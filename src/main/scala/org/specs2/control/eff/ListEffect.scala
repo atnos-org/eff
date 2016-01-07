@@ -45,7 +45,7 @@ object ListEffect {
             Right(EffMonad[R].pure(result.toList))
 
           case (head :: tail, (unevaluated, result)) =>
-            Left((continuation(head), (tail.asInstanceOf[List[A]].map(a => continuation(a.asInstanceOf[X])) ++ unevaluated, result)))
+            Left((continuation(head), (tail.map(a => continuation(a)) ++ unevaluated, result)))
         }
     }
 
