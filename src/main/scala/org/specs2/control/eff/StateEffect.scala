@@ -34,6 +34,22 @@ object StateEffect {
   def modify[R, S](f: S => S)(implicit member: Member[State[S, ?], R]): Eff[R, Unit] =
     get >>= ((s: S) => put(f(s)))
 
+  /** store a new state value */
+  def putTagged[R, T, S](s: S)(implicit member: Member[({type l[X] = State[S, X] @@ T})#l, R]): Eff[R, Unit] =
+    send[({type l[X] = State[S, X] @@ T})#l, R, Unit](Tag(State.set(s)))
+
+  /** get the current state value */
+  def getTagged[R, T, S](implicit member: Member[({type l[X] = State[S, X] @@ T})#l, R]): Eff[R, S] =
+    send[({type l[X] = State[S, X] @@ T})#l, R, S](Tag(State.get))
+
+  /** get the current state value and map it with a function f */
+  def getsTagged[R, U, S, T](f: S => T)(implicit member: Member[({type l[X] = State[S, X] @@ U})#l, R]): Eff[R, T] =
+    send[({type l[X] = State[S, X] @@ U})#l, R, T](Tag(State.inspect(f)))
+
+  /** modify the current state value */
+  def modifyTagged[R, U, T, S](f: S => S)(implicit member: Member[({type l[X] = State[S, X] @@ U})#l, R]): Eff[R, Unit] =
+    getTagged >>= ((s: S) => putTagged(f(s)))
+
   /** run a state effect, with a Monoidal state */
   def evalZero[R <: Effects, S: Monoid, A](w: Eff[State[S, ?] |: R, A]): Eff[R, A] =
     eval(Monoid[S].empty)(w)
@@ -69,6 +85,26 @@ object StateEffect {
 
     interpretState1[R, State[S1, ?], A, (A, S1)]((a: A) => (a, initial))(recurse)(w)
   }
+
+  /** run a state effect, with a Monoidal state */
+  def evalTaggedZero[R <: Effects, T, S: Monoid, A](w: Eff[({type l[X] = State[S, X] @@ T})#l |: R, A]): Eff[R, A] =
+    evalTagged(Monoid[S].empty)(w)
+
+  /** run a state effect, with an initial value, return only the value */
+  def evalTagged[R <: Effects, T, S, A](initial: S)(w: Eff[({type l[X] = State[S, X] @@ T})#l |: R, A]): Eff[R, A] =
+    runTaggedState(initial)(w).map(_._1)
+
+  /** run a state effect, with a monoidal state, return only the state */
+  def execTaggedZero[R <: Effects, T, S : Monoid, A](w: Eff[({type l[X] = State[S, X] @@ T})#l |: R, A]): Eff[R, S] =
+    execTagged(Monoid[S].empty)(w)
+
+  /** run a state effect, with an initial value, return only the state */
+  def execTagged[R <: Effects, T, S, A](initial: S)(w: Eff[({type l[X] = State[S, X] @@ T})#l |: R, A]): Eff[R, S] =
+    runTaggedState(initial)(w).map(_._2)
+
+  /** run a state effect, with an initial value */
+  def runTaggedStateZero[R <: Effects, T, S : Monoid, A](w: Eff[({type l[X] = State[S, X] @@ T})#l |: R, A]): Eff[R, (A, S)] =
+    runTaggedState(Monoid[S].empty)(w)
 
   /** run a tagged state effect, with an initial value */
   def runTaggedState[R <: Effects, T, S1, A](initial: S1)(w: Eff[({type l[X] = State[S1, X] @@ T})#l |: R, A]): Eff[R, (A, S1)] = {

@@ -202,3 +202,42 @@ def fileFold(path: String) = new Fold[String, Unit] {
 run(runWriterFold(action)(fileFold("target/log")))
 io.Source.fromFile("target/log").getLines.toList
 ```
+
+## State
+
+A `State` effect can be seen as the combination of both a `Reader` and a `Writer` with these operations:
+
+ - `get` get the current state
+ - `put` set a new state
+ 
+Let's see an example showing that we can also use tags to track different states at the same time:
+```tut:silent
+import StateEffect._
+import cats.state._
+
+trait Var1
+trait Var2
+
+type S1[A] = State[Int, A] @@ Var1
+type S2[A] = State[Int, A] @@ Var2
+
+type S = S1 |: S2 |: NoEffect
+
+implicit def S1Member: Member[S1, S] = Member.MemberNatIsMember
+implicit def S2Member: Member[S2, S] = Member.MemberNatIsMember
+
+val swapVariables: Eff[S, String] = for {
+  v1 <- getTagged[S, Var1, Int]
+  v2 <- getTagged[S, Var2, Int]
+  _  <- putTagged[S, Var1, Int](v2)
+  _  <- putTagged[S, Var2, Int](v1)
+  w1 <- getTagged[S, Var1, Int]
+  w2 <- getTagged[S, Var2, Int]
+} yield "initial: "+(v1, v2).toString+", final: "+(w1, w2).toString
+```
+```tut
+run(evalTagged(50)(evalTagged(10)(swapVariables)))
+```
+
+In the example above we have used `eval` methods to get the `A` in `Eff[R, A]` but it is also possible to get both the
+ value and the state with `run` or only the state with `exec`. 
