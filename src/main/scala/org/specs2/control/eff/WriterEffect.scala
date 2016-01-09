@@ -22,9 +22,13 @@ import Interpret._
  */
 object WriterEffect {
 
-  /** write a give value */
+  /** write a given value */
   def tell[R, O](o: O)(implicit member: Member[Writer[O, ?], R]): Eff[R, Unit] =
     send[Writer[O, ?], R, Unit](Writer(o, ()))
+
+  /** write a given value */
+  def tellTagged[R, T, O](o: O)(implicit member: Member[({type l[X] = Writer[O, X] @@ T})#l, R]): Eff[R, Unit] =
+    send[({type l[X] = Writer[O, X] @@ T})#l, R, Unit](Tag(Writer(o, ())))
 
   /**
    * run a writer effect and return the list of written values

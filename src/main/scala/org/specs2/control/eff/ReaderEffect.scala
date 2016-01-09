@@ -22,9 +22,17 @@ object ReaderEffect {
   def ask[R, T](implicit member: Member[Reader[T, ?], R]): Eff[R, T] =
     local[R, T, T](identity)
 
+  /** get the environment */
+  def askTagged[R, Tg, T](implicit member: Member[({type l[X] = Reader[T, X] @@ Tg})#l, R]): Eff[R, T] =
+    localTagged[R, Tg, T, T](identity)
+
   /** modify the environment */
   def local[R, T, U](f: T => U)(implicit member: Member[Reader[T, ?], R]): Eff[R, U] =
     send[Reader[T, ?], R, U](Reader(f))
+
+  /** modify the environment */
+  def localTagged[R, Tg, T, U](f: T => U)(implicit member: Member[({type l[X] = Reader[T, X] @@ Tg})#l, R]): Eff[R, U] =
+    send[({type l[X] = Reader[T, X] @@ Tg})#l, R, U](Tag(Reader(f)))
 
   /** interpret the Reader effect by providing an environment when required */
   def runReader[R <: Effects, A, B](env: A)(r: Eff[Reader[A, ?] |: R, B]): Eff[R, B] = {
