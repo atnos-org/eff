@@ -10,6 +10,10 @@ import Effects._
  */
 object OptionEffect {
 
+  /** create an Option effect from a single Option value */
+  def fromOption[R, A](option: Option[A])(implicit member: Member[Option[?], R]): Eff[R, A] =
+    option.fold[Eff[R, A]](none)(some)
+
   /** no value returned */
   def none[R, A](implicit member: Member[Option[?], R]): Eff[R, A] =
     send[Option, R, A](None)

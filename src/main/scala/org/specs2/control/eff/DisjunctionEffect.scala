@@ -12,6 +12,14 @@ import cats.syntax.functor._
  */
 object DisjunctionEffect {
 
+  /** create a Disjunction effect from a single Option value */
+  def fromOption[R, E, A](option: Option[A], e: E)(implicit member: Member[(E Xor ?), R]): Eff[R, A] =
+    option.fold[Eff[R, A]](left[R, E, A](e))(right[R, E, A])
+
+  /** create a Disjunction effect from a single Xor value */
+  def fromXor[R, E, A](xor: E Xor A)(implicit member: Member[(E Xor ?), R]): Eff[R, A] =
+    xor.fold[Eff[R, A]](left[R, E, A], right[R, E, A])
+
   /** create a failed value */
   def left[R, E, A](e: E)(implicit member: Member[(E Xor ?), R]): Eff[R, A] =
     send[E Xor ?, R, A](Left(e))

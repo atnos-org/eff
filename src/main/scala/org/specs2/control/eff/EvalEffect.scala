@@ -9,7 +9,7 @@ import Interpret._
 /**
  * Effect for delayed computations
  *
- * uses scalaz.Name as a data structure
+ * uses cats.Eval as a supporting data structure
  *
  */
 object EvalEffect {

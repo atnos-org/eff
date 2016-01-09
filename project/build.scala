@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 import com.ambiata.promulgate.project.ProjectPlugin.promulgate
 import xerial.sbt.Sonatype._
+import tut.Plugin._
 
 object build extends Build {
   type Settings = Def.Setting[_]
@@ -37,7 +38,6 @@ object build extends Build {
     maxErrors := 20,
     scalacOptions ++= Seq("-Xfatal-warnings",
             "-Xlint",
-            "-Ywarn-unused-import",
             "-Yno-adapted-args",
             "-Ywarn-numeric-widen",
             "-Ywarn-value-discard",
@@ -53,7 +53,7 @@ object build extends Build {
     cancelable := true,
     javaOptions += "-Xmx3G",
     parallelExecution in Benchmark := false
-  )
+  ) ++ tutSettings
 
   lazy val Benchmark = config("bench") extend Test
 
