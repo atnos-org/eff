@@ -3,6 +3,8 @@ import Keys._
 import com.ambiata.promulgate.project.ProjectPlugin.promulgate
 import xerial.sbt.Sonatype._
 import tut.Plugin._
+import com.typesafe.sbt.SbtSite.site
+import com.typesafe.sbt.SbtGhPages.ghPages
 
 object build extends Build {
   type Settings = Def.Setting[_]
@@ -67,6 +69,10 @@ object build extends Build {
     publishMavenStyle := true,
     publishArtifact in Test := false,
     pomIncludeRepository := { x => false },
+    site.addMappingsToSiteDir(tut, "tut"),
+    site.settings,
+    ghpages.settings,
+    git.remoteRepo := "git@github.com:etorreborre/eff-cats.git",
     pomExtra := (
       <url>http://specs2.org/</url>
         <licenses>

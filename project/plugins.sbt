@@ -15,3 +15,9 @@ addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "0.4.0")
 
 addSbtPlugin("org.tpolecat" % "tut-plugin" % "0.4.1")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "0.8.2")
+
+resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.5.4")
