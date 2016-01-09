@@ -12,6 +12,10 @@ import Interpret._
  */
 object ListEffect {
 
+  /** create a list effect with no values */
+  def empty[R, A](implicit m: List <= R): Eff[R, A] =
+    fromList(List())
+
   /** create a list effect from a single value */
   def singleton[R, A](a: A)(implicit m: List <= R): Eff[R, A] =
     fromList(List(a))

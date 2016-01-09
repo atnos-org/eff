@@ -240,4 +240,30 @@ run(evalTagged(50)(evalTagged(10)(swapVariables)))
 ```
 
 In the example above we have used `eval` methods to get the `A` in `Eff[R, A]` but it is also possible to get both the
- value and the state with `run` or only the state with `exec`. 
+ value and the state with `run` or only the state with `exec`.
+ 
+## List
+ 
+The `List` effect is used for non-deterministic computations, that is computations which may return several values.
+ A simple example using this effect would be:
+```tut:silent
+import ListEffect._
+
+type S = List |: NoEffect
+
+implicit def ListMember: Member[List, S] = Member.MemberNatIsMember
+
+// create all the possible pairs for a given list
+def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
+  a <- values(list:_*)
+  b <- values(list:_*)
+  found <- 
+    if (a + b > n) singleton((a, b))
+    else empty
+} yield found
+
+```
+```tut
+
+run(runList(pairsBiggerThan(List(1, 2, 3, 4), 5)))
+```
