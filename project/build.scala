@@ -3,8 +3,8 @@ import Keys._
 import com.ambiata.promulgate.project.ProjectPlugin.promulgate
 import xerial.sbt.Sonatype._
 import tut.Plugin._
-import com.typesafe.sbt.SbtSite.site
-import com.typesafe.sbt.SbtGhPages.ghpages
+import com.typesafe.sbt.SbtSite.{SiteKeys, site}
+import com.typesafe.sbt.SbtGhPages.{GhPagesKeys, ghpages}
 import com.typesafe.sbt.SbtGit.git
 
 object build extends Build {
@@ -44,8 +44,11 @@ object build extends Build {
             "-Yno-adapted-args",
             "-Ywarn-numeric-widen",
             "-Ywarn-value-discard",
+            "-Ywarn-unused-import",
+            "-Ywarn-dead-code",
             "-deprecation:false", "-Xcheckinit", "-unchecked", "-feature", "-language:_"),
     scalacOptions in Test ++= Seq("-Yrangepos"),
+    scalacOptions in Test ~= (_.filterNot(Set("-Ywarn-dead-code"))),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
   )
 
@@ -56,7 +59,9 @@ object build extends Build {
     cancelable := true,
     javaOptions += "-Xmx3G",
     parallelExecution in Benchmark := false
-  ) ++ tutSettings
+  ) ++
+    tutSettings ++
+    Seq(tutScalacOptions ~= (_.filterNot(Set("-Ywarn-unused-import", "-Ywarn-dead-code"))))
 
   lazy val Benchmark = config("bench") extend Test
 
@@ -67,13 +72,13 @@ object build extends Build {
       val nexus = "https://oss.sonatype.org/"
       Some("staging" at nexus + "service/local/staging/deploy/maven2")
     },
+    autoAPIMappings := true,
+    apiURL := Some(url("https://etorreborre.github.io/eff-cats/api/")),
     publishMavenStyle := true,
     publishArtifact in Test := false,
     pomIncludeRepository := { x => false },
-    site.addMappingsToSiteDir(tut, "tut"),
-    git.remoteRepo := "git@github.com:etorreborre/eff-cats.git",
     pomExtra := (
-      <url>http://specs2.org/</url>
+      <url>http://github.com/etorreborre/eff-cats/</url>
         <licenses>
           <license>
             <name>MIT-style</name>
@@ -82,8 +87,8 @@ object build extends Build {
           </license>
         </licenses>
         <scm>
-          <url>http://github.com/etorreborre/eff</url>
-          <connection>scm:http:http://etorreborre@github.com/etorreborre/eff.git</connection>
+          <url>http://github.com/etorreborre/eff-cats</url>
+          <connection>scm:http:http://etorreborre@github.com/etorreborre/eff-cats.git</connection>
         </scm>
         <developers>
           <developer>
@@ -97,6 +102,12 @@ object build extends Build {
   ) ++
   sonatypeSettings ++
   site.settings ++
-  ghpages.settings
+  ghpages.settings ++
+  Seq(
+    site.addMappingsToSiteDir(tut, "tut"),
+    GhPagesKeys.ghpagesNoJekyll := false,
+    includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.yml" | "*.md",
+    git.remoteRepo := "git@github.com:etorreborre/eff-cats.git"
+  )
 
 }
