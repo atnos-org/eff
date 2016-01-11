@@ -1,9 +1,20 @@
-# Out of the box
+package org.specs2.site
+
+import org.specs2.control.eff._
+import Eff._
+import Effects._
+import cats.syntax.all._
+import cats.data._
+import Tag._
+import org.specs2.execute.Snippets
+
+object OutOfTheBox extends UserGuidePage { def is = "out-of-the-box".title ^ s2"""
+### Out of the box
 
 This library comes with a few available effects (in `org.specs2.control.eff._`):
 
  Name                | Description
- ------------------- | ---------- 
+ ------------------- | ----------
  `EvalEffect`        | an effect for delayed computations
  `OptionEffect`      | an effect for optional computations, stopping when there's no available value
  `DisjunctionEffect` | an effect for computations with failures, stopping when there is a failure
@@ -15,20 +26,20 @@ This library comes with a few available effects (in `org.specs2.control.eff._`):
 
 Each object provides methods to create effects and to interpret them.
 
-## Eval
+### Eval
 
 This effect is a very simple one. It allows the delayed execution of computations and it can serve as some sort of overall `IO` effect.
 
-Two methods are available to execute this effect: 
+Two methods are available to execute this effect:
 
  - `runEval[R <: Effects, A](r: Eff[Eval[?] |: R, A]): Eff[R, A]` to just execute the computations
- - `attemptEval[R <: Effects, A](r: Eff[Eval[?] |: R, A]): Eff[R, Throwable \/ A]` to execute the computations but also catch any `Throwable` that would be thrown
-  
-## Option
 
-Adding an `Option` effect in your stack allows to stop computations when necessary. 
-If you create a value with `some(a)` this value will be used downstream but if you use `none` all computations will stop
-```tut:silent
+ - `attemptEval[R <: Effects, A](r: Eff[Eval[?] |: R, A]): Eff[R, Throwable \/ A]` to execute the computations but also catch any `Throwable` that would be thrown
+
+### Option
+
+Adding an `Option` effect in your stack allows to stop computations when necessary.
+If you create a value with `some(a)` this value will be used downstream but if you use `none` all computations will stop:${snippet{
 import org.specs2.control.eff._
 import Eff._
 import Effects._
@@ -44,8 +55,8 @@ implicit def OptionMember: Member[Option, S] =
   Member.MemberNatIsMember
 
 // compute with this stack
-val map: Map[String, Int] = 
-  Map("key1" -> 10, "key2" -> 20) 
+val map: Map[String, Int] =
+  Map("key1" -> 10, "key2" -> 20)
 
 val addKeys: Eff[S, Int] = for {
   a <- fromOption(map.get("key1"))
@@ -56,17 +67,13 @@ val addKeysWithMissingKey: Eff[S, Int] = for {
   a <- fromOption(map.get("key1"))
   b <- fromOption(map.get("missing"))
 } yield a + b
-```
-```tut
-run(runOption(addKeys))
 
-run(runOption(addKeysWithMissingKey))
-```
+(run(runOption(addKeys)), run(runOption(addKeysWithMissingKey)))
+}.eval}
 
-## Disjunction
+### Disjunction
 
-The `Disjunction` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped.
-```tut:silent
+The `Disjunction` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
 import org.specs2.control.eff._
 import Eff._
 import Effects._
@@ -77,15 +84,15 @@ import cats.data.Xor
 /**
  * Stack declaration
  */
-type XorString[A] = String Xor A 
+type XorString[A] = String Xor A
 type S = XorString |: NoEffect
 
 implicit def XorStringMember: Member[XorString, S] =
   Member.MemberNatIsMember
 
 // compute with this stack
-val map: Map[String, Int] = 
-  Map("key1" -> 10, "key2" -> 20) 
+val map: Map[String, Int] =
+  Map("key1" -> 10, "key2" -> 20)
 
 val addKeys: Eff[S, Int] = for {
   a <- fromOption(map.get("key1"), "'key1' not found")
@@ -96,40 +103,40 @@ val addKeysWithMissingKey: Eff[S, Int] = for {
   a <- fromOption(map.get("key1"),    "'key1' not found")
   b <- fromOption(map.get("missing"), "'missing' not found")
 } yield a + b
-```
-```tut
-run(runDisjunction(addKeys))
 
-run(runDisjunction(addKeysWithMissingKey))
-```
+(run(runDisjunction(addKeys)), run(runDisjunction(addKeysWithMissingKey)))
+}.eval}
 
-## Error
+### Error
 
 The `Error` effect is both an `Eval` effect and a `Disjunction` one with `Throwable Xor F` on the "left" side.
- The idea is to represent computation which can fail, either with an exception or a failure. You can:
+ The idea is to represent computations which can fail, either with an exception or a failure. You can:
 
  - create delayed computations with `ok`
+
  - fail with `fail(f: F)` where `F` is the failure type
+
  - throw an exception with `exception`
 
 Other useful combinators are available:
 
- - `andFinally(last)` register an action to be executed even in case of an exception or a failure
- - `orElse` run an action and then run another one if the first is not successful
- - `whenFailed` same thing than `orElse` but use the error for `action1` to decide which action to run next
+ - `andFinally(last)` registers an action to be executed even in case of an exception or a failure
+
+ - `orElse` runs an action and then run another one if the first is not successful
+
+ - `whenFailed` does the same thing than `orElse` but uses the error for `action1` to decide which action to run next
 
 When you run an `Error` effect you get back an `Error Xor A` where `Error` is a type alias for `Throwable Xor Failure`.
 
-The `Error` object implements this effect with `String` as the `Failure` type but you are encouraged to create our own 
-failure datatype and extends the `Error[MyFailureDatatype]` trait. 
+The `Error` object implements this effect with `String` as the `Failure` type but you are encouraged to create our own
+failure datatype and extends the `Error[MyFailureDatatype]` trait.
 
-## Reader
+### Reader
 
 The `Reader` effect is used to request values from the "environment". The main method is `ask` to get the current environment (or "configuration" if you prefer to see it that way)
 and you can run an effect stack containing a `Reader` effect by providing a value for the environment with the `runReader` method.
 
-It is also possible to stack several independent environments in the same effect stack by "tagging" them:
-```tut:silent
+It is also possible to stack several independent environments in the same effect stack by "tagging" them:${snippet{
 import ReaderEffect._
 import Tag._
 import cats.data._
@@ -149,27 +156,27 @@ val getPorts: Eff[S, String] = for {
   p1 <- askTagged[S, Port1, Int]
   p2 <- askTagged[S, Port2, Int]
 } yield "port1 is "+p1+", port2 is "+p2
-```
-```tut
-run(runTaggedReader(50)(runTaggedReader(80)(getPorts)))
-```
 
-## Writer
+run(runTaggedReader(50)(runTaggedReader(80)(getPorts)))
+}.eval}
+
+### Writer
 
 The `Writer` effect is classically used to log values alongside computations. However it generally suffers from the following drawbacks:
 
  - values have to be accumulated in some sort of `Monoid`
- - it can not really be used to log values to a file because all the values are being kept in memory until the 
-  computation ends
-  
-The `Writer` effect has none of these issues. When you want to log a value you simply `tell` it and when you run the effect you can select exactly the strategy you want:
-  
-  - `runWriter` simply accumulates the values in a `List` which is ok if you don't have too many of them
-  - `runWriterFold` uses a `Fold` to act on each value, keeping some internal state between each invocation
-  
-You can then define your own custom `Fold` to log the values to a file:
 
-```tut:silent
+ - it can not really be used to log values to a file because all the values are being kept in memory until the
+  computation ends
+
+The `Writer` effect has none of these issues. When you want to log a value you simply `tell` it and when you run the effect you can select exactly the strategy you want:
+
+  - `runWriter` simply accumulates the values in a `List` which is ok if you don't have too many of them
+
+  - `runWriterFold` uses a `Fold` to act on each value, keeping some internal state between each invocation
+
+You can then define your own custom `Fold` to log the values to a file:${snippet{
+
 import java.io.PrintWriter
 import WriterEffect._
 
@@ -179,10 +186,10 @@ type S = W |: NoEffect
 implicit def WMember: Member[W, S] = Member.MemberNatIsMember
 
 val action: Eff[S, Int] = for {
- a <- EffMonad[S].pure(1) 
- _ <- tell("first value "+a) 
- b <- EffMonad[S].pure(2) 
- _ <- tell("second value "+b) 
+ a <- EffMonad[S].pure(1)
+ _ <- tell("first value "+a)
+ b <- EffMonad[S].pure(2)
+ _ <- tell("second value "+b)
 
 } yield a + b
 
@@ -190,28 +197,27 @@ val action: Eff[S, Int] = for {
 def fileFold(path: String) = new Fold[String, Unit] {
   type S = PrintWriter
   val init: S = new PrintWriter(path)
-  
-  def fold(a: String, s: S): S = 
+
+  def fold(a: String, s: S): S =
     { s.println(a); s }
-    
-  def finalize(s: S): Unit = 
+
+  def finalize(s: S): Unit =
     s.close
 }
-```
-```tut
+
 run(runWriterFold(action)(fileFold("target/log")))
 io.Source.fromFile("target/log").getLines.toList
-```
+}.eval}
 
-## State
+### State
 
 A `State` effect can be seen as the combination of both a `Reader` and a `Writer` with these operations:
 
  - `get` get the current state
+
  - `put` set a new state
- 
-Let's see an example showing that we can also use tags to track different states at the same time:
-```tut:silent
+
+Let's see an example showing that we can also use tags to track different states at the same time:${snippet{
 import StateEffect._
 import cats.state._
 
@@ -234,19 +240,28 @@ val swapVariables: Eff[S, String] = for {
   w1 <- getTagged[S, Var1, Int]
   w2 <- getTagged[S, Var2, Int]
 } yield "initial: "+(v1, v2).toString+", final: "+(w1, w2).toString
-```
-```tut
-run(evalTagged(50)(evalTagged(10)(swapVariables)))
-```
 
-In the example above we have used `eval` methods to get the `A` in `Eff[R, A]` but it is also possible to get both the
+run(evalTagged(50)(evalTagged(10)(swapVariables)))
+}.eval}
+
+In the example above we have used an `eval` method to get the `A` in `Eff[R, A]` but it is also possible to get both the
  value and the state with `run` or only the state with `exec`.
- 
-## List
- 
+
+### List
+
 The `List` effect is used for non-deterministic computations, that is computations which may return several values.
- A simple example using this effect would be:
-```tut:silent
+ A simple example using this effect would be:${ListSnippets.snippet1}
+
+
+<br/>
+Now you can learn about ${"open/closed effect stacks" ~/ OpenClosed}.
+
+"""
+
+}
+
+object ListSnippets extends Snippets {
+  val snippet1 = snippet{
 import ListEffect._
 
 type S = List |: NoEffect
@@ -254,16 +269,15 @@ type S = List |: NoEffect
 implicit def ListMember: Member[List, S] = Member.MemberNatIsMember
 
 // create all the possible pairs for a given list
+// where the sum is greater than a value
 def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
   a <- values(list:_*)
   b <- values(list:_*)
-  found <- 
-    if (a + b > n) singleton((a, b))
-    else empty
+  found <- if (a + b > n) singleton((a, b))
+           else           empty
 } yield found
 
-```
-```tut
-
 run(runList(pairsBiggerThan(List(1, 2, 3, 4), 5)))
-```
+}.eval
+
+}

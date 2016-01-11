@@ -2,7 +2,6 @@ import sbt._
 import Keys._
 import com.ambiata.promulgate.project.ProjectPlugin.promulgate
 import xerial.sbt.Sonatype._
-import tut.Plugin._
 import com.typesafe.sbt.SbtSite.{SiteKeys, site}
 import com.typesafe.sbt.SbtGhPages.{GhPagesKeys, ghpages}
 import com.typesafe.sbt.SbtGit.git
@@ -58,11 +57,8 @@ object build extends Build {
     logBuffered := false,
     cancelable := true,
     javaOptions += "-Xmx3G",
-    parallelExecution in Benchmark := false
-  ) ++
-    tutSettings ++
-    Seq(tutScalacOptions ~= (_.filterNot(Set("-Ywarn-unused-import", "-Ywarn-dead-code"))))
-
+    parallelExecution := false
+  )
   lazy val Benchmark = config("bench") extend Test
 
   lazy val publicationSettings: Seq[Settings] =
@@ -104,7 +100,6 @@ object build extends Build {
   site.settings ++
   ghpages.settings ++
   Seq(
-    site.addMappingsToSiteDir(tut, "tut"),
     GhPagesKeys.ghpagesNoJekyll := false,
     includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.yml" | "*.md",
     git.remoteRepo := "git@github.com:etorreborre/eff-cats.git"
