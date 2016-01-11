@@ -11,7 +11,7 @@ import Effects._
 trait Effects
 
 /** one effect, basically a type constructor */
-trait Effect[F[_]]
+sealed trait Effect[F[_]]
 
 /**
  * Append an effect at the beginning of a list of effects
@@ -23,9 +23,11 @@ final case class EffectsCons[F[_], T <: Effects](head: Effect[F], tail: T) exten
 /**
  * Nil case for the list of effects
  */
-sealed class NoEffect extends Effects {
+class NoEffect extends Effects {
   def |:[G[_]](g: Effect[G]) = EffectsCons[G, NoEffect](g, this)
 }
+
+object NoEffect extends NoEffect
 
 /**
  * Aliases for declaring effects with the following syntax

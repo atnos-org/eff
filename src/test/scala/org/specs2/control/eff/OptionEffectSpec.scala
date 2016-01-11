@@ -1,5 +1,6 @@
 package org.specs2.control.eff
 
+import cats.Eval
 import com.ambiata.disorder._
 import org.specs2.{ScalaCheck, Specification}
 import Eff._
@@ -26,8 +27,8 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     val option: Eff[S, String] =
       for {
-        s1 <- OptionEffect.some[S, String]("hello")
-        s2 <- OptionEffect.some[S, String]("world")
+        s1 <- OptionEffect.some("hello")
+        s2 <- OptionEffect.some("world")
       } yield s1 + " " + s2
 
     run(runOption(option)) === Some("hello world")
@@ -38,8 +39,8 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     val option: Eff[S, String] =
       for {
-        s1 <- OptionEffect.some[S, String]("hello")
-        s2 <- OptionEffect.none[S, String]
+        s1 <- OptionEffect.some("hello")
+        s2 <- OptionEffect.none
       } yield s1 + " " + s2
 
     run(runOption(option)) === None
@@ -50,10 +51,6 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
     // define a Reader / Option stack
     type R[A] = Reader[Int, A]
     type S = Option |: R |: NoEffect
-    import MemberNat._
-
-    implicit def ReaderStackMember: Member[R, S] =
-      Member.MemberNatIsMember
 
     // create actions
     val readOption: Eff[S, Int] =
@@ -69,15 +66,14 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
       Some(initial + someValue.value)
   }
 
+
   def stacksafeOption = {
     type E = Option |: NoEffect
-    implicit def OptionMember: Member[Option, E] =
-      Member.MemberNatIsMember
 
     val list = (1 to 5000).toList
     val action = list.traverseU(i => OptionEffect.some(i))
 
-    run(OptionEffect.runOption(action)) ==== Some(list)
+    run(runOption(action)) ==== Some(list)
   }
 
 }

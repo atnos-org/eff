@@ -5,7 +5,7 @@ import cats._, data._
 import cats.syntax.semigroup._
 import Tag._
 import Eff._
-import Effects._
+import Effects.|:
 import Interpret._
 
 /**
@@ -20,7 +20,14 @@ import Interpret._
  * Several writer effects can be used in the same stack if they are tagged.
  *
  */
-object WriterEffect {
+trait WriterEffect extends
+  WriterCreation with
+  WriterInterpretation with
+  WriterImplicits
+
+object WriterEffect extends WriterEffect
+
+trait WriterCreation {
 
   /** write a given value */
   def tell[R, O](o: O)(implicit member: Member[Writer[O, ?], R]): Eff[R, Unit] =
@@ -30,18 +37,24 @@ object WriterEffect {
   def tellTagged[R, T, O](o: O)(implicit member: Member[({type l[X] = Writer[O, X] @@ T})#l, R]): Eff[R, Unit] =
     send[({type l[X] = Writer[O, X] @@ T})#l, R, Unit](Tag(Writer(o, ())))
 
+}
+
+object WriterCreation extends WriterCreation
+
+trait WriterInterpretation {
+
   /**
    * run a writer effect and return the list of written values
    *
    * This uses a ListBuffer internally to append values
    */
-  def runWriter[R <: Effects, O, A, B](w: Eff[Writer[O, ?] |: R, A]): Eff[R, (A, List[O])] =
+  def runWriter[R <: Effects, U <: Effects, O, A, B](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, List[O])] =
     runWriterFold(w)(ListFold)
 
   /**
    * More general fold of runWriter where we can use a fold to accumulate values in a mutable buffer
    */
-  def runWriterFold[R <: Effects, O, A, B](w: Eff[Writer[O, ?] |: R, A])(implicit fold: Fold[O, B]): Eff[R, (A, B)] = {
+  def runWriterFold[R <: Effects, U <: Effects, O, A, B](w: Eff[R, A])(fold: Fold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
     val recurse: StateRecurse[Writer[O, ?], A, (A, B)] = new StateRecurse[Writer[O, ?], A, (A, B)] {
       type S = fold.S
       val init = fold.init
@@ -49,16 +62,17 @@ object WriterEffect {
       def finalize(a: A, s: S) = (a, fold.finalize(s))
     }
 
-    interpretState1[R, Writer[O, ?], A, (A, B)]((a: A) => (a, fold.finalize(fold.init)))(recurse)(w)
+    interpretState1[R, U, Writer[O, ?], A, (A, B)]((a: A) => (a, fold.finalize(fold.init)))(recurse)(w)
   }
 
   /**
    * run a tagged writer effect
    */
-  def runTaggedWriter[R <: Effects, T, O, A](w: Eff[({type l[X] = Writer[O, X] @@ T})#l |: R, A]): Eff[R, (A, List[O])] =
+  def runTaggedWriter[R <: Effects, U <: Effects, T, O, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = Writer[O, X] @@ T})#l, R, U]): Eff[U, (A, List[O])] =
     runTaggedWriterFold(w)(ListFold)
 
-  def runTaggedWriterFold[R <: Effects, T, O, A, B](w: Eff[({type l[X] = Writer[O, X] @@ T})#l |: R, A])(implicit fold: Fold[O, B]): Eff[R, (A, B)] = {
+  def runTaggedWriterFold[R <: Effects, U <: Effects, T, O, A, B](w: Eff[R, A])(fold: Fold[O, B])(implicit
+        m: Member.Aux[({type l[X] = Writer[O, X] @@ T})#l, R, U]): Eff[U, (A, B)] = {
     type W[X] = Writer[O, X] @@ T
 
     val recurse = new StateRecurse[W, A, (A, B)] {
@@ -74,7 +88,7 @@ object WriterEffect {
         (a, fold.finalize(s))
     }
 
-    interpretState1[R, W, A, (A, B)]((a: A) => (a, fold.finalize(fold.init)))(recurse)(w)
+    interpretState1[R, U, W, A, (A, B)]((a: A) => (a, fold.finalize(fold.init)))(recurse)(w)
   }
 
   /** support trait for folding values while possibly keeping some internal state */
@@ -98,5 +112,44 @@ object WriterEffect {
     def fold(a: A, s: S) = a |+| s
     def finalize(s: S) = s
   }
+}
+
+object WriterInterpretation extends WriterInterpretation
+
+trait WriterImplicits extends WriterImplicits1 {
+  implicit def WriterMemberZero[A]: Member.Aux[Writer[A, ?], Writer[A, ?] |: NoEffect, NoEffect] = {
+    type T[X] = Writer[A, X]
+    Member.zero[T]
+  }
+
+  implicit def WriterMemberFirst[R <: Effects, A]: Member.Aux[Writer[A, ?], Writer[A, ?] |: R, R] = {
+    type T[X] = Writer[A, X]
+    Member.first[T, R]
+  }
+
+  implicit def TaggedWriterMemberZero[Tg, A]: Member.Aux[({type l[X] = Writer[A, X] @@ Tg})#l, ({type l[X] = Writer[A, X] @@ Tg})#l |: NoEffect, NoEffect] = {
+    type T[X] = Writer[A, X] @@ Tg
+    Member.zero[T]
+  }
+
+  implicit def TaggedWriterMemberFirst[R <: Effects, Tg, A]: Member.Aux[({type l[X] = Writer[A, X] @@ Tg})#l, ({type l[X] = Writer[A, X] @@ Tg})#l |: R, R] = {
+    type T[X] = Writer[A, X] @@ Tg
+    Member.first[T, R]
+  }
 
 }
+
+trait WriterImplicits1 {
+  implicit def WriterMemberSuccessor[O[_], R <: Effects, U <: Effects, A](implicit m: Member.Aux[Writer[A, ?], R, U]): Member.Aux[Writer[A, ?], O |: R, O |: U] = {
+    type T[X] = Writer[A, X]
+    Member.successor[T, O, R, U]
+  }
+
+  implicit def TaggedWriterMemberSuccessor[O[_], R <: Effects, U <: Effects, Tg, A](implicit m: Member.Aux[({type l[X] = Writer[A, X] @@ Tg})#l, R, U]): Member.Aux[({type l[X] = Writer[A, X] @@ Tg})#l, O |: R, O |: U] = {
+    type T[X] = Writer[A, X] @@ Tg
+    Member.successor[T, O, R, U]
+  }
+
+}
+
+object WriterImplicits extends WriterImplicits

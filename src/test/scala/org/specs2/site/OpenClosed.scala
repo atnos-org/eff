@@ -1,34 +1,63 @@
 package org.specs2.site
 
 import org.specs2.control.eff._
-import Eff._
 import Effects._
-import StateEffect._
-import WriterEffect._
-import cats.syntax.all._
 import cats.state._
 import cats.data._
+import cats.syntax.all._
 
-object OpenClosed extends UserGuidePage { def is = "Open vs Closed".title ^ s2"""
+object OpenClosed extends UserGuidePage { def is = ("Open - Closed").title ^ s2"""
 
 There are 2 ways to create effectful computations for a given effect `M`.
-The first one is to specify the stack which contains the effect:${snippet{
+
+You can create an **open** union of effects:${snippet {
+// '<= ' reads 'is member of '
+import Member.<=
+import StateCreation._
+import WriterCreation._
+
+def putAndTell[R](i: Int)(implicit s: StateInt <= R, w: WriterString <= R): Eff[R, Int] =
+  for {
+    _ <- put(i)
+    _ <- tell("stored " + i)
+  } yield i
+}}
+
+In this case you don't fix the type of the effect stack to use, you just list the effects that the stack will contain.
+
+This has several advantages:
+
+ - you can add more effects later to the `Eff[R, Int]` action being created
+
+ - the `putAndTell` method can be used in different effect stacks as long as they have the `StateInt` and `WriterString` effects
+
+ - no type annotations are required in the for comprehension
+
+On the other hand:
+
+ - this is verbose if you have lots of methods like this, always operating on the same stack of effects
+
+ - you might want to "seal" the stack to declare exactly with which set of effects you want to be working
+
+In that case you can specify an effect stack:${snippet{
 import org.specs2.control.eff._
-import Eff._
 import Effects._
-import StateEffect._
-import WriterEffect._
 import cats.syntax.all._
 import cats.state._
 import cats.data._
+import StateCreation._
+import WriterCreation._
 
 type StateInt[A] = State[Int, A]
 type WriterString[A] = Writer[String, A]
 
 type S = StateInt |: WriterString |: NoEffect
 
-implicit def StateIntMember: Member[StateInt, S] = Member.MemberNatIsMember
-implicit def WriterStringMember: Member[WriterString, S] = Member.MemberNatIsMember
+implicit val StateIntMember =
+  Member.aux[StateInt, S, WriterString |: NoEffect]
+
+implicit val WriterStringMember =
+  Member.aux[WriterString, S, StateInt |: NoEffect]
 
 def putAndTell(i: Int): Eff[S, Int] =
   for {
@@ -37,45 +66,22 @@ def putAndTell(i: Int): Eff[S, Int] =
   } yield i
 }}
 
-This has several advantages:
+One major issue with this approach is that you will need to use type annotations in the for comprehension unless you
+define one implicit for each effect that is member of the stack. The implicit `StateIntMember` for example declares that:
 
- - this specifies in which order the effects are to be interpreted. This is very important because the
-   result of running `StateInt` followed by `WriterString` is of type `((S, A), List[W])` whereas running
-   `WriterString` followed by `StateInt` returns a value of type `(S, (A, List[W]))`
+ - `StateInt` is a member of `S`
 
- - type inference works well and there is no need to annotate the `put` or `tell` methods.
-
-On the other hand we lose some flexibility:
-
- - adding another effect requires to transform the definition of the effect stack `S`
-
- - the `putAndTell` method cannot be used in 2 different effects stacks having the `StateInt` and `WriterString` effects
-
-The remedy is to use the `Member` typeclass to create an **open** union of effects:${snippet{
-import Member.<=
-
-def putAndTell[R](i: Int)(implicit s: StateInt <= R, w: WriterString <= R): Eff[R, Int] =
-  for {
-    _ <- put[R, Int](i)
-    _ <- tell[R, String]("stored "+i)
-  } yield i
-}}
-
-Here we just declare that the `putAndTell` method can be used with any effect stack `R` if the `StateInt` and `WriterString`
-effects are members of that stack. However we have to add some type annotations to guide the compiler.
+ - if you remove `StateInt` from `S`, you are left with the `WriterString |: NoEffect` stack
 
 <br/>
 Now you can learn ${"how to create effects" ~/ CreateEffects}
 
 """
+
   type StateInt[A] = State[Int, A]
   type WriterString[A] = Writer[String, A]
 
   type S = StateInt |: WriterString |: NoEffect
 
-  implicit def StateIntMember: Member[StateInt, S] = Member.MemberNatIsMember
-  implicit def WriterStringMember: Member[WriterString, S] = Member.MemberNatIsMember
-
 
 }
-

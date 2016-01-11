@@ -16,21 +16,18 @@ class EvalEffectSpec extends Specification { def is = s2"""
 
 """
 
+  type E = Eval |: NoEffect
+
+  val list = (1 to 5000).toList
+
   def stacksafeRun = {
-    type E = Eval |: NoEffect
-
-    val list = (1 to 5000).toList
-    val action = list.traverseU(i => EvalEffect.delay[E, Int](i))
-
+    val action = list.traverseU(i => EvalEffect.delay(i))
     run(runEval(action)) ==== list
   }
 
   def stacksafeAttempt = {
-    type E = Eval |: NoEffect
-
-    val list = (1 to 5000).toList
-    val action = list.traverseU(i => EvalEffect.delay[E, Int](i))
-
+    val action = list.traverseU(i => EvalEffect.delay(i))
     run(attemptEval(action)) ==== Right(list)
   }
 }
+

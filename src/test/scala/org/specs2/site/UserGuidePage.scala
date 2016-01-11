@@ -1,15 +1,15 @@
 package org.specs2.site
 
 import org.specs2.Specification
+import org.specs2.execute.Snippet
+import org.specs2.io._
 import org.specs2.main.Arguments
 import org.specs2.specification.Snippets
 import org.specs2.specification.core._
 
-abstract class UserGuidePage extends Specification with Snippets {
+import scala.reflect.ClassTag
 
-  /** don't display statistics */
-  override def map(structure: SpecStructure): SpecStructure =
-    Arguments("html.nostats") ^ structure
+abstract class UserGuidePage extends Specification with Snippets {
 
   /** mute all links, so that they are not decorated in the html */
   override def map(fs: =>Fragments): Fragments =
@@ -18,5 +18,15 @@ abstract class UserGuidePage extends Specification with Snippets {
       case f => f
     }
 
+  def load(path: FilePath): Snippet[Unit] =
+    Snippet(
+      code = () => (),
+      codeExpression = FileSystem.readFile(path).runOption.orElse(Option("no file found at "+path.path))
+    )
+
+  def definition[T : ClassTag]: Snippet[Unit] = {
+    val name = implicitly[ClassTag[T]].runtimeClass.getName
+    load(FilePath.unsafe("src/test/scala/"+name.replace(".", "/")+".scala"))
+  }
 }
 

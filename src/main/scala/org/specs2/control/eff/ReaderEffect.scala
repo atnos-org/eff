@@ -1,10 +1,10 @@
 package org.specs2.control.eff
 
-import Eff._
-import Effects._
 import cats._, data._, Xor._
 import Interpret._
 import Tag._
+import Eff._
+import Effects.|:
 
 /**
  * Effect for computations depending on an environment.
@@ -16,8 +16,14 @@ import Tag._
  * A tagged Reader effect can be run with runTaggedReader
  *
  */
-object ReaderEffect {
+trait ReaderEffect extends
+  ReaderCreation with
+  ReaderInterpretation with
+  ReaderImplicits
 
+object ReaderEffect extends ReaderEffect
+
+trait ReaderCreation {
   /** get the environment */
   def ask[R, T](implicit member: Member[Reader[T, ?], R]): Eff[R, T] =
     local[R, T, T](identity)
@@ -33,23 +39,66 @@ object ReaderEffect {
   /** modify the environment */
   def localTagged[R, Tg, T, U](f: T => U)(implicit member: Member[({type l[X] = Reader[T, X] @@ Tg})#l, R]): Eff[R, U] =
     send[({type l[X] = Reader[T, X] @@ Tg})#l, R, U](Tag(Reader(f)))
+}
 
+object ReaderCreation extends ReaderCreation
+
+trait ReaderInterpretation {
   /** interpret the Reader effect by providing an environment when required */
-  def runReader[R <: Effects, A, B](env: A)(r: Eff[Reader[A, ?] |: R, B]): Eff[R, B] = {
-    val recurse = new Recurse[Reader[A, ?], R, B] {
+  def runReader[R <: Effects, U <: Effects, A, B](env: A)(r: Eff[R, B])(implicit m: Member.Aux[Reader[A, ?], R, U]): Eff[U, B] = {
+    val recurse = new Recurse[Reader[A, ?], U, B] {
       def apply[X](m: Reader[A, X]) = left(m.run(env))
     }
 
-    interpret1[R, Reader[A, ?], B, B]((b: B) => b)(recurse)(r)
+    interpret1[R, U, Reader[A, ?], B, B]((b: B) => b)(recurse)(r)
   }
 
   /** interpret a tagged Reader effect by providing an environment when required */
-  def runTaggedReader[R <: Effects, T, A, B](env: A)(r: Eff[({type l[X] = Reader[A, X] @@ T})#l |: R, B]): Eff[R, B] = {
-    val recurse = new Recurse[({type l[X] = Reader[A, X] @@ T})#l, R, B] {
+  def runTaggedReader[R <: Effects, U <: Effects, T, A, B](env: A)(r: Eff[R, B])(implicit
+         m: Member.Aux[({type l[X] = Reader[A, X] @@ T})#l, R, U]): Eff[U, B] = {
+
+    val recurse = new Recurse[({type l[X] = Reader[A, X] @@ T})#l, U, B] {
       def apply[X](m: Reader[A, X] @@ T) = Left(Tag.unwrap(m).run(env))
     }
 
-    interpret1[R, ({type l[X] = Reader[A, X] @@ T})#l, B, B]((b: B) => b)(recurse)(r)
+    interpret1[R, U, ({type l[X] = Reader[A, X] @@ T})#l, B, B]((b: B) => b)(recurse)(r)
+  }
+}
+
+object ReaderInterpretation extends ReaderInterpretation
+
+trait ReaderImplicits extends ReaderImplicits1 {
+  implicit def ReaderMemberZero[A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: NoEffect, NoEffect] = {
+    type T[X] = Reader[A, X]
+    Member.zero[T]
   }
 
+  implicit def ReaderMemberFirst[R <: Effects, A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: R, R] = {
+    type T[X] = Reader[A, X]
+    Member.first[T, R]
+  }
+
+  implicit def TaggedReaderMemberZero[Tg, A]: Member.Aux[({type l[X] = Reader[A, X] @@ Tg})#l, ({type l[X] = Reader[A, X] @@ Tg})#l |: NoEffect, NoEffect] = {
+    type T[X] = Reader[A, X] @@ Tg
+    Member.zero[T]
+  }
+
+  implicit def TaggedReaderMemberFirst[R <: Effects, Tg, A]: Member.Aux[({type l[X] = Reader[A, X] @@ Tg})#l, ({type l[X] = Reader[A, X] @@ Tg})#l |: R, R] = {
+    type T[X] = Reader[A, X] @@ Tg
+    Member.first[T, R]
+  }
 }
+
+trait ReaderImplicits1 {
+  implicit def ReaderMemberSuccessor[O[_], R <: Effects, U <: Effects, A](implicit m: Member.Aux[Reader[A, ?], R, U]): Member.Aux[Reader[A, ?], O |: R, O |: U] = {
+    type T[X] = Reader[A, X]
+    Member.successor[T, O, R, U]
+  }
+
+  implicit def TaggedReaderMemberSuccessor[O[_], R <: Effects, U <: Effects, Tg, A](implicit m: Member.Aux[({type l[X] = Reader[A, X] @@ Tg})#l, R, U]): Member.Aux[({type l[X] = Reader[A, X] @@ Tg})#l, O |: R, O |: U] = {
+    type T[X] = Reader[A, X] @@ Tg
+    Member.successor[T, O, R, U]
+  }
+}
+
+object ReaderImplicits extends ReaderImplicits

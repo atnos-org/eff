@@ -1,7 +1,6 @@
 package org.specs2.control.eff
 
 import Eff._
-import Effects._
 import Member._
 import scala.collection.mutable.ListBuffer
 import cats.data._, Xor._
@@ -29,24 +28,24 @@ object ListEffect {
     send[List, R, A](as)
 
   /** run an effect stack starting with a list effect */
-  def runList[R <: Effects, A](effects: Eff[List |: R, A]): Eff[R, List[A]] = {
-    val loop = new Loop[List, R, A, Eff[R, List[A]]] {
-      type S = (List[Eff[List |: R, A]], ListBuffer[A])
-      val init = (List[Eff[List |: R, A]](), new ListBuffer[A])
+  def runList[R <: Effects, U <: Effects, A](effects: Eff[R, A])(implicit m: Member.Aux[List, R, U]): Eff[U, List[A]] = {
+    val loop = new Loop[List, R, A, Eff[U, List[A]]] {
+      type S = (List[Eff[R, A]], ListBuffer[A])
+      val init = (List[Eff[R, A]](), new ListBuffer[A])
 
-      def onPure(a: A, s: S): (Eff[List |: R, A], S) Xor Eff[R, List[A]] =
+      def onPure(a: A, s: S): (Eff[R, A], S) Xor Eff[U, List[A]] =
         s match {
           case (head :: tail, result) => Left((head, (tail, result :+ a)))
-          case (List(), result)       => Right(EffMonad[R].pure((result :+ a).toList))
+          case (List(), result)       => Right(EffMonad[U].pure((result :+ a).toList))
         }
 
-      def onEffect[X](l: List[X], continuation: Arrs[List |: R, X, A], s: S): (Eff[List |: R, A], S) Xor Eff[R, List[A]] =
+      def onEffect[X](l: List[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[U, List[A]] =
         (l, s) match {
           case (List(), (head :: tail, result)) =>
             Left((head, (tail, result)))
 
           case (List(), (List(), result)) =>
-            Right(EffMonad[R].pure(result.toList))
+            Right(EffMonad[U].pure(result.toList))
 
           case (head :: tail, (unevaluated, result)) =>
             Left((continuation(head), (tail.map(a => continuation(a)) ++ unevaluated, result)))

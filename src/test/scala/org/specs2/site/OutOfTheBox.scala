@@ -8,13 +8,12 @@ import cats.data._
 import Tag._
 import org.specs2.execute.Snippets
 
-object OutOfTheBox extends UserGuidePage { def is = "out-of-the-box".title ^ s2"""
-### Out of the box
+object OutOfTheBox extends UserGuidePage { def is = "Out of the box".title ^ s2"""
 
-This library comes with a few available effects (in `org.specs2.control.eff._`):
+This library comes with a few available effects:
 
  Name                | Description
- ------------------- | ----------
+ ---------           | --------------------------------------------
  `EvalEffect`        | an effect for delayed computations
  `OptionEffect`      | an effect for optional computations, stopping when there's no available value
  `DisjunctionEffect` | an effect for computations with failures, stopping when there is a failure
@@ -23,6 +22,8 @@ This library comes with a few available effects (in `org.specs2.control.eff._`):
  `WriterEffect`      | an effect to log messages
  `StateEffect`       | an effect to pass state around
  `ListEffect`        | an effect for computations returning several values (for non-determinism)
+
+<small>(from `org.specs2.control.eff._`)</small>
 
 Each object provides methods to create effects and to interpret them.
 
@@ -35,6 +36,9 @@ Two methods are available to execute this effect:
  - `runEval[R <: Effects, A](r: Eff[Eval[?] |: R, A]): Eff[R, A]` to just execute the computations
 
  - `attemptEval[R <: Effects, A](r: Eff[Eval[?] |: R, A]): Eff[R, Throwable \/ A]` to execute the computations but also catch any `Throwable` that would be thrown
+
+*Note*: the `?` syntax comes from the [kind-projector](https://github.com/non/kind-projector) project and allows us to avoid
+type lambdas.
 
 ### Option
 
@@ -51,24 +55,17 @@ import cats.syntax.all._
  */
 type S = Option |: NoEffect
 
-implicit def OptionMember: Member[Option, S] =
-  Member.MemberNatIsMember
-
 // compute with this stack
 val map: Map[String, Int] =
   Map("key1" -> 10, "key2" -> 20)
 
-val addKeys: Eff[S, Int] = for {
-  a <- fromOption(map.get("key1"))
-  b <- fromOption(map.get("key2"))
+// get 2 keys from the map and add the corresponding values
+def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+  a <- fromOption(map.get(key1))
+  b <- fromOption(map.get(key2))
 } yield a + b
 
-val addKeysWithMissingKey: Eff[S, Int] = for {
-  a <- fromOption(map.get("key1"))
-  b <- fromOption(map.get("missing"))
-} yield a + b
-
-(run(runOption(addKeys)), run(runOption(addKeysWithMissingKey)))
+(run(runOption(addKeys("key1", "key2"))), run(runOption(addKeys("key1", "missing"))))
 }.eval}
 
 ### Disjunction
@@ -87,24 +84,17 @@ import cats.data.Xor
 type XorString[A] = String Xor A
 type S = XorString |: NoEffect
 
-implicit def XorStringMember: Member[XorString, S] =
-  Member.MemberNatIsMember
-
 // compute with this stack
 val map: Map[String, Int] =
   Map("key1" -> 10, "key2" -> 20)
 
-val addKeys: Eff[S, Int] = for {
-  a <- fromOption(map.get("key1"), "'key1' not found")
-  b <- fromOption(map.get("key2"), "'key2' not found")
+// get 2 keys from the map and add the corresponding values
+def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+  a <- fromOption(map.get(key1), s"'$key1' not found")
+  b <- fromOption(map.get(key2), s"'$key2' not found")
 } yield a + b
 
-val addKeysWithMissingKey: Eff[S, Int] = for {
-  a <- fromOption(map.get("key1"),    "'key1' not found")
-  b <- fromOption(map.get("missing"), "'missing' not found")
-} yield a + b
-
-(run(runDisjunction(addKeys)), run(runDisjunction(addKeysWithMissingKey)))
+(run(runDisjunction(addKeys("key1", "key2"))), run(runDisjunction(addKeys("key1", "missing"))))
 }.eval}
 
 ### Error
@@ -133,10 +123,10 @@ failure datatype and extends the `Error[MyFailureDatatype]` trait.
 
 ### Reader
 
-The `Reader` effect is used to request values from the "environment". The main method is `ask` to get the current environment (or "configuration" if you prefer to see it that way)
+The `Reader` effect is used to request values from an "environment". The main method is `ask` to get the current environment (or "configuration" if you prefer to see it that way)
 and you can run an effect stack containing a `Reader` effect by providing a value for the environment with the `runReader` method.
 
-It is also possible to stack several independent environments in the same effect stack by "tagging" them:${snippet{
+It is also possible to query several independent environments in the same effect stack by "tagging" them:${snippet{
 import ReaderEffect._
 import Tag._
 import cats.data._
@@ -149,10 +139,7 @@ type R2[A] = Reader[Int, A] @@ Port2
 
 type S = R1 |: R2 |: NoEffect
 
-implicit def R1Member: Member[R1, S] = Member.MemberNatIsMember
-implicit def R2Member: Member[R2, S] = Member.MemberNatIsMember
-
-val getPorts: Eff[S, String] = for {
+  val getPorts: Eff[S, String] = for {
   p1 <- askTagged[S, Port1, Int]
   p2 <- askTagged[S, Port2, Int]
 } yield "port1 is "+p1+", port2 is "+p2
@@ -182,8 +169,6 @@ import WriterEffect._
 
 type W[A] = Writer[String, A]
 type S = W |: NoEffect
-
-implicit def WMember: Member[W, S] = Member.MemberNatIsMember
 
 val action: Eff[S, Int] = for {
  a <- EffMonad[S].pure(1)
@@ -229,9 +214,6 @@ type S2[A] = State[Int, A] @@ Var2
 
 type S = S1 |: S2 |: NoEffect
 
-implicit def S1Member: Member[S1, S] = Member.MemberNatIsMember
-implicit def S2Member: Member[S2, S] = Member.MemberNatIsMember
-
 val swapVariables: Eff[S, String] = for {
   v1 <- getTagged[S, Var1, Int]
   v2 <- getTagged[S, Var2, Int]
@@ -266,8 +248,6 @@ import ListEffect._
 
 type S = List |: NoEffect
 
-implicit def ListMember: Member[List, S] = Member.MemberNatIsMember
-
 // create all the possible pairs for a given list
 // where the sum is greater than a value
 def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
@@ -281,3 +261,4 @@ run(runList(pairsBiggerThan(List(1, 2, 3, 4), 5)))
 }.eval
 
 }
+

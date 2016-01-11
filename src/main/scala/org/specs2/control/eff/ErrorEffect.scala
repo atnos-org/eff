@@ -5,7 +5,7 @@ import cats.data._, Xor._
 import cats.syntax.functor._
 import cats.syntax.flatMap._
 import Eff._
-import Effects._
+import Effects.|:
 import Member.{<=}
 import Interpret._
 
@@ -18,7 +18,11 @@ import Interpret._
  * The type F is used to represent the failure type.
  *
  */
-trait ErrorEffect[F] { outer =>
+trait ErrorEffect[F] extends
+  ErrorCreation[F] with
+  ErrorInterpretation[F]
+
+trait ErrorTypes[F] {
 
   /** type of errors: exceptions or failure messages */
   type Error = Throwable Xor F
@@ -28,9 +32,11 @@ trait ErrorEffect[F] { outer =>
    * scala.Name represents "by-name" value: values not yet evaluated
    */
   type ErrorOrOk[A] = Error Xor cats.Eval[A]
+}
 
+trait ErrorCreation[F] extends ErrorTypes[F] {
   /** create an Eff value from a computation */
-  def ok[R, A](a: =>A)(implicit m: ErrorOrOk <= R): Eff[R, A] =
+  def ok[R, A](a: => A)(implicit m: ErrorOrOk <= R): Eff[R, A] =
     send[ErrorOrOk, R, A](Right(cats.Eval.later(a)))
 
   /** create an Eff value from an error */
@@ -44,26 +50,29 @@ trait ErrorEffect[F] { outer =>
   /** create an Eff value from an exception */
   def exception[R, A](t: Throwable)(implicit m: ErrorOrOk <= R): Eff[R, A] =
     error(Left(t))
+}
+
+trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
 
   /**
    * Run an error effect.
    *
    * Stop all computation if there is an exception or a failure.
    */
-  def runError[R <: Effects, A](r: Eff[ErrorOrOk |: R, A]): Eff[R, Error Xor A] = {
-    val recurse = new Recurse[ErrorOrOk, R, Error Xor A] {
+  def runError[R <: Effects, U <: Effects, A](r: Eff[R, A])(implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Error Xor A] = {
+    val recurse = new Recurse[ErrorOrOk, U, Error Xor A] {
       def apply[X](m: ErrorOrOk[X]) =
         m match {
           case Left(e) =>
-            Right(EffMonad[R].pure(Left(e)))
+            Right(EffMonad[U].pure(Left(e)))
 
           case Right(a) =>
             try Left(a.value)
-            catch { case NonFatal(t) => Right(EffMonad[R].pure(Left(Left(t)))) }
+            catch { case NonFatal(t) => Right(EffMonad[U].pure(Left(Left(t)))) }
         }
     }
 
-    interpret1[R, ErrorOrOk, A, Error Xor A]((a: A) => Right(a))(recurse)(r)
+    interpret1[R, U, ErrorOrOk, A, Error Xor A]((a: A) => Right(a): Error Xor A)(recurse)(r)
   }
 
   /**

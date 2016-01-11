@@ -2,8 +2,6 @@ package org.specs2.control.eff
 
 import cats.data._, Xor._
 import Eff._
-import Effects._
-import Union._
 
 /**
  * Support methods to create an interpreter (or "effect handlers") for a given Eff[M |: R, A].
@@ -42,25 +40,25 @@ trait Interpret {
   /**
    * interpret the effect M in the M |: R stack
    */
-  def interpret[R <: Effects, M[_], A, B](pure: A => Eff[R, B], recurse: Recurse[M, R, B])(effects: Eff[M |: R, A]): Eff[R, B] = {
-    val loop = new Loop[M, R, A, Eff[R, B]] {
+  def interpret[R <: Effects, U <: Effects, M[_], A, B](pure: A => Eff[U, B], recurse: Recurse[M, U, B])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
+    val loop = new Loop[M, R, A, Eff[U, B]] {
       type S = Unit
       val init = ()
 
-      def onPure(a: A, s: Unit): (Eff[M |: R, A], Unit) Xor Eff[R, B] =
+      def onPure(a: A, s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
         Right(pure(a))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[M |: R, X, A], s: Unit): (Eff[M |: R, A], Unit) Xor Eff[R, B] =
+      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity _)
     }
-    interpretLoop(pure, loop)(effects)
+    interpretLoop[R, U, M, A, B, Unit](pure, loop)(effects)
   }
 
   /**
    * simpler version of interpret where the pure value is just mapped to another type
    */
-  def interpret1[R <: Effects, M[_], A, B](pure: A => B)(recurse: Recurse[M, R, B])(effects: Eff[M |: R, A]): Eff[R, B] =
-    interpret((a: A) => EffMonad[R].pure(pure(a)), recurse)(effects)
+  def interpret1[R <: Effects, U <: Effects, M[_], A, B](pure: A => B)(recurse: Recurse[M, U, B])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
+    interpret[R, U, M, A, B]((a: A) => EffMonad[U].pure(pure(a)), recurse)(effects)
 
   /**
    * Helper trait for computations
@@ -82,15 +80,15 @@ trait Interpret {
   /**
    * interpret the effect M in the M |: R stack, keeping track of some state
    */
-  def interpretState[R <: Effects, M[_], A, B](pure: A => Eff[R, B], recurse: StateRecurse[M, A, B])(effects: Eff[M |: R, A]): Eff[R, B] = {
-    val loop = new Loop[M, R, A, Eff[R, B]] {
+  def interpretState[R <: Effects, U <: Effects, M[_], A, B](pure: A => Eff[U, B], recurse: StateRecurse[M, A, B])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
+    val loop = new Loop[M, R, A, Eff[U, B]] {
       type S = recurse.S
       val init: S = recurse.init
 
-      def onPure(a: A, s: S): (Eff[M |: R, A], S) Xor Eff[R, B] =
-        Right(EffMonad[R].pure(recurse.finalize(a, s)))
+      def onPure(a: A, s: S): (Eff[R, A], S) Xor Eff[U, B] =
+        Right(EffMonad[U].pure(recurse.finalize(a, s)))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[M |: R, X, A], s: S): (Eff[M |: R, A], S) Xor Eff[R, B] =
+      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[U, B] =
         Left { recurse(mx, s) match { case (a, b) => (continuation(a), b)} }
     }
     interpretLoop(pure, loop)(effects)
@@ -99,8 +97,8 @@ trait Interpret {
   /**
    * simpler version of interpret1 where the pure value is just mapped to another type
    */
-  def interpretState1[R <: Effects, M[_], A, B](pure: A => B)(recurse: StateRecurse[M, A, B])(effects: Eff[M |: R, A]): Eff[R, B] =
-    interpretState((a: A) => EffMonad[R].pure(pure(a)), recurse)(effects)
+  def interpretState1[R <: Effects, U <: Effects, M[_], A, B](pure: A => B)(recurse: StateRecurse[M, A, B])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
+    interpretState((a: A) => EffMonad[U].pure(pure(a)), recurse)(effects)
 
   /**
    * Generalisation of Recurse and StateRecurse
@@ -108,8 +106,8 @@ trait Interpret {
   trait Loop[M[_], R <: Effects, A, B] {
     type S
     val init: S
-    def onPure(a: A, s: S): (Eff[M |: R, A], S) Xor B
-    def onEffect[X](x: M[X], continuation: Arrs[M |: R, X, A], s: S): (Eff[M |: R, A], S) Xor B
+    def onPure(a: A, s: S): (Eff[R, A], S) Xor B
+    def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor B
   }
 
   /**
@@ -117,9 +115,8 @@ trait Interpret {
    *
    * This method contains a loop which is stack-safe
    */
-  def interpretLoop[R <: Effects, M[_], A, B, S](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[M |: R, A]): Eff[R, B] = {
-
-    def go(eff: Eff[M |: R, A], s: loop.S): Eff[R, B] = {
+  def interpretLoop[R <: Effects, U <: Effects, M[_], A, B, S](pure: A => Eff[U, B], loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
+    def go(eff: Eff[R, A], s: loop.S): Eff[U, B] = {
       eff match {
         case Pure(a) =>
           loop.onPure(a, s) match {
@@ -128,15 +125,24 @@ trait Interpret {
           }
 
         case Impure(union, continuation) =>
-          decompose(union) match {
-            case Right(v) =>
+          m.project(union) match {
+            case Some(v) =>
               loop.onEffect(v, continuation, s) match {
                 case Left((x, s1)) => go(x, s1)
                 case Right(b)       => b
               }
 
-            case Left(u1) =>
-              Impure[R, u1.X, B](u1, Arrs.singleton(x => go(continuation(x), s)))
+            case None =>
+              union match {
+                case UnionNext(UnionNow(mx)) =>
+                  Impure[U, union.X, B](UnionNow(mx).asInstanceOf[Union[U, union.X]], Arrs.singleton(x => go(continuation(x), s)))
+
+                case UnionNext(UnionNext(n)) =>
+                  Impure[U, union.X, B](UnionNext(n).asInstanceOf[Union[U, union.X]], Arrs.singleton(x => go(continuation(x), s)))
+
+                case UnionNow(mx) =>
+                  Impure[U, union.X, B](union.asInstanceOf[Union[U, union.X]], Arrs.singleton(x => go(continuation(x), s))).asInstanceOf[Eff[U, B]]
+              }
           }
       }
     }
@@ -144,9 +150,10 @@ trait Interpret {
     go(effects, loop.init)
   }
 
-  def interpretLoop1[R <: Effects, M[_], A, B, S](pure: A => B)(loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[M |: R, A]): Eff[R, B] =
-    interpretLoop((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
+  def interpretLoop1[R <: Effects, U <: Effects, M[_], A, B, S](pure: A => B)(loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
+    interpretLoop[R, U, M, A, B, S]((a: A) => EffMonad[U].pure(pure(a)), loop)(effects)
 
 }
 
 object Interpret extends Interpret
+

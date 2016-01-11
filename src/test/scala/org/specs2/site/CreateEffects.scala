@@ -1,16 +1,18 @@
 package org.specs2.site
 
-import scala.concurrent._, duration._
+import cats.data.Reader
+
+import scala.concurrent.duration, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.specs2.control.eff._
 import Eff._
 import Effects._
-import Interpret._
-import cats.data._, Xor._
-import Member.<=
+import snippets._, FutureEffectSnippet._, FutureEffect._
 import cats.syntax.all._
 
 object CreateEffects extends UserGuidePage { def is = "Creating effects".title ^ s2"""
+
+### Creation
 
 New effects can be added to the library pretty easily. Let's create an Effect for `scala.concurrent.Future` for example.
 
@@ -22,32 +24,7 @@ We need:
 
  - an interpreter
 
-${snippet{
-import scala.concurrent._, duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-import org.specs2.control.eff._
-import Eff._
-import Effects._
-import Interpret._
-import cats.data._, Xor._
-import Member.<=
-
-// create the effect and its interpreter
-object FutureEffect {
-  type Fut[A] = Future[() => A]
-
-  def future[R, A](a: =>A)(implicit m: Fut <= R): Eff[R, A] =
-    send[Fut, R, A](Future(() => a))
-
-  def runFuture[R <: Effects, A, B](atMost: Duration)(effects: Eff[Fut |: R, A]): Eff[R, A] = {
-    val recurse = new Recurse[Fut, R, A] {
-      def apply[X](m: Fut[X]): X Xor Eff[R, A] =
-        Left(Await.result(m.map(_()), atMost))
-    }
-    interpret1((a: A) => a)(recurse)(effects)
-  }
-}
-}}
+${definition[FutureEffectSnippet]}
 
 In the code above:
 
@@ -61,13 +38,15 @@ them. In this case, the interpretation doesn't need to pass state around so we c
 implementation is shared by many different monads, like `Reader`, `Eval`, `Option` but not `Writer`, `State` or `List` for
 example.
 
+The `runFuture` method needs an implicit `Member.Aux[Fut, R, U]`. This must be read in the following way:
+
+ - `Fut` must be member of the effect stack `R` and its removal from `R` should be the effect stack `U`
+
+<br/>
+
 Then we can use this effect in a computation:${snippet{
-import FutureEffect._
 
 type F = Fut |: NoEffect
-
-implicit def FutMember: Fut <= F =
-  Member.MemberNatIsMember
 
 val action: Eff[F, Int] = for {
   a <- future(2)
@@ -77,21 +56,38 @@ val action: Eff[F, Int] = for {
 run(runFuture(3.seconds)(action))
 }.eval}
 
-"""
+### Implicits
 
-object FutureEffect {
-  type Fut[A] = Future[() => A]
+You should also note that some effects take 2 type variables, like `Reader` or `Writer`. Those effects need some specific
+implicit declarations in order for type resolution to work when running effects in any order. Here is the "template" used for
+the `Reader` effect: ${snippet{
 
-  def future[R, A](a: =>A)(implicit m: Fut <= R): Eff[R, A] =
-    send[Fut, R, A](Future(() => a))
+// define "Member" implicits by using a type T with only one type variable
+// instead of Reader which has 2
+trait ReaderImplicits extends ReaderImplicits1 {
+  implicit def ReaderMemberZero[A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: NoEffect, NoEffect] = {
+    type T[X] = Reader[A, X]
+    Member.zero[T]
+  }
 
-  def runFuture[R <: Effects, A, B](atMost: Duration)(effects: Eff[Fut |: R, A]): Eff[R, A] = {
-    val recurse = new Recurse[Fut, R, A] {
-      def apply[X](m: Fut[X]): X Xor Eff[R, A] =
-        Left(Await.result(m.map(_()), atMost))
-    }
-    interpret1((a: A) => a)(recurse)(effects)
+  implicit def ReaderMemberFirst[R <: Effects, A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: R, R] = {
+    type T[X] = Reader[A, X]
+    Member.first[T, R]
   }
 }
 
+trait ReaderImplicits1 {
+  implicit def ReaderMemberSuccessor[O[_], R <: Effects, U <: Effects, A](implicit m: Member.Aux[Reader[A, ?], R, U]): Member.Aux[Reader[A, ?], O |: R, O |: U] = {
+    type T[X] = Reader[A, X]
+    Member.successor[T, O, R, U]
+  }
 }
+}}
+
+Following this "template" will help the type inference when using a `run` method (`runReader` in the case of a `Reader` effect).
+
+"""
+
+
+}
+

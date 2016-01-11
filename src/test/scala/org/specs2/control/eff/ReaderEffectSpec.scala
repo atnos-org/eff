@@ -15,9 +15,6 @@ class ReaderEffectSpec extends Specification { def is = s2"""
     type R[A] = Reader[Config, A]
     type S = R |: NoEffect
 
-    implicit def rm: Member[R, S] =
-      Member.MemberNatIsMember
-
     val action: Eff[S, (Int, String)] = for {
       f <- local[S, Config, Int]((_:Config).factor)
       h <- local[S, Config, String]((_:Config).host)
@@ -29,3 +26,4 @@ class ReaderEffectSpec extends Specification { def is = s2"""
   case class Config(factor: Int, host: String)
 
 }
+

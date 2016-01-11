@@ -38,6 +38,7 @@ object build extends Build {
   lazy val compilationSettings: Seq[Settings] = Seq(
     javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
     maxErrors := 20,
+    triggeredMessage := Watched.clearWhenTriggered,
     scalacOptions ++= Seq("-Xfatal-warnings",
             "-Xlint",
             "-Yno-adapted-args",
@@ -46,7 +47,7 @@ object build extends Build {
             "-Ywarn-unused-import",
             "-Ywarn-dead-code",
             "-deprecation:false", "-Xcheckinit", "-unchecked", "-feature", "-language:_"),
-    scalacOptions in Test ++= Seq("-Yrangepos"),
+    scalacOptions in Test ++= Seq("-Yrangepos"), //, "-Xlog-implicits"),
     scalacOptions in Test ~= (_.filterNot(Set("-Ywarn-dead-code"))),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
   )
@@ -101,7 +102,8 @@ object build extends Build {
   ghpages.settings ++
   Seq(
     GhPagesKeys.ghpagesNoJekyll := false,
-    includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.yml" | "*.md",
+    SiteKeys.siteSourceDirectory := target.value / "specs2-reports" / "site",
+    includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
     git.remoteRepo := "git@github.com:etorreborre/eff-cats.git"
   )
 

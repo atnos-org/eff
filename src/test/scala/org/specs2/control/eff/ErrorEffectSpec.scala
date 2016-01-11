@@ -4,6 +4,9 @@ import org.specs2.Specification
 import Eff._
 import Effects._
 import ErrorEffect.{ok => OK, _}
+import EvalEffect._
+import WriterEffect._
+
 import scala.collection.mutable.ListBuffer
 import syntax.error._
 import cats.syntax.all._
@@ -82,19 +85,10 @@ class ErrorEffectSpec extends Specification { def is = s2"""
   }
 
   def logException = {
-    import ErrorEffect._
-    import EvalEffect._
-    import WriterEffect._
 
     type WriterString[A] = Writer[String, A]
 
     type E = ErrorOrOk |: WriterString |: Eval |: NoEffect
-
-    implicit def WriterStringMember: Member[WriterString, E] =
-      Member.MemberNatIsMember
-
-    implicit def ErrorMember: Member[ErrorOrOk, E] =
-      Member.MemberNatIsMember
 
     val action: Eff[E, Int] = for {
       _ <- tell[E, String]("start")
@@ -110,3 +104,4 @@ class ErrorEffectSpec extends Specification { def is = s2"""
   }
 
 }
+
