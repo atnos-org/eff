@@ -1,0 +1,94 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Implicits</title>
+    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10">
+<h1>Implicits</h1>
+<div id="tipue_search_content"></div>
+
+<p>There are 2 ways to create effectful computations for a given effect <code class="prettyprint">M</code>. The first one is to specify the stack which contains the effect:</p>
+<pre><code class="prettyprint">import org.specs2.control.eff._
+import Effects._
+import cats.syntax.all._
+import cats.state._
+import cats.data._
+import StateCreation._
+import WriterCreation._
+
+type StateInt[A] = State[Int, A]
+type WriterString[A] = Writer[String, A]
+
+type S = StateInt |: WriterString |: NoEffect
+
+implicit val StateIntMember =
+  Member.aux[StateInt, S, WriterString |: NoEffect]
+
+implicit val WriterStringMember =
+  Member.aux[WriterString, S, StateInt |: NoEffect]
+
+def putAndTell(i: Int): Eff[S, Int] =
+  for {
+    _ &lt;- put(i)
+    _ &lt;- tell(&quot;stored &quot;+i)
+  } yield i</code></pre>
+<p>This has several advantages:</p>
+<ul>
+<li><p>this specifies in which order the effects are to be interpreted. This is very important because the result of running <code class="prettyprint">StateInt</code> followed by <code class="prettyprint">WriterString</code> is of type <code class="prettyprint">((S, A), List[W])</code> whereas running <code class="prettyprint">WriterString</code> followed by <code class="prettyprint">StateInt</code> returns a value of type <code class="prettyprint">(S, (A, List[W]))</code></p></li>
+<li><p>type inference works well and there is no need to annotate the <code class="prettyprint">put</code> or <code class="prettyprint">tell</code> methods.</p></li>
+</ul>
+<p>On the other hand we lose some flexibility:</p>
+<ul>
+<li><p>adding another effect requires to transform the definition of the effect stack <code class="prettyprint">S</code></p></li>
+<li><p>the <code class="prettyprint">putAndTell</code> method cannot be used in 2 different effects stacks having the <code class="prettyprint">StateInt</code> and <code class="prettyprint">WriterString</code> effects</p></li>
+</ul>
+<p>The remedy is to use the <code class="prettyprint">Member</code> typeclass to create an <strong>open</strong> union of effects:</p>
+<pre><code class="prettyprint">// &#39;&lt;=&#39; reads &#39;is member of&#39;
+import Member.&lt;=
+import StateCreation._
+import WriterCreation._
+
+def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R): Eff[R, Int] =
+  for {
+    _ &lt;- put(i)
+    _ &lt;- tell(&quot;stored &quot;+i)
+  } yield i</code></pre>
+<p>Here we just declare that the <code class="prettyprint">putAndTell</code> method can be used with any effect stack <code class="prettyprint">R</code> if the <code class="prettyprint">StateInt</code> and <code class="prettyprint">WriterString</code> effects are members of that stack. However we have to add some type annotations to guide the compiler.</p>
+<p><br/> Now you can learn <link class="ok"><a href="org.specs2.site.CreateEffects.html" tooltip="" class="ok">how to create effects</a></link></p>
+</div>
+
+</div>
+
+</body>
+</html>

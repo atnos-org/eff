@@ -1,0 +1,208 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Transforming stacks</title>
+    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10">
+<h1>Transforming stacks</h1>
+<div id="tipue_search_content"></div>
+
+<h3 id="transform-an-effect-to-another">Transform an effect to another</h3>
+<p>Once you get a <code class="prettyprint">Eff[R, A]</code> action you might want to act on one of the effects, for example to transform <code class="prettyprint">Option</code> effects into <code class="prettyprint">Disjunction</code> effects:</p>
+<pre><code class="prettyprint">import OptionEffect._
+import DisjunctionEffect.runDisjunction
+import syntax.eff._
+import cats.data._
+import cats.arrow._
+
+type XorString[A] = String Xor A
+
+type S = Option |: XorString |: NoEffect
+
+implicit val OptionMember =
+  Member.aux[Option, S, XorString |: NoEffect]
+
+implicit val XorStringMember =
+  Member.aux[XorString, S, Option |: NoEffect]
+
+val map: Map[String, Int] =
+  Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
+
+// get 2 keys from the map and add the corresponding values
+def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+  a &lt;- fromOption(map.get(key1))
+  b &lt;- fromOption(map.get(key2))
+} yield a + b
+
+// provide a default error message
+def addKeysWithDefaultMessage(key1: String, key2: String, message: String): Eff[S, Int] =
+  addKeys(key1, key2).transform[Option, XorString](new NaturalTransformation[Option, XorString] {
+    def apply[A](o: Option[A]) = o.fold(Xor.left[String, A](message))(Xor.right[String, A])
+  })
+
+import DisjunctionImplicits._
+
+(run(runDisjunction(runOption(addKeys(&quot;key1&quot;, &quot;missing&quot;)))),
+ run(runDisjunction(runOption(addKeysWithDefaultMessage(&quot;key1&quot;, &quot;missing&quot;, &quot;Key not found&quot;)))))</code></pre>
+<p><code class="prettyprint">&gt; (Right(None),Left(Key not found))</code></p>
+<p>But what if we just want to return <code class="prettyprint">0</code> if one of the keys is missing?</p>
+<pre><code class="prettyprint">import OptionEffect._
+import EvalEffect._
+
+type S = Eval |: Option |: NoEffect
+
+implicit val EvalMember =
+  Member.aux[Eval, S, Option |: NoEffect]
+
+implicit val OptionMember =
+  Member.aux[Option, S, Eval |: NoEffect]
+
+val map: Map[String, Int] =
+  Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
+
+// get 2 keys from the map and add the corresponding values
+def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+  a &lt;- fromOption(map.get(key1))
+  c &lt;- delay(a)
+  b &lt;- fromOption(map.get(key2))
+  d &lt;- delay(b)
+} yield c + d
+
+run(runEval(runOption(addKeys(&quot;key1&quot;, &quot;key2&quot;))))</code></pre>
+<p><code class="prettyprint">&gt; Some(30)</code></p>
+<h3 id="merge-stacks">Merge stacks</h3>
+<p>We have seen, in the <a href="open-closed.md">open-closed</a> section, that we can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
+<pre><code class="prettyprint">import org.specs2.control.eff._
+import Eff._
+import Effects._
+import EvalEffect._
+import WriterCreation._
+import cats.data._
+import cats.syntax.all._
+import Tag._
+
+object HadoopStack {
+  trait HadoopTag
+  case class HadoopConf(mappers: Int)
+
+  type HadoopReader[A] = Reader[HadoopConf, A] @@ HadoopTag
+  type WriterString[A] = Writer[String, A]
+  type Hadoop = HadoopReader |: WriterString |: Eval |: NoEffect
+
+  implicit val HadoopReaderMember =
+    Member.aux[HadoopReader, Hadoop, WriterString |: Eval |: NoEffect]
+
+  implicit val WriterStringMember =
+    Member.aux[WriterString, Hadoop, HadoopReader |: Eval |: NoEffect]
+
+  implicit val EvalMember =
+    Member.aux[Eval, Hadoop, HadoopReader |: WriterString |: NoEffect]
+
+  def askHadoopConf: Eff[Hadoop, HadoopConf] =
+    ReaderEffect.askTagged
+
+  def readFile(path: String): Eff[Hadoop, String] =
+    for {
+      c &lt;- askHadoopConf
+      _ &lt;- tell(&quot;Reading from &quot;+path)
+    } yield c.mappers.toString
+
+  import ReaderImplicits._
+
+  def runHadoopReader[R &lt;: Effects, A](conf: HadoopConf): Eff[HadoopReader |: R, A] =&gt; Eff[R, A] =
+    (e: Eff[HadoopReader |: R, A]) =&gt; ReaderEffect.runTaggedReader(conf)(e)
+
+}
+
+object S3Stack {
+  trait S3Tag
+  case class S3Conf(bucket: String)
+
+  type S3Reader[A] = Reader[S3Conf, A] @@ S3Tag
+  type WriterString[A] = Writer[String, A]
+
+  type S3 = S3Reader |: WriterString |: Eval |: NoEffect
+
+  implicit val S3ReaderMember =
+    Member.aux[S3Reader, S3, WriterString |: Eval |: NoEffect]
+
+  implicit val WriterStringMember =
+    Member.aux[WriterString, S3, S3Reader |: Eval |: NoEffect]
+
+  implicit val EvalMember =
+    Member.aux[Eval, S3, S3Reader |: WriterString |: NoEffect]
+
+
+  def askS3Conf: Eff[S3, S3Conf] =
+    ReaderEffect.askTagged
+
+  def writeFile(key: String, content: String): Eff[S3, Unit] =
+    for {
+      c &lt;- askS3Conf
+      _ &lt;- tell(&quot;Writing to bucket &quot;+c.bucket+&quot;: &quot;+content)
+    } yield ()
+
+  import ReaderImplicits._
+
+  def runS3Reader[R &lt;: Effects, A](conf: S3Conf): Eff[S3Reader |: R, A] =&gt; Eff[R, A] =
+    (e: Eff[S3Reader |: R, A]) =&gt; ReaderEffect.runTaggedReader(conf)(e)
+}
+</code></pre>
+<p>So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share some common effects, so the resulting stack we want to work with is:</p>
+<pre><code class="prettyprint">import HadoopStack._
+import S3Stack.{WriterString=&gt;_,_}
+
+type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect</code></pre>
+<p>Then we can use the <code class="prettyprint">into</code> method to inject effects from each stack into this common stack:</p>
+<pre><code class="prettyprint">// this imports the `into` syntax
+import org.specs2.control.eff.syntax.eff._
+
+val action = for {
+  // read a file from hadoop
+  s &lt;- readFile(&quot;/tmp/data&quot;).into[HadoopS3]
+
+  // write a file on S3
+  _ &lt;- writeFile(&quot;key&quot;, s)  .into[HadoopS3]
+} yield ()
+
+// and we can run the composite action
+run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf(&quot;bucket&quot;))(action)))))</code></pre>
+<p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket: 10))</code></p>
+<p>You can find a fully working example of this approach in <code class="prettyprint">src/test/org/specs2/example/StacksSpec</code>.</p>
+</div>
+
+</div>
+
+</body>
+</html>

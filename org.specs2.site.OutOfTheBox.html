@@ -1,0 +1,281 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Out of the box</title>
+    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10">
+<h1>Out of the box</h1>
+<div id="tipue_search_content"></div>
+
+<p>This library comes with a few available effects:</p>
+<table style="width:76%;">
+<colgroup>
+<col width="13%" />
+<col width="62%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Name</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code class="prettyprint">EvalEffect</code></td>
+<td align="left">an effect for delayed computations</td>
+</tr>
+<tr class="even">
+<td align="left"><code class="prettyprint">OptionEffect</code></td>
+<td align="left">an effect for optional computations, stopping when there’s no available value</td>
+</tr>
+<tr class="odd">
+<td align="left"><code class="prettyprint">DisjunctionEffect</code></td>
+<td align="left">an effect for computations with failures, stopping when there is a failure</td>
+</tr>
+<tr class="even">
+<td align="left"><code class="prettyprint">ErrorEffect</code></td>
+<td align="left">a mix of Eval and Disjunction, catching exceptions and returning them as failures</td>
+</tr>
+<tr class="odd">
+<td align="left"><code class="prettyprint">ReaderEffect</code></td>
+<td align="left">an effect for depending on a configuration or an environment</td>
+</tr>
+<tr class="even">
+<td align="left"><code class="prettyprint">WriterEffect</code></td>
+<td align="left">an effect to log messages</td>
+</tr>
+<tr class="odd">
+<td align="left"><code class="prettyprint">StateEffect</code></td>
+<td align="left">an effect to pass state around</td>
+</tr>
+<tr class="even">
+<td align="left"><code class="prettyprint">ListEffect</code></td>
+<td align="left">an effect for computations returning several values (for non-determinism)</td>
+</tr>
+</tbody>
+</table>
+<p><small>(from <code class="prettyprint">org.specs2.control.eff._</code>)</small></p>
+<p>Each object provides methods to create effects and to interpret them.</p>
+<h3 id="eval">Eval</h3>
+<p>This effect is a very simple one. It allows the delayed execution of computations and it can serve as some sort of overall <code class="prettyprint">IO</code> effect.</p>
+<p>Two methods are available to execute this effect:</p>
+<ul>
+<li><p><code class="prettyprint">runEval[R &lt;: Effects, A](r: Eff[Eval[?] |: R, A]): Eff[R, A]</code> to just execute the computations</p></li>
+<li><p><code class="prettyprint">attemptEval[R &lt;: Effects, A](r: Eff[Eval[?] |: R, A]): Eff[R, Throwable \/ A]</code> to execute the computations but also catch any <code class="prettyprint">Throwable</code> that would be thrown</p></li>
+</ul>
+<p><em>Note</em>: the <code class="prettyprint">?</code> syntax comes from the <a href="https://github.com/non/kind-projector">kind-projector</a> project and allows us to avoid type lambdas.</p>
+<h3 id="option">Option</h3>
+<p>Adding an <code class="prettyprint">Option</code> effect in your stack allows to stop computations when necessary. If you create a value with <code class="prettyprint">some(a)</code> this value will be used downstream but if you use <code class="prettyprint">none</code> all computations will stop:</p>
+<pre><code class="prettyprint">import org.specs2.control.eff._
+import Eff._
+import Effects._
+import OptionEffect._
+import cats.syntax.all._
+
+/**
+ * Stack declaration
+ */
+type S = Option |: NoEffect
+
+// compute with this stack
+val map: Map[String, Int] =
+  Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
+
+// get 2 keys from the map and add the corresponding values
+def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+  a &lt;- fromOption(map.get(key1))
+  b &lt;- fromOption(map.get(key2))
+} yield a + b
+
+(run(runOption(addKeys(&quot;key1&quot;, &quot;key2&quot;))), run(runOption(addKeys(&quot;key1&quot;, &quot;missing&quot;))))</code></pre>
+<p><code class="prettyprint">&gt; (Some(30),None)</code></p>
+<h3 id="disjunction">Disjunction</h3>
+<p>The <code class="prettyprint">Disjunction</code> effect is similar to the <code class="prettyprint">Option</code> effect but adds the possibility to specify why a computation stopped:</p>
+<pre><code class="prettyprint">import org.specs2.control.eff._
+import Eff._
+import Effects._
+import DisjunctionEffect._
+import cats.syntax.all._
+import cats.data.Xor
+
+/**
+ * Stack declaration
+ */
+type XorString[A] = String Xor A
+type S = XorString |: NoEffect
+
+// compute with this stack
+val map: Map[String, Int] =
+  Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
+
+// get 2 keys from the map and add the corresponding values
+def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+  a &lt;- fromOption(map.get(key1), s&quot;&#39;$key1&#39; not found&quot;)
+  b &lt;- fromOption(map.get(key2), s&quot;&#39;$key2&#39; not found&quot;)
+} yield a + b
+
+(run(runDisjunction(addKeys(&quot;key1&quot;, &quot;key2&quot;))), run(runDisjunction(addKeys(&quot;key1&quot;, &quot;missing&quot;))))</code></pre>
+<p><code class="prettyprint">&gt; (Right(30),Left('missing' not found))</code></p>
+<h3 id="error">Error</h3>
+<p>The <code class="prettyprint">Error</code> effect is both an <code class="prettyprint">Eval</code> effect and a <code class="prettyprint">Disjunction</code> one with <code class="prettyprint">Throwable Xor F</code> on the “left” side. The idea is to represent computations which can fail, either with an exception or a failure. You can:</p>
+<ul>
+<li><p>create delayed computations with <code class="prettyprint">ok</code></p></li>
+<li><p>fail with <code class="prettyprint">fail(f: F)</code> where <code class="prettyprint">F</code> is the failure type</p></li>
+<li><p>throw an exception with <code class="prettyprint">exception</code></p></li>
+</ul>
+<p>Other useful combinators are available:</p>
+<ul>
+<li><p><code class="prettyprint">andFinally(last)</code> registers an action to be executed even in case of an exception or a failure</p></li>
+<li><p><code class="prettyprint">orElse</code> runs an action and then run another one if the first is not successful</p></li>
+<li><p><code class="prettyprint">whenFailed</code> does the same thing than <code class="prettyprint">orElse</code> but uses the error for <code class="prettyprint">action1</code> to decide which action to run next</p></li>
+</ul>
+<p>When you run an <code class="prettyprint">Error</code> effect you get back an <code class="prettyprint">Error Xor A</code> where <code class="prettyprint">Error</code> is a type alias for <code class="prettyprint">Throwable Xor Failure</code>.</p>
+<p>The <code class="prettyprint">Error</code> object implements this effect with <code class="prettyprint">String</code> as the <code class="prettyprint">Failure</code> type but you are encouraged to create our own failure datatype and extends the <code class="prettyprint">Error[MyFailureDatatype]</code> trait.</p>
+<h3 id="reader">Reader</h3>
+<p>The <code class="prettyprint">Reader</code> effect is used to request values from an “environment”. The main method is <code class="prettyprint">ask</code> to get the current environment (or “configuration” if you prefer to see it that way) and you can run an effect stack containing a <code class="prettyprint">Reader</code> effect by providing a value for the environment with the <code class="prettyprint">runReader</code> method.</p>
+<p>It is also possible to query several independent environments in the same effect stack by “tagging” them:</p>
+<pre><code class="prettyprint">import ReaderEffect._
+import Tag._
+import cats.data._
+
+trait Port1
+trait Port2
+
+type R1[A] = Reader[Int, A] @@ Port1
+type R2[A] = Reader[Int, A] @@ Port2
+
+type S = R1 |: R2 |: NoEffect
+
+  val getPorts: Eff[S, String] = for {
+  p1 &lt;- askTagged[S, Port1, Int]
+  p2 &lt;- askTagged[S, Port2, Int]
+} yield &quot;port1 is &quot;+p1+&quot;, port2 is &quot;+p2
+
+run(runTaggedReader(50)(runTaggedReader(80)(getPorts)))</code></pre>
+<p><code class="prettyprint">&gt; port1 is 80, port2 is 50</code></p>
+<h3 id="writer">Writer</h3>
+<p>The <code class="prettyprint">Writer</code> effect is classically used to log values alongside computations. However it generally suffers from the following drawbacks:</p>
+<ul>
+<li><p>values have to be accumulated in some sort of <code class="prettyprint">Monoid</code></p></li>
+<li><p>it can not really be used to log values to a file because all the values are being kept in memory until the computation ends</p></li>
+</ul>
+<p>The <code class="prettyprint">Writer</code> effect has none of these issues. When you want to log a value you simply <code class="prettyprint">tell</code> it and when you run the effect you can select exactly the strategy you want:</p>
+<ul>
+<li><p><code class="prettyprint">runWriter</code> simply accumulates the values in a <code class="prettyprint">List</code> which is ok if you don’t have too many of them</p></li>
+<li><p><code class="prettyprint">runWriterFold</code> uses a <code class="prettyprint">Fold</code> to act on each value, keeping some internal state between each invocation</p></li>
+</ul>
+<p>You can then define your own custom <code class="prettyprint">Fold</code> to log the values to a file:</p>
+<pre><code class="prettyprint">import java.io.PrintWriter
+import WriterEffect._
+
+type W[A] = Writer[String, A]
+type S = W |: NoEffect
+
+val action: Eff[S, Int] = for {
+ a &lt;- EffMonad[S].pure(1)
+ _ &lt;- tell(&quot;first value &quot;+a)
+ b &lt;- EffMonad[S].pure(2)
+ _ &lt;- tell(&quot;second value &quot;+b)
+
+} yield a + b
+
+// define a fold to output values
+def fileFold(path: String) = new Fold[String, Unit] {
+  type S = PrintWriter
+  val init: S = new PrintWriter(path)
+
+  def fold(a: String, s: S): S =
+    { s.println(a); s }
+
+  def finalize(s: S): Unit =
+    s.close
+}
+
+run(runWriterFold(action)(fileFold(&quot;target/log&quot;)))
+io.Source.fromFile(&quot;target/log&quot;).getLines.toList</code></pre>
+<p><code class="prettyprint">&gt; List(first value 1, second value 2)</code></p>
+<h3 id="state">State</h3>
+<p>A <code class="prettyprint">State</code> effect can be seen as the combination of both a <code class="prettyprint">Reader</code> and a <code class="prettyprint">Writer</code> with these operations:</p>
+<ul>
+<li><p><code class="prettyprint">get</code> get the current state</p></li>
+<li><p><code class="prettyprint">put</code> set a new state</p></li>
+</ul>
+<p>Let’s see an example showing that we can also use tags to track different states at the same time:</p>
+<pre><code class="prettyprint">import StateEffect._
+import cats.state._
+
+trait Var1
+trait Var2
+
+type S1[A] = State[Int, A] @@ Var1
+type S2[A] = State[Int, A] @@ Var2
+
+type S = S1 |: S2 |: NoEffect
+
+val swapVariables: Eff[S, String] = for {
+  v1 &lt;- getTagged[S, Var1, Int]
+  v2 &lt;- getTagged[S, Var2, Int]
+  _  &lt;- putTagged[S, Var1, Int](v2)
+  _  &lt;- putTagged[S, Var2, Int](v1)
+  w1 &lt;- getTagged[S, Var1, Int]
+  w2 &lt;- getTagged[S, Var2, Int]
+} yield &quot;initial: &quot;+(v1, v2).toString+&quot;, final: &quot;+(w1, w2).toString
+
+run(evalTagged(50)(evalTagged(10)(swapVariables)))</code></pre>
+<p><code class="prettyprint">&gt; initial: (10,50), final: (50,10)</code></p>
+<p>In the example above we have used an <code class="prettyprint">eval</code> method to get the <code class="prettyprint">A</code> in <code class="prettyprint">Eff[R, A]</code> but it is also possible to get both the value and the state with <code class="prettyprint">run</code> or only the state with <code class="prettyprint">exec</code>.</p>
+<h3 id="list">List</h3>
+<p>The <code class="prettyprint">List</code> effect is used for non-deterministic computations, that is computations which may return several values. A simple example using this effect would be:</p>
+<pre><code class="prettyprint">import ListEffect._
+
+type S = List |: NoEffect
+
+// create all the possible pairs for a given list
+// where the sum is greater than a value
+def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
+  a &lt;- values(list:_*)
+  b &lt;- values(list:_*)
+  found &lt;- if (a + b &gt; n) singleton((a, b))
+           else           empty
+} yield found
+
+run(runList(pairsBiggerThan(List(1, 2, 3, 4), 5)))</code></pre>
+<p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
+<p><br/> Now you can learn about <link class="ok"><a href="org.specs2.site.Implicits.html" tooltip="" class="ok">open/closed effect stacks</a></link>.</p>
+</div>
+
+</div>
+
+</body>
+</html>

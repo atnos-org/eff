@@ -1,0 +1,114 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Creating effects</title>
+    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10">
+<h1>Creating effects</h1>
+<div id="tipue_search_content"></div>
+
+<h3 id="creation">Creation</h3>
+<p>New effects can be added to the library pretty easily. Let’s create an Effect for <code class="prettyprint">scala.concurrent.Future</code> for example.</p>
+<p>We need:</p>
+<ul>
+<li><p>a base type. We select <code class="prettyprint">Future[() =&gt; A]</code> (instead of <code class="prettyprint">Future[A]</code> in order to avoid values to be evaluated straight away)</p></li>
+<li><p>a method to send values of type <code class="prettyprint">A</code> into <code class="prettyprint">Eff[R, A]</code></p></li>
+<li><p>an interpreter</p></li>
+</ul>
+<pre><code class="prettyprint">object FutureEffect {
+  type Fut[A] = Future[() =&gt; A]
+
+  def future[R, A](a: =&gt; A)(implicit m: Fut &lt;= R): Eff[R, A] =
+    send[Fut, R, A](Future(() =&gt; a))
+
+  def runFuture[R &lt;: Effects, U &lt;: Effects, A, B](atMost: Duration)(effects: Eff[R, A])(
+     implicit m: Member.Aux[Fut, R, U]): Eff[U, A] = {
+
+    val recurse = new Recurse[Fut, U, A] {
+      def apply[X](m: Fut[X]): X Xor Eff[U, A] =
+        Left(Await.result(m.map(_ ()), atMost))
+    }
+    interpret1((a: A) =&gt; a)(recurse)(effects)(m)
+  }
+}
+</code></pre>
+<p>In the code above:</p>
+<ul>
+<li><p>the <code class="prettyprint">future</code> method uses <code class="prettyprint">Eff.send</code> to “send” values of a given effect into a larger sum of effects <code class="prettyprint">Eff[R, A]</code></p></li>
+<li><p><code class="prettyprint">runFuture</code> runs the <code class="prettyprint">Future</code> by using the <code class="prettyprint">Interpret.interpret1</code> method</p></li>
+</ul>
+<p>Writing interpreters can be a bit tricky, especially to keep them stack-safe. There is no method at the moment for writing generic stack-safe interpreters but the <code class="prettyprint">Interpret</code> objects offers several support traits and functions to write some of them. In this case, the interpretation doesn’t need to pass state around so we can use the <code class="prettyprint">Recurse</code> trait. This kind of implementation is shared by many different monads, like <code class="prettyprint">Reader</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Option</code> but not <code class="prettyprint">Writer</code>, <code class="prettyprint">State</code> or <code class="prettyprint">List</code> for example.</p>
+<p>The <code class="prettyprint">runFuture</code> method needs an implicit <code class="prettyprint">Member.Aux[Fut, R, U]</code>. This must be read in the following way:</p>
+<ul>
+<li><code class="prettyprint">Fut</code> must be member of the effect stack <code class="prettyprint">R</code> and its removal from <code class="prettyprint">R</code> should be the effect stack <code class="prettyprint">U</code></li>
+</ul>
+<p><br/></p>
+<p>Then we can use this effect in a computation:</p>
+<pre><code class="prettyprint">type F = Fut |: NoEffect
+
+val action: Eff[F, Int] = for {
+  a &lt;- future(2)
+  b &lt;- future(3)
+} yield a + b
+
+run(runFuture(3.seconds)(action))</code></pre>
+<p><code class="prettyprint">&gt; 5</code></p>
+<h3 id="implicits">Implicits</h3>
+<p>You should also note that some effects take 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. Those effects need some specific implicit declarations in order for type resolution to work when running effects in any order. Here is the “template” used for the <code class="prettyprint">Reader</code> effect:</p>
+<pre><code class="prettyprint">// define &quot;Member&quot; implicits by using a type T with only one type variable
+// instead of Reader which has 2
+trait ReaderImplicits extends ReaderImplicits1 {
+  implicit def ReaderMemberZero[A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: NoEffect, NoEffect] = {
+    type T[X] = Reader[A, X]
+    Member.zero[T]
+  }
+
+  implicit def ReaderMemberFirst[R &lt;: Effects, A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: R, R] = {
+    type T[X] = Reader[A, X]
+    Member.first[T, R]
+  }
+}
+
+trait ReaderImplicits1 {
+  implicit def ReaderMemberSuccessor[O[_], R &lt;: Effects, U &lt;: Effects, A](implicit m: Member.Aux[Reader[A, ?], R, U]): Member.Aux[Reader[A, ?], O |: R, O |: U] = {
+    type T[X] = Reader[A, X]
+    Member.successor[T, O, R, U]
+  }
+}</code></pre>
+</div>
+
+</div>
+
+</body>
+</html>
