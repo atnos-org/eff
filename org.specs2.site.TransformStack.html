@@ -76,33 +76,8 @@ import DisjunctionImplicits._
 (run(runDisjunction(runOption(addKeys(&quot;key1&quot;, &quot;missing&quot;)))),
  run(runDisjunction(runOption(addKeysWithDefaultMessage(&quot;key1&quot;, &quot;missing&quot;, &quot;Key not found&quot;)))))</code></pre>
 <p><code class="prettyprint">&gt; (Right(None),Left(Key not found))</code></p>
-<p>But what if we just want to return <code class="prettyprint">0</code> if one of the keys is missing?</p>
-<pre><code class="prettyprint">import OptionEffect._
-import EvalEffect._
-
-type S = Eval |: Option |: NoEffect
-
-implicit val EvalMember =
-  Member.aux[Eval, S, Option |: NoEffect]
-
-implicit val OptionMember =
-  Member.aux[Option, S, Eval |: NoEffect]
-
-val map: Map[String, Int] =
-  Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
-
-// get 2 keys from the map and add the corresponding values
-def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a &lt;- fromOption(map.get(key1))
-  c &lt;- delay(a)
-  b &lt;- fromOption(map.get(key2))
-  d &lt;- delay(b)
-} yield c + d
-
-run(runEval(runOption(addKeys(&quot;key1&quot;, &quot;key2&quot;))))</code></pre>
-<p><code class="prettyprint">&gt; Some(30)</code></p>
 <h3 id="merge-stacks">Merge stacks</h3>
-<p>We have seen, in the <a href="open-closed.md">open-closed</a> section, that we can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
+<p>We have seen, in the <link class="ok"><a href="org.specs2.site.OpenClosed.html" tooltip="" class="ok">open-closed</a></link> section, that we can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
 <pre><code class="prettyprint">import org.specs2.control.eff._
 import Eff._
 import Effects._
