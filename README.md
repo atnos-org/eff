@@ -17,7 +17,7 @@ You can learn more in the User Guide:
  
 # Contributing
  
-[eff-cats] is a [Typelevel](http://typelevel.org] project. This means we embrace pure, typeful, functional programming, 
+[eff-cats](https://github.com/etorreborre/eff-cats/) is a [Typelevel](http://typelevel.org) project. This means we embrace pure, typeful, functional programming, 
 and provide a safe and friendly environment for teaching, learning, and contributing as described in the [Typelevel Code of Conduct](http://typelevel.org/conduct.html). 
 
 Feel free to open an issue if you notice a bug, have an idea for a feature, or have a question about the code. Pull requests are also gladly accepted. 
