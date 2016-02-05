@@ -7,7 +7,7 @@ import StateEffect._
 import cats.syntax.all._
 import cats.std.int._
 import cats.std.list.listInstance
-import cats.state._
+import cats.data._
 
 class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 

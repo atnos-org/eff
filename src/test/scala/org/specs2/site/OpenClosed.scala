@@ -2,7 +2,6 @@ package org.specs2.site
 
 import org.specs2.control.eff._
 import Effects._
-import cats.state._
 import cats.data._
 import cats.syntax.all._
 
@@ -43,7 +42,6 @@ In that case you can specify an effect stack:${snippet{
 import org.specs2.control.eff._
 import Effects._
 import cats.syntax.all._
-import cats.state._
 import cats.data._
 import StateCreation._
 import WriterCreation._

@@ -204,7 +204,7 @@ A `State` effect can be seen as the combination of both a `Reader` and a `Writer
 
 Let's see an example showing that we can also use tags to track different states at the same time:${snippet{
 import StateEffect._
-import cats.state._
+import cats.data._
 
 trait Var1
 trait Var2

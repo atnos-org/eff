@@ -5,7 +5,7 @@ import cats.syntax.flatMap._
 import Tag._
 import Interpret._
 import Eff._
-import cats._, state._, std.all._
+import cats._, data._
 import Effects.|:
 
 /**
@@ -13,7 +13,7 @@ import Effects.|:
  *
  * Several state effects can be used in the same stack if they are tagged
  *
- * Internally backed up by cats.state.State
+ * Internally backed up by cats.data.State
  *
  */
 trait StateEffect extends
@@ -89,7 +89,7 @@ trait StateInterpretation {
       val init = initial
 
       def apply[X](x: State[S, X], s: S) =
-        x.run(s).run.swap
+        x.run(s).value.swap
 
       def finalize(a: A, s: S) = (a, s)
 
@@ -128,7 +128,7 @@ trait StateInterpretation {
       val init = initial
 
       def apply[X](x: State[S, X] @@ T, s: S) =
-        Tag.unwrap(x).run(s).run.swap
+        Tag.unwrap(x).run(s).value.swap
 
       def finalize(a: A, s: S) = (a, s)
 

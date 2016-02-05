@@ -3,12 +3,12 @@ import Keys._
 
 object depend {
 
-  val catsVersion     = "0.3.0"
+  val catsVersion     = "0.4.0"
   val specs2Version   = "3.6.5"
   val disorderVersion = "0.0.1-20150618032436-9c1f81e"
 
   val cats = Seq(
-      "org.spire-math" %% "cats"
+      "org.typelevel" %% "cats"
     ).map(_ % catsVersion)
 
   val specs2 = Seq(
