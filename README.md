@@ -18,10 +18,10 @@ You can learn more in the User Guide:
 
 You add `eff-cats` as an sbt dependency:
 ```scala
-libraryDependencies += "org.specs2" %% "eff-cats" % "1.0"
+libraryDependencies += "org.specs2" %% "eff-cats" % "1.1"
 ```
 
-or download it from [here](https://oss.sonatype.org/content/repositories/releases/org/specs2/eff-cats_2.11/1.0/eff-cats_2.11-1.0.jar).
+or download it from [here](https://oss.sonatype.org/content/repositories/releases/org/specs2/eff-cats_2.11/1.0/eff-cats_2.11-1.1.jar).
  
 # Contributing
  
