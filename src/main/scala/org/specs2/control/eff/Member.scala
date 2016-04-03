@@ -2,6 +2,7 @@ package org.specs2.control.eff
 
 import Effects._
 import Tag._
+import cats.data.Xor
 
 
 /**
@@ -17,7 +18,7 @@ trait Member[T[_], R] {
 
   def inject[V](tv: T[V]): Union[R, V]
 
-  def project[V](u: Union[R, V]): Option[T[V]]
+  def project[V](u: Union[R, V]): Union[Out, V] Xor T[V]
 }
 
 object Member extends MemberImplicits {
@@ -36,10 +37,11 @@ object Member extends MemberImplicits {
     def inject[V](effect: T[V]): Union[T |: R, V] =
       Union.now(effect)
 
-    def project[V](union: Union[T |: R, V]): Option[T[V]] =
+    def project[V](union: Union[T |: R, V]): Union[R, V] Xor T[V] =
       union match {
-        case UnionNow(x) => Some(x)
-        case _ => None
+        case UnionNow(x) => Xor.Right(x)
+        case UnionNext(u@UnionNow(x)) => Xor.Left(UnionNow(x).asInstanceOf[Union[R, V]])
+        case UnionNext(u@UnionNext(x)) => Xor.Left(UnionNext(x).asInstanceOf[Union[R, V]])
       }
   }
 
@@ -49,10 +51,10 @@ object Member extends MemberImplicits {
     def inject[V](effect: T[V]) =
       Union.next(m.inject[V](effect))
 
-    def project[V](union: Union[O |: R, V]) =
+    def project[V](union: Union[O |: R, V]): Union[Out, V] Xor T[V] =
       union match {
-        case UnionNow(_) => None
-        case UnionNext(u) => m.project[V](u)
+        case UnionNow(x) => Xor.left(UnionNow(x).asInstanceOf[Union[Out, V]])
+        case UnionNext(u) => m.project[V](u).leftMap(u1 => UnionNext(u1).asInstanceOf[Union[Out, V]])
       }
   }
 
@@ -66,7 +68,7 @@ object Member extends MemberImplicits {
       def inject[V](tv: T[V]): Union[R, V] =
         m.inject(Tag(tv))
 
-      def project[V](u: Union[R, V]): Option[T[V]] =
+      def project[V](u: Union[R, V]): Union[Out, V] Xor T[V] =
         m.project(u).map(Tag.unwrap)
     }
 

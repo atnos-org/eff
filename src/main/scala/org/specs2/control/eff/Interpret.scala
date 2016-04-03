@@ -121,28 +121,19 @@ trait Interpret {
         case Pure(a) =>
           loop.onPure(a, s) match {
             case Left((a1, s1)) => go(a1, s1)
-            case Right(b)  => b
+            case Right(b) => b
           }
 
         case Impure(union, continuation) =>
           m.project(union) match {
-            case Some(v) =>
+            case Right(v) =>
               loop.onEffect(v, continuation, s) match {
                 case Left((x, s1)) => go(x, s1)
-                case Right(b)       => b
+                case Right(b)      => b
               }
 
-            case None =>
-              union match {
-                case UnionNext(UnionNow(mx)) =>
-                  Impure[U, union.X, B](UnionNow(mx).asInstanceOf[Union[U, union.X]], Arrs.singleton(x => go(continuation(x), s)))
-
-                case UnionNext(UnionNext(n)) =>
-                  Impure[U, union.X, B](UnionNext(n).asInstanceOf[Union[U, union.X]], Arrs.singleton(x => go(continuation(x), s)))
-
-                case UnionNow(mx) =>
-                  Impure[U, union.X, B](union.asInstanceOf[Union[U, union.X]], Arrs.singleton(x => go(continuation(x), s))).asInstanceOf[Eff[U, B]]
-              }
+            case Left(u) =>
+              Impure[U, union.X, B](u, Arrs.singleton(x => go(continuation(x), s)))
           }
       }
     }
