@@ -1,7 +1,7 @@
-package org.specs2.benchmarks
+package org.atnos.benchmarks
 
 import org.scalameter.api._
-import org.specs2.control.eff._
+import org.atnos.eff._
 import EvalEffect._
 import Effects._
 import Eff._
