@@ -3,7 +3,9 @@ package syntax
 
 import Eff._
 import Member._
+import cats.Monad
 import cats.arrow.NaturalTransformation
+import org.atnos.eff.Effects.|:
 
 /**
  * Operations of Eff[R, A] values
@@ -19,6 +21,16 @@ object eff {
 
     def runM[M[_]](runner: Runner[M, R, A])(implicit m: M <= R): Eff[R, A] =
       Eff.runM(e, runner)
+  }
+
+  implicit class EffNoEffectOps[A](e: Eff[NoEffect, A]) {
+    def run: A =
+      Eff.run(e)
+  }
+
+  implicit class EffOneEffectOps[M[_] : Monad, A](e: Eff[M |: NoEffect, A]) {
+    def detach: M[A] =
+      Eff.detach(e)
   }
 
 }

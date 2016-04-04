@@ -11,7 +11,7 @@ import org.specs2.{ScalaCheck, Specification}
 import cats.data._
 import cats.syntax.all._
 import cats.std.all._
-
+import syntax.eff._
 
 class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -26,6 +26,9 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  The Eff monad is stack safe with Writer                 $stacksafeWriter
  The Eff monad is stack safe with Reader                 $stacksafeReader
  The Eff monad is stack safe with both Reader and Writer $stacksafeReaderWriter
+
+ It is possible to run a Eff value with no effects $noEffect
+ It is possible to run a Eff value with just one effect and get it back $oneEffect
 
 """
 
@@ -123,6 +126,12 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     run(WriterEffect.runWriter(ReaderEffect.runReader("h")(action))) ==== ((list.as(()), list.as("h")))
   }
+
+  def noEffect =
+    EvalEffect.runEval(EvalEffect.delay(1)).run === 1
+
+  def oneEffect =
+    EvalEffect.delay(1).detach.value === 1
 
   /**
    * Helpers
