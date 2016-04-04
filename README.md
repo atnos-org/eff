@@ -8,20 +8,20 @@ Oleg Kiselyov in [Freer monads, more extensible effects](http://okmij.org/ftp/Ha
 
 You can learn more in the User Guide:
 
- - [your first effects](http://etorreborre.github.io/eff-cats/org.specs2.site.Introduction.html)
- - [included effects: `Reader`, `Writer`, `Eval`, `State`,...](http://etorreborre.github.io/eff-cats/org.specs2.site.OutOfTheBox.html)
- - [using an open or a closed union of effects](http://etorreborre.github.io/eff-cats/org.specs2.site.OpenClosed.html)
- - [create your own effects](http://etorreborre.github.io/eff-cats/org.specs2.site.CreateEffects.html)
- - [working with different effect stacks](http://etorreborre.github.io/eff-cats/org.specs2.site.TransformStack.html)
+ - [your first effects](http://etorreborre.github.io/eff-cats/org.atnos.site.Introduction.html)
+ - [included effects: `Reader`, `Writer`, `Eval`, `State`,...](http://etorreborre.github.io/eff-cats/org.atnos.site.OutOfTheBox.html)
+ - [using an open or a closed union of effects](http://etorreborre.github.io/eff-cats/org.atnos.site.OpenClosed.html)
+ - [create your own effects](http://etorreborre.github.io/eff-cats/org.atnos.site.CreateEffects.html)
+ - [working with different effect stacks](http://etorreborre.github.io/eff-cats/org.atnos.site.TransformStack.html)
  
 ## Installation
 
 You add `eff-cats` as an sbt dependency:
 ```scala
-libraryDependencies += "org.specs2" %% "eff-cats" % "1.1"
+libraryDependencies += "org.atnos" %% "eff-cats" % "1.3"
 ```
 
-or download it from [here](https://oss.sonatype.org/content/repositories/releases/org/specs2/eff-cats_2.11/1.0/eff-cats_2.11-1.1.jar).
+or download it from [here](https://oss.sonatype.org/content/repositories/releases/org/atnos/eff-cats_2.11/1.0/eff-cats_2.11-1.3.jar).
  
 # Contributing
  

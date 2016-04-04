@@ -85,7 +85,7 @@ val action = for {
 run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action)))))
 }.eval}
 
-You can find a fully working example of this approach in `src/test/org/specs2/example/StacksSpec`.
+You can find a fully working example of this approach in `src/test/org/atnos/example/StacksSpec`.
 """
 
 }
