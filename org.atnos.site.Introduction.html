@@ -52,7 +52,7 @@
 <p>A monadic action is modelled as a value of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> denotes a set of effects and <code class="prettyprint">A</code> is the value returned by the computation, possibly triggering some effects when evaluated.</p>
 <p>The effects <code class="prettyprint">R</code> are modelled by a type-level list of “effect constructors”, for example:</p>
 <pre><code class="prettyprint">import cats.data._
-import org.specs2.control.eff._
+import org.atnos.eff._
 import Effects._
 import EvalEffect._
 
@@ -101,8 +101,8 @@ run(runWriter(runEval(runReader(6)(program))))</code></pre>
 <li>finally the <code class="prettyprint">NoEffect</code> effect (provided by the <code class="prettyprint">Eff</code> object) to get the final value out of <code class="prettyprint">Eff[Stack, Int]</code></li>
 </ol>
 <p><br/> Maybe you noticed that the effects are not being executed in the same order as their order in the stack declaration. The effects can indeed be executed in any order. This doesn’t mean though that the results will be the same. For example running <code class="prettyprint">Writer</code> then <code class="prettyprint">Disjunction</code> returns <code class="prettyprint">String Xor (A, List[String])</code> whereas running <code class="prettyprint">Disjunction</code> then <code class="prettyprint">Writer</code> returns <code class="prettyprint">(String Xor A, List[String])</code>.</p>
-<p>This is only possible because of pretty specific implicits definitions in the library to guide Scala type inference towards the right return types. You can learn more on implicits in the <link class="ok"><a href="org.specs2.site.OpenClosed.html" tooltip="" class="ok">implicits</a></link> section.</p>
-<p>Otherwise you can also learn about <link class="ok"><a href="org.specs2.site.OutOfTheBox.html" tooltip="" class="ok">other effects</a></link> supported by this library.</p>
+<p>This is only possible because of pretty specific implicits definitions in the library to guide Scala type inference towards the right return types. You can learn more on implicits in the <link class="ok"><a href="org.atnos.site.OpenClosed.html" tooltip="" class="ok">implicits</a></link> section.</p>
+<p>Otherwise you can also learn about <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">other effects</a></link> supported by this library.</p>
 </div>
 
 </div>

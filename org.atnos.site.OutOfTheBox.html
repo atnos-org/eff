@@ -85,7 +85,7 @@
 </tr>
 </tbody>
 </table>
-<p><small>(from <code class="prettyprint">org.specs2.control.eff._</code>)</small></p>
+<p><small>(from <code class="prettyprint">org.atnos.eff._</code>)</small></p>
 <p>Each object provides methods to create effects and to interpret them.</p>
 <h3 id="eval">Eval</h3>
 <p>This effect is a very simple one. It allows the delayed execution of computations and it can serve as some sort of overall <code class="prettyprint">IO</code> effect.</p>
@@ -97,7 +97,7 @@
 <p><em>Note</em>: the <code class="prettyprint">?</code> syntax comes from the <a href="https://github.com/non/kind-projector">kind-projector</a> project and allows us to avoid type lambdas.</p>
 <h3 id="option">Option</h3>
 <p>Adding an <code class="prettyprint">Option</code> effect in your stack allows to stop computations when necessary. If you create a value with <code class="prettyprint">some(a)</code> this value will be used downstream but if you use <code class="prettyprint">none</code> all computations will stop:</p>
-<pre><code class="prettyprint">import org.specs2.control.eff._
+<pre><code class="prettyprint">import org.atnos.eff._
 import Eff._
 import Effects._
 import OptionEffect._
@@ -122,7 +122,7 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 <p><code class="prettyprint">&gt; (Some(30),None)</code></p>
 <h3 id="disjunction">Disjunction</h3>
 <p>The <code class="prettyprint">Disjunction</code> effect is similar to the <code class="prettyprint">Option</code> effect but adds the possibility to specify why a computation stopped:</p>
-<pre><code class="prettyprint">import org.specs2.control.eff._
+<pre><code class="prettyprint">import org.atnos.eff._
 import Eff._
 import Effects._
 import DisjunctionEffect._
@@ -233,7 +233,7 @@ io.Source.fromFile(&quot;target/log&quot;).getLines.toList</code></pre>
 </ul>
 <p>Let’s see an example showing that we can also use tags to track different states at the same time:</p>
 <pre><code class="prettyprint">import StateEffect._
-import cats.state._
+import cats.data._
 
 trait Var1
 trait Var2
@@ -272,7 +272,7 @@ def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
 
 run(runList(pairsBiggerThan(List(1, 2, 3, 4), 5)))</code></pre>
 <p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
-<p><br/> Now you can learn about <link class="ok"><a href="org.specs2.site.OpenClosed.html" tooltip="" class="ok">open/closed effect stacks</a></link>.</p>
+<p><br/> Now you can learn about <link class="ok"><a href="org.atnos.site.OpenClosed.html" tooltip="" class="ok">open/closed effect stacks</a></link>.</p>
 </div>
 
 </div>

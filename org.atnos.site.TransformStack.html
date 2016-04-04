@@ -77,8 +77,8 @@ import DisjunctionImplicits._
  run(runDisjunction(runOption(addKeysWithDefaultMessage(&quot;key1&quot;, &quot;missing&quot;, &quot;Key not found&quot;)))))</code></pre>
 <p><code class="prettyprint">&gt; (Right(None),Left(Key not found))</code></p>
 <h3 id="merge-stacks">Merge stacks</h3>
-<p>We have seen, in the <link class="ok"><a href="org.specs2.site.OpenClosed.html" tooltip="" class="ok">open-closed</a></link> section, that we can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
-<pre><code class="prettyprint">import org.specs2.control.eff._
+<p>We have seen, in the <link class="ok"><a href="org.atnos.site.OpenClosed.html" tooltip="" class="ok">open-closed</a></link> section, that we can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
+<pre><code class="prettyprint">import org.atnos.eff._
 import Eff._
 import Effects._
 import EvalEffect._
@@ -161,7 +161,7 @@ import S3Stack.{WriterString=&gt;_,_}
 type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect</code></pre>
 <p>Then we can use the <code class="prettyprint">into</code> method to inject effects from each stack into this common stack:</p>
 <pre><code class="prettyprint">// this imports the `into` syntax
-import org.specs2.control.eff.syntax.eff._
+import org.atnos.eff.syntax.eff._
 
 val action = for {
   // read a file from hadoop
@@ -174,7 +174,7 @@ val action = for {
 // and we can run the composite action
 run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf(&quot;bucket&quot;))(action)))))</code></pre>
 <p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket: 10))</code></p>
-<p>You can find a fully working example of this approach in <code class="prettyprint">src/test/org/specs2/example/StacksSpec</code>.</p>
+<p>You can find a fully working example of this approach in <code class="prettyprint">src/test/org/atnos/example/StacksSpec</code>.</p>
 </div>
 
 </div>

@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Implicits</title>
+    <title>Open - Closed</title>
     <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
     <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
@@ -35,14 +35,37 @@
 
 
 <div class="col-md-10">
-<h1>Implicits</h1>
+<h1>Open - Closed</h1>
 <div id="tipue_search_content"></div>
 
-<p>There are 2 ways to create effectful computations for a given effect <code class="prettyprint">M</code>. The first one is to specify the stack which contains the effect:</p>
-<pre><code class="prettyprint">import org.specs2.control.eff._
+<p>There are 2 ways to create effectful computations for a given effect <code class="prettyprint">M</code>.</p>
+<p>You can create an <strong>open</strong> union of effects:</p>
+<pre><code class="prettyprint">// &#39;&lt;= &#39; reads &#39;is member of &#39;
+import Member.&lt;=
+import StateCreation._
+import WriterCreation._
+
+def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R): Eff[R, Int] =
+  for {
+    _ &lt;- put(i)
+    _ &lt;- tell(&quot;stored &quot; + i)
+  } yield i</code></pre>
+<p>In this case you don’t fix the type of the effect stack to use, you just list the effects that the stack will contain.</p>
+<p>This has several advantages:</p>
+<ul>
+<li><p>you can add more effects later to the <code class="prettyprint">Eff[R, Int]</code> action being created</p></li>
+<li><p>the <code class="prettyprint">putAndTell</code> method can be used in different effect stacks as long as they have the <code class="prettyprint">StateInt</code> and <code class="prettyprint">WriterString</code> effects</p></li>
+<li><p>no type annotations are required in the for comprehension</p></li>
+</ul>
+<p>On the other hand:</p>
+<ul>
+<li><p>this is verbose if you have lots of methods like this, always operating on the same stack of effects</p></li>
+<li><p>you might want to “seal” the stack to declare exactly with which set of effects you want to be working</p></li>
+</ul>
+<p>In that case you can specify an effect stack:</p>
+<pre><code class="prettyprint">import org.atnos.eff._
 import Effects._
 import cats.syntax.all._
-import cats.state._
 import cats.data._
 import StateCreation._
 import WriterCreation._
@@ -63,29 +86,12 @@ def putAndTell(i: Int): Eff[S, Int] =
     _ &lt;- put(i)
     _ &lt;- tell(&quot;stored &quot;+i)
   } yield i</code></pre>
-<p>This has several advantages:</p>
+<p>One major issue with this approach is that you will need to use type annotations in the for comprehension unless you define one implicit for each effect that is member of the stack. The implicit <code class="prettyprint">StateIntMember</code> for example declares that:</p>
 <ul>
-<li><p>this specifies in which order the effects are to be interpreted. This is very important because the result of running <code class="prettyprint">StateInt</code> followed by <code class="prettyprint">WriterString</code> is of type <code class="prettyprint">((S, A), List[W])</code> whereas running <code class="prettyprint">WriterString</code> followed by <code class="prettyprint">StateInt</code> returns a value of type <code class="prettyprint">(S, (A, List[W]))</code></p></li>
-<li><p>type inference works well and there is no need to annotate the <code class="prettyprint">put</code> or <code class="prettyprint">tell</code> methods.</p></li>
+<li><p><code class="prettyprint">StateInt</code> is a member of <code class="prettyprint">S</code></p></li>
+<li><p>if you remove <code class="prettyprint">StateInt</code> from <code class="prettyprint">S</code>, you are left with the <code class="prettyprint">WriterString |: NoEffect</code> stack</p></li>
 </ul>
-<p>On the other hand we lose some flexibility:</p>
-<ul>
-<li><p>adding another effect requires to transform the definition of the effect stack <code class="prettyprint">S</code></p></li>
-<li><p>the <code class="prettyprint">putAndTell</code> method cannot be used in 2 different effects stacks having the <code class="prettyprint">StateInt</code> and <code class="prettyprint">WriterString</code> effects</p></li>
-</ul>
-<p>The remedy is to use the <code class="prettyprint">Member</code> typeclass to create an <strong>open</strong> union of effects:</p>
-<pre><code class="prettyprint">// &#39;&lt;=&#39; reads &#39;is member of&#39;
-import Member.&lt;=
-import StateCreation._
-import WriterCreation._
-
-def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R): Eff[R, Int] =
-  for {
-    _ &lt;- put(i)
-    _ &lt;- tell(&quot;stored &quot;+i)
-  } yield i</code></pre>
-<p>Here we just declare that the <code class="prettyprint">putAndTell</code> method can be used with any effect stack <code class="prettyprint">R</code> if the <code class="prettyprint">StateInt</code> and <code class="prettyprint">WriterString</code> effects are members of that stack. However we have to add some type annotations to guide the compiler.</p>
-<p><br/> Now you can learn <link class="ok"><a href="org.specs2.site.CreateEffects.html" tooltip="" class="ok">how to create effects</a></link></p>
+<p><br/> Now you can learn <link class="ok"><a href="org.atnos.site.CreateEffects.html" tooltip="" class="ok">how to create effects</a></link></p>
 </div>
 
 </div>
