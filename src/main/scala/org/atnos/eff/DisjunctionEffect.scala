@@ -34,6 +34,8 @@ trait DisjunctionCreation {
     send[E Xor ?, R, A](Right(a))
 }
 
+object DisjunctionCreation extends DisjunctionCreation
+
 trait DisjunctionInterpretation {
   /** run the disjunction effect, yielding E Xor A */
   def runDisjunction[R <: Effects, U <: Effects, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, E Xor A] = {
@@ -53,6 +55,8 @@ trait DisjunctionInterpretation {
     runDisjunction(r).map(_.fold(util.Left.apply, util.Right.apply))
 
 }
+
+object DisjunctionInterpretation extends DisjunctionInterpretation
 
 trait DisjunctionImplicits extends DisjunctionImplicitsLower {
   implicit def DisjunctionMemberZero[R, A]: Member.Aux[Xor[A, ?], Xor[A, ?] |: NoEffect, NoEffect] = {
