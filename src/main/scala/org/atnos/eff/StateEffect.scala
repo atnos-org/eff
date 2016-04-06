@@ -54,7 +54,7 @@ trait StateCreation {
     send[({type l[X] = State[S, X] @@ U})#l, R, T](Tag(State.inspect(f)))
 
   /** modify the current state value */
-  def modifyTagged[R, U, T, S](f: S => S)(implicit member: Member[({type l[X] = State[S, X] @@ U})#l, R]): Eff[R, Unit] =
+  def modifyTagged[R, T, S](f: S => S)(implicit member: Member[({type l[X] = State[S, X] @@ T})#l, R]): Eff[R, Unit] =
     getTagged >>= ((s: S) => putTagged(f(s)))
 
 }
