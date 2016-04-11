@@ -144,6 +144,61 @@ trait Interpret {
   def interpretLoop1[R <: Effects, U <: Effects, M[_], A, B, S](pure: A => B)(loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
     interpretLoop[R, U, M, A, B, S]((a: A) => EffMonad[U].pure(pure(a)), loop)(effects)
 
+  /**
+   * INTERPRET IN THE SAME STACK
+   */
+  def intercept[R <: Effects, M[_], A, B](pure: A => Eff[R, B], recurse: Recurse[M, R, B])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] = {
+    val loop = new Loop[M, R, A, Eff[R, B]] {
+      type S = Unit
+      val init = ()
+
+      def onPure(a: A, s: Unit): (Eff[R, A], Unit) Xor Eff[R, B] =
+        Right(pure(a))
+
+      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Xor Eff[R, B] =
+        recurse(mx).bimap(x => (continuation(x), ()), identity _)
+    }
+    interceptLoop[R, M, A, B, Unit](pure, loop)(effects)
+  }
+
+  /**
+   * simpler version of intercept where the pure value is just mapped to another type
+   */
+  def intercept1[R <: Effects, M[_], A, B](pure: A => B)(recurse: Recurse[M, R, B])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
+    intercept[R, M, A, B]((a: A) => EffMonad[R].pure(pure(a)), recurse)(effects)
+
+  /**
+   * intercept an effect and interpret it in the same stack.
+   * This method is stack-safe
+   */
+  def interceptLoop[R <: Effects, M[_], A, B, S](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] = {
+    def go(eff: Eff[R, A], s: loop.S): Eff[R, B] = {
+      eff match {
+        case Pure(a) =>
+          loop.onPure(a, s) match {
+            case Left((a1, s1)) => go(a1, s1)
+            case Right(b) => b
+          }
+
+        case Impure(union, continuation) =>
+          m.project(union) match {
+            case Right(v) =>
+              loop.onEffect(v, continuation, s) match {
+                case Left((x, s1)) => go(x, s1)
+                case Right(b)      => b
+              }
+
+            case Left(u) =>
+              Impure[R, union.X, B](union, Arrs.singleton(x => go(continuation(x), s)))
+          }
+      }
+    }
+
+    go(effects, loop.init)
+  }
+
+  def interceptLoop1[R <: Effects, M[_], A, B, S](pure: A => B)(loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
+    interceptLoop[R, M, A, B, S]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
 }
 
 object Interpret extends Interpret

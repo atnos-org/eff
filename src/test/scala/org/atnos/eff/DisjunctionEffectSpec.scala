@@ -17,7 +17,8 @@ class DisjunctionEffectSpec extends Specification with ScalaCheck { def is = s2"
  run the disjunction monad with nothing        $disjunctionWithKoMonad
  run the disjunction monad with reader         $disjunctionReader
 
- run is stack safe with Disjunction      $stacksafeRun
+ run is stack safe with Disjunction                          $stacksafeRun
+ a left value can be caught and transformed to a right value $leftToRight
 
 """
 
@@ -77,5 +78,23 @@ class DisjunctionEffectSpec extends Specification with ScalaCheck { def is = s2"
     run(DisjunctionEffect.runDisjunction(action)) ==== Right(list.map(_.toString))
   }
 
+  def leftToRight = {
+    case class TooBig(value: Int)
+    type D[A] = TooBig Xor A
+    type E = D |: NoEffect
+
+    val i = 7
+
+    val value: Eff[E, Int] =
+      if (i > 5) DisjunctionEffect.left[E, TooBig, Int](TooBig(i))
+      else       DisjunctionEffect.right[E, TooBig, Int](i)
+
+    val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =>
+      if (k < 10) DisjunctionEffect.right[E, TooBig, Int](k)
+      else        DisjunctionEffect.left[E, TooBig, Int](TooBig(k))
+    }
+
+    run(runDisjunction(action)) ==== Right(7)
+  }
 }
 

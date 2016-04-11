@@ -97,6 +97,32 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 (run(runDisjunction(addKeys("key1", "key2"))), run(runDisjunction(addKeys("key1", "missing"))))
 }.eval}
 
+A `catchLeft` method can also be used to intercept an error and possible recover from it:${snippet{
+// 8<--
+import org.atnos.eff._
+import Eff._
+import Effects._
+import DisjunctionEffect._
+import cats.data.Xor
+// 8<--
+case class TooBig(value: Int)
+type D[A] = TooBig Xor A
+type E = D |: NoEffect
+
+val i = 7
+
+val value: Eff[E, Int] =
+  if (i > 5) DisjunctionEffect.left[E, TooBig, Int](TooBig(i))
+  else       DisjunctionEffect.right[E, TooBig, Int](i)
+
+val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =>
+  if (k < 10) DisjunctionEffect.right[E, TooBig, Int](k)
+  else        DisjunctionEffect.left[E, TooBig, Int](TooBig(k))
+}
+
+run(runDisjunction(action)) ==== Xor.Right(7)
+}}
+
 ### Error
 
 The `Error` effect is both an `Eval` effect and a `Disjunction` one with `Throwable Xor F` on the "left" side.
