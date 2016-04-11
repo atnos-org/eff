@@ -38,6 +38,7 @@ trait DisjunctionCreation {
 object DisjunctionCreation extends DisjunctionCreation
 
 trait DisjunctionInterpretation {
+
   /** run the disjunction effect, yielding E Xor A */
   def runDisjunction[R <: Effects, U <: Effects, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, E Xor A] = {
     val recurse = new Recurse[(E Xor ?), U, E Xor A] {

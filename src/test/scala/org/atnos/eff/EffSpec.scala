@@ -11,6 +11,10 @@ import org.specs2.{ScalaCheck, Specification}
 import cats.data._
 import cats.syntax.all._
 import cats.std.all._
+import cats.MonadFilter
+import algebra.Eq
+import cats.laws.discipline.{arbitrary => _, _}
+import CartesianTests._, Isomorphisms._
 import syntax.eff._
 
 class EffSpec extends Specification with ScalaCheck { def is = s2"""
@@ -30,9 +34,13 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  It is possible to run a Eff value with no effects $noEffect
  It is possible to run a Eff value with just one effect and get it back $oneEffect
 
+ Eff can be used as MonadFilter if one effect is doing the filtering $monadFilter
+ MonadFilterLaws are respected if one effect is doing the filtering $monadFilterLaws
+
 """
 
-  def laws = pending //cats.laws.discipline.MonadTests[F].monad[Int, Int, Int]
+  def laws =
+    MonadTests[F].monad[Int, Int, Int].all
 
   def readerMonadPure = prop { (initial: Int) =>
     type R[A] = Reader[Int, A]
@@ -133,19 +141,57 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
   def oneEffect =
     EvalEffect.delay(1).detach.value === 1
 
+  def monadFilter = {
+    type ReaderString[A] = Reader[String, A]
+
+    type E = ReaderString |: Option |: NoEffect
+
+    val action: Eff[E, Int] = for {
+      _ <- ask[E, String]
+      i <- OptionEffect.some[E, Int](10)
+    } yield i
+
+    val filtered =
+      MonadFilter[Eff[E, ?]](EffMonadFilter[E, Option]).filterM(action)((i: Int) => EffMonad[E].pure(i > 10))
+
+    run(OptionEffect.runOption(ReaderEffect.runReader("h")(filtered))) ==== None
+  }
+
+  def monadFilterLaws = {
+    type R = Option |: NoEffect
+    implicit val m = Eff.EffMonadFilter[R, Option]
+
+    MonadFilterTests[Eff[R, ?]].monadFilter[Int, Int, Int].all
+  }
+
+
   /**
    * Helpers
    */
-   type F[A] = Eff[NoEffect, A]
+  type F[A] = Eff[Option |: NoEffect, A]
 
-   implicit def ArbitraryEff: Arbitrary[F[Int]] = Arbitrary[F[Int]] {
-     Gen.oneOf(
-       Gen.choose(0, 100).map(i => EffMonad[NoEffect].pure(i)),
-       Gen.choose(0, 100).map(i => EffMonad[NoEffect].pure(i).map(_ + 10))
-     )
-   }
+  implicit def ArbitraryEff[R]: Arbitrary[Eff[R, Int]] = Arbitrary[Eff[R, Int]] {
+    Gen.oneOf(
+      Gen.choose(0, 100).map(i => EffMonad[R].pure(i)),
+      Gen.choose(0, 100).map(i => EffMonad[R].pure(i).map(_ + 10))
+    )
+  }
 
-   implicit def ArbitraryEffFunction: Arbitrary[F[Int => Int]] =
-     Arbitrary(arbitrary[Int => Int].map(f => EffMonad[NoEffect].pure(f)))
+  implicit def ArbitraryEffFunction[R]: Arbitrary[Eff[R, Int => Int]] =
+    Arbitrary(arbitrary[Int => Int].map(f => EffMonad[R].pure(f)))
+
+  import OptionEffect._
+
+  implicit val eqEffInt: Eq[F[Int]] = new Eq[F[Int]] {
+    def eqv(x: F[Int], y: F[Int]): Boolean =
+      runOption(x).run == runOption(y).run
+  }
+  implicit val eqEffInt3: Eq[F[(Int, Int, Int)]] = new Eq[F[(Int, Int, Int)]] {
+    def eqv(x: F[(Int, Int, Int)], y:F[(Int, Int, Int)]): Boolean =
+      runOption(x).run == runOption(y).run
+  }
+  implicit def iso[R]: Isomorphisms[Eff[R, ?]] =
+    Isomorphisms.invariant[Eff[R, ?]]
+
 
 }
