@@ -1,6 +1,5 @@
 package org.atnos.eff
 
-import com.ambiata.disorder.PositiveIntSmall
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import Eff._
@@ -77,7 +76,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     run(runWriter(write)) ==== (((), List("hello", "world")))
   }
 
-  def readerWriter = prop { init: PositiveIntSmall =>
+  def readerWriter = prop { init: Int =>
 
     // define a Reader / Writer stack
     type W[A] = Writer[String, A]
@@ -91,16 +90,15 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     val readWrite: Eff[S, Int] =
       for {
         i <- ask[S, Int]
-        _ <- tell[S, String]("initial="+i)
+        _ <- tell[S, String]("init="+i)
         j <- ask[S, Int]
         _ <- tell[S, String]("result="+(i+j))
       } yield i + j
 
     // run effects
-    val initial = init.value
-    run(runReader(initial)(runWriter(readWrite))) must_==
-      ((initial * 2, List("initial="+initial, "result="+(initial*2))))
-  }
+    run(runReader(init)(runWriter(readWrite))) must_==
+      ((init * 2, List("init="+init, "result="+(init*2))))
+  }.setGen(Gen.posNum[Int])
 
   def stacksafeWriter = {
     type WriterString[A] = Writer[String, A]

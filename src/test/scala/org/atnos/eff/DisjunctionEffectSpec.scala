@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import com.ambiata.disorder.{PositiveIntSmall, PositiveLongSmall}
+import org.scalacheck.Gen.posNum
 import DisjunctionEffect._
 import ReaderEffect._
 import Eff._
@@ -46,7 +46,7 @@ class DisjunctionEffectSpec extends Specification with ScalaCheck { def is = s2"
     run(runDisjunction(disjunction)) === Left("error!")
   }
 
-  def disjunctionReader = prop { (init: PositiveLongSmall, someValue: PositiveIntSmall) =>
+  def disjunctionReader = prop { (init: Long, someValue: Int) =>
 
     // define a Reader / Disjunction stack
     type ReaderLong[A] = Reader[Long, A]
@@ -55,17 +55,15 @@ class DisjunctionEffectSpec extends Specification with ScalaCheck { def is = s2"
     // create actions
     val readDisjunction: Eff[S, Int] =
       for {
-        j <- DisjunctionEffect.right[S, String, Int](someValue.value)
+        j <- DisjunctionEffect.right[S, String, Int](someValue)
         i <- ask[S, Long]
       } yield i.toInt + j
 
     // run effects
-    val initial = init.value
+    run(runReader(init)(runDisjunction(readDisjunction))) must_==
+      Right(init.toInt + someValue)
 
-    run(runReader(initial)(runDisjunction(readDisjunction))) must_==
-      Right(initial.toInt + someValue.value)
-
-  }
+  }.setGens(posNum[Long], posNum[Int])
 
   type DisjunctionString[A] = String Xor A
 

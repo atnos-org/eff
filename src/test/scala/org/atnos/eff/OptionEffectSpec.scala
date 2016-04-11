@@ -1,12 +1,12 @@
 package org.atnos.eff
 
 import cats.Eval
-import com.ambiata.disorder._
 import org.specs2.{ScalaCheck, Specification}
 import Eff._
 import Effects._
 import ReaderEffect._
 import OptionEffect._
+import org.scalacheck.Gen.posNum
 
 import cats.syntax.all._
 import cats.std.all._
@@ -46,7 +46,7 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
     run(runOption(option)) === None
   }
 
-  def optionReader = prop { (init: PositiveIntSmall, someValue: PositiveIntSmall) =>
+  def optionReader = prop { (init: Int, someValue: Int) =>
 
     // define a Reader / Option stack
     type R[A] = Reader[Int, A]
@@ -55,16 +55,13 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
     // create actions
     val readOption: Eff[S, Int] =
       for {
-        j <- OptionEffect.some[S, Int](someValue.value)
+        j <- OptionEffect.some[S, Int](someValue)
         i <- ask[S, Int]
       } yield i + j
 
     // run effects
-    val initial = init.value
-
-    run(runReader(initial)(runOption(readOption))) must_==
-      Some(initial + someValue.value)
-  }
+    run(runReader(init)(runOption(readOption))) must_== Some(init + someValue)
+  }.setGens(posNum[Int], posNum[Int])
 
 
   def stacksafeOption = {

@@ -24,7 +24,6 @@ object build extends Build {
     Seq[Settings](libraryDependencies ++=
       depend.cats       ++
       depend.specs2     ++
-      depend.disorder   ++
       depend.scalameter
     ) ++
     Seq(resolvers := depend.resolvers)
