@@ -66,6 +66,24 @@ object Eff {
       }
   }
 
+  /**
+   * Monad filter implementation for the Eff[R, ?] type
+   *
+   * There is a monad filter implementation for M if at least one of the effects
+   * can be empty. In practice Option can always be used to an effect stack
+   * in order to get that.
+   */
+  implicit def EffMonadFilter[R, M[_]: MonadFilter](implicit m: Member[M, R]): MonadFilter[Eff[R, ?]] = new MonadFilter[Eff[R, ?]] {
+    def pure[A](a: A): Eff[R, A] =
+      EffMonad[R].pure(a)
+
+    def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
+      EffMonad[R].flatMap(fa)(f)
+
+    def empty[A]: Eff[R, A] =
+      send(MonadFilter[M].empty[A])
+  }
+
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
   def send[T[_], R, V](tv: T[V])(implicit member: Member[T, R]): Eff[R, V] =
     impure(member.inject(tv), Arrs.unit)
@@ -85,33 +103,6 @@ object Eff {
   /** create a impure value from an union of effects and a continuation */
   def impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]): Eff[R, A] =
     Impure[R, X, A](union, continuation)
-
-  /** run a specific effect in a stack */
-  trait Runner[M[_], R, A] {
-    def onPure(a: A): Eff[R, A]
-    def onEffect[X](mx: M[X], cx: Arrs[R, X, A]): Eff[R, A]
-  }
-
-  /** transform a specific effect in a stack */
-  def transform[R, M[_], N[_], A](e: Eff[R, A], t: NaturalTransformation[M, N])(implicit m: M <= R, n: N <= R): Eff[R, A] =
-    runM(e, new Runner[M, R, A] {
-      def onPure(a: A): Eff[R, A] =
-        Pure(a)
-
-      def onEffect[X](mx: M[X], cx: Arrs[R, X, A]) =
-        Impure(n.inject(t(mx)), cx.transform(t)(m, n))
-    })
-
-  /** run a specific effect in a stack */
-  def runM[R, M[_], A](e: Eff[R, A], runner: Runner[M, R, A])(implicit m: M <= R): Eff[R, A] =
-    e match {
-      case Pure(a) => runner.onPure(a)
-      case Impure(u, c) =>
-        m.project(u) match {
-          case Xor.Right(mx) => runner.onEffect(mx, c)
-          case Xor.Left(_)   => Impure(u, c)
-        }
-    }
 
   /**
    * base runner for an Eff value having no effects at all
@@ -265,7 +256,7 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) {
     Arrs(((c: Any) => Eff.EffMonad[R].pure(f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions)
 
   def transform[M[_], N[_]](t: NaturalTransformation[M, N])(implicit m: M <= R, n: N <= R): Arrs[R, A, B] =
-    Arrs(functions.map(f => (x: Any) => Eff.transform(f(x), t)(m, n)))
+    Arrs(functions.map(f => (x: Any) => Interpret.transform(f(x), t)(m, n)))
 }
 
 object Arrs {

@@ -1,7 +1,10 @@
 package org.atnos.eff
 
-import cats.data._, Xor._
+import cats.data._
+import Xor._
 import Eff._
+import cats.arrow.NaturalTransformation
+import org.atnos.eff.Member.<=
 
 /**
  * Support methods to create an interpreter (or "effect handlers") for a given Eff[M |: R, A].
@@ -199,6 +202,18 @@ trait Interpret {
 
   def interceptLoop1[R <: Effects, M[_], A, B, S](pure: A => B)(loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
     interceptLoop[R, M, A, B, S]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
+
+  /** transform a specific effect in a stack */
+  def transform[R, M[_], N[_], A](e: Eff[R, A], t: NaturalTransformation[M, N])(implicit m: M <= R, n: N <= R): Eff[R, A] =
+    e match {
+      case Pure(a) => Pure(a)
+      case Impure(u, c) =>
+        m.project(u) match {
+          case Xor.Right(mx) => Impure(n.inject(t(mx)), c.transform(t)(m, n))
+          case Xor.Left(_)   => Impure(u, c)
+        }
+    }
+
 }
 
 object Interpret extends Interpret
