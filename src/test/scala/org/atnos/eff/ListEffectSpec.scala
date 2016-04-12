@@ -8,7 +8,7 @@ import ListEffect._
 import cats.syntax.all._
 import cats.std.all._
 
-class ListSpec extends Specification { def is = s2"""
+class ListEffectSpec extends Specification { def is = s2"""
 
  List effect example $listEffect
 

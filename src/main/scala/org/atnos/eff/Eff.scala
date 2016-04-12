@@ -66,24 +66,6 @@ object Eff {
       }
   }
 
-  /**
-   * Monad filter implementation for the Eff[R, ?] type
-   *
-   * There is a monad filter implementation for M if at least one of the effects
-   * can be empty. In practice Option can always be used to an effect stack
-   * in order to get that.
-   */
-  implicit def EffMonadFilter[R, M[_]: MonadFilter](implicit m: Member[M, R]): MonadFilter[Eff[R, ?]] = new MonadFilter[Eff[R, ?]] {
-    def pure[A](a: A): Eff[R, A] =
-      EffMonad[R].pure(a)
-
-    def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
-      EffMonad[R].flatMap(fa)(f)
-
-    def empty[A]: Eff[R, A] =
-      send(MonadFilter[M].empty[A])
-  }
-
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
   def send[T[_], R, V](tv: T[V])(implicit member: Member[T, R]): Eff[R, V] =
     impure(member.inject(tv), Arrs.unit)

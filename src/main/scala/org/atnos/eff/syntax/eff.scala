@@ -17,7 +17,6 @@ object eff {
 
     def transform[M[_], N[_]](t: NaturalTransformation[M, N])(implicit m: M <= R, n: N <= R): Eff[R, A] =
       Interpret.transform(e, t)(m, n)
-
   }
 
   implicit class EffNoEffectOps[A](e: Eff[NoEffect, A]) {
@@ -30,4 +29,8 @@ object eff {
       Eff.detach(e)
   }
 
+  implicit class EffMonadicOps[R <: Effects, M[_], A](e: Eff[R, M[A]]) {
+    def collapse(implicit m: M <= R): Eff[R, A] =
+      Eff.collapse[R, M, A](e)
+  }
 }

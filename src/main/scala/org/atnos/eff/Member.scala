@@ -29,6 +29,9 @@ object Member extends MemberImplicits {
   def aux[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, R, U] =
     m
 
+  def unaux[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member[T, R] =
+    m
+
   type Aux[T[_], R, U] = Member[T, R] { type Out = U }
 
   def ZeroMember[T[_], R <: Effects]: Member.Aux[T, T |: R, R] = new Member[T, T |: R] {

@@ -21,7 +21,8 @@ This library comes with a few available effects:
  `ReaderEffect`      | an effect for depending on a configuration or an environment
  `WriterEffect`      | an effect to log messages
  `StateEffect`       | an effect to pass state around
- `ListEffect`        | an effect for computations returning several values (for non-determinism)
+ `ListEffect`        | an effect for computations returning several values
+ `ChooseEffect`      | an effect for modeling non-determinism
 
 <small>(from `org.atnos.eff._`)</small>
 
@@ -257,9 +258,21 @@ In the example above we have used an `eval` method to get the `A` in `Eff[R, A]`
 
 ### List
 
-The `List` effect is used for non-deterministic computations, that is computations which may return several values.
+The `List` effect is used for computations which may return several values.
  A simple example using this effect would be:${ListSnippets.snippet1}
 
+
+### Choose
+
+The `Choose` effect is used for non-deterministic computations. With the `Choose` effect you can model computations which either:
+
+  - return no result at all
+  - choose between 2 different computations
+
+`Choose` is actually a generalization of `List` where instead of "exploring" all the branches we might "cut" some of them.
+That behaviour is controlled by the `Alternative[F]` instance you use when running `Choose`.
+
+For example if we take `List` to run a similar example as before, we get the list of all the accepted pairs:${ChooseSnippets.snippet1}
 
 <br/>
 Now you can learn about ${"open/closed effect stacks" ~/ OpenClosed}.
@@ -284,6 +297,27 @@ def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
 } yield found
 
 run(runList(pairsBiggerThan(List(1, 2, 3, 4), 5)))
+}.eval
+
+}
+
+object ChooseSnippets extends Snippets {
+val snippet1 = snippet{
+  import ChooseEffect._
+  type S = Choose |: NoEffect
+
+  // create all the possible pairs for a given list
+  // where the sum is greater than a value
+  def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
+    a <- choose(list)
+    b <- choose(list)
+    found <- if (a + b > n) EffMonad[S].pure((a, b))
+             else           zero
+  } yield found
+
+  import cats.std.list._
+
+  run(runChoose(pairsBiggerThan(List(1, 2, 3, 4), 5)))
 }.eval
 
 }

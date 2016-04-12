@@ -2,15 +2,14 @@ package org.atnos.eff
 
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
-import Eff._
 import Effects._
 import ReaderEffect._
 import WriterEffect._
 import org.specs2.{ScalaCheck, Specification}
-import cats.data._
+import cats._, data._
 import cats.syntax.all._
 import cats.std.all._
-import cats.MonadFilter
+import Eff._
 import algebra.Eq
 import cats.laws.discipline.{arbitrary => _, _}
 import CartesianTests._, Isomorphisms._
@@ -32,9 +31,6 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
  It is possible to run a Eff value with no effects $noEffect
  It is possible to run a Eff value with just one effect and get it back $oneEffect
-
- Eff can be used as MonadFilter if one effect is doing the filtering $monadFilter
- MonadFilterLaws are respected if one effect is doing the filtering $monadFilterLaws
 
 """
 
@@ -138,30 +134,6 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
   def oneEffect =
     EvalEffect.delay(1).detach.value === 1
-
-  def monadFilter = {
-    type ReaderString[A] = Reader[String, A]
-
-    type E = ReaderString |: Option |: NoEffect
-
-    val action: Eff[E, Int] = for {
-      _ <- ask[E, String]
-      i <- OptionEffect.some[E, Int](10)
-    } yield i
-
-    val filtered =
-      MonadFilter[Eff[E, ?]](EffMonadFilter[E, Option]).filterM(action)((i: Int) => EffMonad[E].pure(i > 10))
-
-    run(OptionEffect.runOption(ReaderEffect.runReader("h")(filtered))) ==== None
-  }
-
-  def monadFilterLaws = {
-    type R = Option |: NoEffect
-    implicit val m = Eff.EffMonadFilter[R, Option]
-
-    MonadFilterTests[Eff[R, ?]].monadFilter[Int, Int, Int].all
-  }
-
 
   /**
    * Helpers
