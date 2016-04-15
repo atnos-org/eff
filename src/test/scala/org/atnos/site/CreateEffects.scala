@@ -3,7 +3,6 @@ package org.atnos.site
 import cats.data.Reader
 
 import scala.concurrent.duration, duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import org.atnos.eff._
 import Eff._
 import Effects._

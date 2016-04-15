@@ -3,7 +3,6 @@ package org.atnos.site
 import org.specs2.Specification
 import org.specs2.execute.Snippet
 import org.specs2.io._
-import org.specs2.main.Arguments
 import org.specs2.specification.Snippets
 import org.specs2.specification.core._
 

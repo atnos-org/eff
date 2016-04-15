@@ -37,8 +37,8 @@ val map: Map[String, Int] =
 
 // get 2 keys from the map and add the corresponding values
 def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a <- fromOption(map.get(key1))
-  b <- fromOption(map.get(key2))
+  a <- option(map.get(key1))
+  b <- option(map.get(key2))
 } yield a + b
 
 // provide a default error message

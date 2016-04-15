@@ -41,14 +41,12 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     type R[A] = Reader[Int, A]
     type S = R |: NoEffect
 
-    run(runReader(initial)(ask[S, Int](ReaderMemberFirst))) === initial
+    run(runReader(initial)(ask[S, Int])) === initial
   }
 
   def readerMonadBind = prop { (initial: Int) =>
     type R[A] = Reader[Int, A]
     type S = R |: NoEffect
-
-    import ReaderImplicits._
 
     val read: Eff[S, Int] =
       for {
@@ -79,7 +77,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     type R[A] = Reader[Int, A]
     type S = W |: R |: NoEffect
 
-    object SImplicits extends MemberImplicits with ReaderImplicits with WriterImplicits
+    object SImplicits extends MemberImplicits
     import SImplicits._
 
     // create actions
@@ -109,7 +107,6 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
   def stacksafeReader = {
     type ReaderString[A] = Reader[String, A]
     type E = ReaderString |: NoEffect
-    import ReaderImplicits._
 
     val list = (1 to 5000).toList
     val action = list.traverseU(i => ReaderEffect.ask[E, String])

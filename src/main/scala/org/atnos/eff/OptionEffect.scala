@@ -7,11 +7,17 @@ import Eff._
 /**
  * Effect for optional computations
  */
-object OptionEffect {
+trait OptionEffect extends
+  OptionCreation with
+  OptionInterpretation
+
+object OptionEffect extends OptionEffect
+
+trait OptionCreation {
 
   /** create an Option effect from a single Option value */
-  def fromOption[R, A](option: Option[A])(implicit member: Member[Option, R]): Eff[R, A] =
-    option.fold[Eff[R, A]](none)(some)
+  def option[R, A](o: Option[A])(implicit member: Member[Option, R]): Eff[R, A] =
+    o.fold[Eff[R, A]](none)(some)
 
   /** no value returned */
   def none[R, A](implicit member: Member[Option, R]): Eff[R, A] =
@@ -20,7 +26,11 @@ object OptionEffect {
   /** a value is returned */
   def some[R, A](a: A)(implicit member: Member[Option, R]): Eff[R, A] =
     send[Option, R, A](Some(a))
+}
 
+object OptionCreation extends OptionCreation
+
+trait OptionInterpretation {
   /**
    * Interpret the Option effect
    *
@@ -39,4 +49,6 @@ object OptionEffect {
   }
 
 }
+
+object OptionInterpretation extends OptionInterpretation
 

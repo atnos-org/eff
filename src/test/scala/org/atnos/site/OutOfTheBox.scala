@@ -1,8 +1,6 @@
 package org.atnos.site
 
-import org.atnos.eff._
-import Eff._
-import Effects._
+import org.atnos.eff._, all._, implicits._
 import cats.syntax.all._
 import cats.data._
 import Tag._
@@ -45,10 +43,7 @@ type lambdas.
 
 Adding an `Option` effect in your stack allows to stop computations when necessary.
 If you create a value with `some(a)` this value will be used downstream but if you use `none` all computations will stop:${snippet{
-import org.atnos.eff._
-import Eff._
-import Effects._
-import OptionEffect._
+import org.atnos.eff._, all._
 import cats.syntax.all._
 
 /**
@@ -62,8 +57,8 @@ val map: Map[String, Int] =
 
 // get 2 keys from the map and add the corresponding values
 def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a <- fromOption(map.get(key1))
-  b <- fromOption(map.get(key2))
+  a <- option(map.get(key1))
+  b <- option(map.get(key2))
 } yield a + b
 
 (run(runOption(addKeys("key1", "key2"))), run(runOption(addKeys("key1", "missing"))))
@@ -72,18 +67,14 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 ### Disjunction
 
 The `Disjunction` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
-import org.atnos.eff._
-import Eff._
-import Effects._
-import DisjunctionEffect._
+import org.atnos.eff._, all._
 import cats.syntax.all._
 import cats.data.Xor
 
 /**
  * Stack declaration
  */
-type XorString[A] = String Xor A
-type S = XorString |: NoEffect
+type S = (String Xor ?) |: NoEffect
 
 // compute with this stack
 val map: Map[String, Int] =
@@ -100,15 +91,11 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 
 A `catchLeft` method can also be used to intercept an error and possible recover from it:${snippet{
 // 8<--
-import org.atnos.eff._
-import Eff._
-import Effects._
-import DisjunctionEffect._
+import org.atnos.eff._, all._
 import cats.data.Xor
 // 8<--
 case class TooBig(value: Int)
-type D[A] = TooBig Xor A
-type E = D |: NoEffect
+type E = (TooBig Xor ?) |: NoEffect
 
 val i = 7
 
@@ -154,7 +141,6 @@ The `Reader` effect is used to request values from an "environment". The main me
 and you can run an effect stack containing a `Reader` effect by providing a value for the environment with the `runReader` method.
 
 It is also possible to query several independent environments in the same effect stack by "tagging" them:${snippet{
-import ReaderEffect._
 import Tag._
 import cats.data._
 
@@ -192,10 +178,8 @@ The `Writer` effect has none of these issues. When you want to log a value you s
 You can then define your own custom `Fold` to log the values to a file:${snippet{
 
 import java.io.PrintWriter
-import WriterEffect._
 
-type W[A] = Writer[String, A]
-type S = W |: NoEffect
+type S = Writer[String, ?] |: NoEffect
 
 val action: Eff[S, Int] = for {
  a <- EffMonad[S].pure(1)
@@ -230,7 +214,6 @@ A `State` effect can be seen as the combination of both a `Reader` and a `Writer
  - `put` set a new state
 
 Let's see an example showing that we can also use tags to track different states at the same time:${snippet{
-import StateEffect._
 import cats.data._
 
 trait Var1
@@ -283,7 +266,6 @@ Now you can learn about ${"open/closed effect stacks" ~/ OpenClosed}.
 
 object ListSnippets extends Snippets {
   val snippet1 = snippet{
-import ListEffect._
 
 type S = List |: NoEffect
 

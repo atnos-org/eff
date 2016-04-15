@@ -25,15 +25,16 @@ case object ChoosePlus extends Choose[Boolean]
  *
  * If F is Option then:
  *  - no results is the None
- *  - the result for a or b is Some(a) or Some(b)
-
+ *  - the result for a or b is Some(a) or Some(b
  */
-object ChooseEffect extends
-  ChooseEffectCreation with
-  ChooseEffectInterpretation with
-  ChooseEffectImplicits
+trait ChooseEffect extends
+  ChooseCreation with
+  ChooseInterpretation with
+  ChooseImplicits
 
-trait ChooseEffectCreation {
+object ChooseEffect extends ChooseEffect
+
+trait ChooseCreation {
   def zero[R, A](implicit m: Choose <= R): Eff[R, A] =
     send[Choose, R, A](ChooseZero[A]())
 
@@ -47,9 +48,9 @@ trait ChooseEffectCreation {
     }
 }
 
-object ChooseEffectCreation extends ChooseEffectCreation
+object ChooseCreation extends ChooseCreation
 
-trait ChooseEffectInterpretation {
+trait ChooseInterpretation {
   def runChoose[R <: Effects, U <: Effects, A, F[_] : Alternative](r: Eff[R, A])(implicit m: Member.Aux[Choose, R, U]): Eff[U, F[A]] = {
     r match {
       case Pure(a) =>
@@ -72,13 +73,13 @@ trait ChooseEffectInterpretation {
   }
 }
 
-object ChooseEffectInterpretation extends ChooseEffectInterpretation
+object ChooseInterpretation extends ChooseInterpretation
 
-trait ChooseEffectImplicits {
+trait ChooseImplicits {
   /**
    * MonadCombine implementation for the Eff[R, ?] type if R contains the Choose effect
    */
-  implicit def EffMonadCombine[R](implicit m: Member[Choose, R]): MonadCombine[Eff[R, ?]] = new MonadCombine[Eff[R, ?]] {
+  def EffMonadCombine[R](implicit m: Member[Choose, R]): MonadCombine[Eff[R, ?]] = new MonadCombine[Eff[R, ?]] {
     def pure[A](a: A): Eff[R, A] =
       EffMonad[R].pure(a)
 
@@ -94,4 +95,4 @@ trait ChooseEffectImplicits {
 
 }
 
-object ChooseEffectImplicits extends ChooseEffectImplicits
+object ChooseImplicits extends ChooseImplicits

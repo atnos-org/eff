@@ -10,10 +10,12 @@ import Effects.|:
 /**
  * Effect for computation which can fail
  */
-object DisjunctionEffect extends
+trait DisjunctionEffect extends
   DisjunctionCreation with
   DisjunctionInterpretation with
   DisjunctionImplicits
+
+object DisjunctionEffect extends DisjunctionEffect
 
 trait DisjunctionCreation {
 

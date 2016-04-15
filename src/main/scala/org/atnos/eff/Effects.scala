@@ -1,14 +1,16 @@
 package org.atnos.eff
 
-import Effects._
-
 /**
  * Effects is a type level representing a list of effects
  * which might take place in a computation
  *
  * Note that each "effect" is a type constructor
  */
-trait Effects
+trait Effects  {
+  type |:[H[_], T <: Effects] = EffectsCons[H, T]
+
+  val |: = EffectsCons
+}
 
 /** one effect, basically a type constructor */
 sealed trait Effect[F[_]]
@@ -35,10 +37,6 @@ object NoEffect extends NoEffect
  *  A |: B |: C |: NoEffect
  *
  */
-object Effects {
-  type |:[H[_], T <: Effects] = EffectsCons[H, T]
-
-  val |: = EffectsCons
-}
+object Effects extends Effects
 
 

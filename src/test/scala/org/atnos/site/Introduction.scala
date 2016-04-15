@@ -1,9 +1,7 @@
 package org.atnos.site
 
 import cats.data._
-import org.atnos.eff._
-import Effects._
-import EvalEffect._
+import org.atnos.eff._, all._
 
 object Introduction extends UserGuidePage { def is = "Introduction".title ^ s2"""
 
@@ -51,10 +49,9 @@ The stack `Stack` above declares 3 effects:
  - an `Eval` effect to only compute values on demand (a bit like lazy values)
 
 Now we can write a program with those 3 effects, using the primitive operations provided by `ReaderEffect`, `WriterEffect` and `EvalEffect`:${snippet{
-import Eff._
 import cats.syntax.all._
-import ReaderCreation._
-import WriterCreation._
+import org.atnos.eff._, all._
+import Stack._
 
 val program: Eff[Stack, Int] = for {
   // get the configuration
@@ -70,8 +67,7 @@ val program: Eff[Stack, Int] = for {
   _ <- tell("the result is "+a)
 } yield a
 
-import ReaderEffect._
-import WriterEffect._
+import implicits._
 
 // run the action with all the interpreters
 // each interpreter running one effect
@@ -102,14 +98,16 @@ Otherwise you can also learn about ${"other effects" ~/ OutOfTheBox} supported b
 
   type Stack = ReaderInt |: WriterString |: Eval |: NoEffect
 
-  implicit val ReaderIntMember =
-    Member.aux[ReaderInt, Stack, WriterString |: Eval |: NoEffect]
+  object Stack {
+    implicit val ReaderIntMember: Member.Aux[ReaderInt, Stack, WriterString |: Eval |: NoEffect] =
+      Member.ZeroMember
 
-  implicit val WriterStringMember =
-    Member.aux[WriterString, Stack, ReaderInt |: Eval |: NoEffect]
+    implicit val WriterStringMember: Member.Aux[WriterString, Stack, ReaderInt |: Eval |: NoEffect] =
+      Member.SuccessorMember
 
-  implicit val EvalMember =
-    Member.aux[Eval, Stack, ReaderInt |: WriterString |: NoEffect]
+    implicit val EvalMember: Member.Aux[Eval, Stack, ReaderInt |: WriterString |: NoEffect] =
+      Member.SuccessorMember
+  }
 
 }
 

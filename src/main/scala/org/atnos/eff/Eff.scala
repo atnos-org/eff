@@ -47,7 +47,11 @@ case class Pure[R, A](value: A) extends Eff[R, A]
  */
 case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]) extends Eff[R, A]
 
-object Eff {
+object Eff extends EffCreation with
+  EffInterpretation with
+  EffImplicits
+
+trait EffImplicits {
 
   /**
    * Monad implementation for the Eff[R, ?] type
@@ -66,6 +70,11 @@ object Eff {
       }
   }
 
+}
+
+object EffImplicits extends EffImplicits
+
+trait EffCreation {
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
   def send[T[_], R, V](tv: T[V])(implicit member: Member[T, R]): Eff[R, V] =
     impure(member.inject(tv), Arrs.unit)
@@ -85,7 +94,11 @@ object Eff {
   /** create a impure value from an union of effects and a continuation */
   def impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]): Eff[R, A] =
     Impure[R, X, A](union, continuation)
+}
 
+object EffCreation extends EffCreation
+
+trait EffInterpretation {
   /**
    * base runner for an Eff value having no effects at all
    *
@@ -123,6 +136,8 @@ object Eff {
   def effInto[R <: Effects, U, A](e: Eff[R, A])(implicit f: IntoPoly[R, U, A]): Eff[U, A] =
     f(e)
 }
+
+object EffInterpretation extends EffInterpretation
 
 /**
  * Trait for polymorphic recursion into Eff[?, A]

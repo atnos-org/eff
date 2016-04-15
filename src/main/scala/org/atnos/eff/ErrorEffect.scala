@@ -6,7 +6,6 @@ import Xor._
 import cats.syntax.functor._
 import cats.syntax.flatMap._
 import Eff._
-import Effects.|:
 import Member.<=
 import Interpret._
 import org.atnos.eff.EvalEffect.Eval
