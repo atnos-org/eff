@@ -62,7 +62,6 @@ val action: Eff[SS, String] = for {
 } yield s1 + " " + s2
 
 action.runReader(Conf("www.me.com", 8080)).runOption.run
-
 }.eval}
 
 There are also specialized versions of `transform` for `Reader` and `State`:

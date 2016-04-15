@@ -32,13 +32,17 @@ object build extends Build {
     name := "eff-cats",
     version in ThisBuild := "1.4",
     organization := "org.atnos",
-    scalaVersion := "2.11.7")
+    scalaVersion := "2.11.8-tl-201604151108")
 
   lazy val compilationSettings: Seq[Settings] = Seq(
+    scalaBinaryVersion := "2.11",
+    resolvers += "scalatl" at "http://milessabin.com/scalatl",
     javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
     maxErrors := 20,
     triggeredMessage := Watched.clearWhenTriggered,
-    scalacOptions ++= Seq("-Xfatal-warnings",
+    scalacOptions ++= Seq(
+            "-Yhigher-order-unification",
+            "-Xfatal-warnings",
             "-Xlint",
             "-Yno-adapted-args",
             "-Ywarn-numeric-widen",
