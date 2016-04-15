@@ -30,9 +30,7 @@ returned by the computation, possibly triggering some effects when evaluated.
 
 The effects `R` are modelled by a type-level list of "effect constructors", for example:${snippet{
 import cats.data._
-import org.atnos.eff._
-import Effects._
-import EvalEffect._
+import org.atnos.eff._, all._
 
 type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect
 
@@ -50,8 +48,7 @@ import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import Stack._
-
-import Stack._
+  import Stack._
 
 val program: Eff[Stack, Int] = for {
   // get the configuration
@@ -66,8 +63,6 @@ val program: Eff[Stack, Int] = for {
   // log the result
   _ <- tell("the result is "+a)
 } yield a
-
-import org.atnos.eff.implicits._
 
 // run the action with all the interpreters
 // each interpreter running one effect

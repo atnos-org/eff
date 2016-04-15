@@ -58,8 +58,8 @@ val map: Map[String, Int] =
 
 // get 2 keys from the map and add the corresponding values
 def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a <- fromOption(map.get(key1))
-  b <- fromOption(map.get(key2))
+  a <- option(map.get(key1))
+  b <- option(map.get(key2))
 } yield a + b
 
 (addKeys("key1", "key2").runOption.run, addKeys("key1", "missing").runOption.run)
@@ -68,7 +68,7 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 ### Xor
 
 The `Xor` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
-import org.atnos.eff._, all._, syntax.all._, implicits._
+import org.atnos.eff._, all._, syntax.all._
 import cats.data.Xor
 
 /**
@@ -94,7 +94,7 @@ type lambdas.
 
 A `catchLeft` method can also be used to intercept an error and possibly recover from it:${snippet{
 // 8<--
-import org.atnos.eff._, all._, syntax.all._, implicits._
+import org.atnos.eff._, all._, syntax.all._
 import cats.data.Xor
 // 8<--
 case class TooBig(value: Int)
@@ -171,7 +171,7 @@ The `Reader` effect is used to request values from an "environment". The main me
 providing a value for the environment with the `runReader` method.
 
 It is also possible to query several independent environments in the same effect stack by "tagging" them:${snippet{
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 import Tag._
 import cats.data._
 
@@ -349,7 +349,7 @@ Now you can learn how to  ${"create your own effects" ~/ CreateEffects}.
 
 object ListSnippets extends Snippets {
   val snippet1 = snippet{
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 
 type S = List |: NoEffect
 

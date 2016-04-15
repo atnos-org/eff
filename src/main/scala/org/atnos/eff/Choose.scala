@@ -28,8 +28,7 @@ case object ChoosePlus extends Choose[Boolean]
  */
 trait ChooseEffect extends
   ChooseCreation with
-  ChooseInterpretation with
-  ChooseImplicits
+  ChooseInterpretation
 
 object ChooseEffect extends ChooseEffect
 
