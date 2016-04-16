@@ -1,9 +1,7 @@
 package org.atnos.site
 
-import org.atnos.eff._, all._, implicits._
 import cats.syntax.all._
 import cats.data._
-import Tag._
 import org.specs2.execute.Snippets
 
 object OutOfTheBox extends UserGuidePage { def is = "Out of the box".title ^ s2"""
@@ -43,8 +41,7 @@ type lambdas.
 
 Adding an `Option` effect in your stack allows to stop computations when necessary.
 If you create a value with `some(a)` this value will be used downstream but if you use `none` all computations will stop:${snippet{
-import org.atnos.eff._, all._
-import cats.syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 
 /**
  * Stack declaration
@@ -61,14 +58,13 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
   b <- option(map.get(key2))
 } yield a + b
 
-(run(runOption(addKeys("key1", "key2"))), run(runOption(addKeys("key1", "missing"))))
+(addKeys("key1", "key2").runOption.run, addKeys("key1", "missing").runOption.run)
 }.eval}
 
 ### Disjunction
 
 The `Disjunction` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
-import org.atnos.eff._, all._
-import cats.syntax.all._
+import org.atnos.eff._, all._, syntax.all._, implicits._
 import cats.data.Xor
 
 /**
@@ -86,12 +82,12 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
   b <- fromOption(map.get(key2), s"'$key2' not found")
 } yield a + b
 
-(run(runDisjunction(addKeys("key1", "key2"))), run(runDisjunction(addKeys("key1", "missing"))))
+(addKeys("key1", "key2").runXor.run, addKeys("key1", "missing").runXor.run)
 }.eval}
 
 A `catchLeft` method can also be used to intercept an error and possible recover from it:${snippet{
 // 8<--
-import org.atnos.eff._, all._
+import org.atnos.eff._, all._, syntax.all._, implicits._
 import cats.data.Xor
 // 8<--
 case class TooBig(value: Int)
@@ -108,7 +104,7 @@ val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =>
   else        DisjunctionEffect.left[E, TooBig, Int](TooBig(k))
 }
 
-run(runDisjunction(action)) ==== Xor.Right(7)
+action.runXor.run ==== Xor.Right(7)
 }}
 
 ### Error
@@ -141,6 +137,7 @@ The `Reader` effect is used to request values from an "environment". The main me
 and you can run an effect stack containing a `Reader` effect by providing a value for the environment with the `runReader` method.
 
 It is also possible to query several independent environments in the same effect stack by "tagging" them:${snippet{
+import org.atnos.eff._, all._, implicits._, syntax.all._
 import Tag._
 import cats.data._
 
@@ -157,7 +154,7 @@ type S = R1 |: R2 |: NoEffect
   p2 <- askTagged[S, Port2, Int]
 } yield "port1 is "+p1+", port2 is "+p2
 
-run(runTaggedReader(50)(runTaggedReader(80)(getPorts)))
+getPorts.runReaderTagged(80).runReaderTagged(50).run
 }.eval}
 
 ### Writer
@@ -176,7 +173,7 @@ The `Writer` effect has none of these issues. When you want to log a value you s
   - `runWriterFold` uses a `Fold` to act on each value, keeping some internal state between each invocation
 
 You can then define your own custom `Fold` to log the values to a file:${snippet{
-
+import org.atnos.eff._, all._, implicits._, syntax.all._
 import java.io.PrintWriter
 
 type S = Writer[String, ?] |: NoEffect
@@ -201,7 +198,7 @@ def fileFold(path: String) = new Fold[String, Unit] {
     s.close
 }
 
-run(runWriterFold(action)(fileFold("target/log")))
+action.runWriterFold(fileFold("target/log")).run
 io.Source.fromFile("target/log").getLines.toList
 }.eval}
 
@@ -215,6 +212,8 @@ A `State` effect can be seen as the combination of both a `Reader` and a `Writer
 
 Let's see an example showing that we can also use tags to track different states at the same time:${snippet{
 import cats.data._
+import org.atnos.eff._, all._, implicits._, syntax.all._
+import Tag._
 
 trait Var1
 trait Var2
@@ -233,7 +232,7 @@ val swapVariables: Eff[S, String] = for {
   w2 <- getTagged[S, Var2, Int]
 } yield "initial: "+(v1, v2).toString+", final: "+(w1, w2).toString
 
-run(evalTagged(50)(evalTagged(10)(swapVariables)))
+swapVariables.evalStateTagged(10).evalStateTagged(50).run
 }.eval}
 
 In the example above we have used an `eval` method to get the `A` in `Eff[R, A]` but it is also possible to get both the
@@ -266,6 +265,7 @@ Now you can learn about ${"open/closed effect stacks" ~/ OpenClosed}.
 
 object ListSnippets extends Snippets {
   val snippet1 = snippet{
+import org.atnos.eff._, all._, implicits._, syntax.all._
 
 type S = List |: NoEffect
 
@@ -278,28 +278,29 @@ def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
            else           empty
 } yield found
 
-run(runList(pairsBiggerThan(List(1, 2, 3, 4), 5)))
+pairsBiggerThan(List(1, 2, 3, 4), 5).runList.run
 }.eval
 
 }
 
 object ChooseSnippets extends Snippets {
 val snippet1 = snippet{
-  import ChooseEffect._
+import org.atnos.eff._, all._, implicits._, syntax.all._
+
   type S = Choose |: NoEffect
 
-  // create all the possible pairs for a given list
-  // where the sum is greater than a value
-  def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
-    a <- choose(list)
-    b <- choose(list)
-    found <- if (a + b > n) EffMonad[S].pure((a, b))
-             else           zero
-  } yield found
+// create all the possible pairs for a given list
+// where the sum is greater than a value
+def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
+  a <- chooseFrom(list)
+  b <- chooseFrom(list)
+  found <- if (a + b > n) EffMonad[S].pure((a, b))
+           else           zero
+} yield found
 
-  import cats.std.list._
+import cats.std.list._
 
-  run(runChoose(pairsBiggerThan(List(1, 2, 3, 4), 5)))
+pairsBiggerThan(List(1, 2, 3, 4), 5).runChoose.run
 }.eval
 
 }

@@ -63,19 +63,19 @@ object StateCreation extends StateCreation
 
 trait StateInterpretation {
   /** run a state effect, with a Monoidal state */
-  def evalZero[R <: Effects, U <: Effects, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, A] =
-    eval(Monoid[S].empty)(w)
+  def evalStateZero[R <: Effects, U <: Effects, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, A] =
+    evalState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value, return only the value */
-  def eval[R <: Effects, U <: Effects, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, A] =
+  def evalState[R <: Effects, U <: Effects, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, A] =
     runState(initial)(w).map(_._1)
 
   /** run a state effect, with a monoidal state, return only the state */
-  def execZero[R <: Effects, U <: Effects, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, S] =
-    exec(Monoid[S].empty)(w)
+  def execStateZero[R <: Effects, U <: Effects, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, S] =
+    execState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value, return only the state */
-  def exec[R <: Effects, U <: Effects, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, S] =
+  def execState[R <: Effects, U <: Effects, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, S] =
     runState(initial)(w).map(_._2)
 
   /** run a state effect, with an initial value */
@@ -98,29 +98,28 @@ trait StateInterpretation {
     interpretState1[R, U, State[S1, ?], A, (A, S1)]((a: A) => (a, initial))(recurse)(w)
   }
 
-
   /** run a state effect, with a Monoidal state */
-  def evalTaggedZero[R <: Effects, U <: Effects, T, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, A] =
-    evalTagged(Monoid[S].empty)(w)
+  def evalStateZeroTagged[R <: Effects, U <: Effects, T, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, A] =
+    evalStateTagged(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value, return only the value */
-  def evalTagged[R <: Effects, U <: Effects, T, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, A] =
-    runTaggedState(initial)(w).map(_._1)
+  def evalStateTagged[R <: Effects, U <: Effects, T, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, A] =
+    runStateTagged(initial)(w).map(_._1)
 
   /** run a state effect, with a monoidal state, return only the state */
-  def execTaggedZero[R <: Effects, U <: Effects, T, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, S] =
-    execTagged(Monoid[S].empty)(w)
+  def execStateZeroTagged[R <: Effects, U <: Effects, T, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, S] =
+    execStateTagged(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value, return only the state */
-  def execTagged[R <: Effects, U <: Effects, T, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, S] =
-    runTaggedState(initial)(w).map(_._2)
+  def execStateTagged[R <: Effects, U <: Effects, T, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, S] =
+    runStateTagged(initial)(w).map(_._2)
 
   /** run a state effect, with an initial value */
-  def runTaggedStateZero[R <: Effects, U <: Effects, T, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, (A, S)] =
-    runTaggedState(Monoid[S].empty)(w)
+  def runStateZeroTagged[R <: Effects, U <: Effects, T, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, (A, S)] =
+    runStateTagged(Monoid[S].empty)(w)
 
   /** run a tagged state effect, with an initial value */
-  def runTaggedState[R <: Effects, U <: Effects, T, S1, A](initial: S1)(w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S1, X] @@ T})#l, R, U]): Eff[U, (A, S1)] = {
+  def runStateTagged[R <: Effects, U <: Effects, T, S1, A](initial: S1)(w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = State[S1, X] @@ T})#l, R, U]): Eff[U, (A, S1)] = {
     type SS[X] = State[S1, X] @@ T
 
     val recurse: StateRecurse[SS, A, (A, S1)] = new StateRecurse[SS, A, (A, S1)] {

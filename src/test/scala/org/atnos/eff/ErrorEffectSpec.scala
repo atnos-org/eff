@@ -1,16 +1,14 @@
 package org.atnos.eff
 
 import org.specs2.Specification
-import Eff._
-import Effects._
-import ErrorEffect.{ok => OK, _}
-import EvalEffect._
-import WriterEffect._
+import ErrorEffect.{ok => OK, ErrorOrOk}
 
 import scala.collection.mutable.ListBuffer
-import syntax.error._
 import cats.syntax.all._
 import cats.data._, Xor._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 
 class ErrorEffectSpec extends Specification { def is = s2"""
 
@@ -38,7 +36,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
     val all: Eff[R, Unit] =
       action.andFinally(OK(messages.append("final")))
 
-    run(runError(all))
+    all.runError.run
 
     messages.toList ==== List("first", "final")
   }
@@ -53,7 +51,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
     val all: Eff[R, Unit] =
       action.andFinally(OK(messages.append("final")))
 
-    run(runError(all))
+    all.runError.run
 
     messages.toList ==== List("final")
   }
@@ -67,7 +65,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
     val all: Eff[R, Int] =
       action.orElse(OK { messages.append("second"); 2 })
 
-    (run(runError(all)) ==== Right(1)) and
+    (all.runError.run ==== Right(1)) and
     (messages.toList ==== List("first"))
   }
 
@@ -80,7 +78,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
     val all: Eff[R, Int] =
       action.orElse(OK { messages.append("second"); 2 })
 
-    (run(runError(all)) ==== Right(2)) and
+    (all.runError.run ==== Right(2)) and
     (messages.toList ==== List("second"))
   }
 
@@ -97,7 +95,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
     } yield a
 
     val result =
-      run(runEval(runWriter(runError(action))))
+      action.runError.runWriter.runEval.run
 
     (result._2 ==== List("start")) and
     (result._1.toErrorSimpleMessage ==== Option("Error[java.lang.Exception] boom"))

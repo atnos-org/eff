@@ -25,14 +25,18 @@ object HadoopStack {
   type WriterString[A] = Writer[String, A]
   type Hadoop = HadoopReader |: WriterString |: Eval |: NoEffect
 
-  implicit val HadoopReaderMember =
-    Member.aux[HadoopReader, Hadoop, WriterString |: Eval |: NoEffect]
+  object Hadoop {
+    implicit val HadoopReaderMember: Member.Aux[HadoopReader, Hadoop, WriterString |: Eval |: NoEffect] =
+      Member.first
 
-  implicit val WriterStringMember =
-    Member.aux[WriterString, Hadoop, HadoopReader |: Eval |: NoEffect]
+    implicit val WriterStringMember: Member.Aux[WriterString, Hadoop, HadoopReader |: Eval |: NoEffect] =
+      Member.successor
 
-  implicit val EvalMember =
-    Member.aux[Eval, Hadoop, HadoopReader |: WriterString |: NoEffect]
+    implicit val EvalMember: Member.Aux[Eval, Hadoop, HadoopReader |: WriterString |: NoEffect] =
+      Member.successor
+  }
+
+  import Hadoop._
 
   def askHadoopConf: Eff[Hadoop, HadoopConf] =
     ReaderEffect.askTagged
@@ -46,7 +50,7 @@ object HadoopStack {
   import ReaderImplicits._
 
   def runHadoopReader[R <: Effects, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
-    (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runTaggedReader(conf)(e)
+    (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runReaderTagged(conf)(e)
 
 }
 
@@ -59,15 +63,18 @@ object S3Stack {
 
   type S3 = S3Reader |: WriterString |: Eval |: NoEffect
 
-  implicit val S3ReaderMember =
-    Member.aux[S3Reader, S3, WriterString |: Eval |: NoEffect]
+  object S3 {
+    implicit val S3ReaderMember: Member.Aux[S3Reader, S3, WriterString |: Eval |: NoEffect] =
+      Member.first
 
-  implicit val WriterStringMember =
-    Member.aux[WriterString, S3, S3Reader |: Eval |: NoEffect]
+    implicit val WriterStringMember: Member.Aux[WriterString, S3, S3Reader |: Eval |: NoEffect] =
+      Member.successor
 
-  implicit val EvalMember =
-    Member.aux[Eval, S3, S3Reader |: WriterString |: NoEffect]
+    implicit val EvalMember: Member.Aux[Eval, S3, S3Reader |: WriterString |: NoEffect] =
+      Member.successor
+  }
 
+  import S3._
 
   def askS3Conf: Eff[S3, S3Conf] =
     ReaderEffect.askTagged
@@ -81,12 +88,27 @@ object S3Stack {
   import ReaderImplicits._
 
   def runS3Reader[R <: Effects, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
-    (e: Eff[S3Reader |: R, A]) => ReaderEffect.runTaggedReader(conf)(e)
+    (e: Eff[S3Reader |: R, A]) => ReaderEffect.runReaderTagged(conf)(e)
 }
 
 // 8<---
 
   type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect
+
+  object HadoopS3 {
+    implicit val S3ReaderMember: Member.Aux[S3Reader, HadoopS3, HadoopReader |: WriterString |: Eval |: NoEffect] =
+      Member.first
+
+    implicit val HadoopReaderMember: Member.Aux[HadoopReader, HadoopS3, S3Reader |: WriterString |: Eval |: NoEffect] =
+      Member.successor
+
+    implicit val WriterStringMember: Member.Aux[WriterString, HadoopS3, S3Reader |: HadoopReader |: Eval |: NoEffect] =
+      Member.successor
+
+    implicit val EvalMember: Member.Aux[Eval, HadoopS3, S3Reader |: HadoopReader |: WriterString |: NoEffect] =
+      Member.successor
+
+  }
 
 }
 

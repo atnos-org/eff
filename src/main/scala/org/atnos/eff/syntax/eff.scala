@@ -1,7 +1,6 @@
 package org.atnos.eff
 package syntax
 
-import Member._
 import cats.Monad
 import cats.arrow.NaturalTransformation
 import org.atnos.eff.Effects.|:
@@ -9,7 +8,9 @@ import org.atnos.eff.Effects.|:
 /**
  * Operations of Eff[R, A] values
  */
-object eff {
+object eff extends eff
+
+trait eff {
 
   implicit class EffOps[R <: Effects, A](e: Eff[R, A]) {
     def into[U](implicit f: IntoPoly[R, U, A]): Eff[U, A] =

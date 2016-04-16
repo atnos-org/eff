@@ -1,15 +1,14 @@
 package org.atnos.eff
 
 import org.specs2.{ScalaCheck, Specification}
-import Eff._
-import Effects._
-import ReaderEffect._
-import OptionEffect._
 import org.scalacheck.Gen.posNum
-
 import cats.syntax.all._
 import cats.std.all._
 import cats.data._
+import Eff._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 
 class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -30,7 +29,7 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
         s2 <- OptionEffect.some("world")
       } yield s1 + " " + s2
 
-    run(runOption(option)) === Some("hello world")
+    option.runOption.run === Some("hello world")
   }
 
   def optionWithNothingMonad = {
@@ -42,7 +41,7 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
         s2 <- OptionEffect.none[S, String]
       } yield s1 + " " + s2
 
-    run(runOption(option)) === None
+    option.runOption.run === None
   }
 
   def optionReader = prop { (init: Int, someValue: Int) =>
@@ -59,7 +58,7 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
       } yield i + j
 
     // run effects
-    run(runReader(init)(runOption(readOption))) must_== Some(init + someValue)
+    readOption.runOption.runReader(init).run must_== Some(init + someValue)
   }.setGens(posNum[Int], posNum[Int])
 
 
@@ -69,7 +68,7 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val list = (1 to 5000).toList
     val action = list.traverseU(i => OptionEffect.some(i))
 
-    run(runOption(action)) ==== Some(list)
+    action.runOption.run ==== Some(list)
   }
 
 }

@@ -94,7 +94,7 @@ class StacksSpec extends Specification { def is = s2"""
       } yield c.mappers.toString
 
     def runHadoopReader[R <: Effects, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
-      (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runTaggedReader(conf)(e)
+      (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runReaderTagged(conf)(e)
 
   }
 
@@ -117,7 +117,7 @@ class StacksSpec extends Specification { def is = s2"""
       } yield ()
 
     def runS3Reader[R <: Effects, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
-      (e: Eff[S3Reader |: R, A]) => ReaderEffect.runTaggedReader(conf)(e)
+      (e: Eff[S3Reader |: R, A]) => ReaderEffect.runReaderTagged(conf)(e)
   }
 
   object HadoopClosedStack {
@@ -138,7 +138,7 @@ class StacksSpec extends Specification { def is = s2"""
       } yield c.mappers.toString
 
     def runHadoopReader[R <: Effects, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
-      (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runTaggedReader(conf)(e)
+      (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runReaderTagged(conf)(e)
 
   }
 
@@ -161,7 +161,7 @@ class StacksSpec extends Specification { def is = s2"""
       } yield ()
 
     def runS3Reader[R <: Effects, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
-      (e: Eff[S3Reader |: R, A]) => ReaderEffect.runTaggedReader(conf)(e)
+      (e: Eff[S3Reader |: R, A]) => ReaderEffect.runReaderTagged(conf)(e)
   }
 
 }

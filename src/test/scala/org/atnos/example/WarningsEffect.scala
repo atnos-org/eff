@@ -19,6 +19,6 @@ object WarningsEffect {
    * This interpreter cumulates warnings
    */
   def runWarnings[R <: Effects, U <: Effects, A](w: Eff[R, A])(implicit m: Member.Aux[Warnings, R, U]): Eff[U, (A, List[String])] =
-    WriterEffect.runTaggedWriter[R, U, WarningsTag, String, A](w)
+    WriterEffect.runWriterTagged[R, U, WarningsTag, String, A](w)
 
 }

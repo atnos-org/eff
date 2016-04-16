@@ -68,7 +68,7 @@ trait WriterInterpretation {
   /**
    * run a tagged writer effect
    */
-  def runTaggedWriter[R <: Effects, U <: Effects, T, O, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = Writer[O, X] @@ T})#l, R, U]): Eff[U, (A, List[O])] =
+  def runWriterTagged[R <: Effects, U <: Effects, T, O, A](w: Eff[R, A])(implicit m: Member.Aux[({type l[X] = Writer[O, X] @@ T})#l, R, U]): Eff[U, (A, List[O])] =
     runTaggedWriterFold(w)(ListFold)
 
   def runTaggedWriterFold[R <: Effects, U <: Effects, T, O, A, B](w: Eff[R, A])(fold: Fold[O, B])(implicit
@@ -91,14 +91,6 @@ trait WriterInterpretation {
     interpretState1[R, U, W, A, (A, B)]((a: A) => (a, fold.finalize(fold.init)))(recurse)(w)
   }
 
-  /** support trait for folding values while possibly keeping some internal state */
-  trait Fold[A, B] {
-    type S
-    val init: S
-    def fold(a: A, s: S): S
-    def finalize(s: S): B
-  }
-
   implicit def ListFold[A]: Fold[A, List[A]] = new Fold[A, List[A]] {
     type S = ListBuffer[A]
     val init = new ListBuffer[A]
@@ -112,6 +104,14 @@ trait WriterInterpretation {
     def fold(a: A, s: S) = a |+| s
     def finalize(s: S) = s
   }
+}
+
+/** support trait for folding values while possibly keeping some internal state */
+trait Fold[A, B] {
+  type S
+  val init: S
+  def fold(a: A, s: S): S
+  def finalize(s: S): B
 }
 
 object WriterInterpretation extends WriterInterpretation

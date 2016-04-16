@@ -1,13 +1,13 @@
 package org.atnos.eff
 
-import Eff._
-import Effects._
 import org.specs2.{ScalaCheck, Specification}
-import StateEffect._
 import cats.syntax.all._
 import cats.std.int._
 import cats.std.list.listInstance
 import cats.data._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 
 class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -28,7 +28,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
       w <- EffMonad[E].pure("world")
     } yield h+" "+w
 
-    run(runState(5)(action)) ==== (("hello world", 20))
+    action.runState(5).run ==== (("hello world", 20))
   }
 
   def modifyState = {
@@ -38,14 +38,14 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
        _ <- modify((_:Int) + 10)
     } yield a.toString
 
-    run(execZero(action)) ==== 11
+    action.execStateZero.run ==== 11
   }
 
   def stacksafeState = {
     val list = (1 to 5000).toList
     val action = list.traverseU(i => StateEffect.put[E, Int](i).as(i.toString))
 
-    run(StateEffect.runState(0)(action)) ==== ((list.map(_.toString), 5000))
+    action.runState(0).run ==== ((list.map(_.toString), 5000))
   }
 
   type StateInt[A] = State[Int, A]

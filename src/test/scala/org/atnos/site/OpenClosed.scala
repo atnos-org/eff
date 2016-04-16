@@ -1,19 +1,18 @@
 package org.atnos.site
 
-import org.atnos.eff._
-import Effects._
 import cats.data._
-import cats.syntax.all._
 
 object OpenClosed extends UserGuidePage { def is = ("Open - Closed").title ^ s2"""
 
 There are 2 ways to create effectful computations for a given effect `M`.
 
 You can create an **open** union of effects:${snippet {
-// '<= ' reads 'is member of '
-import Member.<=
-import StateCreation._
-import WriterCreation._
+import cats.syntax.all._
+import org.atnos.eff._
+import org.atnos.eff.all._
+
+type StateInt[A] = State[Int, A]
+type WriterString[A] = Writer[String, A]
 
 def putAndTell[R](i: Int)(implicit s: StateInt <= R, w: WriterString <= R): Eff[R, Int] =
   for {
@@ -36,26 +35,28 @@ On the other hand:
 
  - this is verbose if you have lots of methods like this, always operating on the same stack of effects
 
- - you might want to "seal" the stack to declare exactly with which set of effects you want to be working
+ - you might want to "seal" the stack to declare exactly with which set of effects you want to be working with
 
 In that case you can specify an effect stack:${snippet{
-import org.atnos.eff._
-import Effects._
-import cats.syntax.all._
 import cats.data._
-import StateCreation._
-import WriterCreation._
+import cats.syntax.all._
+import org.atnos.eff._
+import org.atnos.eff.all._
 
-type StateInt[A] = State[Int, A]
-type WriterString[A] = Writer[String, A]
+object S {
+  type StateInt[A] = State[Int, A]
+  type WriterString[A] = Writer[String, A]
 
-type S = StateInt |: WriterString |: NoEffect
+  type S = StateInt |: WriterString |: NoEffect
 
-implicit val StateIntMember =
-  Member.aux[StateInt, S, WriterString |: NoEffect]
+  implicit val StateIntMember: Member.Aux[StateInt, S, WriterString |: NoEffect] =
+    Member.first
 
-implicit val WriterStringMember =
-  Member.aux[WriterString, S, StateInt |: NoEffect]
+  implicit val WriterStringMember: Member.Aux[WriterString, S, StateInt |: NoEffect] =
+    Member.successor
+}
+
+import S._
 
 def putAndTell(i: Int): Eff[S, Int] =
   for {
@@ -75,11 +76,5 @@ define one implicit for each effect that is member of the stack. The implicit `S
 Now you can learn ${"how to create effects" ~/ CreateEffects}
 
 """
-
-  type StateInt[A] = State[Int, A]
-  type WriterString[A] = Writer[String, A]
-
-  type S = StateInt |: WriterString |: NoEffect
-
 
 }

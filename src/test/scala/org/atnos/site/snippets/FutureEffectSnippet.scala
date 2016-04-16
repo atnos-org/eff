@@ -3,10 +3,8 @@ package org.atnos.site.snippets
 
 import cats.data.Xor
 import cats.data.Xor.Left
-import org.atnos.eff.Interpret._
-import org.atnos.eff.{Member, Effects, Eff}
-import org.atnos.eff.Eff._
-import org.atnos.eff.Member._
+import org.atnos.eff._, all._
+import org.atnos.eff.interpret._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.{Await, Future}

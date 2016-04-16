@@ -2,6 +2,8 @@ package org.atnos
 
 package object eff {
 
+  type <=[M[_], R] = Member.<=[M, R]
+
   object all extends
     ReaderCreation with ReaderInterpretation with
     WriterCreation with WriterInterpretation with
@@ -20,5 +22,8 @@ package object eff {
     StateImplicits with
     DisjunctionImplicits with
     EffImplicits
+
+  object interpret extends
+    Interpret
 
 }

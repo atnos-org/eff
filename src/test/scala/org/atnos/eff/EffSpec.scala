@@ -2,18 +2,16 @@ package org.atnos.eff
 
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
-import Effects._
-import ReaderEffect._
-import WriterEffect._
 import org.specs2.{ScalaCheck, Specification}
 import cats._, data._
 import cats.syntax.all._
 import cats.std.all._
-import Eff._
 import algebra.Eq
 import cats.laws.discipline.{arbitrary => _, _}
 import CartesianTests._, Isomorphisms._
-import syntax.eff._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 
 class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -41,7 +39,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     type R[A] = Reader[Int, A]
     type S = R |: NoEffect
 
-    run(runReader(initial)(ask[S, Int])) === initial
+    ask[S, Int].runReader(initial).run === initial
   }
 
   def readerMonadBind = prop { (initial: Int) =>
@@ -54,7 +52,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
         j <- ask[S, Int]
       } yield i + j
 
-    run(runReader(initial)(read)) === initial * 2
+    read.runReader(initial).run === initial * 2
   }
 
   def writerTwice = prop { _ : Int =>
@@ -67,7 +65,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
         _ <- tell("world")
       } yield ()
 
-    run(runWriter(write)) ==== (((), List("hello", "world")))
+    write.runWriter.run ==== (((), List("hello", "world")))
   }
 
   def readerWriter = prop { init: Int =>
@@ -90,7 +88,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       } yield i + j
 
     // run effects
-    run(runReader(init)(runWriter(readWrite))) must_==
+    readWrite.runWriter.runReader(init).run must_==
       ((init * 2, List("init="+init, "result="+(init*2))))
   }.setGen(Gen.posNum[Int])
 
@@ -101,7 +99,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     val list = (1 to 5000).toList
     val action = list.traverseU(i => WriterEffect.tell[E, String](i.toString))
 
-    run(WriterEffect.runWriter(action)) ==== ((list.as(()), list.map(_.toString)))
+    action.runWriter.run ==== ((list.as(()), list.map(_.toString)))
   }
 
   def stacksafeReader = {
@@ -111,7 +109,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     val list = (1 to 5000).toList
     val action = list.traverseU(i => ReaderEffect.ask[E, String])
 
-    run(ReaderEffect.runReader("h")(action)) ==== list.as("h")
+    action.runReader("h").run ==== list.as("h")
   }
 
   def stacksafeReaderWriter = {
@@ -123,14 +121,14 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     val list = (1 to 5000).toList
     val action = list.traverseU(i => ReaderEffect.ask[E, String] >>= WriterEffect.tell[E, String])
 
-    run(WriterEffect.runWriter(ReaderEffect.runReader("h")(action))) ==== ((list.as(()), list.as("h")))
+    action.runReader("h").runWriter.run ==== ((list.as(()), list.as("h")))
   }
 
   def noEffect =
-    EvalEffect.runEval(EvalEffect.delay(1)).run === 1
+    delay(1).runEval.run === 1
 
   def oneEffect =
-    EvalEffect.delay(1).detach.value === 1
+    delay(1).detach.value === 1
 
   /**
    * Helpers

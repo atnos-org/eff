@@ -3,8 +3,8 @@ package org.atnos.eff
 import cats.Eval
 import cats.data._
 import org.specs2.Specification
-import Effects._
-import EvalEffect._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
 
 class MemberSpec extends Specification { def is = s2"""
 

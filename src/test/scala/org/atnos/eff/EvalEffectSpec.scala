@@ -1,9 +1,9 @@
 package org.atnos.eff
 
 import org.specs2.Specification
-import Eff._
-import Effects._
-import EvalEffect._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 
 import cats.syntax.all._
 import cats.std.all._
@@ -22,12 +22,12 @@ class EvalEffectSpec extends Specification { def is = s2"""
 
   def stacksafeRun = {
     val action = list.traverseU(i => EvalEffect.delay(i))
-    run(runEval(action)) ==== list
+    action.runEval.run ==== list
   }
 
   def stacksafeAttempt = {
     val action = list.traverseU(i => EvalEffect.delay(i))
-    run(attemptEval(action)) ==== Right(list)
+    action.attemptEval.run ==== Right(list)
   }
 }
 

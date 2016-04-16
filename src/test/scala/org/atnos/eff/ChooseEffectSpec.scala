@@ -1,13 +1,11 @@
 package org.atnos.eff
 
-import Eff._
-import Effects._
-import ChooseEffect._
-import OptionEffect._
 import org.specs2.Specification
 import cats.syntax.functor._
 import cats.syntax.flatMap._
-
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 
 class ChooseEffectSpec extends Specification { def is = s2"""
 
@@ -24,12 +22,12 @@ class ChooseEffectSpec extends Specification { def is = s2"""
     val action: Eff[R, Int] = for {
       i <- OptionEffect.some[R, Int](1)
       j <- OptionEffect.some[R, Int](2)
-      k <- choose[R, Int](List(i, j))
+      k <- chooseFrom[R, Int](List(i, j))
     } yield k
 
     import cats.std.list._
 
-    run(runOption(runChoose(action))) ==== Some(List(1, 2))
+    action.runChoose.runOption.run ==== Some(List(1, 2))
   }
 
   def nondetOption = {
@@ -37,12 +35,12 @@ class ChooseEffectSpec extends Specification { def is = s2"""
     val action: Eff[R, Int] = for {
       _ <- OptionEffect.some[R, Int](1)
       j <- OptionEffect.some[R, Int](2)
-      k <- choose[R, Int](List(j))
+      k <- chooseFrom[R, Int](List(j))
     } yield k
 
     import cats.std.option._
 
-    run(runOption(runChoose(action))) ==== Some(Some(2))
+    action.runChoose.runOption.run ==== Some(Some(2))
   }
 
 

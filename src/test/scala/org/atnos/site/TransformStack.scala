@@ -1,10 +1,5 @@
 package org.atnos.site
 
-import org.atnos.eff._
-import Eff._
-import Effects._
-import EvalEffect._
-import WriterEffect._
 import snippets._, HadoopS3Snippet._
 import HadoopStack._
 import S3Stack.{WriterString=>_,_}
@@ -16,21 +11,23 @@ object TransformStack extends UserGuidePage { def is = "Transforming stacks".tit
 
 Once you get a `Eff[R, A]` action you might want to act on one of the effects, for example to transform `Option` effects
 into `Disjunction` effects:${snippet{
-import OptionEffect._
-import DisjunctionEffect.runDisjunction
-import syntax.eff._
+import org.atnos.eff._, all._
+import org.atnos.eff.syntax.all._
 import cats.data._
 import cats.arrow._
 
-type XorString[A] = String Xor A
+object S {
+  type XorString[A] = String Xor A
 
-type S = Option |: XorString |: NoEffect
+  type S = Option |: XorString |: NoEffect
 
-implicit val OptionMember =
-  Member.aux[Option, S, XorString |: NoEffect]
+  implicit val OptionMember: Member.Aux[Option, S, XorString |: NoEffect] =
+    Member.first
 
-implicit val XorStringMember =
-  Member.aux[XorString, S, Option |: NoEffect]
+  implicit val XorStringMember: Member.Aux[XorString, S, Option |: NoEffect] =
+    Member.successor
+}
+import S._
 
 val map: Map[String, Int] =
   Map("key1" -> 10, "key2" -> 20)
@@ -47,10 +44,10 @@ def addKeysWithDefaultMessage(key1: String, key2: String, message: String): Eff[
     def apply[A](o: Option[A]) = o.fold(Xor.left[String, A](message))(Xor.right[String, A])
   })
 
-import DisjunctionImplicits._
+import org.atnos.eff.implicits._
 
-(run(runDisjunction(runOption(addKeys("key1", "missing")))),
- run(runDisjunction(runOption(addKeysWithDefaultMessage("key1", "missing", "Key not found")))))
+(addKeys("key1", "missing").runOption.runXor.run,
+ addKeysWithDefaultMessage("key1", "missing", "Key not found").runOption.runXor.run)
 
 }.eval}
                                                                                         
@@ -62,6 +59,8 @@ ${definition[HadoopS3Snippet]}
 
 So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share
 some common effects, so the resulting stack we want to work with is:${snippet{
+import org.atnos.eff._, Effects._
+import cats.Eval
 import HadoopStack._
 import S3Stack.{WriterString=>_,_}
 
@@ -70,8 +69,8 @@ type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect
 
 Then we can use the `into` method to inject effects from each stack into this common stack:${snippet{
 
-// this imports the `into` syntax
-import org.atnos.eff.syntax.eff._
+// this imports the `into` and runXXX syntax
+import org.atnos.eff.syntax.all._
 
 val action = for {
   // read a file from hadoop
@@ -81,8 +80,11 @@ val action = for {
   _ <- writeFile("key", s)  .into[HadoopS3]
 } yield ()
 
+import HadoopS3._
+import org.atnos.eff.implicits._
+
 // and we can run the composite action
-run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action)))))
+action.runReaderTagged(S3Conf("bucket")).runReaderTagged(HadoopConf(10)).runWriter.runEval.run
 }.eval}
 
 You can find a fully working example of this approach in `src/test/org/atnos/example/StacksSpec`.

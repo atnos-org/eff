@@ -42,7 +42,7 @@ object DisjunctionCreation extends DisjunctionCreation
 trait DisjunctionInterpretation {
 
   /** run the disjunction effect, yielding E Xor A */
-  def runDisjunction[R <: Effects, U <: Effects, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, E Xor A] = {
+  def runXor[R <: Effects, U <: Effects, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, E Xor A] = {
     val recurse = new Recurse[(E Xor ?), U, E Xor A] {
       def apply[X](m: E Xor X) =
         m match {
@@ -55,8 +55,8 @@ trait DisjunctionInterpretation {
   }
 
   /** run the disjunction effect, yielding Either[E, A] */
-  def runDisjunctionEither[R <: Effects, U <: Effects, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, Either[E, A]] =
-    runDisjunction(r).map(_.fold(util.Left.apply, util.Right.apply))
+  def runEither[R <: Effects, U <: Effects, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, Either[E, A]] =
+    runXor(r).map(_.fold(util.Left.apply, util.Right.apply))
 
   /** catch and handle a possible left value */
   def catchLeft[R <: Effects, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Member[(E Xor ?), R]): Eff[R, A] = {

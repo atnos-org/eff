@@ -54,8 +54,8 @@ trait ReaderInterpretation {
   }
 
   /** interpret a tagged Reader effect by providing an environment when required */
-  def runTaggedReader[R <: Effects, U <: Effects, T, A, B](env: A)(r: Eff[R, B])(implicit
-         m: Member.Aux[({type l[X] = Reader[A, X] @@ T})#l, R, U]): Eff[U, B] = {
+  def runReaderTagged[R <: Effects, U <: Effects, T, A, B](env: A)(r: Eff[R, B])(implicit
+                                                                                 m: Member.Aux[({type l[X] = Reader[A, X] @@ T})#l, R, U]): Eff[U, B] = {
 
     val recurse = new Recurse[({type l[X] = Reader[A, X] @@ T})#l, U, B] {
       def apply[X](m: Reader[A, X] @@ T) = Left(Tag.unwrap(m).run(env))

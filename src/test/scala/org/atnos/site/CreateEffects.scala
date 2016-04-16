@@ -3,9 +3,8 @@ package org.atnos.site
 import cats.data.Reader
 
 import scala.concurrent.duration, duration._
-import org.atnos.eff._
-import Eff._
-import Effects._
+import org.atnos.eff._, all._
+import org.atnos.eff.implicits._
 import snippets._, FutureEffectSnippet._, FutureEffect._
 import cats.syntax.all._
 
@@ -58,7 +57,8 @@ run(runFuture(3.seconds)(action))
 ### Implicits
 
 You should also note that some effects take 2 type variables, like `Reader` or `Writer`. Those effects need some specific
-implicit declarations in order for type resolution to work when running effects in any order. Here is the "template" used for
+implicit declarations in order for type resolution to work when running effects in any order (this will be fixed with this
+[Scala compiler fix](https://github.com/scala/scala/pull/5102)). Here is the "template" used for
 the `Reader` effect: ${snippet{
 
 // define "Member" implicits by using a type T with only one type variable

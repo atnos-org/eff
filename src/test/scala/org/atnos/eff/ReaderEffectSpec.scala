@@ -1,9 +1,11 @@
 package org.atnos.eff
 
 import org.specs2.Specification
-import Eff._, Effects._, ReaderEffect._
 import cats.data._
 import cats.syntax.all._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 
 class ReaderEffectSpec extends Specification { def is = s2"""
 
@@ -20,7 +22,7 @@ class ReaderEffectSpec extends Specification { def is = s2"""
       h <- local[S, Config, String]((_:Config).host)
     } yield (f, h)
 
-    run(runReader(Config(10, "www.me.com"))(action)) ==== ((10, "www.me.com"))
+    action.runReader(Config(10, "www.me.com")).run ==== ((10, "www.me.com"))
   }
 
   case class Config(factor: Int, host: String)

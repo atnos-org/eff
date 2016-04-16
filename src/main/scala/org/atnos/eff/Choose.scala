@@ -1,6 +1,5 @@
 package org.atnos.eff
 
-import org.atnos.eff.Member.<=
 import Eff._
 import cats.{Alternative, MonadCombine}
 import cats.data.Xor
@@ -41,10 +40,10 @@ trait ChooseCreation {
   def plus[R, A](a1: Eff[R, A], a2: Eff[R, A])(implicit m: Choose <= R): Eff[R, A] =
     EffMonad[R].flatMap(send(ChoosePlus))((b: Boolean) => if (b) a1 else a2)
 
-  def choose[R, A](as: List[A])(implicit m: Choose <= R): Eff[R, A] =
+  def chooseFrom[R, A](as: List[A])(implicit m: Choose <= R): Eff[R, A] =
     as match {
       case Nil => send[Choose, R, A](ChooseZero[A]())
-      case a :: rest => plus(EffMonad[R].pure(a), choose(rest))
+      case a :: rest => plus(EffMonad[R].pure(a), chooseFrom(rest))
     }
 }
 

@@ -1,9 +1,9 @@
 package org.atnos.eff
 
 import org.specs2._
-import Eff._
-import Effects._
-import ListEffect._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 
 import cats.syntax.all._
 import cats.std.all._
@@ -26,7 +26,7 @@ class ListEffectSpec extends Specification { def is = s2"""
       d <- fromList((1 to c).toList)
     } yield b + d
 
-    run(runList(action)) ==== List(2, 3, 4, 3, 4, 5)
+    action.runList.run ==== List(2, 3, 4, 3, 4, 5)
   }
 
   def stackSafe = {
@@ -35,7 +35,7 @@ class ListEffectSpec extends Specification { def is = s2"""
     val action: Eff[L, List[Int]] =
       list.traverseU(i => singleton[L, Int](i))
 
-    run(runList(action)).flatten must_== list
+    action.runList.run.flatten must_== list
   }
 
 }

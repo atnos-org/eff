@@ -5,9 +5,15 @@ import Member.<=
 import ErrorEffect._
 import cats.data._, Xor._
 
-object error {
+object error extends error
+
+trait error {
 
   implicit class ErrorEffectOps[R <: Effects, A](action: Eff[R, A]) {
+
+    def runError[U <: Effects](implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Error Xor A] =
+      ErrorEffect.runError(action)
+
     def andFinally(last: Eff[R, Unit])(implicit m: ErrorOrOk <= R): Eff[R, A] =
       ErrorEffect.andFinally(action, last)
 
