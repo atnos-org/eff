@@ -7,7 +7,6 @@ import cats._
 import cats.data._, Xor._
 import Union._
 import Effects._
-import Member.<=
 import Eff._
 
 /**

@@ -1,7 +1,6 @@
 package org.atnos.eff
 
 import Eff._
-import Member._
 import scala.collection.mutable.ListBuffer
 import cats.data._, Xor._
 import Interpret._

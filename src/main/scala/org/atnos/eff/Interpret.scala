@@ -4,7 +4,6 @@ import cats.data._
 import Xor._
 import Eff._
 import cats.arrow.NaturalTransformation
-import org.atnos.eff.Member.<=
 
 /**
  * Support methods to create an interpreter (or "effect handlers") for a given Eff[M |: R, A].
