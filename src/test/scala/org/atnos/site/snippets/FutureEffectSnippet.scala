@@ -5,7 +5,6 @@ import cats.data.Xor
 import cats.data.Xor.Left
 import org.atnos.eff._, all._
 import org.atnos.eff.interpret._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
@@ -13,6 +12,8 @@ import scala.concurrent.duration.Duration
 trait FutureEffectSnippet {
 
 // 8<---
+import scala.concurrent.ExecutionContext.Implicits.global
+
 object FutureEffect {
   type Fut[A] = Future[() => A]
 
