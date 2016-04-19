@@ -46,7 +46,9 @@
 <li><p>a method to send values of type <code class="prettyprint">A</code> into <code class="prettyprint">Eff[R, A]</code></p></li>
 <li><p>an interpreter</p></li>
 </ul>
-<pre><code class="prettyprint">object FutureEffect {
+<pre><code class="prettyprint">import scala.concurrent.ExecutionContext.Implicits.global
+
+object FutureEffect {
   type Fut[A] = Future[() =&gt; A]
 
   def future[R, A](a: =&gt; A)(implicit m: Fut &lt;= R): Eff[R, A] =
@@ -85,7 +87,7 @@ val action: Eff[F, Int] = for {
 run(runFuture(3.seconds)(action))</code></pre>
 <p><code class="prettyprint">&gt; 5</code></p>
 <h3 id="implicits">Implicits</h3>
-<p>You should also note that some effects take 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. Those effects need some specific implicit declarations in order for type resolution to work when running effects in any order. Here is the “template” used for the <code class="prettyprint">Reader</code> effect:</p>
+<p>You should also note that some effects take 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. Those effects need some specific implicit declarations in order for type resolution to work when running effects in any order (this will be fixed with this <a href="https://github.com/scala/scala/pull/5102">Scala compiler fix</a>). Here is the “template” used for the <code class="prettyprint">Reader</code> effect:</p>
 <pre><code class="prettyprint">// define &quot;Member&quot; implicits by using a type T with only one type variable
 // instead of Reader which has 2
 trait ReaderImplicits extends ReaderImplicits1 {

@@ -67,10 +67,10 @@ type Stack = ReaderInt |: WriterString |: Eval |: NoEffect</code></pre>
 <li><p>an <code class="prettyprint">Eval</code> effect to only compute values on demand (a bit like lazy values)</p></li>
 </ul>
 <p>Now we can write a program with those 3 effects, using the primitive operations provided by <code class="prettyprint">ReaderEffect</code>, <code class="prettyprint">WriterEffect</code> and <code class="prettyprint">EvalEffect</code>:</p>
-<pre><code class="prettyprint">import Eff._
-import cats.syntax.all._
-import ReaderCreation._
-import WriterCreation._
+<pre><code class="prettyprint">import cats.syntax.all._
+import org.atnos.eff.all._
+import org.atnos.eff.syntax.all._
+import Stack._
 
 val program: Eff[Stack, Int] = for {
   // get the configuration
@@ -86,12 +86,11 @@ val program: Eff[Stack, Int] = for {
   _ &lt;- tell(&quot;the result is &quot;+a)
 } yield a
 
-import ReaderEffect._
-import WriterEffect._
+import org.atnos.eff.implicits._
 
-// run the action with all the interpreters
+  // run the action with all the interpreters
 // each interpreter running one effect
-run(runWriter(runEval(runReader(6)(program))))</code></pre>
+program.runReader(6).runWriter.runEval.run</code></pre>
 <p><code class="prettyprint">&gt; (64,List(the required power is 6, the result is 64))</code></p>
 <p>As you can see, all the effects of the <code class="prettyprint">Stack</code> type are being executed one by one:</p>
 <ol style="list-style-type: decimal">

@@ -40,10 +40,12 @@
 
 <p>There are 2 ways to create effectful computations for a given effect <code class="prettyprint">M</code>.</p>
 <p>You can create an <strong>open</strong> union of effects:</p>
-<pre><code class="prettyprint">// &#39;&lt;= &#39; reads &#39;is member of &#39;
-import Member.&lt;=
-import StateCreation._
-import WriterCreation._
+<pre><code class="prettyprint">import cats.syntax.all._
+import org.atnos.eff._
+import org.atnos.eff.all._
+
+type StateInt[A] = State[Int, A]
+type WriterString[A] = Writer[String, A]
 
 def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R): Eff[R, Int] =
   for {
@@ -60,26 +62,28 @@ def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R)
 <p>On the other hand:</p>
 <ul>
 <li><p>this is verbose if you have lots of methods like this, always operating on the same stack of effects</p></li>
-<li><p>you might want to “seal” the stack to declare exactly with which set of effects you want to be working</p></li>
+<li><p>you might want to “seal” the stack to declare exactly with which set of effects you want to be working with</p></li>
 </ul>
 <p>In that case you can specify an effect stack:</p>
-<pre><code class="prettyprint">import org.atnos.eff._
-import Effects._
+<pre><code class="prettyprint">import cats.data._
 import cats.syntax.all._
-import cats.data._
-import StateCreation._
-import WriterCreation._
+import org.atnos.eff._
+import org.atnos.eff.all._
 
-type StateInt[A] = State[Int, A]
-type WriterString[A] = Writer[String, A]
+object S {
+  type StateInt[A] = State[Int, A]
+  type WriterString[A] = Writer[String, A]
 
-type S = StateInt |: WriterString |: NoEffect
+  type S = StateInt |: WriterString |: NoEffect
 
-implicit val StateIntMember =
-  Member.aux[StateInt, S, WriterString |: NoEffect]
+  implicit val StateIntMember: Member.Aux[StateInt, S, WriterString |: NoEffect] =
+    Member.first
 
-implicit val WriterStringMember =
-  Member.aux[WriterString, S, StateInt |: NoEffect]
+  implicit val WriterStringMember: Member.Aux[WriterString, S, StateInt |: NoEffect] =
+    Member.successor
+}
+
+import S._
 
 def putAndTell(i: Int): Eff[S, Int] =
   for {
