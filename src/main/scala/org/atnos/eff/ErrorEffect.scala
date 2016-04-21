@@ -12,7 +12,7 @@ import org.atnos.eff.EvalEffect.Eval
 /**
  * Effect for computation which can fail and return a Throwable, or just stop with a failure
  *
- * This effect is a mix of Eval and Disjunction in the sense that every computation passed to this effect (with the ok
+ * This effect is a mix of Eval and Either in the sense that every computation passed to this effect (with the ok
  * method) is considered "impure" or "faulty" by default.
  *
  * The type F is used to represent the failure type.

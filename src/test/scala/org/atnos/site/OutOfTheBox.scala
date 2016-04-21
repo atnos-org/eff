@@ -12,8 +12,9 @@ This library comes with a few available effects:
  ---------           | --------------------------------------------
  `EvalEffect`        | an effect for delayed computations
  `OptionEffect`      | an effect for optional computations, stopping when there's no available value
- `DisjunctionEffect` | an effect for computations with failures, stopping when there is a failure
- `ErrorEffect`       | a mix of Eval and Disjunction, catching exceptions and returning them as failures
+ `EitherEffect`      | an effect for computations with failures, stopping when there is a failure
+ `ValidateEffect`    | an effect for computations with failures, allowing to continue computations and to collect failures
+ `ErrorEffect`       | a mix of Eval and Either, catching exceptions and returning them as failures
  `ReaderEffect`      | an effect for depending on a configuration or an environment
  `WriterEffect`      | an effect to log messages
  `StateEffect`       | an effect to pass state around
@@ -61,9 +62,9 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 (addKeys("key1", "key2").runOption.run, addKeys("key1", "missing").runOption.run)
 }.eval}
 
-### Disjunction
+### Either
 
-The `Disjunction` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
+The `Either` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
 import org.atnos.eff._, all._, syntax.all._, implicits._
 import cats.data.Xor
 
@@ -96,20 +97,43 @@ type E = (TooBig Xor ?) |: NoEffect
 val i = 7
 
 val value: Eff[E, Int] =
-  if (i > 5) DisjunctionEffect.left[E, TooBig, Int](TooBig(i))
-  else       DisjunctionEffect.right[E, TooBig, Int](i)
+  if (i > 5) EitherEffect.left[E, TooBig, Int](TooBig(i))
+  else       EitherEffect.right[E, TooBig, Int](i)
 
 val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =>
-  if (k < 10) DisjunctionEffect.right[E, TooBig, Int](k)
-  else        DisjunctionEffect.left[E, TooBig, Int](TooBig(k))
+  if (k < 10) EitherEffect.right[E, TooBig, Int](k)
+  else        EitherEffect.left[E, TooBig, Int](TooBig(k))
 }
 
 action.runXor.run ==== Xor.Right(7)
 }}
 
+### Validate
+
+The `Validate` effect is similar to the `Either` effect but let you cumulate failures: ${snippet{
+import org.atnos.eff._, all._, syntax.all._, implicits._
+
+/**
+ * Stack declaration
+ */
+type S = Validate[String, ?] |: NoEffect
+
+def checkPositiveInt(i: Int): Eff[S, Unit] =
+  validateCheck(i >= 0, s"$i is not positive")
+
+def checkPositiveInts(a: Int, b: Int, c: Int): Eff[S, (Int, Int, Int)] = for {
+  _ <- checkPositiveInt(a)
+  _ <- checkPositiveInt(b)
+  _ <- checkPositiveInt(c)
+} yield (a, b, c)
+
+checkPositiveInts(1, -3, -2).runNel.run
+}.eval}
+
+
 ### Error
 
-The `Error` effect is both an `Eval` effect and a `Disjunction` one with `Throwable Xor F` on the "left" side.
+The `Error` effect is both an `Eval` effect and a `Either` one with `Throwable Xor F` on the "left" side.
  The idea is to represent computations which can fail, either with an exception or a failure. You can:
 
  - create delayed computations with `ok`

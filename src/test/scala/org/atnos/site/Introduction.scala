@@ -85,7 +85,7 @@ As you can see, all the effects of the `Stack` type are being executed one by on
 <br/>
 Maybe you noticed that the effects are not being executed in the same order as their order in the stack declaration.
 The effects can indeed be executed in any order. This doesn't mean though that the results will be the same. For example
-running `Writer` then `Disjunction` returns `String Xor (A, List[String])` whereas running `Disjunction` then `Writer` returns
+running `Writer` then `Either` returns `String Xor (A, List[String])` whereas running `Either` then `Writer` returns
 `(String Xor A, List[String])`.
 
 This is only possible because of pretty specific implicits definitions in the library to guide Scala type inference towards the

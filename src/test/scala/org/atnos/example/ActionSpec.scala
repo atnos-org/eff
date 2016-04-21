@@ -11,12 +11,12 @@ import ConsoleEffect._
 import ErrorEffect._
 import Member.{<=}
 import Eff._
-import org.specs2.matcher.DisjunctionMatchers
+import org.specs2.matcher.EitherMatchers
 import cats.syntax.all._
 import cats.data._, Xor._
 import org.specs2._
 
-class ActionSpec extends Specification with ScalaCheck with DisjunctionMatchers { def is = s2"""
+class ActionSpec extends Specification with ScalaCheck with EitherMatchers { def is = s2"""
 
  The action stack can be used to
    compute values                      $computeValues

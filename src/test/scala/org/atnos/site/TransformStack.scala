@@ -10,7 +10,7 @@ object TransformStack extends UserGuidePage { def is = "Transforming stacks".tit
 ### Transform an effect to another
 
 Once you get a `Eff[R, A]` action you might want to act on one of the effects, for example to transform `Option` effects
-into `Disjunction` effects:${snippet{
+into `Either` effects:${snippet{
 import org.atnos.eff._, all._
 import org.atnos.eff.syntax.all._
 import cats.data._
