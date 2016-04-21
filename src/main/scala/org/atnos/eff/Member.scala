@@ -15,7 +15,7 @@ import scala.annotation.implicitNotFound
  * - create a Union of effects from a single effect with "inject"
  * - extract an effect value from a union if there is such an effect in the stack
  */
-@implicitNotFound("No instance found for Member[${T}, ${R}]. The effect ${T} is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
+@implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
 trait Member[T[_], R] {
   type Out <: Effects
 
@@ -26,6 +26,12 @@ trait Member[T[_], R] {
 
 object Member extends MemberImplicits {
 
+  @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
+  type Aux[T[_], R, U] = Member[T, R] { type Out = U }
+
+  @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
+  type <=[T[_], R] = Member[T, R]
+
   def apply[T[_], R](implicit m: Member[T, R]): Member[T, R] =
     m
 
@@ -34,8 +40,6 @@ object Member extends MemberImplicits {
 
   def unaux[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member[T, R] =
     m
-
-  type Aux[T[_], R, U] = Member[T, R] { type Out = U }
 
   def ZeroMember[T[_], R <: Effects]: Member.Aux[T, T |: R, R] = new Member[T, T |: R] {
     type Out = R
@@ -78,7 +82,6 @@ object Member extends MemberImplicits {
         m.project(u).map(Tag.unwrap)
     }
 
-  type <=[M[_], R] = Member[M, R]
 }
 
 trait MemberImplicits extends MemberImplicits1 {
