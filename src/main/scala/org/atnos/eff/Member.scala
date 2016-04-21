@@ -4,6 +4,8 @@ import Effects._
 import Tag._
 import cats.data.Xor
 
+import scala.annotation.implicitNotFound
+
 
 /**
  * Member typeclass for effects belonging to a stack of effects R
@@ -13,6 +15,7 @@ import cats.data.Xor
  * - create a Union of effects from a single effect with "inject"
  * - extract an effect value from a union if there is such an effect in the stack
  */
+@implicitNotFound("No instance found for Member[${T}, ${R}]. The effect ${T} is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
 trait Member[T[_], R] {
   type Out <: Effects
 
