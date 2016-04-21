@@ -10,8 +10,9 @@ package object eff {
     StateCreation with StateInterpretation with
     EvalCreation with EvalInterpretation with 
     OptionCreation with OptionInterpretation with 
-    ListCreation with ListInterpretation with 
-    DisjunctionCreation with DisjunctionInterpretation with 
+    ListCreation with ListInterpretation with
+    EitherCreation with EitherInterpretation with
+    ValidateCreation with ValidateInterpretation with
     ChooseCreation with ChooseInterpretation with
     EffCreation with EffInterpretation with
     Effects
@@ -20,7 +21,8 @@ package object eff {
     ReaderImplicits with
     WriterImplicits with
     StateImplicits with
-    DisjunctionImplicits with
+    EitherImplicits with
+    ValidateImplicits with
     EffImplicits
 
   object interpret extends
