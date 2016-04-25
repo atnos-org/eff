@@ -3,9 +3,7 @@ package org.atnos.eff
 import Effects._
 import Tag._
 import cats.data.Xor
-
 import scala.annotation.implicitNotFound
-
 
 /**
  * Member typeclass for effects belonging to a stack of effects R
@@ -21,7 +19,9 @@ trait Member[T[_], R] {
 
   def inject[V](tv: T[V]): Union[R, V]
 
-  def project[V](u: Union[R, V]): Union[Out, V] Xor T[V]
+  def accept[V](union: Union[Out, V]): Union[R, V]
+
+  def project[V](union: Union[R, V]): Union[Out, V] Xor T[V]
 }
 
 object Member extends MemberImplicits {
@@ -47,6 +47,9 @@ object Member extends MemberImplicits {
     def inject[V](effect: T[V]): Union[T |: R, V] =
       Union.now(effect)
 
+    def accept[V](union: Union[Out, V]): Union[T |: R, V] =
+      UnionNext(union)
+
     def project[V](union: Union[T |: R, V]): Union[R, V] Xor T[V] =
       union match {
         case UnionNow(x) => Xor.Right(x)
@@ -60,6 +63,12 @@ object Member extends MemberImplicits {
 
     def inject[V](effect: T[V]) =
       Union.next(m.inject[V](effect))
+
+    def accept[V](union: Union[Out, V]): Union[O |: R, V] =
+      union match {
+        case UnionNow(x)  => union.asInstanceOf[Union[O |: R, V]]
+        case UnionNext(u) => UnionNext(m.accept(u.asInstanceOf[Union[U, V]]))
+      }
 
     def project[V](union: Union[O |: R, V]): Union[Out, V] Xor T[V] =
       union match {
@@ -77,6 +86,9 @@ object Member extends MemberImplicits {
 
       def inject[V](tv: T[V]): Union[R, V] =
         m.inject(Tag(tv))
+
+      def accept[V](union: Union[Out, V]): Union[R, V] =
+        m.accept(union)
 
       def project[V](u: Union[R, V]): Union[Out, V] Xor T[V] =
         m.project(u).map(Tag.unwrap)
