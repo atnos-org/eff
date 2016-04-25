@@ -9,8 +9,8 @@ object TransformStack extends UserGuidePage { def is = "Transforming stacks".tit
 
 ### Transform an effect to another
 
-Once you get a `Eff[R, A]` action you might want to act on one of the effects, for example to transform `Option` effects
-into `Either` effects:${snippet{
+Once you get a `Eff[R, A]` action you might want to act on one of the effects, for example to swap the `Option` effect
+with the `Either` effect:${snippet{
 import org.atnos.eff._, all._
 import org.atnos.eff.syntax.all._
 import cats.data._
@@ -38,11 +38,13 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
   b <- option(map.get(key2))
 } yield a + b
 
+def nat(message: String) = new NaturalTransformation[Option, XorString] {
+  def apply[A](o: Option[A]) = o.fold(Xor.left[String, A](message))(Xor.right[String, A])
+}
+
 // provide a default error message
 def addKeysWithDefaultMessage(key1: String, key2: String, message: String): Eff[S, Int] =
-  addKeys(key1, key2).transform[Option, XorString](new NaturalTransformation[Option, XorString] {
-    def apply[A](o: Option[A]) = o.fold(Xor.left[String, A](message))(Xor.right[String, A])
-  })
+  addKeys(key1, key2).swap[Option, XorString](nat(message))
 
 import org.atnos.eff.implicits._
 

@@ -142,32 +142,15 @@ trait StateInterpretation {
    * Lift a computation over a "small" state (for a subsystem) into
    * a computation over a "bigger" state (for the full application state)
    */
-  def lensState[SS, TS, U, S, T, A](et: Eff[TS, A], getter: S => T, setter: (S, T) => S)
-                                (implicit ts: Member.Aux[State[T, ?], TS, U], ss: Member.Aux[State[S, ?], SS, U]): Eff[SS, A] = {
-
-    def mapState[X](tstate: State[T, X]): State[S, X] =
-      State { s: S =>
-        val (t, x) = tstate.run(getter(s)).value
-        (setter(s, t), x)
-      }
-
-    def go(eff: Eff[TS, A]): Eff[SS, A] = {
-      eff match {
-        case Pure(a) => Pure(a)
-
-        case Impure(u, c) =>
-          ts.project(u) match {
-            case Xor.Right(tstate) =>
-              Impure(ss.inject(mapState(tstate)), Arrs.singleton((x: u.X) => go(c(x))))
-
-            case Xor.Left(u1) =>
-              Impure(ss.accept(u1), Arrs.singleton((x: u.X) => go(c(x))))
-          }
-      }
-    }
-
-    go(et)
-  }
+  def lensState[TS, SS, U, T, S, A](state: Eff[TS, A], getter: S => T, setter: (S, T) => S)
+                                   (implicit ts: Member.Aux[State[T, ?], TS, U], ss: Member.Aux[State[S, ?], SS, U]): Eff[SS, A] =
+    Interpret.transform[TS, SS, U, State[T, ?], State[S, ?], A](state, new ~>[State[T, ?], State[S, ?]] {
+      def apply[X](tstate: State[T, X]): State[S, X] =
+        State { s: S =>
+          val (t, x) = tstate.run(getter(s)).value
+          (setter(s, t), x)
+        }
+    })
 
 }
 

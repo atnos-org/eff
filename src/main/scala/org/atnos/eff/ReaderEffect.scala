@@ -1,10 +1,13 @@
 package org.atnos.eff
 
-import cats._, data._, Xor._
+import cats._
+import data._
+import Xor._
 import Interpret._
 import Tag._
 import Eff._
 import Effects.|:
+import cats.arrow.NaturalTransformation
 
 /**
  * Effect for computations depending on an environment.
@@ -68,29 +71,12 @@ trait ReaderInterpretation {
    * Lift a computation over a "small" reader (for a subsystem) into
    * a computation over a "bigger" reader (for the full application)
    */
-  def localReader[BR, SR, B, S, U, A](r: Eff[SR, A], getter: B => S)
-                                    (implicit sr: Member.Aux[Reader[S, ?], SR, U], br: Member.Aux[Reader[B, ?], BR, U]): Eff[BR, A] = {
-
-    def mapReader[X](sreader: Reader[S, X]): Reader[B, X] =
-      Reader((b: B) => sreader.run(getter(b)))
-
-    def go(eff: Eff[SR, A]): Eff[BR, A] = {
-      eff match {
-        case Pure(a) => Pure(a)
-
-        case Impure(u, c) =>
-          sr.project(u) match {
-            case Xor.Right(sreader) =>
-              Impure(br.inject(mapReader(sreader)), Arrs.singleton((x: u.X) => go(c(x))))
-
-            case Xor.Left(u1) =>
-              Impure(br.accept(u1), Arrs.singleton((x: u.X) => go(c(x))))
-          }
-      }
-    }
-
-    go(r)
-  }
+  def localReader[SR, BR, U, S, B, A](r: Eff[SR, A], getter: B => S)
+                                    (implicit sr: Member.Aux[Reader[S, ?], SR, U], br: Member.Aux[Reader[B, ?], BR, U]): Eff[BR, A] =
+    transform[SR, BR, U, Reader[S, ?], Reader[B, ?], A](r, new ~>[Reader[S, ?], Reader[B, ?]] {
+      def apply[X](r: Reader[S, X]): Reader[B, X] =
+        Reader((b: B) => r.run(getter(b)))
+    })
 }
 
 object ReaderInterpretation extends ReaderInterpretation
