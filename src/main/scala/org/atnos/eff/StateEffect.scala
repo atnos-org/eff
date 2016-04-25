@@ -141,7 +141,6 @@ trait StateInterpretation {
   /**
    * Lift a computation over a "small" state (for a subsystem) into
    * a computation over a "bigger" state (for the full application state)
-   *
    */
   def lensState[SS, TS, U, S, T, A](et: Eff[TS, A], getter: S => T, setter: (S, T) => S)
                                 (implicit ts: Member.Aux[State[T, ?], TS, U], ss: Member.Aux[State[S, ?], SS, U]): Eff[SS, A] = {

@@ -63,6 +63,34 @@ trait ReaderInterpretation {
 
     interpret1[R, U, ({type l[X] = Reader[A, X] @@ T})#l, B, B]((b: B) => b)(recurse)(r)
   }
+
+  /**
+   * Lift a computation over a "small" reader (for a subsystem) into
+   * a computation over a "bigger" reader (for the full application)
+   */
+  def localReader[BR, SR, B, S, U, A](r: Eff[SR, A], getter: B => S)
+                                    (implicit sr: Member.Aux[Reader[S, ?], SR, U], br: Member.Aux[Reader[B, ?], BR, U]): Eff[BR, A] = {
+
+    def mapReader[X](sreader: Reader[S, X]): Reader[B, X] =
+      Reader((b: B) => sreader.run(getter(b)))
+
+    def go(eff: Eff[SR, A]): Eff[BR, A] = {
+      eff match {
+        case Pure(a) => Pure(a)
+
+        case Impure(u, c) =>
+          sr.project(u) match {
+            case Xor.Right(sreader) =>
+              Impure(br.inject(mapReader(sreader)), Arrs.singleton((x: u.X) => go(c(x))))
+
+            case Xor.Left(u1) =>
+              Impure(br.accept(u1), Arrs.singleton((x: u.X) => go(c(x))))
+          }
+      }
+    }
+
+    go(r)
+  }
 }
 
 object ReaderInterpretation extends ReaderInterpretation
