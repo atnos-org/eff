@@ -1,9 +1,11 @@
 package org.atnos.site
 
-import snippets._, HadoopS3Snippet._
+import snippets._
+import HadoopS3Snippet._
 import HadoopStack._
-import S3Stack.{WriterString=>_,_}
+import S3Stack.{WriterString => _, _}
 import cats.syntax.all._
+import cats.~>
 
 object TransformStack extends UserGuidePage { def is = "Transforming stacks".title ^ s2"""
 
@@ -46,66 +48,27 @@ val readPort: Eff[S2, String] = for {
   h <- OptionEffect.some[S2, String]("world")
 } yield h
 
+val fromHost = new (ReaderHost ~> ReaderConf) {
+  def apply[X](r: ReaderHost[X]) = Reader((c: Conf) => r.run(c.host))
+}
+
+val fromPort = new (ReaderPort ~> ReaderConf) {
+  def apply[X](r: ReaderPort[X]) = Reader((c: Conf) => r.run(c.port))
+}
+
 val action: Eff[SS, String] = for {
-  s1 <- localReader(readHost, (c: Conf) => c.host)
-  s2 <- localReader(readPort, (c: Conf) => c.port)
+  s1 <- readHost.transform(fromHost)
+  s2 <- readPort.transform(fromPort)
 } yield s1 + " " + s2
 
 action.runReader(Conf("www.me.com", 8080)).runOption.run
 
 }.eval}
 
-More generally the method `Interpret.transform(eff, naturalTransformation)` provides a way to interpret one effect to
-another using a natural transformation (changing just one effect in the stack).
+There are also specialized versions of `transform` for `Reader` and `State`:
 
-#### From one effect to another in the same stack
-
-Once you get a `Eff[R, A]` action you might want to act on one of the effects, for example to swap the `Option` effect
-with the `Either` effect if both are present in the stack:${snippet{
-import org.atnos.eff._, all._
-import org.atnos.eff.syntax.all._
-import cats.data._
-import cats.arrow._
-
-object S {
-  type XorString[A] = String Xor A
-
-  type S = Option |: XorString |: NoEffect
-
-  implicit val OptionMember: Member.Aux[Option, S, XorString |: NoEffect] =
-    Member.first
-
-  implicit val XorStringMember: Member.Aux[XorString, S, Option |: NoEffect] =
-    Member.successor
-}
-import S._
-
-val map: Map[String, Int] =
-  Map("key1" -> 10, "key2" -> 20)
-
-// get 2 keys from the map and add the corresponding values
-def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a <- option(map.get(key1))
-  b <- option(map.get(key2))
-} yield a + b
-
-// describe how options are transformed into eithers
-def nat(message: String) = new NaturalTransformation[Option, XorString] {
-  def apply[A](o: Option[A]) = o.fold(Xor.left[String, A](message))(Xor.right[String, A])
-}
-
-// provide a default error message
-def addKeysWithDefaultMessage(key1: String, key2: String, message: String): Eff[S, Int] =
-  addKeys(key1, key2).swap[Option, XorString](nat(message))
-
-import org.atnos.eff.implicits._
-
-(addKeys("key1", "missing").runOption.runXor.run,
- addKeysWithDefaultMessage("key1", "missing", "Key not found").runOption.runXor.run)
-
-}.eval}
-
-Note that the stack stays the same before and after, even if the original effect is not used anymore.
+ - `ReaderEffect.localReader` takes a "getter" `B => A` to transform a stack with a `Reader[A, ?]` into a stack with a `Reader[B, ?]`
+ - `StateEffect.lensState` takes a "getter" `S => T` and a "setter" `(S, T) => S` to to transform a stack with a `State[T, ?]` into a stack with a `State[S, ?]`
 
 ### Merge stacks
 

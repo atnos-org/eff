@@ -203,28 +203,6 @@ trait Interpret {
     interceptLoop[R, M, A, B, S]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
 
   /**
-   * swap an effect in a stack with another one in the same stack
-   * using a natural transformation
-   */
-  def swap[R, M[_], N[_], A](e: Eff[R, A], t: NaturalTransformation[M, N])(implicit m: M <= R, n: N <= R): Eff[R, A] = {
-    def go(eff: Eff[R, A]): Eff[R, A] = {
-      eff match {
-        case Pure(a) => Pure(a)
-
-        case Impure(u, c) =>
-          m.project(u) match {
-            case Xor.Right(mx) =>
-              Impure(n.inject(t(mx)), Arrs.singleton((x: u.X) => go(c(x))))
-
-            case Xor.Left(u1) =>
-              Impure(u, Arrs.singleton((x: u.X) => go(c(x))))
-          }
-      }
-    }
-    go(e)
-  }
-
-  /**
    * transform an effect into another one
    * using a natural transformation
    */

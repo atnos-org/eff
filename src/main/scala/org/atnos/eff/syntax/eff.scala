@@ -16,10 +16,7 @@ trait eff {
     def into[U](implicit f: IntoPoly[R, U, A]): Eff[U, A] =
       Eff.effInto(e)(f)
 
-    def swap[M[_], N[_]](t: NaturalTransformation[M, N])(implicit m: M <= R, n: N <= R): Eff[R, A] =
-      Interpret.swap(e, t)(m, n)
-
-    def transform[U, M[_], N[_]](t: NaturalTransformation[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, R, U]): Eff[R, A] =
+    def transform[BR, U, M[_], N[_]](t: NaturalTransformation[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, BR, U]): Eff[BR, A] =
       Interpret.transform(e, t)(m, n)
   }
 
