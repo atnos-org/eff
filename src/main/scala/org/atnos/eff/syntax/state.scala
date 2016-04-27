@@ -37,6 +37,10 @@ trait state {
 
     def execStateTagged[S, U <: Effects, T](s: S)(implicit member: Member.Aux[({type l[X] = State[S, X] @@ T})#l, R, U]): Eff[U, S] =
       StateInterpretation.execStateTagged(s)(e)
+
+    def lensState[BR, U, T, S](getter: S => T, setter: (S, T) => S)(implicit m1: Member.Aux[State[T, ?], R, U], m2: Member.Aux[State[S, ?], BR, U]): Eff[BR, A] =
+      StateInterpretation.lensState[R, BR, U, T, S, A](e, getter, setter)
+
   }
 
 }

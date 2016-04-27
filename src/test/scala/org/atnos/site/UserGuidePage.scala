@@ -1,14 +1,20 @@
 package org.atnos.site
 
-import org.specs2.Specification
+import org.specs2.matcher._
 import org.specs2.execute.Snippet
 import org.specs2.io._
 import org.specs2.specification.Snippets
 import org.specs2.specification.core._
+import org.specs2.specification.create.SpecificationCreation
 
 import scala.reflect.ClassTag
 
-abstract class UserGuidePage extends Specification with Snippets {
+abstract class UserGuidePage extends
+  ImmutableSpecificationStructure with
+  SpecificationCreation with
+  Snippets with
+  TypedEqual with
+  ExpectationsCreation {
 
   /** mute all links, so that they are not decorated in the html */
   override def map(fs: =>Fragments): Fragments =

@@ -72,7 +72,7 @@ There are also specialized versions of `transform` for `Reader` and `State`:
 
 ### Merge stacks
 
-We have seen, in the ${"open-closed" ~/ OpenClosed} section, that we can create effects for a given effect stack, for example
+We have seen, in the ${"open-closed" ~/ Implicits} section, that we can create effects for a given effect stack, for example
  to interact with a [Hadoop](https://hadoop.apache.org) cluster. We can also define another stack, for storing and retrieving data on [S3](https://aws.amazon.com/s3).
 ${definition[HadoopS3Snippet]}
 

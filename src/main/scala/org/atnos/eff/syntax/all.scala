@@ -5,7 +5,7 @@ object all extends all
 trait all extends
   eval with
   option with
-  either with
+  xor with
   validate with
   error with
   reader with

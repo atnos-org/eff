@@ -54,37 +54,6 @@ val action: Eff[F, Int] = for {
 run(runFuture(3.seconds)(action))
 }.eval}
 
-### Implicits
-
-You should also note that some effects take 2 type variables, like `Reader` or `Writer`. Those effects need some specific
-implicit declarations in order for type resolution to work when running effects in any order (this will be fixed with this
-[Scala compiler fix](https://github.com/scala/scala/pull/5102)). Here is the "template" used for
-the `Reader` effect: ${snippet{
-
-// define "Member" implicits by using a type T with only one type variable
-// instead of Reader which has 2
-trait ReaderImplicits extends ReaderImplicits1 {
-  implicit def ReaderMemberZero[A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: NoEffect, NoEffect] = {
-    type T[X] = Reader[A, X]
-    Member.zero[T]
-  }
-
-  implicit def ReaderMemberFirst[R <: Effects, A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: R, R] = {
-    type T[X] = Reader[A, X]
-    Member.first[T, R]
-  }
-}
-
-trait ReaderImplicits1 {
-  implicit def ReaderMemberSuccessor[O[_], R <: Effects, U <: Effects, A](implicit m: Member.Aux[Reader[A, ?], R, U]): Member.Aux[Reader[A, ?], O |: R, O |: U] = {
-    type T[X] = Reader[A, X]
-    Member.successor[T, O, R, U]
-  }
-}
-}}
-
-Following this "template" will help the type inference when using a `run` method (`runReader` in the case of a `Reader` effect).
-
 """
 
 

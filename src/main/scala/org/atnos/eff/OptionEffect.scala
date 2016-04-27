@@ -16,8 +16,8 @@ object OptionEffect extends OptionEffect
 trait OptionCreation {
 
   /** create an Option effect from a single Option value */
-  def option[R, A](o: Option[A])(implicit member: Member[Option, R]): Eff[R, A] =
-    o.fold[Eff[R, A]](none)(some)
+  def fromOption[R, A](o: Option[A])(implicit member: Member[Option, R]): Eff[R, A] =
+    send[Option, R, A](o)
 
   /** no value returned */
   def none[R, A](implicit member: Member[Option, R]): Eff[R, A] =

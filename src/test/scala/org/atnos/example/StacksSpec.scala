@@ -2,17 +2,13 @@ package org.atnos
 package example
 
 import org.specs2._
-import eff._
-import Effects._
-import EvalEffect._
-import WriterEffect._
-import ReaderEffect._
-import Eff._
-import Member.<=
 import cats.syntax.all._
 import cats.data._
+import org.atnos.eff._
+import org.atnos.eff.all._
+import org.atnos.eff.implicits._
+import org.atnos.eff.syntax.all._
 import Tag._
-import eff.syntax.eff._
 
 class StacksSpec extends Specification { def is = s2"""
 

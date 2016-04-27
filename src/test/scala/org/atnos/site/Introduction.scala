@@ -17,9 +17,9 @@ There are lots of advantages to this approach:
 
  - the underlying implementation is performant and stack-safe
 
- - existing monad datatypes can be integrated to the library
+ - existing monadic datatypes can be integrated to the library
 
- - it is possible to integrate different effect stacks into one
+ - effect stacks can be modified or combined
 
 This is probably very abstract so let's see more precisely what this all means.
 
@@ -70,7 +70,7 @@ val program: Eff[Stack, Int] = for {
 
 import org.atnos.eff.implicits._
 
-  // run the action with all the interpreters
+// run the action with all the interpreters
 // each interpreter running one effect
 program.runReader(6).runWriter.runEval.run
 }.eval}
@@ -78,18 +78,18 @@ program.runReader(6).runWriter.runEval.run
 As you can see, all the effects of the `Stack` type are being executed one by one:
 
  1. the `Reader` effect, needing a value to inject
- 2. the `Writer` effect, which logs values
+ 2. the `Writer` effect, which logs messages
  3. the `Eval` effect to compute the "power of 2 computation"
  4. finally the `NoEffect` effect (provided by the `Eff` object) to get the final value out of `Eff[Stack, Int]`
 
 <br/>
 Maybe you noticed that the effects are not being executed in the same order as their order in the stack declaration.
 The effects can indeed be executed in any order. This doesn't mean though that the results will be the same. For example
-running `Writer` then `Either` returns `String Xor (A, List[String])` whereas running `Either` then `Writer` returns
-`(String Xor A, List[String])`.
+running the `Writer` effect then `Xor` effect returns `String Xor (A, List[String])` whereas running the `Xor` effect
+ then the `Writer` effect returns `(String Xor A, List[String])`.
 
-This is only possible because of pretty specific implicits definitions in the library to guide Scala type inference towards the
-right return types. You can learn more on implicits in the ${"implicits" ~/ OpenClosed} section.
+This all works thanks to some implicits definitions guiding Scala type inference towards the
+right return types. You can learn more on implicits in the ${"implicits" ~/ Implicits} section.
 
 Otherwise you can also learn about ${"other effects" ~/ OutOfTheBox} supported by this library.
 """
