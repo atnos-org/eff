@@ -72,8 +72,8 @@ There are also specialized versions of `transform` for `Reader` and `State`:
 
 ### Merge stacks
 
-We have seen, in the ${"open-closed" ~/ Implicits} section, that we can create effects for a given effect stack, for example
- to interact with a [Hadoop](https://hadoop.apache.org) cluster. We can also define another stack, for storing and retrieving data on [S3](https://aws.amazon.com/s3).
+We can create effects for a given effect stack, for example to interact with a [Hadoop](https://hadoop.apache.org) cluster.
+ We can also define another stack, for storing and retrieving data on [S3](https://aws.amazon.com/s3).
 ${definition[HadoopS3Snippet]}
 
 So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share
