@@ -32,7 +32,7 @@ object build extends Build {
     name := "eff-cats",
     version in ThisBuild := "1.4",
     organization := "org.atnos",
-    scalaVersion := "2.11.8-tl-201604151108")
+    scalaVersion := "2.11.8")
 
   lazy val compilationSettings: Seq[Settings] = Seq(
     scalaBinaryVersion := "2.11",
@@ -41,7 +41,6 @@ object build extends Build {
     maxErrors := 20,
     triggeredMessage := Watched.clearWhenTriggered,
     scalacOptions ++= Seq(
-            "-Yhigher-order-unification",
             "-Xfatal-warnings",
             "-Xlint",
             "-Yno-adapted-args",
@@ -53,7 +52,8 @@ object build extends Build {
     scalacOptions in Test ++= Seq("-Yrangepos"), //, "-Xlog-implicits"),
     scalacOptions in Test ~= (_.filterNot(Set("-Ywarn-dead-code"))),
     scalacOptions in console := Seq(),
-    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
+    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1"),
+    addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.0.0-SNAPSHOT")
   )
 
   lazy val testingSettings: Seq[Settings] = Seq(
