@@ -10,7 +10,6 @@ import algebra.Eq
 import cats.laws.discipline.{arbitrary => _, _}
 import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.atnos.eff.syntax.all._
 
 class EffSpec extends Specification with ScalaCheck { def is = s2"""

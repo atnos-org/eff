@@ -7,7 +7,6 @@ import cats.std.all._
 import cats.data._
 import Eff._
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.atnos.eff.syntax.all._
 
 class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""

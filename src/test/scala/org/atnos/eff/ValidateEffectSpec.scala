@@ -5,9 +5,7 @@ import cats.data._
 import cats.std.all._
 import cats.syntax.all._
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.atnos.eff.syntax.all._
-import org.scalacheck.Gen.posNum
 import org.specs2.{ScalaCheck, Specification}
 
 class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""

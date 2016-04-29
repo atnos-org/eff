@@ -7,7 +7,6 @@ import Interpret._
 import Tag._
 import Eff._
 import Effects.|:
-import cats.arrow.NaturalTransformation
 
 /**
  * Effect for computations depending on an environment.

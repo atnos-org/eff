@@ -99,8 +99,7 @@ val action = for {
 } yield ()
 
 import HadoopS3._
-import org.atnos.eff.implicits._
-
+import org.atnos.eff.ReaderImplicits._
 // and we can run the composite action
 action.runReaderTagged(S3Conf("bucket")).runReaderTagged(HadoopConf(10)).runWriter.runEval.run
 }.eval}

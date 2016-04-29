@@ -23,10 +23,14 @@ package object eff {
     OptionEffect with
     ListEffect with
     XorEffect with
+    ValidateEffect with
     ChooseEffect with
     EffInterpretation with
     EffCreation with
     EffImplicits with
     Effects
+
+  object interpret extends
+    Interpret
 
 }

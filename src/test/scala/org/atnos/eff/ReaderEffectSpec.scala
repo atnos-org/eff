@@ -4,7 +4,6 @@ import org.specs2.Specification
 import cats.data._
 import cats.syntax.all._
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.atnos.eff.syntax.all._
 
 class ReaderEffectSpec extends Specification { def is = s2"""

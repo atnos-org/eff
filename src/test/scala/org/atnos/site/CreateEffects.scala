@@ -1,7 +1,5 @@
 package org.atnos.site
 
-import cats.data.Reader
-
 import scala.concurrent.duration, duration._
 import org.atnos.eff._, all._
 import snippets._, FutureEffectSnippet._, FutureEffect._

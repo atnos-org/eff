@@ -21,7 +21,6 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 """
 
   def putGetState = {
-    import org.atnos.eff.implicits._
 
     val action: Eff[E, String] = for {
       a <- get[E, Int]
@@ -36,7 +35,6 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   def modifyState = {
-    import org.atnos.eff.implicits._
 
     val action: Eff[E, String] = for {
        a <- get[E, Int]
@@ -48,7 +46,6 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   def stacksafeState = {
-    import org.atnos.eff.implicits._
 
     val list = (1 to 5000).toList
     val action = list.traverseU(i => StateEffect.put[E, Int](i).as(i.toString))
@@ -85,7 +82,6 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     val lensed = lensState(action, getter, setter)
 
-    import org.atnos.eff.implicits._
 
     lensed.runOption.runState((20, 30)).run ==== ((Some("hello"), (20, 12)))
 

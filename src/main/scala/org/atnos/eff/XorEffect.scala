@@ -12,6 +12,8 @@ trait XorEffect extends
   XorCreation with
   XorInterpretation
 
+object XorEffect extends XorEffect
+
 trait XorCreation {
 
   /** create an Xor effect from a single Option value */

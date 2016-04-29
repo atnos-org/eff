@@ -8,7 +8,6 @@ import Eff._
 import cats._
 import data._
 import Effects.|:
-import cats.data.Xor.{Left, Right}
 
 /**
  * Effect for passing state along computations
