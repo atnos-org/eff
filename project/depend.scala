@@ -1,5 +1,6 @@
 import sbt._
 import Keys._
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object depend {
 
@@ -7,7 +8,7 @@ object depend {
   val specs2Version   = "3.6.5"
 
   val cats = Seq(
-      "org.typelevel" %% "cats"
+      "org.typelevel" %%%! "cats"
     ).map(_ % catsVersion)
 
   val specs2 = Seq(

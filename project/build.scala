@@ -5,24 +5,42 @@ import xerial.sbt.Sonatype._
 import com.typesafe.sbt.SbtSite.{SiteKeys, site}
 import com.typesafe.sbt.SbtGhPages.{GhPagesKeys, ghpages}
 import com.typesafe.sbt.SbtGit.git
+import org.scalajs.sbtplugin.cross.{CrossProject, CrossType}
 
 object build extends Build {
   type Settings = Def.Setting[_]
 
-  lazy val project = Project(
-    id = "eff",
-    base = file("."),
-    settings = Defaults.coreDefaultSettings ++
-               dependencies             ++
-               projectSettings          ++
-               compilationSettings      ++
-               testingSettings          ++
-               publicationSettings
-    ).configs(Benchmark).settings(inConfig(Benchmark)(Defaults.testSettings):_*)
+  lazy val root = project.in(file(".")).
+    aggregate(effJS, effJVM).
+    settings(
+      publish := {},
+      publishLocal := {}
+    )
 
-  lazy val dependencies: Seq[Settings] =
+  lazy val effProject = CrossProject("eff", new File("."), CrossType.Full).
+    settings((
+      Defaults.coreDefaultSettings ++
+      sharedDependencies           ++
+      projectSettings              ++
+      compilationSettings          ++
+      publicationSettings
+      ):_*).
+    jvmSettings((
+      jvmDependencies ++
+      testingSettings
+    ):_*).configs(Benchmark).settings(inConfig(Benchmark)(Defaults.testSettings):_*)
+
+  lazy val effJVM = effProject.jvm
+  lazy val effJS = effProject.js
+
+  lazy val sharedDependencies: Seq[Settings] =
     Seq[Settings](libraryDependencies ++=
-      depend.cats       ++
+      depend.cats
+    ) ++
+    Seq(resolvers := depend.resolvers)
+
+  lazy val jvmDependencies: Seq[Settings] =
+    Seq[Settings](libraryDependencies ++=
       depend.specs2     ++
       depend.scalameter
     ) ++
