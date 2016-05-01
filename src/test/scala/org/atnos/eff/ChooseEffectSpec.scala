@@ -4,7 +4,6 @@ import org.specs2.Specification
 import cats.syntax.functor._
 import cats.syntax.flatMap._
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.atnos.eff.syntax.all._
 
 class ChooseEffectSpec extends Specification { def is = s2"""

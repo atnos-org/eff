@@ -68,7 +68,7 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 ### Xor
 
 The `Xor` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
-import org.atnos.eff._, all._, syntax.all._, implicits._
+import org.atnos.eff._, all._, syntax.all._
 import cats.data.Xor
 
 /**
@@ -94,7 +94,7 @@ type lambdas.
 
 A `catchLeft` method can also be used to intercept an error and possibly recover from it:${snippet{
 // 8<--
-import org.atnos.eff._, all._, syntax.all._, implicits._
+import org.atnos.eff._, all._, syntax.all._
 import cats.data.Xor
 // 8<--
 case class TooBig(value: Int)
@@ -120,7 +120,7 @@ more about this in the ${"Implicits" ~/ Implicits} section.
 ### Validate
 
 The `Validate` effect is similar to the `Xor` effect but let you accumulate failures: ${snippet{
-import org.atnos.eff._, all._, syntax.all._, implicits._
+import org.atnos.eff._, all._, syntax.all._
 
 /**
  * Stack declaration
@@ -171,7 +171,7 @@ The `Reader` effect is used to request values from an "environment". The main me
 providing a value for the environment with the `runReader` method.
 
 It is also possible to query several independent environments in the same effect stack by "tagging" them:${snippet{
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 import Tag._
 import cats.data._
 
@@ -192,7 +192,7 @@ getPorts.runReaderTagged(80).runReaderTagged(50).run
 }.eval}
 
 You can also inject a "local" reader into a "bigger" one:${snippet {
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 import cats.data._
 
 case class Conf(host: String, port: Int)
@@ -226,7 +226,7 @@ you can select exactly the strategy you want:
   - `runWriterFold` uses a `Fold` to act on each value, keeping some internal state between each invocation
 
 You can then define your own custom `Fold` to log the values to a file:${snippet{
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 import java.io.PrintWriter
 
 type S = Writer[String, ?] |: NoEffect
@@ -265,7 +265,7 @@ A `State` effect can be seen as the combination of both a `Reader` and a `Writer
 
 Let's see an example showing that we can also use tags to track different states at the same time:${snippet{
 import cats.data._
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 import Tag._
 
 trait Var1
@@ -293,7 +293,7 @@ In the example above we have used an `eval` method to get the `A` in `Eff[R, A]`
 
 Instead of tagging state effects it is also possible to transform a State effect acting on a "small" state into a State
 effect acting on a "bigger" state:${snippet{
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 
 type Count[A] = State[Int, A]
 type Sum[A] = State[Int, A]
@@ -349,7 +349,7 @@ Now you can learn how to  ${"create your own effects" ~/ CreateEffects}.
 
 object ListSnippets extends Snippets {
   val snippet1 = snippet{
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 
 type S = List |: NoEffect
 
@@ -369,7 +369,7 @@ pairsBiggerThan(List(1, 2, 3, 4), 5).runList.run
 
 object ChooseSnippets extends Snippets {
 val snippet1 = snippet{
-import org.atnos.eff._, all._, implicits._, syntax.all._
+import org.atnos.eff._, all._, syntax.all._
 
   type S = Choose |: NoEffect
 

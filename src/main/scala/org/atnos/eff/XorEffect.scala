@@ -1,19 +1,16 @@
 package org.atnos.eff
 
-import cats.data._
-import Xor._
+import cats.data._, Xor._
 import cats.syntax.functor._
 import Eff._
 import Interpret._
-import Effects.|:
 
 /**
  * Effect for computation which can fail
  */
 trait XorEffect extends
   XorCreation with
-  XorInterpretation with
-  XorImplicits
+  XorInterpretation
 
 object XorEffect extends XorEffect
 
@@ -74,23 +71,3 @@ trait XorInterpretation {
 }
 
 object XorInterpretation extends XorInterpretation
-
-trait XorImplicits extends XorImplicitsLower {
-  implicit def XorMemberZero[R, A]: Member.Aux[Xor[A, ?], Xor[A, ?] |: NoEffect, NoEffect] = {
-    type T[X] = Xor[A, X]
-    Member.zero[T]
-  }
-
-  implicit def XorMemberFirst[R <: Effects, A]: Member.Aux[Xor[A, ?], Xor[A, ?] |: R, R] = {
-    type T[X] = Xor[A, X]
-    Member.first[T, R]
-  }
-}
-
-trait XorImplicitsLower {
-  implicit def XorMemberSuccessor[O[_], R <: Effects, U <: Effects, A](implicit m: Member.Aux[Xor[A, ?], R, U]): Member.Aux[Xor[A, ?], O |: R, O |: U] = {
-    type T[X] = Xor[A, X]
-    Member.successor[T, O, R, U]
-  }
-}
-object XorImplicits extends XorImplicits

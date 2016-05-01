@@ -7,7 +7,6 @@ import scala.collection.mutable.ListBuffer
 import cats.syntax.all._
 import cats.data._, Xor._
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.atnos.eff.syntax.all._
 
 class ErrorEffectSpec extends Specification { def is = s2"""

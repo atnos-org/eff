@@ -30,21 +30,16 @@ returned by the computation, possibly triggering some effects when evaluated.
 
 The effects `R` are modelled by a type-level list of "effect constructors", for example:${snippet{
 import cats.data._
-import org.atnos.eff._
-import Effects._
-import EvalEffect._
+import org.atnos.eff._, all._
 
-type ReaderInt[X] = Reader[Int, X]
-type WriterString[X] = Writer[String, X]
-
-type Stack = ReaderInt |: WriterString |: Eval |: NoEffect
+type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect
 
 }}
 The stack `Stack` above declares 3 effects:
 
- - a `ReaderInt` effect to access some configuration number of type `Int`
+ - a `Reader[Int, ?]` effect to access some configuration number of type `Int`
 
- - a `WriterString` effect to log string messages
+ - a `Writer[String, ?]` effect to log string messages
 
  - an `Eval` effect to only compute values on demand (a bit like lazy values)
 
@@ -53,6 +48,7 @@ import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import Stack._
+  import Stack._
 
 val program: Eff[Stack, Int] = for {
   // get the configuration
@@ -67,8 +63,6 @@ val program: Eff[Stack, Int] = for {
   // log the result
   _ <- tell("the result is "+a)
 } yield a
-
-import org.atnos.eff.implicits._
 
 // run the action with all the interpreters
 // each interpreter running one effect
@@ -94,20 +88,19 @@ right return types. You can learn more on implicits in the ${"implicits" ~/ Impl
 Otherwise you can also learn about ${"other effects" ~/ OutOfTheBox} supported by this library.
 """
 
-  type ReaderInt[X] = Reader[Int, X]
-  type WriterString[X] = Writer[String, X]
-
-  type Stack = ReaderInt |: WriterString |: Eval |: NoEffect
+  type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect
 
   object Stack {
-    implicit val ReaderIntMember: Member.Aux[ReaderInt, Stack, WriterString |: Eval |: NoEffect] =
+
+    implicit lazy val ReaderMember: Member.Aux[Reader[Int, ?], Stack, Writer[String, ?] |: Eval |: NoEffect] =
       Member.ZeroMember
 
-    implicit val WriterStringMember: Member.Aux[WriterString, Stack, ReaderInt |: Eval |: NoEffect] =
+    implicit lazy val WriterMember: Member.Aux[Writer[String, ?], Stack, Reader[Int, ?] |: Eval |: NoEffect] =
       Member.SuccessorMember
 
-    implicit val EvalMember: Member.Aux[Eval, Stack, ReaderInt |: WriterString |: NoEffect] =
+    implicit lazy val EvalMember: Member.Aux[Eval, Stack, Reader[Int, ?] |: Writer[String, ?] |: NoEffect] =
       Member.SuccessorMember
+
   }
 
 }

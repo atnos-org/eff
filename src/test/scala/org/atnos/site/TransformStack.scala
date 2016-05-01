@@ -62,7 +62,6 @@ val action: Eff[SS, String] = for {
 } yield s1 + " " + s2
 
 action.runReader(Conf("www.me.com", 8080)).runOption.run
-
 }.eval}
 
 There are also specialized versions of `transform` for `Reader` and `State`:
@@ -100,8 +99,7 @@ val action = for {
 } yield ()
 
 import HadoopS3._
-import org.atnos.eff.implicits._
-
+import org.atnos.eff.ReaderImplicits._
 // and we can run the composite action
 action.runReaderTagged(S3Conf("bucket")).runReaderTagged(HadoopConf(10)).runWriter.runEval.run
 }.eval}

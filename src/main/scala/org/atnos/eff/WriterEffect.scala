@@ -1,12 +1,13 @@
 package org.atnos.eff
 
 import scala.collection.mutable._
-import cats._, data._
+import cats._
+import data._
 import cats.syntax.semigroup._
 import Tag._
 import Eff._
-import Effects.|:
 import Interpret._
+import org.atnos.eff.Effects.|:
 
 /**
  * Effect for logging values alongside computations
@@ -117,16 +118,6 @@ trait Fold[A, B] {
 object WriterInterpretation extends WriterInterpretation
 
 trait WriterImplicits extends WriterImplicits1 {
-  implicit def WriterMemberZero[A]: Member.Aux[Writer[A, ?], Writer[A, ?] |: NoEffect, NoEffect] = {
-    type T[X] = Writer[A, X]
-    Member.zero[T]
-  }
-
-  implicit def WriterMemberFirst[R <: Effects, A]: Member.Aux[Writer[A, ?], Writer[A, ?] |: R, R] = {
-    type T[X] = Writer[A, X]
-    Member.first[T, R]
-  }
-
   implicit def TaggedWriterMemberZero[Tg, A]: Member.Aux[({type l[X] = Writer[A, X] @@ Tg})#l, ({type l[X] = Writer[A, X] @@ Tg})#l |: NoEffect, NoEffect] = {
     type T[X] = Writer[A, X] @@ Tg
     Member.zero[T]
@@ -140,11 +131,6 @@ trait WriterImplicits extends WriterImplicits1 {
 }
 
 trait WriterImplicits1 {
-  implicit def WriterMemberSuccessor[O[_], R <: Effects, U <: Effects, A](implicit m: Member.Aux[Writer[A, ?], R, U]): Member.Aux[Writer[A, ?], O |: R, O |: U] = {
-    type T[X] = Writer[A, X]
-    Member.successor[T, O, R, U]
-  }
-
   implicit def TaggedWriterMemberSuccessor[O[_], R <: Effects, U <: Effects, Tg, A](implicit m: Member.Aux[({type l[X] = Writer[A, X] @@ Tg})#l, R, U]): Member.Aux[({type l[X] = Writer[A, X] @@ Tg})#l, O |: R, O |: U] = {
     type T[X] = Writer[A, X] @@ Tg
     Member.successor[T, O, R, U]

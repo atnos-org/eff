@@ -7,7 +7,6 @@ import cats.data._, Xor._
 import cats.syntax.all._
 import cats.std.all._
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.atnos.eff.syntax.all._
 
 class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""

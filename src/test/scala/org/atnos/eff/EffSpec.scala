@@ -10,7 +10,6 @@ import algebra.Eq
 import cats.laws.discipline.{arbitrary => _, _}
 import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.atnos.eff.syntax.all._
 
 class EffSpec extends Specification with ScalaCheck { def is = s2"""
@@ -107,7 +106,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     type E = ReaderString |: NoEffect
 
     val list = (1 to 5000).toList
-    val action = list.traverseU(i => ReaderEffect.ask[E, String])
+    val action = list.traverse(i => ReaderEffect.ask[E, String])
 
     action.runReader("h").run ==== list.as("h")
   }
@@ -119,7 +118,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     type E = ReaderString |: WriterString |: NoEffect
 
     val list = (1 to 5000).toList
-    val action = list.traverseU(i => ReaderEffect.ask[E, String] >>= WriterEffect.tell[E, String])
+    val action = list.traverse(i => ReaderEffect.ask[E, String] >>= WriterEffect.tell[E, String])
 
     action.runReader("h").runWriter.run ==== ((list.as(()), list.as("h")))
   }
@@ -155,8 +154,5 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     def eqv(x: F[(Int, Int, Int)], y:F[(Int, Int, Int)]): Boolean =
       runOption(x).run == runOption(y).run
   }
-  implicit def iso[R]: Isomorphisms[Eff[R, ?]] =
-    Isomorphisms.invariant[Eff[R, ?]]
-
 
 }

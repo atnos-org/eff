@@ -4,7 +4,6 @@ import cats.Eval
 import cats.data._
 import org.specs2.{ScalaCheck, Specification}
 import org.atnos.eff.all._
-import org.atnos.eff.implicits._
 import org.scalacheck._
 
 class MemberSpec extends Specification with ScalaCheck { def is = s2"""
