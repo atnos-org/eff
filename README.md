@@ -19,7 +19,7 @@ You can learn more in the User Guide:
 
 You add `eff-cats` as an sbt dependency:
 ```scala
-libraryDependencies += "org.atnos" %% "eff-cats" % "1.4"
+libraryDependencies += "org.atnos" %% "eff-cats" % "1.5"
 ```
 
 or download it from [here](https://oss.sonatype.org/content/repositories/releases/org/atnos/eff-cats_2.11/1.0/eff-cats_2.11-1.3.jar).
