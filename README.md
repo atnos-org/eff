@@ -22,7 +22,7 @@ You add `eff-cats` as an sbt dependency:
 libraryDependencies += "org.atnos" %% "eff-cats" % "1.5"
 ```
 
-or download it from [here](https://oss.sonatype.org/content/repositories/releases/org/atnos/eff-cats_2.11/1.0/eff-cats_2.11-1.3.jar).
+or download it from [here](https://oss.sonatype.org/content/repositories/releases/org/atnos/eff-cats_2.11/1.5/eff-cats_2.11-1.5.jar).
 
 # Contributing
 
