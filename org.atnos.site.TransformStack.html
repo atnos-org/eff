@@ -39,47 +39,63 @@
 <div id="tipue_search_content"></div>
 
 <h3 id="transform-an-effect-to-another">Transform an effect to another</h3>
-<p>Once you get a <code class="prettyprint">Eff[R, A]</code> action you might want to act on one of the effects, for example to transform <code class="prettyprint">Option</code> effects into <code class="prettyprint">Disjunction</code> effects:</p>
+<h4 id="change-the-effect">Change the effect</h4>
+<p>A typical use case for this is to transform a stack having a <code class="prettyprint">Reader[S, ?]</code> effect to a stack having a <code class="prettyprint">Reader[B, ?]</code> effect where <code class="prettyprint">S</code> is “contained” in <code class="prettyprint">B</code> (meaning that there is a mapping from <code class="prettyprint">B</code>, “big”, to <code class="prettyprint">S</code>, “small”). Here is an example:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._
 import org.atnos.eff.syntax.all._
 import cats.data._
-import cats.arrow._
 
-object S {
-  type XorString[A] = String Xor A
+case class Conf(host: String, port: Int)
 
-  type S = Option |: XorString |: NoEffect
+type ReaderPort[A] = Reader[Int, A]
+type ReaderHost[A] = Reader[String, A]
+type ReaderConf[A] = Reader[Conf, A]
 
-  implicit val OptionMember: Member.Aux[Option, S, XorString |: NoEffect] =
-    Member.first
+type S1 = ReaderHost |: Option |: NoEffect
+type S2 = ReaderPort |: Option |: NoEffect
+type SS = ReaderConf |: Option |: NoEffect
 
-  implicit val XorStringMember: Member.Aux[XorString, S, Option |: NoEffect] =
-    Member.successor
+implicit val ReaderHostMember: Member.Aux[ReaderHost, S1, Option |: NoEffect] =
+  Member.first
+
+implicit val ReaderPortMember: Member.Aux[ReaderPort, S2, Option |: NoEffect] =
+  Member.first
+
+implicit val ReaderConfMember: Member.Aux[ReaderConf, SS, Option |: NoEffect] =
+  Member.first
+
+val readHost: Eff[S1, String] = for {
+  c &lt;- ask[S1, String]
+  h &lt;- OptionEffect.some[S1, String](&quot;hello&quot;)
+} yield h
+
+val readPort: Eff[S2, String] = for {
+  c &lt;- ask[S2, Int]
+  h &lt;- OptionEffect.some[S2, String](&quot;world&quot;)
+} yield h
+
+val fromHost = new (ReaderHost ~&gt; ReaderConf) {
+  def apply[X](r: ReaderHost[X]) = Reader((c: Conf) =&gt; r.run(c.host))
 }
-import S._
 
-val map: Map[String, Int] =
-  Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
+val fromPort = new (ReaderPort ~&gt; ReaderConf) {
+  def apply[X](r: ReaderPort[X]) = Reader((c: Conf) =&gt; r.run(c.port))
+}
 
-// get 2 keys from the map and add the corresponding values
-def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a &lt;- option(map.get(key1))
-  b &lt;- option(map.get(key2))
-} yield a + b
+val action: Eff[SS, String] = for {
+  s1 &lt;- readHost.transform(fromHost)
+  s2 &lt;- readPort.transform(fromPort)
+} yield s1 + &quot; &quot; + s2
 
-// provide a default error message
-def addKeysWithDefaultMessage(key1: String, key2: String, message: String): Eff[S, Int] =
-  addKeys(key1, key2).transform[Option, XorString](new NaturalTransformation[Option, XorString] {
-    def apply[A](o: Option[A]) = o.fold(Xor.left[String, A](message))(Xor.right[String, A])
-  })
-
-import org.atnos.eff.implicits._
-
-(addKeys(&quot;key1&quot;, &quot;missing&quot;).runOption.runXor.run,
- addKeysWithDefaultMessage(&quot;key1&quot;, &quot;missing&quot;, &quot;Key not found&quot;).runOption.runXor.run)</code></pre>
-<p><code class="prettyprint">&gt; (Right(None),Left(Key not found))</code></p>
+action.runReader(Conf(&quot;www.me.com&quot;, 8080)).runOption.run</code></pre>
+<p><code class="prettyprint">&gt; Some(hello world)</code></p>
+<p>There are also specialized versions of <code class="prettyprint">transform</code> for <code class="prettyprint">Reader</code> and <code class="prettyprint">State</code>:</p>
+<ul>
+<li><code class="prettyprint">ReaderEffect.localReader</code> takes a “getter” <code class="prettyprint">B =&gt; A</code> to transform a stack with a <code class="prettyprint">Reader[A, ?]</code> into a stack with a <code class="prettyprint">Reader[B, ?]</code></li>
+<li><code class="prettyprint">StateEffect.lensState</code> takes a “getter” <code class="prettyprint">S =&gt; T</code> and a “setter” <code class="prettyprint">(S, T) =&gt; S</code> to to transform a stack with a <code class="prettyprint">State[T, ?]</code> into a stack with a <code class="prettyprint">State[S, ?]</code></li>
+</ul>
 <h3 id="merge-stacks">Merge stacks</h3>
-<p>We have seen, in the <link class="ok"><a href="org.atnos.site.OpenClosed.html" tooltip="" class="ok">open-closed</a></link> section, that we can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
+<p>We can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 import Eff._
 import Effects._
@@ -183,8 +199,7 @@ val action = for {
 } yield ()
 
 import HadoopS3._
-import org.atnos.eff.implicits._
-
+import org.atnos.eff.ReaderImplicits._
 // and we can run the composite action
 action.runReaderTagged(S3Conf(&quot;bucket&quot;)).runReaderTagged(HadoopConf(10)).runWriter.runEval.run</code></pre>
 <p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket: 10))</code></p>

@@ -40,14 +40,12 @@
 
 <p>There are 2 ways to create effectful computations for a given effect <code class="prettyprint">M</code>.</p>
 <p>You can create an <strong>open</strong> union of effects:</p>
-<pre><code class="prettyprint">import cats.syntax.all._
-import org.atnos.eff._
-import org.atnos.eff.all._
+<pre><code class="prettyprint">// &#39;&lt;= &#39; reads &#39;is member of &#39;
+import Member.&lt;=
+import StateEffect._
+import WriterEffect._
 
-type StateInt[A] = State[Int, A]
-type WriterString[A] = Writer[String, A]
-
-def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R): Eff[R, Int] =
+def putAndTell[R](i: Int)(implicit s: State[Int, ?] &lt;= R, w: Writer[String, ?] &lt;= R): Eff[R, Int] =
   for {
     _ &lt;- put(i)
     _ &lt;- tell(&quot;stored &quot; + i)
@@ -62,25 +60,23 @@ def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R)
 <p>On the other hand:</p>
 <ul>
 <li><p>this is verbose if you have lots of methods like this, always operating on the same stack of effects</p></li>
-<li><p>you might want to “seal” the stack to declare exactly with which set of effects you want to be working with</p></li>
+<li><p>you might want to “seal” the stack to declare exactly with which set of effects you want to be working</p></li>
 </ul>
 <p>In that case you can specify an effect stack:</p>
-<pre><code class="prettyprint">import cats.data._
+<pre><code class="prettyprint">import org.atnos.eff._, all._
 import cats.syntax.all._
-import org.atnos.eff._
-import org.atnos.eff.all._
+import cats.data._
+
+type S = State[Int, ?] |: Writer[String, ?] |: NoEffect
 
 object S {
-  type StateInt[A] = State[Int, A]
-  type WriterString[A] = Writer[String, A]
 
-  type S = StateInt |: WriterString |: NoEffect
+  implicit val StateIntMember: Member.Aux[State[Int, ?], S, Writer[String, ?] |: NoEffect] =
+    Member.ZeroMember
 
-  implicit val StateIntMember: Member.Aux[StateInt, S, WriterString |: NoEffect] =
-    Member.first
+  implicit val WriterStringMember: Member.Aux[Writer[String, ?], S, State[Int, ?] |: NoEffect] =
+    Member.SuccessorMember
 
-  implicit val WriterStringMember: Member.Aux[WriterString, S, StateInt |: NoEffect] =
-    Member.successor
 }
 
 import S._
@@ -90,10 +86,10 @@ def putAndTell(i: Int): Eff[S, Int] =
     _ &lt;- put(i)
     _ &lt;- tell(&quot;stored &quot;+i)
   } yield i</code></pre>
-<p>One major issue with this approach is that you will need to use type annotations in the for comprehension unless you define one implicit for each effect that is member of the stack. The implicit <code class="prettyprint">StateIntMember</code> for example declares that:</p>
+<p>One major issue with this approach is that you will need to define one implicit for each effect that is member of the stack. The implicit <code class="prettyprint">StateIntMember</code> for example declares that:</p>
 <ul>
-<li><p><code class="prettyprint">StateInt</code> is a member of <code class="prettyprint">S</code></p></li>
-<li><p>if you remove <code class="prettyprint">StateInt</code> from <code class="prettyprint">S</code>, you are left with the <code class="prettyprint">WriterString |: NoEffect</code> stack</p></li>
+<li><p><code class="prettyprint">State[Int, ?]</code> is a member of <code class="prettyprint">S</code></p></li>
+<li><p>if you remove <code class="prettyprint">State[Int, ?]</code> from <code class="prettyprint">S</code>, you are left with the <code class="prettyprint">Writer[String, ?] |: NoEffect</code> stack</p></li>
 </ul>
 <p><br/> Now you can learn <link class="ok"><a href="org.atnos.site.CreateEffects.html" tooltip="" class="ok">how to create effects</a></link></p>
 </div>
