@@ -40,29 +40,8 @@
 
 <p>Type inference with the Eff monad can be a bit tricky to get right if we want to avoid type annotations. Here are some tips to help you.</p>
 <h3 id="running-effects-with-several-type-parameters">Running effects with several type parameters</h3>
-<p>Some effects use 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. Those effects need some specific implicit declarations in order for implicit resolution to work when running effects in any order (this will be fixed with this <a href="https://github.com/scala/scala/pull/5102">Scala compiler fix</a>). Here is the “template” used for the <code class="prettyprint">Reader</code> effect:</p>
-<pre><code class="prettyprint">// define &quot;Member&quot; implicits by using a type T with only one type variable
-// instead of Reader which has 2
-trait ReaderImplicits extends ReaderImplicits1 {
-  implicit def ReaderMemberZero[A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: NoEffect, NoEffect] = {
-    type T[X] = Reader[A, X]
-    Member.zero[T]
-  }
-
-  implicit def ReaderMemberFirst[R &lt;: Effects, A]: Member.Aux[Reader[A, ?], Reader[A, ?] |: R, R] = {
-    type T[X] = Reader[A, X]
-    Member.first[T, R]
-  }
-}
-
-trait ReaderImplicits1 {
-  implicit def ReaderMemberSuccessor[O[_], R &lt;: Effects, U &lt;: Effects, A](implicit m: Member.Aux[Reader[A, ?], R, U]): Member.Aux[Reader[A, ?], O |: R, O |: U] = {
-    type T[X] = Reader[A, X]
-    Member.successor[T, O, R, U]
-  }
-}</code></pre>
-<p>Following this “template” will help the type inference when using a <code class="prettyprint">run</code> method (<code class="prettyprint">runReader</code> in the case of a <code class="prettyprint">Reader</code> effect).</p>
-<p>Note that you will get these implicits for <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">out of the box effects</a></link> by importing <code class="prettyprint">org.atnos.eff.implicits._</code>.</p>
+<p>Some effects use 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. If you want to use those effects in an effect stack you need to add a compiler plugin to your build:</p>
+<pre><code class="prettyprint">addCompilerPlugin(&quot;com.milessabin&quot; % &quot;si2712fix-plugin_2.11.8&quot; % &quot;1.1.0&quot;)</code></pre>
 <h3 id="use-context-bounds">Use context bounds</h3>
 <p>When creating effects you can always “require” a stack containing the right effects with the <code class="prettyprint">Member</code> typeclass:</p>
 <pre><code class="prettyprint">import cats.syntax.all._
