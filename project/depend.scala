@@ -3,12 +3,16 @@ import Keys._
 
 object depend {
 
-  val catsVersion     = "0.4.0"
-  val specs2Version   = "3.6.5"
+  val catsVersion     = "0.5.0"
+  val specs2Version   = "3.7.3"
 
   val cats = Seq(
-      "org.typelevel" %% "cats"
-    ).map(_ % catsVersion)
+    "org.typelevel" %% "cats-core" % catsVersion,
+    "org.typelevel" %% "cats-laws" % catsVersion % "test" excludeAll(
+        ExclusionRule("org.typelevel", "discipline"),
+        ExclusionRule("org.scalacheck", "scalacheck"))) ++
+  Seq("org.typelevel" %% "discipline" % "0.5" % "test")
+
 
   val specs2 = Seq(
       "org.specs2" %% "specs2-core"
