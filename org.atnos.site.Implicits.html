@@ -2,14 +2,15 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Implicits</title>
-    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
-    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
-    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
-    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
-    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
-    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
-    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
-    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
+    <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
+    <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css"     rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css"     rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css"     rel="stylesheet" />
 
     <script src="./javascript/jquery.js"                           type="text/javascript"></script>
     <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
@@ -44,8 +45,7 @@
 <pre><code class="prettyprint">addCompilerPlugin(&quot;com.milessabin&quot; % &quot;si2712fix-plugin_2.11.8&quot; % &quot;1.1.0&quot;)</code></pre>
 <h3 id="use-context-bounds">Use context bounds</h3>
 <p>When creating effects you can always “require” a stack containing the right effects with the <code class="prettyprint">Member</code> typeclass:</p>
-<pre><code class="prettyprint">import cats.syntax.all._
-import org.atnos.eff._
+<pre><code class="prettyprint">import org.atnos.eff._
 import org.atnos.eff.all._
 
 type StateInt[A] = State[Int, A]
@@ -58,8 +58,7 @@ def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R)
     _ &lt;- tell(&quot;stored &quot; + i)
   } yield i</code></pre>
 <p>You can even use context bounds to make the declaration of <code class="prettyprint">putAndTell</code> more concise:</p>
-<pre><code class="prettyprint">import cats.syntax.all._
-import org.atnos.eff.all._
+<pre><code class="prettyprint">import org.atnos.eff.all._
 
 type StateInt[R] = State[Int, ?] &lt;= R
 type WriterString[R] = Writer[String, ?] &lt;= R
@@ -72,7 +71,6 @@ def putAndTell[R : StateInt : WriterString](i: Int): Eff[R, Int] =
 <h3 id="creating-effects-for-your-own-stack">Creating effects for your own stack</h3>
 <p>When you create your own effect stack you can give a little help to the compiler by adding <code class="prettyprint">Member.Aux</code> implicits for each effect in the stack:</p>
 <pre><code class="prettyprint">import cats.data._
-import cats.syntax.all._
 import org.atnos.eff._
 import org.atnos.eff.all._
 

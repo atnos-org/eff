@@ -2,14 +2,15 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Introduction</title>
-    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
-    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
-    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
-    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
-    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
-    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
-    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
-    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
+    <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
+    <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css"     rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css"     rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css"     rel="stylesheet" />
 
     <script src="./javascript/jquery.js"                           type="text/javascript"></script>
     <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
@@ -62,11 +63,9 @@ type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect</code></pre
 <li><p>an <code class="prettyprint">Eval</code> effect to only compute values on demand (a bit like lazy values)</p></li>
 </ul>
 <p>Now we can write a program with those 3 effects, using the primitive operations provided by <code class="prettyprint">ReaderEffect</code>, <code class="prettyprint">WriterEffect</code> and <code class="prettyprint">EvalEffect</code>:</p>
-<pre><code class="prettyprint">import cats.syntax.all._
-import org.atnos.eff.all._
+<pre><code class="prettyprint">import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import Stack._
-  import Stack._
 
 val program: Eff[Stack, Int] = for {
   // get the configuration
