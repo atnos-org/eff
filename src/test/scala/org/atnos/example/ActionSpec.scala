@@ -10,8 +10,6 @@ import WarningsEffect._
 import ConsoleEffect._
 import ErrorEffect._
 import Member.{<=}
-import Eff._
-import cats.syntax.all._
 import cats.data._, Xor._
 import org.specs2._
 

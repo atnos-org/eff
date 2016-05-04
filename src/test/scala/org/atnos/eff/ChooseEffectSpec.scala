@@ -1,8 +1,6 @@
 package org.atnos.eff
 
 import org.specs2.Specification
-import cats.syntax.functor._
-import cats.syntax.flatMap._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 

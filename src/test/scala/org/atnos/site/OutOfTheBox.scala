@@ -45,7 +45,6 @@ delay(1 + 1).runEval.run
 Adding an `Option` effect in your stack allows to stop computations when necessary.
 If you create a value with `some(a)` this value will be used downstream but if you use `none` all computations will stop:${snippet{
 import org.atnos.eff._, all._, syntax.all._
-import cats.syntax.all._
 
 /**
  * Stack declaration
@@ -69,7 +68,6 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 
 The `Xor` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
 import org.atnos.eff._, all._, syntax.all._
-import cats.syntax.all._
 import cats.data.Xor
 
 /**
@@ -122,7 +120,6 @@ more about this in the ${"Implicits" ~/ Implicits} section.
 
 The `Validate` effect is similar to the `Xor` effect but let you accumulate failures: ${snippet{
 import org.atnos.eff._, all._, syntax.all._
-import cats.syntax.all._
 
 /**
  * Stack declaration
@@ -176,7 +173,6 @@ It is also possible to query several independent environments in the same effect
 import org.atnos.eff._, all._, syntax.all._
 import Tag._
 import cats.data._
-import cats.syntax.all._
 
 trait Port1
 trait Port2
@@ -197,7 +193,6 @@ getPorts.runReaderTagged(80).runReaderTagged(50).run
 You can also inject a "local" reader into a "bigger" one:${snippet {
 import org.atnos.eff._, all._, syntax.all._
 import cats.data._
-import cats.syntax.all._
 
 case class Conf(host: String, port: Int)
 
@@ -231,7 +226,6 @@ you can select exactly the strategy you want:
 
 You can then define your own custom `Fold` to log the values to a file:${snippet{
 import org.atnos.eff._, all._, syntax.all._
-import cats.syntax.all._
 import java.io.PrintWriter
 
 type S = Writer[String, ?] |: NoEffect
@@ -270,7 +264,6 @@ A `State` effect can be seen as the combination of both a `Reader` and a `Writer
 
 Let's see an example showing that we can also use tags to track different states at the same time:${snippet{
 import cats.data._
-import cats.syntax.all._
 import org.atnos.eff._, all._, syntax.all._
 import Tag._
 
@@ -300,7 +293,6 @@ In the example above we have used an `eval` method to get the `A` in `Eff[R, A]`
 Instead of tagging state effects it is also possible to transform a State effect acting on a "small" state into a State
 effect acting on a "bigger" state:${snippet{
 import org.atnos.eff._, all._, syntax.all._
-import cats.syntax.all._
 
 type Count[A] = State[Int, A]
 type Sum[A] = State[Int, A]
@@ -357,7 +349,6 @@ Now you can learn how to  ${"create your own effects" ~/ CreateEffects}.
 object ListSnippets extends Snippets {
   val snippet1 = snippet{
 import org.atnos.eff._, all._, syntax.all._
-import cats.syntax.all._
 
 type S = List |: NoEffect
 
@@ -378,7 +369,6 @@ pairsBiggerThan(List(1, 2, 3, 4), 5).runList.run
 object ChooseSnippets extends Snippets {
 val snippet1 = snippet{
 import org.atnos.eff._, all._, syntax.all._
-import cats.syntax.all._
 
 type S = Choose |: NoEffect
 

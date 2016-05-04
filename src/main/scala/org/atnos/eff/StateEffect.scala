@@ -1,6 +1,5 @@
 package org.atnos.eff
 
-import cats.syntax.functor._
 import cats.syntax.flatMap._
 import Tag._
 import Interpret._

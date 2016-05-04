@@ -9,12 +9,10 @@ trait HadoopS3Snippet {
 // 8<---
 
 import org.atnos.eff._
-import Eff._
 import Effects._
 import EvalEffect._
 import WriterCreation._
 import cats.data._
-import cats.syntax.all._
 import Tag._
 
 object HadoopStack {

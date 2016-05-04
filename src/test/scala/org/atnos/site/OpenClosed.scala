@@ -2,7 +2,6 @@ package org.atnos.site
 
 import org.atnos.eff._, all._
 import cats.data._
-import cats.syntax.all._
 
 object OpenClosed extends UserGuidePage { def is = ("Open - Closed").title ^ s2"""
 
@@ -39,7 +38,6 @@ On the other hand:
 
 In that case you can specify an effect stack:${snippet{
 import org.atnos.eff._, all._
-import cats.syntax.all._
 import cats.data._
 
 type S = State[Int, ?] |: Writer[String, ?] |: NoEffect

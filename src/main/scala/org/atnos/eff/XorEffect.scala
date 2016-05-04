@@ -1,7 +1,6 @@
 package org.atnos.eff
 
 import cats.data._, Xor._
-import cats.syntax.functor._
 import Eff._
 import Interpret._
 

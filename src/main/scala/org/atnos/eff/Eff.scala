@@ -37,7 +37,13 @@ import Eff._
  * @see http://okmij.org/ftp/Haskell/extensible/more.pdf
  *
  */
-sealed trait Eff[R, A]
+sealed trait Eff[R, A] {
+  def map[B](f: A => B): Eff[R, B] =
+    EffMonad[R].map(this)(f)
+
+  def flatMap[B](f: A => Eff[R, B]): Eff[R, B] =
+    EffMonad[R].flatMap(this)(f)
+}
 
 case class Pure[R, A](value: A) extends Eff[R, A]
 

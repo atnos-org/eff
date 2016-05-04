@@ -19,7 +19,6 @@ addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.1.0")
 ### Use context bounds
 
 When creating effects you can always "require" a stack containing the right effects with the `Member` typeclass:${snippet {
-import cats.syntax.all._
 import org.atnos.eff._
 import org.atnos.eff.all._
 
@@ -35,7 +34,6 @@ def putAndTell[R](i: Int)(implicit s: StateInt <= R, w: WriterString <= R): Eff[
 }}
 
 You can even use context bounds to make the declaration of `putAndTell` more concise:${snippet{
-import cats.syntax.all._
 import org.atnos.eff.all._
 
 type StateInt[R] = State[Int, ?] <= R
@@ -54,7 +52,6 @@ def putAndTell[R : StateInt : WriterString](i: Int): Eff[R, Int] =
 When you create your own effect stack you can give a little help to the compiler by adding `Member.Aux` implicits for each effect
 in the stack:${snippet{
 import cats.data._
-import cats.syntax.all._
 import org.atnos.eff._
 import org.atnos.eff.all._
 

@@ -2,7 +2,6 @@ package org.atnos
 package example
 
 import org.specs2._
-import cats.syntax.all._
 import cats.data._
 import org.atnos.eff._
 import org.atnos.eff.all._
