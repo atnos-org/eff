@@ -30,7 +30,7 @@ object build extends Build {
 
   lazy val projectSettings: Seq[Settings] = Seq(
     name := "eff-cats",
-    version in ThisBuild := "1.5",
+    version in ThisBuild := "1.5.1",
     organization := "org.atnos",
     scalaVersion := "2.11.8")
 
