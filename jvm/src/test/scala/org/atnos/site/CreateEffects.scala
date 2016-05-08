@@ -2,7 +2,7 @@ package org.atnos.site
 
 import scala.concurrent.duration, duration._
 import org.atnos.eff._, all._
-import snippets._, FutureEffectSnippet._, FutureEffect._
+import snippets._, FutEffectSnippet._, FutEffect._
 
 object CreateEffects extends UserGuidePage { def is = "Creating effects".title ^ s2"""
 
@@ -18,11 +18,11 @@ We need:
 
  - an interpreter
 
-${definition[FutureEffectSnippet]}
+${definition[FutEffectSnippet]}
 
 In the code above:
 
- - the `future` method uses `Eff.send` to "send" values of a given effect into a larger sum of effects `Eff[R, A]`
+ - the `fut` method uses `Eff.send` to "send" values of a given effect into a larger sum of effects `Eff[R, A]`
 
  - `runFuture` runs the `Future` by using the `Interpret.interpret1` method
 
@@ -43,8 +43,8 @@ Then we can use this effect in a computation:${snippet{
 type F = Fut |: NoEffect
 
 val action: Eff[F, Int] = for {
-  a <- future(2)
-  b <- future(3)
+  a <- fut(2)
+  b <- fut(3)
 } yield a + b
 
 run(runFuture(3.seconds)(action))

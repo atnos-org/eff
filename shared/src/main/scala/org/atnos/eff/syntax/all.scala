@@ -13,5 +13,6 @@ trait all extends
   choose with
   list with
   state with
+  future with
   eff
 

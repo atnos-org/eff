@@ -67,6 +67,9 @@ trait ChooseInterpretation {
                 (runChoose(continuation(true)) |@| runChoose(continuation(false))).map(Alternative[F].combineK)
             }
         }
+
+      case ap @ ImpureAp(_,_) =>
+        runChoose(ap.toMonadic)
     }
   }
 }

@@ -11,7 +11,7 @@ object build extends Build {
   type Settings = Def.Setting[_]
 
   lazy val root = project.in(file(".")).
-    aggregate(effJS, effJVM).
+    aggregate(js, jvm).
     settings(
       publish := {},
       publishLocal := {}
@@ -30,8 +30,8 @@ object build extends Build {
       testingSettings
     ):_*).configs(Benchmark).settings(inConfig(Benchmark)(Defaults.testSettings):_*)
 
-  lazy val effJVM = effProject.jvm
-  lazy val effJS = effProject.js
+  lazy val jvm = effProject.jvm
+  lazy val js = effProject.js
 
   lazy val sharedDependencies: Seq[Settings] =
     Seq[Settings](libraryDependencies ++=

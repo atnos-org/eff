@@ -14,6 +14,7 @@ package object eff {
   object xor extends XorCreation with XorInterpretation
   object validate extends ValidateCreation with ValidateInterpretation
   object choose extends ChooseCreation with ChooseInterpretation
+  object future extends FutureCreation with FutureInterpretation
 
   object all extends
     ReaderEffect with
@@ -25,6 +26,7 @@ package object eff {
     XorEffect with
     ValidateEffect with
     ChooseEffect with
+    FutureEffect with
     EffInterpretation with
     EffCreation with
     EffImplicits with

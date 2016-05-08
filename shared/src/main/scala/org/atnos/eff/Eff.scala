@@ -43,6 +43,9 @@ sealed trait Eff[R, A] {
 
   def flatMap[B](f: A => Eff[R, B]): Eff[R, B] =
     EffMonad[R].flatMap(this)(f)
+
+  def flatten[B](implicit ev: A =:= Eff[R, B]): Eff[R, B] =
+    flatMap(a => a)
 }
 
 case class Pure[R, A](value: A) extends Eff[R, A]
@@ -51,6 +54,14 @@ case class Pure[R, A](value: A) extends Eff[R, A]
  * union is a disjoint union of effects returning a value of type X (not specified)
  */
 case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]) extends Eff[R, A]
+
+/**
+  * union is a disjoint union of effects returning a value of type X (not specified)
+  */
+case class ImpureAp[R, X, A](union: Union[R, X], continuation: Apps[R, X, A]) extends Eff[R, A] {
+  def toMonadic: Eff[R, A] =
+    Impure[R, union.X, A](union, Arrs.singleton((x: union.X) => continuation(x)))
+}
 
 object Eff extends EffCreation with
   EffInterpretation with
@@ -72,6 +83,27 @@ trait EffImplicits {
 
         case Impure(union, continuation) =>
           Impure(union, continuation.append(f))
+
+        case ap @ ImpureAp(_, _) =>
+          ap.toMonadic.flatMap(f)
+      }
+  }
+
+  def EffApplicative[R]: Applicative[Eff[R, ?]] = new Applicative[Eff[R, ?]] {
+    def pure[A](a: A): Eff[R, A] =
+      Pure(a)
+
+    def ap[A, B](ff: Eff[R, A => B])(fa: Eff[R, A]): Eff[R, B] =
+      fa match {
+        case Pure(a) =>
+          ff.map(f => f(a))
+
+        case Impure(union, continuation) =>
+          fa.flatMap(a => ff.map(f => f(a)))
+
+        case ImpureAp(union, continuation) =>
+          ImpureAp(union, continuation.append(ff))
+
       }
   }
 
@@ -99,6 +131,18 @@ trait EffCreation {
   /** create a impure value from an union of effects and a continuation */
   def impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]): Eff[R, A] =
     Impure[R, X, A](union, continuation)
+
+  /** apply a function to an Eff value using the applicative instance */
+  def ap[R, A, B](a: Eff[R, A])(f: Eff[R, A => B]): Eff[R, B] =
+    EffImplicits.EffApplicative[R].ap(f)(a)
+
+  /** use the applicative instance of Eff to traverse a list of values */
+  def traverse[R, F[_] : Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
+    Traverse[F].traverse(fs)(f)(EffImplicits.EffApplicative[R])
+
+  /** use the applicative instance of Eff to sequenc a list of values */
+  def sequence[R, F[_] : Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
+    Traverse[F].sequence(fs)(EffImplicits.EffApplicative[R])
 }
 
 object EffCreation extends EffCreation
@@ -179,6 +223,8 @@ object IntoPoly extends IntoPolyLower {
               case Right(mx) => impure[U, u.X, A](mu.inject(mx), Arrs.singleton(x => effInto(c(x))))
               case Left(u1) => sys.error("impossible")
             }
+
+          case ap @ ImpureAp(_,_) => apply(ap.toMonadic)
         }
       }
     }
@@ -197,6 +243,10 @@ trait IntoPolyLower {
               case Right(mx) => impure[U, u.X, A](mu.inject(mx), Arrs.singleton(x => effInto(c(x))))
               case Left(u1) => recurse(impure[R, u1.X, A](u1, c.asInstanceOf[Arrs[R, u1.X, A]]))
             }
+
+          case ap @ ImpureAp(_,_) =>
+            apply(ap.toMonadic)
+
         }
       }
     }
@@ -245,8 +295,15 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) {
 
         case f +: rest =>
           f(v) match {
-            case Pure(a1) => go(rest, a1)
-            case Impure(u, q) => Impure[R, u.X, B](u, q.copy(functions = q.functions ++ rest))
+            case Pure(a1) =>
+              go(rest, a1)
+
+            case Impure(u, q) =>
+              Impure[R, u.X, B](u, q.copy(functions = q.functions ++ rest))
+
+            case ap @ ImpureAp(u, continuation) =>
+              val monadicArrs = Arrs.singleton((x: u.X) => continuation(x))
+              Impure[R, u.X, B](u, monadicArrs.copy(functions = monadicArrs.functions ++ rest))
           }
       }
     }
@@ -270,4 +327,49 @@ object Arrs {
   /** create an Arrs function with no effect, which is similar to using an identity a => EffMonad[R].pure(a) */
   def unit[R, A]: Arrs[R, A, A] =
     Arrs(Vector())
+}
+
+/**
+ * Sequence of applicative functions from A to B: Eff[A => B]
+ *
+ */
+case class Apps[R, A, B](functions: Vector[Eff[R, Any => Any]]) {
+
+  def append[C](f: Eff[R, B => C]): Apps[R, A, C] =
+    Apps(functions :+ f.asInstanceOf[Eff[R, Any => Any]])
+
+  /**
+   * execute this data structure as function
+   *
+   * This method is stack-safe
+   */
+  def apply(a: A): Eff[R, B] = {
+    @tailrec
+    def go(fs: Vector[Eff[R, Any => Any]], v: Eff[R, Any]): Eff[R, B] = {
+      fs match {
+        case Vector() =>
+          v.asInstanceOf[Eff[R, B]]
+
+        case Vector(ff) =>
+          ff.flatMap(f => v.map(f)).asInstanceOf[Eff[R, B]]
+
+        case ff +: rest =>
+          go(rest, ff.flatMap(f => v.map(f)))
+      }
+    }
+
+    go(functions, Eff.EffMonad[R].pure(a).asInstanceOf[Eff[R, Any]])
+  }
+
+}
+
+object Apps {
+
+  /** create an Apps function from a single applicative function */
+  def singleton[R, A, B](f: Eff[R, A => B]): Apps[R, A, B] =
+    Apps(Vector(f.asInstanceOf[Eff[R, Any => Any]]))
+
+  /** create an Apps function with no effect */
+  def unit[R, A]: Apps[R, A, A] =
+    Apps(Vector())
 }

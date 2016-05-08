@@ -9,15 +9,15 @@ import org.atnos.eff.interpret._
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 
-trait FutureEffectSnippet {
+trait FutEffectSnippet {
 
 // 8<---
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object FutureEffect {
+object FutEffect {
   type Fut[A] = Future[() => A]
 
-  def future[R, A](a: => A)(implicit m: Fut <= R): Eff[R, A] =
+  def fut[R, A](a: => A)(implicit m: Fut <= R): Eff[R, A] =
     send[Fut, R, A](Future(() => a))
 
   def runFuture[R <: Effects, U <: Effects, A, B](atMost: Duration)(effects: Eff[R, A])(
@@ -34,5 +34,5 @@ object FutureEffect {
 // 8<---
 }
 
-object FutureEffectSnippet extends FutureEffectSnippet
+object FutEffectSnippet extends FutEffectSnippet
 

@@ -29,6 +29,8 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  It is possible to run a Eff value with no effects $noEffect
  It is possible to run a Eff value with just one effect and get it back $oneEffect
 
+ Eff values can be traversed with an applicative instance $traverseEff
+
 """
 
   def laws =
@@ -128,6 +130,14 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
   def oneEffect =
     delay(1).detach.value === 1
+
+  def traverseEff = {
+    type R = Option |: NoEffect
+    val traversed: Eff[R, List[Int]] =
+      EffCreation.traverse(List(1, 2, 3))(i => OptionEffect.some(i))
+
+    traversed.runOption.run === Option(List(1, 2, 3))
+  }
 
   /**
    * Helpers

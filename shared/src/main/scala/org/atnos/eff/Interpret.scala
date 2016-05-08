@@ -137,6 +137,9 @@ trait Interpret {
             case Left(u) =>
               Impure[U, union.X, B](u, Arrs.singleton(x => go(continuation(x), s)))
           }
+
+        case ap @ ImpureAp(_,_) =>
+          go(ap.toMonadic, s)
       }
     }
 
@@ -193,6 +196,9 @@ trait Interpret {
             case Left(u) =>
               Impure[R, union.X, B](union, Arrs.singleton(x => go(continuation(x), s)))
           }
+
+        case ap @ ImpureAp(_,_) =>
+          go(ap.toMonadic, s)
       }
     }
 
@@ -221,6 +227,9 @@ trait Interpret {
             case Xor.Left(u1) =>
               Impure(br.accept(u1), Arrs.singleton((x: u.X) => go(c(x))))
           }
+
+        case ap @ ImpureAp(_,_) =>
+          go(ap.toMonadic)
       }
     }
 

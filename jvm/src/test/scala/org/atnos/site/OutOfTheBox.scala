@@ -19,6 +19,7 @@ This library comes with the following effects:
  `StateEffect`       | an effect to pass state around
  `ListEffect`        | an effect for computations returning several values
  `ChooseEffect`      | an effect for modeling non-determinism
+ `FutureEffect`      | an effect using Scala's Future
 
 <small>(from `org.atnos.eff._`)</small>
 
@@ -338,6 +339,22 @@ The `Choose` effect is used for non-deterministic computations. With the `Choose
 That behaviour is controlled by the `Alternative[F]` instance you use when running `Choose`.
 
 For example if we take `List` to run a similar example as before, we get the list of all the accepted pairs:${ChooseSnippets.snippet1}
+
+### Future
+
+The `Future` effect uses Scala`s `Future` for asynchronous computations. You can create values with:
+
+ - `sync`: a "pure" value
+ - `async`: a `Future` value
+
+You can then run the `Eff` computation containing a `Future` effect by using either:
+
+ - `awaitFuture(atMost: FiniteDuration)` which might return a timeout exception
+ - `detach` to get back a `Future[A]` if the future effect is the last one to be interpreted in the stack of effects
+
+Note that it is possible to delay the execution of `Future` values by having both `Eval` and `Future` in the stack:
+
+ - `delay(10).flatMap(async)`
 
 <br/>
 Now you can learn how to  ${"create your own effects" ~/ CreateEffects}.
