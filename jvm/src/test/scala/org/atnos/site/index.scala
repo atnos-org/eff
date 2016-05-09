@@ -10,8 +10,9 @@ You can learn more in the following sections:
 
  - ${"your first effects" ~ Introduction}
  - ${"standard effects in eff-cats" ~ OutOfTheBox}: `Reader`, `Writer`, `Eval`, `State`,...
- - using an ${"open or a closed union of effects" ~ Implicits}
+ - use an ${"open or a closed union of effects" ~ OpenClosed}
  - ${"create your own effects" ~/ CreateEffects}
+ - ${"use Member implicits" ~/ Implicits }
  - ${"manipulate effect stacks" ~ TransformStack}
 
 ### Contributing
