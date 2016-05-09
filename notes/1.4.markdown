@@ -1,0 +1,12 @@
+
+Improvements:
+
+ * core: added all._, syntax.all._ and implicits._
+ * core: added a proper `Choose` effect removed the previous `MonadFilter/MonadCombine/expand` nonsense
+ * core: removed the disorder dependency
+ * core: added some syntax support for `catchLeft`
+ * core: removed the `runM` method
+
+Issues: 
+
+ * doc: added the import of the implicit execution context for the Future effect [#4](https://github.com/atnos-org/eff-cats/issues/4)

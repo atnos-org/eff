@@ -1,0 +1,5 @@
+Improvements:
+
+ * build: updated the `scalacheck` and `specs2` dependencies
+ * doc: updated the section on implicits with the SI-2712 plugin
+ * core: added `map` and `flatMap` directly on `Eff` to avoid syntax imports

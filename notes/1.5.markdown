@@ -1,0 +1,18 @@
+
+Improvements:
+
+ * core: use the `SI-2712` fix [#42](https://github.com/atnos-org/eff-cats/issues/2)
+ * core: renamed the `DisjunctionEffect` effect to `XorEffect`
+ * core: removed the `swap` method and improved the doc for `transform`
+ * core: added a `localReader` interpreter
+ * core: added a law for `Member project / inject / accept`
+ * core: added a `lensState` method to "inject" a `Eff[TS, A]` into `Eff[SS, A]` where `TS` contains an effect with a "small" state `T` and `SS` contains an effect with a "larger" state `S` provided there is a lens from `S` to `T`
+ * core: added a `Validate` effect to cumulate failure messages
+ * core: added an `implicitNotFound` annotation for the `Member` typeclass
+ * doc: added some documentation on `transform` and `localReader`
+ * doc: added a gitter badge
+
+Issues: 
+
+ * build: fixed the connection tag in the pom file [#5](https://github.com/atnos-org/eff-cats/issues/5)
+ 
