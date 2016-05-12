@@ -1,0 +1,7 @@
+Maintenance version
+
+Improvements:
+
+ * modified the type parameters to the `effect.runXXX` calls to help the case where it is necessary to guide type inference.
+   see the [InferenceSpec](https://github.com/atnos-org/eff-cats/blob/a0271e414cd643dd9caaaa0540004b7b8386b04b/jvm/src/test/scala/org/atnos/eff/InferenceSpec.scala) for an example of that
+ 
