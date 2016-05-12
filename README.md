@@ -27,7 +27,7 @@ libraryDependencies += "org.atnos" %% "eff-cats" % "1.6.2"
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1"),
 
 // to get types like Reader[String, ?] (with more than one type parameter) correctly inferred
-addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.1.0")
+addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
 ```
 
 # Contributing

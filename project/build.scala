@@ -71,7 +71,7 @@ object build extends Build {
     scalacOptions in Test ~= (_.filterNot(Set("-Ywarn-dead-code"))),
     scalacOptions in console := Seq(),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1"),
-    addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.1.0")
+    addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
   )
 
   lazy val testingSettings: Seq[Settings] = Seq(
