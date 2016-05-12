@@ -9,11 +9,11 @@ trait eval {
 
   implicit class EvalEffectOps[R <: Effects, A](e: Eff[R, A]) {
 
-    def runEval[U <: Effects](implicit member: Member.Aux[Eval, R, U]): Eff[U, A] =
-      EvalInterpretation.runEval(e)
+    def runEval(implicit member: Member[Eval, R]): Eff[member.Out, A] =
+      EvalInterpretation.runEval(e)(member.aux)
 
-    def attemptEval[U <: Effects](implicit member: Member.Aux[Eval, R, U]): Eff[U, Throwable Xor A] =
-      EvalInterpretation.attemptEval(e)
+    def attemptEval(implicit member: Member[Eval, R]): Eff[member.Out, Throwable Xor A] =
+      EvalInterpretation.attemptEval(e)(member.aux)
 
   }
 

@@ -8,8 +8,8 @@ trait option {
 
   implicit class OptionEffectOps[R <: Effects, A](e: Eff[R, A]) {
 
-    def runOption[U <: Effects](implicit member: Member.Aux[Option, R, U]): Eff[U, Option[A]] =
-      OptionInterpretation.runOption(e)
+    def runOption(implicit member: Member[Option, R]): Eff[member.Out, Option[A]] =
+      OptionInterpretation.runOption(e)(member.aux)
 
   }
 

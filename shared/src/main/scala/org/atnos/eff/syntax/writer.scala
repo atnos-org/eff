@@ -10,14 +10,14 @@ trait writer {
 
   implicit class WriterEffectOps[R <: Effects, A](e: Eff[R, A]) {
 
-    def runWriter[O, U <: Effects](implicit member: Member.Aux[Writer[O,  ?], R, U]): Eff[U, (A, List[O])] =
-      WriterInterpretation.runWriter(e)
+    def runWriter[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, (A, List[O])] =
+      WriterInterpretation.runWriter(e)(member.aux)
 
-    def runWriterFold[O, B, U <: Effects](fold: Fold[O, B])(implicit member: Member.Aux[Writer[O,  ?], R, U]): Eff[U, (A, B)] =
-      WriterInterpretation.runWriterFold(e)(fold)
+    def runWriterFold[O, B](fold: Fold[O, B])(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, (A, B)] =
+      WriterInterpretation.runWriterFold(e)(fold)(member.aux)
 
-    def runWriterTagged[O, U <: Effects, T](implicit member: Member.Aux[({type l[X] = Writer[O, X] @@ T})#l, R, U]): Eff[U, (A, List[O])] =
-      WriterInterpretation.runWriterTagged(e)
+    def runWriterTagged[O, T](implicit member: Member[({type l[X] = Writer[O, X] @@ T})#l, R]): Eff[member.Out, (A, List[O])] =
+      WriterInterpretation.runWriterTagged(e)(member.aux)
   }
 
 }

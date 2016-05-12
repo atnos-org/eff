@@ -22,6 +22,9 @@ trait Member[T[_], R] {
   def accept[V](union: Union[Out, V]): Union[R, V]
 
   def project[V](union: Union[R, V]): Union[Out, V] Xor T[V]
+
+  def aux: Member.Aux[T, R, Out] =
+    this
 }
 
 object Member extends MemberImplicits {
