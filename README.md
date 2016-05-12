@@ -21,7 +21,7 @@ You can learn more in the User Guide:
 
 You add `eff-cats` as an sbt dependency:
 ```scala
-libraryDependencies += "org.atnos" %% "eff-cats" % "1.6.1"
+libraryDependencies += "org.atnos" %% "eff-cats" % "1.6.2"
 
 // to write types like Reader[String, ?]
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1"),

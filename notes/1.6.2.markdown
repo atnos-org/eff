@@ -1,0 +1,6 @@
+Maintenance version
+
+Fixes:
+
+ * modified the type parameters to the `runXor` method to help with type inference
+ 
