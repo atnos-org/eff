@@ -56,8 +56,8 @@ case class Pure[R, A](value: A) extends Eff[R, A]
 case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]) extends Eff[R, A]
 
 /**
-  * union is a disjoint union of effects returning a value of type X (not specified)
-  */
+ * union is a disjoint union of effects returning a value of type X (not specified)
+ */
 case class ImpureAp[R, X, A](union: Union[R, X], continuation: Apps[R, X, A]) extends Eff[R, A] {
   def toMonadic: Eff[R, A] =
     Impure[R, union.X, A](union, Arrs.singleton((x: union.X) => continuation(x)))

@@ -16,6 +16,20 @@ package object eff {
   object choose extends ChooseCreation with ChooseInterpretation
   object future extends FutureCreation with FutureInterpretation
 
+  object create extends
+    ReaderCreation with
+    WriterCreation with
+    StateCreation with
+    EvalCreation with
+    OptionCreation with
+    ListCreation with
+    XorCreation with
+    ValidateCreation with
+    ChooseCreation with
+    FutureCreation with
+    EffCreation with
+    Effects
+
   object all extends
     ReaderEffect with
     WriterEffect with

@@ -14,6 +14,7 @@ You can learn more in the following sections:
  - ${"create your own effects" ~/ CreateEffects}
  - ${"use Member implicits" ~/ Implicits }
  - ${"manipulate effect stacks" ~ TransformStack}
+ - ${"use an applicative evaluation" ~ ApplicativeEvaluation}
 
 ### Contributing
 

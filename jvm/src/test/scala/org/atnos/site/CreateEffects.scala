@@ -12,7 +12,7 @@ New effects can be added to the library pretty easily. Let's create an Effect fo
 
 We need:
 
- - a base type. We select `Future[() => A]` (instead of `Future[A]` in order to avoid values to be evaluated straight away)
+ - a base type. We select `Future[A]` (instead of `Future[A]` in order to avoid values to be evaluated straight away)
 
  - a method to send values of type `A` into `Eff[R, A]`
 
