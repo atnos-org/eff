@@ -1,0 +1,10 @@
+Eff Monad, applicative edition!
+
+Improvements:
+
+ * added `traverseA` and `sequenceA` to traverse a list of effects with an `Applicative` instance for `Eff`. 
+   This allows to execute future computations in parallel
+ * added a `FutureEffect` for Scala's `Future`
+ * removed "tagged" effects for `Reader`, `Writer`, `State` since the `SI-2712` compiler is now able to distinguish 2 
+    effects `Reader[A, ?]` and `Reader[B, ?]` in the same stack
+    
