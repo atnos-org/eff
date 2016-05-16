@@ -1,7 +1,7 @@
 package org.atnos.eff
 package syntax
 
-import cats.Monad
+import cats.{Monad, Traverse}
 import cats.arrow.NaturalTransformation
 import org.atnos.eff.Effects.|:
 
@@ -33,5 +33,15 @@ trait eff {
   implicit class EffMonadicOps[R <: Effects, M[_], A](e: Eff[R, M[A]]) {
     def collapse(implicit m: M <= R): Eff[R, A] =
       Eff.collapse[R, M, A](e)
+  }
+
+  implicit class EffApplicativeOps[F[_] : Traverse, A](values: F[A]) {
+    def traverseA[R, B](f: A => Eff[R, B]): Eff[R, F[B]] =
+      Eff.traverseA(values)(f)
+  }
+
+  implicit class EffSequenceOps[F[_] : Traverse, R, A](values: F[Eff[R, A]]) {
+    def sequenceA: Eff[R, F[A]] =
+      Eff.sequenceA(values)
   }
 }

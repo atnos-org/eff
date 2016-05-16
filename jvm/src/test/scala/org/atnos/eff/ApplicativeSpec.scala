@@ -50,7 +50,7 @@ class ApplicativeSpec extends Specification with ScalaCheck with ThrownExpectati
     val messages = new ListBuffer[String]
 
     val actionApplicative: Eff[S, List[Int]] =
-      Eff.sequence(elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))))
+      elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))).sequenceA
 
     actionApplicative.runEval.awaitFuture(2.seconds).run ==== Xor.right(elements)
 
@@ -77,7 +77,7 @@ class ApplicativeSpec extends Specification with ScalaCheck with ThrownExpectati
 
     val messages = new ListBuffer[String]
     val actionApplicative: Eff[S, List[Int]] =
-      Eff.sequence(elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))))
+      elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))).sequenceA
 
     actionApplicative.runEval.awaitFuture(2.seconds).run ==== Xor.right(elements)
 
@@ -96,7 +96,7 @@ class ApplicativeSpec extends Specification with ScalaCheck with ThrownExpectati
 
   def stacksafeEff = {
     val list = (1 to 5000).toList
-    val action = Eff.traverse(list)(i => FutureEffect.async[S, String](i.toString))
+    val action = list.traverseA(i => FutureEffect.async[S, String](i.toString))
 
     action.awaitFuture(1.second).runEval.run ==== list.map(_.toString).right
   }

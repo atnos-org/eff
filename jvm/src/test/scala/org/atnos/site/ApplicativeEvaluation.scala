@@ -56,7 +56,7 @@ def execute[E: Eval_ : Writer_ : Future_](i: Int): Eff[E, Int] =
     _ <- tell(i2.toString)
   } yield i2
 
-val action: Eff[S, List[Int]] = Eff.traverse(List(1000, 500, 50))(execute[S])
+val action: Eff[S, List[Int]] = List(1000, 500, 50).traverseA(execute[S])
 action.runEval.awaitFuture(2.seconds).runWriterLog.run
 }.eval}
 """

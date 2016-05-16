@@ -137,11 +137,11 @@ trait EffCreation {
     EffImplicits.EffApplicative[R].ap(f)(a)
 
   /** use the applicative instance of Eff to traverse a list of values */
-  def traverse[R, F[_] : Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
+  def traverseA[R, F[_] : Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
     Traverse[F].traverse(fs)(f)(EffImplicits.EffApplicative[R])
 
   /** use the applicative instance of Eff to sequenc a list of values */
-  def sequence[R, F[_] : Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
+  def sequenceA[R, F[_] : Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
     Traverse[F].sequence(fs)(EffImplicits.EffApplicative[R])
 }
 

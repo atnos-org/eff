@@ -134,7 +134,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
   def traverseEff = {
     type R = Option |: NoEffect
     val traversed: Eff[R, List[Int]] =
-      EffCreation.traverse(List(1, 2, 3))(i => OptionEffect.some(i))
+      List(1, 2, 3).traverseA(i => OptionEffect.some(i))
 
     traversed.runOption.run === Option(List(1, 2, 3))
   }
