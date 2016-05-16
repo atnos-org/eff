@@ -1,7 +1,6 @@
 package org.atnos.eff
 
 import Effects._
-import Tag._
 import cats.data.Xor
 import scala.annotation.implicitNotFound
 
@@ -79,23 +78,6 @@ object Member extends MemberImplicits {
         case UnionNext(u) => m.project[V](u).leftMap(u1 => UnionNext(u1).asInstanceOf[Union[Out, V]])
       }
   }
-
-  /**
-   * helper method to untag a tagged effect
-   */
-  def untagMember[T[_], R, TT](m: Member[({type X[A]=T[A] @@ TT})#X, R]): Member.Aux[T, R, m.Out] =
-    new Member[T, R] {
-      type Out = m.Out
-
-      def inject[V](tv: T[V]): Union[R, V] =
-        m.inject(Tag(tv))
-
-      def accept[V](union: Union[Out, V]): Union[R, V] =
-        m.accept(union)
-
-      def project[V](u: Union[R, V]): Union[Out, V] Xor T[V] =
-        m.project(u).map(Tag.unwrap)
-    }
 
 }
 

@@ -170,27 +170,6 @@ The `Reader` effect is used to request values from an "environment". The main me
 (or "configuration" if you prefer to see it that way) and you can run an effect stack containing a `Reader` effect by
 providing a value for the environment with the `runReader` method.
 
-It is also possible to query several independent environments in the same effect stack by "tagging" them:${snippet{
-import org.atnos.eff._, all._, syntax.all._
-import Tag._
-import cats.data._
-
-trait Port1
-trait Port2
-
-type R1[A] = Reader[Int, A] @@ Port1
-type R2[A] = Reader[Int, A] @@ Port2
-
-type S = R1 |: R2 |: NoEffect
-
-  val getPorts: Eff[S, String] = for {
-  p1 <- askTagged[S, Port1, Int]
-  p2 <- askTagged[S, Port2, Int]
-} yield "port1 is "+p1+", port2 is "+p2
-
-getPorts.runReaderTagged(80).runReaderTagged(50).run
-}.eval}
-
 You can also inject a "local" reader into a "bigger" one:${snippet {
 import org.atnos.eff._, all._, syntax.all._
 import cats.data._
@@ -266,26 +245,22 @@ A `State` effect can be seen as the combination of both a `Reader` and a `Writer
 Let's see an example showing that we can also use tags to track different states at the same time:${snippet{
 import cats.data._
 import org.atnos.eff._, all._, syntax.all._
-import Tag._
 
-trait Var1
-trait Var2
-
-type S1[A] = State[Int, A] @@ Var1
-type S2[A] = State[Int, A] @@ Var2
+type S1[A] = State[Int, A]
+type S2[A] = State[String, A]
 
 type S = S1 |: S2 |: NoEffect
 
 val swapVariables: Eff[S, String] = for {
-  v1 <- getTagged[S, Var1, Int]
-  v2 <- getTagged[S, Var2, Int]
-  _  <- putTagged[S, Var1, Int](v2)
-  _  <- putTagged[S, Var2, Int](v1)
-  w1 <- getTagged[S, Var1, Int]
-  w2 <- getTagged[S, Var2, Int]
+  v1 <- get[S, Int]
+  v2 <- get[S, String]
+  _  <- put[S, Int](v2.size)
+  _  <- put[S, String](v1.toString)
+  w1 <- get[S, Int]
+  w2 <- get[S, String]
 } yield "initial: "+(v1, v2).toString+", final: "+(w1, w2).toString
 
-swapVariables.evalStateTagged(10).evalStateTagged(50).run
+swapVariables.evalState(10).evalState("hello").run
 }.eval}
 
 In the example above we have used an `eval` method to get the `A` in `Eff[R, A]` but it is also possible to get both the

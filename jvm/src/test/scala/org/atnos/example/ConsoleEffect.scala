@@ -5,16 +5,14 @@ import Eff._
 import Interpret._
 import cats.syntax.all._
 import cats.data._
-import Tag._
 
 object ConsoleEffect {
 
-  trait ConsoleTag
-
-  type Console[A] = Writer[String, A] @@ ConsoleTag
+  case class ConsoleString(message: String) extends AnyVal
+  type Console[A] = Writer[ConsoleString, A]
 
   def log[R](message: String, doIt: Boolean = true)(implicit m: Member[Console, R]): Eff[R, Unit] =
-    if (doIt) WriterEffect.tell(message)(Member.untagMember[Writer[String, ?], R, ConsoleTag](m))
+    if (doIt) WriterEffect.tell(ConsoleString(message))
     else      EffMonad.pure(())
 
   def logThrowable[R](t: Throwable, doIt: Boolean = true)(implicit m: Member[Console, R]): Eff[R, Unit] =
@@ -42,9 +40,9 @@ object ConsoleEffect {
       type S = Unit
       val init = ()
 
-      def apply[X](x: Console[X], s: Unit): (X, Unit) =
-        Tag.unwrap(x) match {
-          case w => (w.run._2, printer(w.run._1))
+      def apply[X](cx: Console[X], s: Unit): (X, Unit) =
+        cx.run match {
+          case (c, x) => (x, printer(c.message))
         }
 
       def finalize(a: A, s: Unit): A =

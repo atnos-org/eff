@@ -80,31 +80,7 @@ trait ValidateInterpretation extends ValidateCreation {
     interpretState1[R, U, Validate[E, ?], A, L Xor A]((a: A) => Xor.right[L, A](a))(recurse)(r)
   }
 
-
-
 }
 
 object ValidateInterpretation extends ValidateInterpretation
 
-trait ValidateImplicits extends ValidateImplicits1 {
-  implicit def ValidateMemberZero[A]: Member.Aux[Validate[A, ?], Validate[A, ?] |: NoEffect, NoEffect] = {
-    type T[X] = Validate[A, X]
-    Member.zero[T]
-  }
-
-  implicit def ValidateMemberFirst[R <: Effects, A]: Member.Aux[Validate[A, ?], Validate[A, ?] |: R, R] = {
-    type T[X] = Validate[A, X]
-    Member.first[T, R]
-  }
-
-}
-
-trait ValidateImplicits1 {
-  implicit def ValidateMemberSuccessor[O[_], R <: Effects, U <: Effects, A](implicit m: Member.Aux[Validate[A, ?], R, U]): Member.Aux[Validate[A, ?], O |: R, O |: U] = {
-    type T[X] = Validate[A, X]
-    Member.successor[T, O, R, U]
-  }
-
-}
-
-object ValidateImplicits extends ValidateImplicits
