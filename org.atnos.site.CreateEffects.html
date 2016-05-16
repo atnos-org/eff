@@ -43,14 +43,14 @@
 <p>New effects can be added to the library pretty easily. Let’s create an Effect for <code class="prettyprint">scala.concurrent.Future</code> for example.</p>
 <p>We need:</p>
 <ul>
-<li><p>a base type. We select <code class="prettyprint">Future[() =&gt; A]</code> (instead of <code class="prettyprint">Future[A]</code> in order to avoid values to be evaluated straight away)</p></li>
+<li><p>a base type. We select <code class="prettyprint">Future[A]</code> (instead of <code class="prettyprint">Future[A]</code> in order to avoid values to be evaluated straight away)</p></li>
 <li><p>a method to send values of type <code class="prettyprint">A</code> into <code class="prettyprint">Eff[R, A]</code></p></li>
 <li><p>an interpreter</p></li>
 </ul>
-<p><code class="prettyprint">no file found at src/test/scala/org/atnos/site/snippets/FutureEffectSnippet.scala</code></p>
+<p><code class="prettyprint">no file found at src/test/scala/org/atnos/site/snippets/FutEffectSnippet.scala</code></p>
 <p>In the code above:</p>
 <ul>
-<li><p>the <code class="prettyprint">future</code> method uses <code class="prettyprint">Eff.send</code> to “send” values of a given effect into a larger sum of effects <code class="prettyprint">Eff[R, A]</code></p></li>
+<li><p>the <code class="prettyprint">fut</code> method uses <code class="prettyprint">Eff.send</code> to “send” values of a given effect into a larger sum of effects <code class="prettyprint">Eff[R, A]</code></p></li>
 <li><p><code class="prettyprint">runFuture</code> runs the <code class="prettyprint">Future</code> by using the <code class="prettyprint">Interpret.interpret1</code> method</p></li>
 </ul>
 <p>Writing interpreters can be a bit tricky, especially to keep them stack-safe. There is no method at the moment for writing generic stack-safe interpreters but the <code class="prettyprint">Interpret</code> objects offers several support traits and functions to write some of them. In this case, the interpretation doesn’t need to pass state around so we can use the <code class="prettyprint">Recurse</code> trait. This kind of implementation is shared by many different monads, like <code class="prettyprint">Reader</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Option</code> but not <code class="prettyprint">Writer</code>, <code class="prettyprint">State</code> or <code class="prettyprint">List</code> for example.</p>
@@ -63,8 +63,8 @@
 <pre><code class="prettyprint">type F = Fut |: NoEffect
 
 val action: Eff[F, Int] = for {
-  a &lt;- future(2)
-  b &lt;- future(3)
+  a &lt;- fut(2)
+  b &lt;- fut(3)
 } yield a + b
 
 run(runFuture(3.seconds)(action))</code></pre>

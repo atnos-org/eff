@@ -117,9 +117,9 @@ val action = for {
 } yield ()
 
 import HadoopS3._
-import org.atnos.eff.ReaderImplicits._
+
 // and we can run the composite action
-action.runReaderTagged(S3Conf(&quot;bucket&quot;)).runReaderTagged(HadoopConf(10)).runWriter.runEval.run</code></pre>
+action.runReader(S3Conf(&quot;bucket&quot;)).runReader(HadoopConf(10)).runWriter.runEval.run</code></pre>
 <p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket: 10))</code></p>
 <p>You can find a fully working example of this approach in <code class="prettyprint">src/test/org/atnos/example/StacksSpec</code>.</p>
 </div>
