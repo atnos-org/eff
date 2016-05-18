@@ -17,6 +17,8 @@ You can learn more in the User Guide:
  - [use Member implicits](http://atnos-org.github.io/eff-cats/org.atnos.site.Implicits.html)
  - [working with different effect stacks](http://atnos-org.github.io/eff-cats/org.atnos.site.TransformStack.html)
 
+You can also check out [this presentation](http://bit.ly/eff_flatmap_2016) at flatMap Oslo 2016 ([slides](http://www.slideshare.net/etorreborre/the-eff-monad-one-monad-to-rule-them-all)).
+
 ## Installation
 
 You add `eff-cats` as an sbt dependency:
