@@ -2,15 +2,14 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Introduction</title>
-    <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
-    <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
-    <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
-    <link href="./css/font-awesome.min.css"                        type="text/css"     rel="stylesheet" />
-    <link href="./css/prettify.css"                                type="text/css"     rel="stylesheet" />
-    <link href="./css/tabber.css"                                  type="text/css"     rel="stylesheet" />
-    <link href="./css/tipuesearch.css"                             type="text/css"     rel="stylesheet" />
-    <link href="./css/specs2.css"                                  type="text/css"     rel="stylesheet" />
-    <link href="./css/specs2-user.css"                             type="text/css"     rel="stylesheet" />
+    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
 
     <script src="./javascript/jquery.js"                           type="text/javascript"></script>
     <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
@@ -69,16 +68,16 @@ import Stack._
 
 val program: Eff[Stack, Int] = for {
   // get the configuration
-  n &lt;- ask
+  n &lt;- ask[Stack, Int]
 
   // log the current configuration value
-  _ &lt;- tell(&quot;the required power is &quot;+n)
+  _ &lt;- tell[Stack, String](&quot;the required power is &quot;+n)
 
   // compute the nth power of 2
-  a &lt;- delay(math.pow(2, n.toDouble).toInt)
+  a &lt;- delay[Stack, Int](math.pow(2, n.toDouble).toInt)
 
   // log the result
-  _ &lt;- tell(&quot;the result is &quot;+a)
+  _ &lt;- tell[Stack, String](&quot;the result is &quot;+a)
 } yield a
 
 // run the action with all the interpreters
@@ -93,7 +92,7 @@ program.runReader(6).runWriter.runEval.run</code></pre>
 <li>finally the <code class="prettyprint">NoEffect</code> effect (provided by the <code class="prettyprint">Eff</code> object) to get the final value out of <code class="prettyprint">Eff[Stack, Int]</code></li>
 </ol>
 <p><br/> Maybe you noticed that the effects are not being executed in the same order as their order in the stack declaration. The effects can indeed be executed in any order. This doesn’t mean though that the results will be the same. For example running the <code class="prettyprint">Writer</code> effect then <code class="prettyprint">Xor</code> effect returns <code class="prettyprint">String Xor (A, List[String])</code> whereas running the <code class="prettyprint">Xor</code> effect then the <code class="prettyprint">Writer</code> effect returns <code class="prettyprint">(String Xor A, List[String])</code>.</p>
-<p>This all works thanks to some implicits definitions guiding Scala type inference towards the right return types. You can learn more on implicits in the <link class="ok"><a href="org.atnos.site.Implicits.html" tooltip="" class="ok">implicits</a></link> section.</p>
+<p>This all works thanks to some implicits definitions guiding Scala type inference towards the right return types. You can learn more on implicits and how to remove the type annotations in the example above in the <link class="ok"><a href="org.atnos.site.Implicits.html" tooltip="" class="ok">implicits</a></link> section.</p>
 <p>Otherwise you can also learn about <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">other effects</a></link> supported by this library.</p>
 </div>
 
