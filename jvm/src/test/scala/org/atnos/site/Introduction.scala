@@ -50,16 +50,16 @@ import Stack._
 
 val program: Eff[Stack, Int] = for {
   // get the configuration
-  n <- ask
+  n <- ask[Stack, Int]
 
   // log the current configuration value
-  _ <- tell("the required power is "+n)
+  _ <- tell[Stack, String]("the required power is "+n)
 
   // compute the nth power of 2
-  a <- delay(math.pow(2, n.toDouble).toInt)
+  a <- delay[Stack, Int](math.pow(2, n.toDouble).toInt)
 
   // log the result
-  _ <- tell("the result is "+a)
+  _ <- tell[Stack, String]("the result is "+a)
 } yield a
 
 // run the action with all the interpreters
@@ -81,7 +81,8 @@ running the `Writer` effect then `Xor` effect returns `String Xor (A, List[Strin
  then the `Writer` effect returns `(String Xor A, List[String])`.
 
 This all works thanks to some implicits definitions guiding Scala type inference towards the
-right return types. You can learn more on implicits in the ${"implicits" ~/ Implicits} section.
+right return types. You can learn more on implicits and how to remove the type annotations in the example above
+ in the ${"implicits" ~/ Implicits} section.
 
 Otherwise you can also learn about ${"other effects" ~/ OutOfTheBox} supported by this library.
 """
