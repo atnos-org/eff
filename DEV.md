@@ -11,4 +11,3 @@ sbt> project root
 sbt> publishSigned
 sbt> sonatypeReleaseAll
 ```
-

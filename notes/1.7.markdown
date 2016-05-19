@@ -7,4 +7,3 @@ Improvements:
  * added a `FutureEffect` for Scala's `Future`
  * removed "tagged" effects for `Reader`, `Writer`, `State` since the `SI-2712` compiler is now able to distinguish 2 
     effects `Reader[A, ?]` and `Reader[B, ?]` in the same stack
-    
