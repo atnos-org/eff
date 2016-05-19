@@ -31,7 +31,7 @@ abstract class UserGuidePage extends
 
   def definition[T : ClassTag]: Snippet[Unit] = {
     val name = implicitly[ClassTag[T]].runtimeClass.getName
-    load(FilePath.unsafe("src/test/scala/"+name.replace(".", "/")+".scala"))
+    load(FilePath.unsafe("jvm/src/test/scala/"+name.replace(".", "/")+".scala"))
   }
 }
 
