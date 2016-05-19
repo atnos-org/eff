@@ -92,7 +92,7 @@ object build extends Build {
       Some("staging" at nexus + "service/local/staging/deploy/maven2")
     },
     autoAPIMappings := true,
-    apiURL := Some(url("https://etorreborre.github.io/eff-cats/api/")),
+    apiURL := Some(url("https://atnos-org.github.io/eff-cats/api/")),
     publishMavenStyle := true,
     publishArtifact in Test := false,
     pomIncludeRepository := { x => false },
