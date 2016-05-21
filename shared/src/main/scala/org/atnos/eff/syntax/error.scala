@@ -4,6 +4,7 @@ package syntax
 import Member.<=
 import ErrorEffect._
 import cats.data._, Xor._
+import scala.reflect.ClassTag
 
 object error extends error
 
@@ -19,6 +20,9 @@ trait error {
 
     def orElse(action2: Eff[R, A])(implicit m: ErrorOrOk <= R): Eff[R, A] =
       ErrorEffect.orElse(action, action2)
+
+    def ignore[E <: Throwable : ClassTag](implicit m: ErrorOrOk <= R): Eff[R, Unit] =
+      ErrorEffect.ignoreException(action)
   }
 
   implicit class ErrorOrOkOps[A](c: Error Xor A) {

@@ -8,6 +8,8 @@ import Eff._
 import Interpret._
 import org.atnos.eff.EvalEffect.Eval
 
+import scala.reflect.ClassTag
+
 /**
  * Effect for computation which can fail and return a Throwable, or just stop with a failure
  *
@@ -109,9 +111,9 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    *
    * Execute a second action if the first one is not successful, based on the error
    */
-  def whenFailed[R <: Effects, A](action: Eff[R, A], onError: Error => Eff[R, A])(implicit m: ErrorOrOk <= R): Eff[R, A] = {
-    val recurse = new Recurse[ErrorOrOk, R, A] {
-      def apply[X](current: ErrorOrOk[X]): X Xor Eff[R, A] =
+  def catchError[R <: Effects, A, B](action: Eff[R, A], pure: A => B, onError: Error => Eff[R, B])(implicit m: ErrorOrOk <= R): Eff[R, B] = {
+    val recurse = new Recurse[ErrorOrOk, R, B] {
+      def apply[X](current: ErrorOrOk[X]): X Xor Eff[R, B] =
         current match {
           case Left(e) => Right(onError(e))
           case Right(x) =>
@@ -119,8 +121,30 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
             catch { case NonFatal(t) => Right(onError(Left(t))) }
         }
     }
-    intercept1[R, ErrorOrOk, A, A]((a: A) => a)(recurse)(action)
+    intercept1[R, ErrorOrOk, A, B](pure)(recurse)(action)
   }
+
+  /**
+   * evaluate 1 action possibly having error effects
+   *
+   * Execute a second action if the first one is not successful, based on the error
+   *
+   * The final value type is the same as the original type
+   */
+  def whenFailed[R <: Effects, A](action: Eff[R, A], onError: Error => Eff[R, A])(implicit m: ErrorOrOk <= R): Eff[R, A] =
+    catchError(action, identity[A], onError)
+
+  /**
+   * ignore one possible exception that could be thrown
+   */
+  def ignoreException[R <: Effects, E <: Throwable : ClassTag, A](action: Eff[R, A])(implicit m: ErrorOrOk <= R): Eff[R, Unit] =
+    catchError[R, A, Unit](action, (a: A) => (), { error: Error =>
+      error match {
+        case Xor.Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
+          EffMonad[R].pure(())
+        case other => outer.error(other)
+      }
+    })
 }
 
 /**

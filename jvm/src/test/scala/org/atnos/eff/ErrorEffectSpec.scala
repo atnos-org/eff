@@ -20,6 +20,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
 
   Writer can be used with Error to get logs even if there is an exception $logException
 
+ A thrown exception can be ignored $ignored
 """
 
   type R = ErrorOrOk |: NoEffect
@@ -97,6 +98,17 @@ class ErrorEffectSpec extends Specification { def is = s2"""
 
     (result._2 ==== List("start")) and
     (result._1.toErrorSimpleMessage ==== Option("Error[java.lang.Exception] boom"))
+  }
+
+  def ignored = {
+    val action =
+      OK[R, Int] { throw new IllegalArgumentException("boom"); 1 }
+
+    val action2: Eff[R, Unit] =
+      action.ignore[IllegalArgumentException]
+
+    action2.runError.run ==== Right(())
+
   }
 
 }
