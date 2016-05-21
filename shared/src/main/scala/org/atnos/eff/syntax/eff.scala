@@ -44,4 +44,9 @@ trait eff {
     def sequenceA: Eff[R, F[A]] =
       Eff.sequenceA(values)
   }
+
+  implicit class EffApplicativeSyntaxOps[R, A](a: Eff[R, A]) {
+    def tuple2[B](b: Eff[R, B]): Eff[R, (A, B)] =
+      Eff.EffApplicative[R].tuple2(a, b)
+  }
 }

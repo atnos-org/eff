@@ -6,7 +6,7 @@ import org.specs2.{ScalaCheck, Specification}
 import cats._, data._
 import cats.syntax.all._
 import cats.std.all._
-import algebra.Eq
+import cats.Eq
 //import cats.laws.discipline.{arbitrary => _, _}
 //import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
