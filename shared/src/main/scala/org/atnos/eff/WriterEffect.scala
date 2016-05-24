@@ -57,6 +57,12 @@ trait WriterInterpretation {
     interpretState1[R, U, Writer[O, ?], A, (A, B)]((a: A) => (a, fold.finalize(fold.init)))(recurse)(w)
   }
 
+  /**
+   * Run a side-effecting fold
+   */
+  def runWriterUnsafeFold[R <: Effects, U <: Effects, O, A](w: Eff[R, A])(fold: Fold[O, Unit])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
+    runWriterFold(w)(fold).map(_._1)
+
   implicit def ListFold[A]: Fold[A, List[A]] = new Fold[A, List[A]] {
     type S = ListBuffer[A]
     val init = new ListBuffer[A]
@@ -70,6 +76,14 @@ trait WriterInterpretation {
     def fold(a: A, s: S) = a |+| s
     def finalize(s: S) = s
   }
+
+  def UnsafeFold[A](f: A => Unit): Fold[A, Unit] = new Fold[A, Unit] {
+    type S = Unit
+    val init = ()
+    def fold(a: A, s: S) = f(a)
+    def finalize(s: S) = s
+  }
+
 }
 
 /** support trait for folding values while possibly keeping some internal state */
