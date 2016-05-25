@@ -6,6 +6,7 @@ import Xor._
 import cats.syntax.functor._
 import Eff._
 import Interpret._
+import cats.~>
 import org.atnos.eff.EvalEffect.Eval
 
 import scala.reflect.ClassTag
@@ -145,6 +146,20 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
         case other => outer.error(other)
       }
     })
+
+  /**
+   * Lift a computation over a "small" error (for a subsystem) into
+   * a computation over a "bigger" error (for the full application)
+   */
+  def localError[SR, BR, U, E1, E2, A](r: Eff[SR, A], getter: E1 => E2)
+                                     (implicit sr: Member.Aux[({type l[X]=(Throwable Xor E1) Xor Eval[X]})#l, SR, U],
+                                               br: Member.Aux[({type l[X]=(Throwable Xor E2) Xor Eval[X]})#l, BR, U]): Eff[BR, A] =
+    transform[SR, BR, U, ({type l[X]=(Throwable Xor E1) Xor Eval[X]})#l, ({type l[X]=(Throwable Xor E2) Xor Eval[X]})#l, A](r,
+      new ~>[({type l[X]=(Throwable Xor E1) Xor Eval[X]})#l, ({type l[X]=(Throwable Xor E2) Xor Eval[X]})#l] {
+      def apply[X](r: (Throwable Xor E1) Xor Eval[X]): (Throwable Xor E2) Xor Eval[X] =
+        r.leftMap(_.map(getter))
+    })
+
 }
 
 /**

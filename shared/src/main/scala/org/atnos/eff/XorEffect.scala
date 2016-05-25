@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats.data._, Xor._
+import cats._, data._, Xor._
 import Eff._
 import Interpret._
 
@@ -66,6 +66,19 @@ trait XorInterpretation {
 
     intercept1[R, (E Xor ?), A, A]((a: A) => a)(recurse)(r)
   }
+
+  /**
+   * Lift a computation over a "small" error (for a subsystem) into
+   * a computation over a "bigger" error (for the full application)
+   */
+  def localXor[SR, BR, U, E1, E2, A](r: Eff[SR, A], getter: E1 => E2)
+                                    (implicit sr: Member.Aux[E1 Xor ?, SR, U],
+                                       br: Member.Aux[E2 Xor ?, BR, U]): Eff[BR, A] =
+    transform[SR, BR, U, E1 Xor ?, E2 Xor ?, A](r,
+      new ~>[E1 Xor ?, E2 Xor ?] {
+        def apply[X](r: E1 Xor X): E2 Xor X =
+          r.leftMap(getter)
+      })
 
 }
 

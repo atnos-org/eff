@@ -17,6 +17,10 @@ trait xor {
 
     def catchLeft[E](handle: E => Eff[R, A])(implicit member: Member[(E Xor ?), R]): Eff[R, A] =
       XorInterpretation.catchLeft(e)(handle)(member)
+
+    def localXor[BR, U, C, B](getter: C => B)(implicit m1: Member.Aux[C Xor ?, R, U], m2: Member.Aux[B Xor  ?, BR, U]): Eff[BR, A] =
+      XorInterpretation.localXor[R, BR, U, C, B, A](e, getter)
+
   }
 
 }
