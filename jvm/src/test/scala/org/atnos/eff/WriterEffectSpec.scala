@@ -24,7 +24,7 @@ class WriterEffectSpec extends Specification { def is = s2"""
 
     val messages: ListBuffer[String] = new ListBuffer[String]
 
-    action.runWriterUnsafeFold(UnsafeFold((m: String) => messages.append(m)))
+    action.runWriterUnsafe((m: String) => messages.append(m))
 
     messages.toList ==== List("hello", "world")
 

@@ -60,8 +60,8 @@ trait WriterInterpretation {
   /**
    * Run a side-effecting fold
    */
-  def runWriterUnsafeFold[R <: Effects, U <: Effects, O, A](w: Eff[R, A])(fold: Fold[O, Unit])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
-    runWriterFold(w)(fold).map(_._1)
+  def runWriterUnsafe[R <: Effects, U <: Effects, O, A](w: Eff[R, A])(f: O => Unit)(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
+    runWriterFold(w)(UnsafeFold(f)).map(_._1)
 
   implicit def ListFold[A]: Fold[A, List[A]] = new Fold[A, List[A]] {
     type S = ListBuffer[A]

@@ -18,8 +18,8 @@ trait writer {
     def runWriterFold[O, B](fold: Fold[O, B])(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, (A, B)] =
       WriterInterpretation.runWriterFold(e)(fold)(member.aux)
 
-    def runWriterUnsafeFold[O](fold: Fold[O, Unit])(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =
-      WriterInterpretation.runWriterUnsafeFold(e)(fold)(member.aux)
+    def runWriterUnsafe[O](f: O => Unit)(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =
+      WriterInterpretation.runWriterUnsafe(e)(f)(member.aux)
 
   }
 
