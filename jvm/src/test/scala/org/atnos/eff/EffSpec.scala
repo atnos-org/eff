@@ -31,6 +31,9 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
  Eff values can be traversed with an applicative instance $traverseEff
 
+ A stack can be added a new effect when the effect is not in stack $notInStack
+ A stack can be added a new effect when the effect is not in stack $inStack
+
 """
 
   def laws =
@@ -137,6 +140,33 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       List(1, 2, 3).traverseA(i => OptionEffect.some(i))
 
     traversed.runOption.run === Option(List(1, 2, 3))
+  }
+
+
+  def functionReader[R <: Effects, A, B](f: A => Eff[R, B]): Eff[Reader[A, ?] |: R, B] =
+    ask[Reader[A, ?] |: R, A].flatMap(f(_).into[Reader[A, ?] |: R])
+
+  def notInStack = {
+
+    type S = Option |: NoEffect
+
+    val a: Eff[S, Int] = OptionEffect.some(1)
+
+    val b: Eff[Reader[String, ?] |: S, Int] = functionReader((s: String) => a.map(_ + s.size))
+
+    b.runReader("start").runOption.run ==== Option(6)
+  }
+
+  def inStack = {
+
+    type S = Reader[String, ?] |: Option |: NoEffect
+
+    val a: Eff[S, Int] = OptionEffect.some(1)
+
+    val b: Eff[Reader[String, ?] |: S, Int] = functionReader((s: String) => a.map(_ + s.size))
+
+    b.runReader("start").runReader("start2").runOption.run ==== Option(6)
+
   }
 
   /**
