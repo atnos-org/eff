@@ -5,10 +5,18 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 object depend {
 
   val catsVersion     = "0.5.0"
-  val specs2Version   = "3.7.3"
+  val monixVersion    = "2.0-RC2"
+  val specs2Version   = "3.8.3"
+
 
   val cats = Seq(
     "org.typelevel" %%%! "cats-core" % catsVersion)
+
+  val monix = Seq(
+    "io.monix" %% "monix-eval" % monixVersion)
+
+  val monixjs = Seq(
+    "io.monix" %%%! "monix-eval" % monixVersion)
 
   val specs2 = Seq(
       "org.specs2" %% "specs2-core"

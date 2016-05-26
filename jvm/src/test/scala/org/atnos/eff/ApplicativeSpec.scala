@@ -8,14 +8,13 @@ import scala.concurrent._
 import duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.data.Xor
-import cats.std.list.listInstance
-import cats.syntax.all._
+import cats.implicits._
 import org.specs2.matcher.ThrownExpectations
-import org.scalacheck.Gen.{choose => chooseInt, listOfN}
-
+import org.scalacheck.Gen.{listOfN, choose => chooseInt}
+import org.specs2.concurrent.ExecutionEnv
 import scala.collection.mutable.ListBuffer
 
-class ApplicativeSpec extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  It is possible to use an applicative instance to execute effects "in parallel"
   as a monad $asMonad
@@ -70,7 +69,7 @@ class ApplicativeSpec extends Specification with ScalaCheck with ThrownExpectati
     "messages are received in the same order" ==> {
       messages.toList ==== elements.map("got "+_)
     }
-  }.setGen(chooseInt(2, 10).flatMap(listOfN(_, chooseInt(10, 500)))).
+  }.setGen(chooseInt(5, 10).flatMap(listOfN(_, chooseInt(10, 50)))).
     set(minTestsOk = 20)
 
   def asApplicativeProp = prop { elements: List[Int] =>
@@ -79,12 +78,12 @@ class ApplicativeSpec extends Specification with ScalaCheck with ThrownExpectati
     val actionApplicative: Eff[S, List[Int]] =
       elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))).sequenceA
 
-    actionApplicative.runEval.awaitFuture(2.seconds).run ==== Xor.right(elements)
+    Eff.detach(actionApplicative.runEval) must be_==(elements).await
 
     "messages are not received in the same order" ==> {
       messages.toList !=== elements.map("got "+_)
     }
-  }.setGen(chooseInt(2, 10).flatMap(listOfN(_, chooseInt(10, 500)))).
+  }.setGen(chooseInt(5, 10).flatMap(listOfN(_, chooseInt(10, 50)))).
     set(minTestsOk = 20)
 
   def stacksafeList = {
@@ -104,7 +103,6 @@ class ApplicativeSpec extends Specification with ScalaCheck with ThrownExpectati
   /**
    * HELPERS
    */
-
   def register(i: Int, messages: ListBuffer[String]) = {
     Thread.sleep(i.toLong)
     messages.append("got "+i)

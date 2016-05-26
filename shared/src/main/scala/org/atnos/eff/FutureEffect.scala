@@ -19,6 +19,7 @@ trait FutureEffect extends
 object FutureEffect extends FutureEffect
 
 trait FutureCreation {
+
   def sync[R, A](a: A)(implicit m: Member[Future, R]): Eff[R, A] =
     pure(a)
 
