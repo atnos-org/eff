@@ -10,7 +10,7 @@ trait future {
 
   implicit class FutureEffectOps[R <: Effects, A](e: Eff[R, A]) {
 
-    def awaitFuture[U <: Effects](atMost: FiniteDuration)
+    def awaitFuture[U <: Effects](atMost: Duration)
       (implicit member: Member.Aux[Future, R, U], ec: ExecutionContext): Eff[U, Throwable Xor A] =
       FutureInterpretation.awaitFuture(e)(atMost)
 
