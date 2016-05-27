@@ -15,6 +15,8 @@ class FutureEffectSpec extends Specification { def is = s2"""
 
  A Future value execution can be delayed $e3
 
+ A Future can be lifted to a stack of effects $e4
+
 """
 
   def e1 = {
@@ -53,5 +55,15 @@ class FutureEffectSpec extends Specification { def is = s2"""
 
     action.runEval.awaitFuture(1.second).run ==== Xor.right(10)
 
+  }
+
+  def e4 = {
+    type S = Future |: Eval |: NoEffect
+
+    def future: Future[Int] = Future(10)
+
+    val action: Eff[S, Int] = future.liftFuture
+
+    action.runEval.awaitFuture(1.second).run ==== Xor.right(10)
   }
 }

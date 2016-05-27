@@ -24,6 +24,10 @@ trait FutureCreation {
 
   def async[R, A](a: =>A)(implicit m: Member[Future, R], ec: ExecutionContext): Eff[R, A] =
     send(Future(a))
+
+  def liftFuture[R, A](f: => Future[A])(implicit m: Member[Future, R], e: Member[EvalEffect.Eval, R]): Eff[R, A] =
+    EvalEffect.delay(f).flatMap(v => Eff.send[Future, R, A](v))
+
 }
 
 trait FutureInterpretation {
