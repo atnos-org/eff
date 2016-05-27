@@ -8,8 +8,11 @@ import cats.syntax.all._
 import cats.std.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
+import org.scalacheck.Gen
 
 class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
+
+ an xor value can be injected in the stack    $xorCreation
 
  run the xor effect monad                     $xorMonad
  run the xor effect monad with nothing        $xorWithKoMonad
@@ -21,6 +24,14 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
  the left type can be modified with local     $local
 
 """
+
+  def xorCreation = prop { stringOrInt: String Either Int =>
+    type S = XorString |: NoEffect
+
+    val xor = Xor.fromEither(stringOrInt)
+    val e: Eff[S, Int] = fromXor(xor)
+    e.runEither.run ==== xor.toEither
+  }
 
   def xorMonad = {
     type S = XorString |: NoEffect
@@ -76,7 +87,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
     action.runXor.run ==== Right(list.map(_.toString))
   }
 
-  def leftToRight = {
+  def leftToRight = prop { i: Int =>
     case class TooBig(value: Int)
     type D[A] = TooBig Xor A
     type E = D |: NoEffect
@@ -92,8 +103,15 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
       else        XorEffect.left[E, TooBig, Int](TooBig(k))
     }
 
-    action.runXor.run ==== Right(7)
-  }
+    val expected: TooBig Xor Int =
+      if (i < 10) Xor.right(i) else Xor.left(TooBig(i))
+
+    val actual: TooBig Xor Int =
+      action.runXor.run
+
+    actual == expected
+
+  }.setGen(Gen.oneOf(14, 12))
 
   def local = {
     case class Error1(m: String)
