@@ -1,0 +1,102 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Introduction</title>
+    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10">
+<h1>Introduction</h1>
+<div id="tipue_search_content"></div>
+
+<p>Extensible effects are an alternative to monad transformers for computing with effects in a functional way. This library uses a “free-er” monad and an “open-union” of effects to create an “effect stack” as described in <a href="http://okmij.org/ftp/Haskell/extensible/more.pdf">Oleg Kiselyov’s paper</a>.</p>
+<p>There are lots of advantages to this approach:</p>
+<ul>
+<li><p>operations can be declared as “requiring” an effect, without the need to fix the full stack of effects in advance</p></li>
+<li><p>effects handlers are modular and can be replaced with other implementations as needed (even at runtime)</p></li>
+<li><p>the underlying implementation is performant and stack-safe</p></li>
+<li><p>existing monadic datatypes can be integrated to the library</p></li>
+<li><p>effect stacks can be modified or combined</p></li>
+</ul>
+<p>This is probably very abstract so let’s see more precisely what this all means.</p>
+<h3 id="first-example">First example</h3>
+<p>A monadic action is modelled as a value of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> denotes a set of effects and <code class="prettyprint">A</code> is the value returned by the computation, possibly triggering some effects when evaluated.</p>
+<p>The effects <code class="prettyprint">R</code> are modelled by a type-level list of “effect constructors”, for example:</p>
+<pre><code class="prettyprint">import cats.data._
+import org.atnos.eff._, all._
+
+type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect</code></pre>
+<p>The stack <code class="prettyprint">Stack</code> above declares 3 effects:</p>
+<ul>
+<li><p>a <code class="prettyprint">Reader[Int, ?]</code> effect to access some configuration number of type <code class="prettyprint">Int</code></p></li>
+<li><p>a <code class="prettyprint">Writer[String, ?]</code> effect to log string messages</p></li>
+<li><p>an <code class="prettyprint">Eval</code> effect to only compute values on demand (a bit like lazy values)</p></li>
+</ul>
+<p>Now we can write a program with those 3 effects, using the primitive operations provided by <code class="prettyprint">ReaderEffect</code>, <code class="prettyprint">WriterEffect</code> and <code class="prettyprint">EvalEffect</code>:</p>
+<pre><code class="prettyprint">import org.atnos.eff.all._
+import org.atnos.eff.syntax.all._
+import Stack._
+
+val program: Eff[Stack, Int] = for {
+  // get the configuration
+  n &lt;- ask[Stack, Int]
+
+  // log the current configuration value
+  _ &lt;- tell[Stack, String](&quot;the required power is &quot;+n)
+
+  // compute the nth power of 2
+  a &lt;- delay[Stack, Int](math.pow(2, n.toDouble).toInt)
+
+  // log the result
+  _ &lt;- tell[Stack, String](&quot;the result is &quot;+a)
+} yield a
+
+// run the action with all the interpreters
+// each interpreter running one effect
+program.runReader(6).runWriter.runEval.run</code></pre>
+<p><code class="prettyprint">&gt; (64,List(the required power is 6, the result is 64))</code></p>
+<p>As you can see, all the effects of the <code class="prettyprint">Stack</code> type are being executed one by one:</p>
+<ol style="list-style-type: decimal">
+<li>the <code class="prettyprint">Reader</code> effect, needing a value to inject</li>
+<li>the <code class="prettyprint">Writer</code> effect, which logs messages</li>
+<li>the <code class="prettyprint">Eval</code> effect to compute the “power of 2 computation”</li>
+<li>finally the <code class="prettyprint">NoEffect</code> effect (provided by the <code class="prettyprint">Eff</code> object) to get the final value out of <code class="prettyprint">Eff[Stack, Int]</code></li>
+</ol>
+<p><br/> Maybe you noticed that the effects are not being executed in the same order as their order in the stack declaration. The effects can indeed be executed in any order. This doesn’t mean though that the results will be the same. For example running the <code class="prettyprint">Writer</code> effect then <code class="prettyprint">Xor</code> effect returns <code class="prettyprint">String Xor (A, List[String])</code> whereas running the <code class="prettyprint">Xor</code> effect then the <code class="prettyprint">Writer</code> effect returns <code class="prettyprint">(String Xor A, List[String])</code>.</p>
+<p>This all works thanks to some implicits definitions guiding Scala type inference towards the right return types. You can learn more on implicits and how to remove the type annotations in the example above in the <link class="ok"><a href="org.atnos.site.Implicits.html" tooltip="" class="ok">implicits</a></link> section.</p>
+<p>Otherwise you can also learn about <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">other effects</a></link> supported by this library.</p>
+</div>
+
+</div>
+
+</body>
+</html>
