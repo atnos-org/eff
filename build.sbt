@@ -16,9 +16,9 @@ lazy val eff = project.in(file("."))
 
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff-cats")
-  .settings(effSettings:_*)
   .jsSettings(commonJsSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
+  .settings(effSettings:_*)
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
@@ -44,6 +44,7 @@ lazy val scoverageSettings = Seq(
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := "2.11.8",
+  version := "1.7.1",
   crossScalaVersions := Seq("2.11.8")
 )
 
@@ -71,7 +72,8 @@ lazy val commonJvmSettings = Seq(
   libraryDependencies ++= depend.specs2
 )
 
-lazy val effSettings = buildSettings ++ commonSettings ++ publishSettings ++ scoverageSettings
+lazy val effSettings =
+  buildSettings ++ commonSettings ++ publishSettings ++ scoverageSettings
 
 lazy val publishSettings =
   Seq(
@@ -121,7 +123,17 @@ lazy val sharedPublishSettings = Seq(
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
   publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
-)
+) ++ site.settings ++
+  ghpages.settings ++
+  userGuideSettings
+
+lazy val userGuideSettings =
+  Seq(
+    GhPagesKeys.ghpagesNoJekyll := false,
+    SiteKeys.siteSourceDirectory in SiteKeys.makeSite := target.value / "specs2-reports" / "site",
+    includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
+    git.remoteRepo := "git@github.com:atnos-org/eff-cats.git"
+  )
 
 lazy val sharedReleaseProcess = Seq(
   releaseProcess := Seq[ReleaseStep](
