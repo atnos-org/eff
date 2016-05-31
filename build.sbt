@@ -17,7 +17,7 @@ lazy val eff = project.in(file("."))
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff-cats")
   .jsSettings(commonJsSettings:_*)
-  .jvmSettings(commonJvmSettings:_*)
+  .jvmSettings(commonJvmSettings ++ Seq(libraryDependencies ++= depend.scalameter):_*)
   .settings(effSettings:_*)
 
 lazy val coreJVM = core.jvm

@@ -26,7 +26,7 @@ object depend {
     , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
 
   val scalameter = Seq(
-    "com.storm-enroute" %% "scalameter" % "0.7")
+    "com.storm-enroute" %% "scalameter" % "0.7" % "test")
 
   val resolvers = Seq(
       Resolver.sonatypeRepo("releases")

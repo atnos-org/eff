@@ -1,11 +1,11 @@
-package org.atnos.benchmarks
+package org.atnos.benchmark
 
 import org.scalameter.api._
 import org.atnos.eff._
 import EvalEffect._
 import Effects._
 import Eff._
-import scalaz._, Scalaz._
+import cats.implicits._
 import org.scalameter.picklers.Implicits._
 
 object EffBenchmark extends Bench.OfflineReport {
@@ -18,20 +18,21 @@ object EffBenchmark extends Bench.OfflineReport {
   } yield (0 until size).toList
 
   def simpleSend[R, V](v: =>V)(implicit m: Member[Eval, R]) =
-    impure(m.inject(Name(v)), Arrs.singleton((v: V) => EffMonad[R].pure(v)))
+    delay(v)
 
 
   performance of "send" in {
     measure method "simple send" in {
       using(lists) in { list =>
-        run(runEval(list.traverseU(a => simpleSend[E, Int](a))))
+        run(runEval(list.traverse(a => simpleSend[E, Int](a))))
       }
     }
     measure method "optimised send" in {
       using(lists) in { list =>
-        run(runEval(list.traverseU(a => delay[E, Int](a))))
+        run(runEval(list.traverse(a => delay[E, Int](a))))
       }
     }
   }
 
 }
+
