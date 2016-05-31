@@ -5,6 +5,7 @@ import ReleaseTransformations._
 import ScoverageSbtPlugin._
 import com.ambiata.promulgate.project.ProjectPlugin.promulgate
 import org.scalajs.sbtplugin.cross.CrossType
+import Defaults.{testTaskOptions, defaultTestTasks}
 
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
@@ -137,18 +138,29 @@ lazy val userGuideSettings =
 
 lazy val sharedReleaseProcess = Seq(
   releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    runTest,
-    setReleaseVersion,
-    commitReleaseVersion,
-    tagRelease,
-    publishArtifacts,
-    setNextVersion,
-    commitNextVersion,
-    ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true),
-    pushChanges)
-)
+  , checkSnapshotDependencies
+  , inquireVersions
+  , runTest
+  , setReleaseVersion
+  , commitReleaseVersion
+  , tagRelease
+  , generateWebsite
+  , publishSite
+  , publishArtifacts
+  , setNextVersion
+  , commitNextVersion
+  , ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
+  , pushChange
+  )
+) ++ testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website"))))
+
+lazy val publishSite = ReleaseStep { st: State =>
+  val st2 = executeStepTask(makeSite, "Making the site")(st)
+  executeStepTask(pushSite, "Publishing the site")(st2)
+}
+
+lazy val generateWebsiteTask = TaskKey[Tests.Output]("generate-website", "generate the website")
+lazy val generateWebsite     = executeStepTask(generateWebsiteTask, "Generating the website", Test)
 
 lazy val warnUnusedImport = Seq(
   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
@@ -165,5 +177,36 @@ lazy val credentialSettings = Seq(
 
 lazy val prompt = shellPrompt in ThisBuild := { state =>
   val name = Project.extract(state).currentRef.project
-  (if (name == "root") "" else name) + "> "
+  (if (name == "eff") "" else name) + "> "
 }
+
+def executeTask(task: TaskKey[_], info: String) = (st: State) => {
+  st.log.info(info)
+  val extracted = Project.extract(st)
+  val ref: ProjectRef = extracted.get(thisProjectRef)
+  extracted.runTask(task in ref, st)._1
+}
+
+def executeStepTask(task: TaskKey[_], info: String, configuration: Configuration) = ReleaseStep { st: State =>
+  executeTask(task, info, configuration)(st)
+}
+
+def executeStepTask(task: TaskKey[_], info: String) = ReleaseStep { st: State =>
+  executeTask(task, info)(st)
+}
+
+def executeTask(task: TaskKey[_], info: String, configuration: Configuration) = (st: State) => {
+  st.log.info(info)
+  Project.extract(st).runTask(task in configuration, st)._1
+}
+
+def testTaskDefinition(task: TaskKey[Tests.Output], options: Seq[TestOption]) =
+  Seq(testTask(task))                          ++
+    inScope(GlobalScope)(defaultTestTasks(task)) ++
+    inConfig(Test)(testTaskOptions(task))        ++
+    (testOptions in (Test, task) ++= options)
+
+def testTask(task: TaskKey[Tests.Output]) =
+  task <<= (streams in Test, loadedTestFrameworks in Test, testLoader in Test,
+    testGrouping in Test in test, testExecution in Test in task,
+    fullClasspath in Test in test, javaHome in test) flatMap Defaults.allTestGroupsTask
