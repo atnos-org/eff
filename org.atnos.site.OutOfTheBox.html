@@ -2,14 +2,15 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Out of the box</title>
-    <link href="./css/opensans-fonts.css"                          type="text/css" rel="stylesheet" />
-    <link href="./css/bootstrap.min.css"                           type="text/css" rel="stylesheet" />
-    <link href="./css/font-awesome.min.css"                        type="text/css" rel="stylesheet" />
-    <link href="./css/prettify.css"                                type="text/css" rel="stylesheet" />
-    <link href="./css/tabber.css"                                  type="text/css" rel="stylesheet" />
-    <link href="./css/tipuesearch.css"                             type="text/css" rel="stylesheet" />
-    <link href="./css/specs2.css"                                  type="text/css" rel="stylesheet" />
-    <link href="./css/specs2-user.css"                             type="text/css" rel="stylesheet" />
+    <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
+    <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css"     rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css"     rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css"     rel="stylesheet" />
 
     <script src="./javascript/jquery.js"                           type="text/javascript"></script>
     <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
@@ -323,22 +324,7 @@ mean(List(1, 2, 3)).runState((0, 0)).run</code></pre>
 <pre><code class="prettyprint">&gt; (there are 3 values
 the sum is 6,(3,6))</code></pre>
 <h3 id="list">List</h3>
-<p>The <code class="prettyprint">List</code> effect is used for computations which may return several values. A simple example using this effect would be:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-
-type S = List |: NoEffect
-
-// create all the possible pairs for a given list
-// where the sum is greater than a value
-def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
-  a &lt;- values(list:_*)
-  b &lt;- values(list:_*)
-  found &lt;- if (a + b &gt; n) singleton((a, b))
-           else           empty
-} yield found
-
-pairsBiggerThan(List(1, 2, 3, 4), 5).runList.run</code></pre>
-<p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
+<p>The <code class="prettyprint">List</code> effect is used for computations which may return several values. A simple example using this effect would be:<code class="prettyprint">ListSnippets.snippet1</code> <code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
 <h3 id="choose">Choose</h3>
 <p>The <code class="prettyprint">Choose</code> effect is used for non-deterministic computations. With the <code class="prettyprint">Choose</code> effect you can model computations which either:</p>
 <ul>
@@ -346,24 +332,7 @@ pairsBiggerThan(List(1, 2, 3, 4), 5).runList.run</code></pre>
 <li>choose between 2 different computations</li>
 </ul>
 <p><code class="prettyprint">Choose</code> is actually a generalization of <code class="prettyprint">List</code> where instead of “exploring” all the branches we might “cut” some of them. That behaviour is controlled by the <code class="prettyprint">Alternative[F]</code> instance you use when running <code class="prettyprint">Choose</code>.</p>
-<p>For example if we take <code class="prettyprint">List</code> to run a similar example as before, we get the list of all the accepted pairs:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-
-type S = Choose |: NoEffect
-
-// create all the possible pairs for a given list
-// where the sum is greater than a value
-def pairsBiggerThan(list: List[Int], n: Int): Eff[S, (Int, Int)] = for {
-  a &lt;- chooseFrom(list)
-  b &lt;- chooseFrom(list)
-  found &lt;- if (a + b &gt; n) EffMonad[S].pure((a, b))
-           else           zero
-} yield found
-
-import cats.std.list._
-
-pairsBiggerThan(List(1, 2, 3, 4), 5).runChoose.run</code></pre>
-<p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
+<p>For example if we take <code class="prettyprint">List</code> to run a similar example as before, we get the list of all the accepted pairs:<code class="prettyprint">ChooseSnippets.snippet1</code> <code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
 <h3 id="future">Future</h3>
 <p>The <code class="prettyprint">Future</code> effect uses Scala<code class="prettyprint">s</code>Future` for asynchronous computations. You can create values with:</p>
 <ul>
