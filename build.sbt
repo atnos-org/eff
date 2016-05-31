@@ -138,7 +138,7 @@ lazy val userGuideSettings =
 
 lazy val sharedReleaseProcess = Seq(
   releaseProcess := Seq[ReleaseStep](
-  , checkSnapshotDependencies
+    checkSnapshotDependencies
   , inquireVersions
   , runTest
   , setReleaseVersion
@@ -150,7 +150,7 @@ lazy val sharedReleaseProcess = Seq(
   , setNextVersion
   , commitNextVersion
   , ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
-  , pushChange
+  , pushChanges
   )
 ) ++ testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website"))))
 
