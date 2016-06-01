@@ -1,0 +1,12 @@
+Maintenance version
+
+Improvements:
+
+ * added an `eff-monix` module to provide a `TaskEffect` based on [monix `Task`](https://github.com/monixio/monix)
+ * added a `lift` function to `FutureEffect` to insert a `Future` in a stack [#9](https://github.com/atnos-org/eff-cats/pulls/9) (thanks to @pavlosgi)
+ * use `Duration` instead of `FiniteDuration` to run a `FutureEffect` [#9](https://github.com/atnos-org/eff-cats/pulls/10) (thanks to @pavlosgi)
+ 
+Fixes:
+
+ * removed the dependency of `eff-cats` on `scalameter` (only used in tests) [#11](https://github.com/atnos-org/eff-cats/pulls/11)
+
