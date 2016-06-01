@@ -1,11 +1,11 @@
-import com.typesafe.sbt.pgp.PgpKeys.publishSigned
 import com.typesafe.sbt.SbtSite.SiteKeys._
 import com.typesafe.sbt.SbtGhPages.GhPagesKeys._
 import ReleaseTransformations._
 import ScoverageSbtPlugin._
 import com.ambiata.promulgate.project.ProjectPlugin.promulgate
 import org.scalajs.sbtplugin.cross.CrossType
-import Defaults.{testTaskOptions, defaultTestTasks}
+import Defaults.{defaultTestTasks, testTaskOptions}
+import sbtrelease._
 
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
@@ -140,19 +140,24 @@ lazy val sharedReleaseProcess = Seq(
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies
   , inquireVersions
-  , runTest
+//  , runTest
   , setReleaseVersion
   , commitReleaseVersion
   , tagRelease
-  , generateWebsite
-  , publishSite
-  , publishArtifacts
-  , setNextVersion
-  , commitNextVersion
-  , ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
-  , pushChanges
+//  , generateWebsite
+//  , publishSite
+//  , publishArtifacts
+//  , setNextVersion
+//  , commitNextVersion
+//  , ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
+//  , pushChanges
   )
-) ++ testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website"))))
+) ++
+  Seq(
+    releaseNextVersion := { v => Version(v).map(_.bumpBugfix.string).getOrElse(versionFormatError) },
+    releaseTagName <<= (releaseVersion, version) map  { (rv, v) => "EFF-" + rv(v) }
+  ) ++
+  testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website"))))
 
 lazy val publishSite = ReleaseStep { st: State =>
   val st2 = executeStepTask(makeSite, "Making the site")(st)
