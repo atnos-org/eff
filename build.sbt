@@ -139,17 +139,17 @@ lazy val sharedReleaseProcess = Seq(
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies
   , inquireVersions
-//  , runTest
+  , runTest
   , setReleaseVersion
   , commitReleaseVersion
   , tagRelease
-//  , generateWebsite
-//  , publishSite
-//  , publishArtifacts
-//  , setNextVersion
-//  , commitNextVersion
-//  , ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
-//  , pushChanges
+  , generateWebsite
+  , publishSite
+  , publishArtifacts
+  , setNextVersion
+  , commitNextVersion
+  , ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
+  , pushChanges
   )
 ) ++
   Seq(
