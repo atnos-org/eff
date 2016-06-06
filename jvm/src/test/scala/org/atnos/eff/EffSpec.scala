@@ -3,10 +3,12 @@ package org.atnos.eff
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import org.specs2.{ScalaCheck, Specification}
-import cats._, data._
+import cats._
+import data._
 import cats.syntax.all._
 import cats.std.all._
 import cats.Eq
+import cats.arrow.NaturalTransformation
 //import cats.laws.discipline.{arbitrary => _, _}
 //import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
@@ -32,7 +34,9 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  Eff values can be traversed with an applicative instance $traverseEff
 
  A stack can be added a new effect when the effect is not in stack $notInStack
- A stack can be added a new effect when the effect is not in stack $inStack
+ A stack can be added a new effect when the effect is in stack     $inStack
+
+ An effect of the stack can be transformed into another one        $transformEffect
 
 """
 
@@ -166,6 +170,30 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     val b: Eff[Reader[String, ?] |: S, Int] = functionReader((s: String) => a.map(_ + s.size))
 
     b.runReader("start").runReader("start2").runOption.run ==== Option(6)
+
+  }
+
+  def transformEffect = {
+    type S = Reader[String, ?] |: Option |: NoEffect
+    type S2 = State[String, ?] |: Option |: NoEffect
+
+    def readSize[R](implicit m: Member[Reader[String, ?], R]): Eff[R, Int] =
+      ReaderEffect.ask.map(_.size)
+
+    def setString[R](implicit m: Member[State[String, ?], R]): Eff[R, Unit] =
+      StateEffect.put("hello")
+
+    val readerToState = new NaturalTransformation[Reader[String, ?], State[String, ?]] {
+      def apply[A](fa: Reader[String, A]): State[String, A] =
+        State((s: String) => (s, fa.run(s)))
+    }
+
+    def both: Eff[S2, Int] = for {
+      _ <- setString[S2]
+      s <- readSize[S].transform(readerToState)
+    } yield s
+
+    both.runState("universe").runOption.run ==== Option((5, "hello"))
 
   }
 
