@@ -19,15 +19,16 @@ object EvalEffect extends EvalEffect
 
 trait EvalTypes {
   type Eval[A] = cats.Eval[A]
+  type _Eval[R] = Eval <= R
 }
 
 object EvalTypes extends EvalTypes
 
 trait EvalCreation extends EvalTypes {
-  def now[R, A](a: A)(implicit m: Member[Eval, R]): Eff[R, A] =
+  def now[R :_Eval, A](a: A): Eff[R, A] =
     pure(a)
 
-  def delay[R, A](a: => A)(implicit m: Member[Eval, R]): Eff[R, A] =
+  def delay[R :_Eval, A](a: => A): Eff[R, A] =
     send(cats.Eval.later(a))
 }
 

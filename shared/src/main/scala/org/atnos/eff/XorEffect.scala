@@ -16,19 +16,19 @@ object XorEffect extends XorEffect
 trait XorCreation {
 
   /** create an Xor effect from a single Option value */
-  def optionXor[R, E, A](option: Option[A], e: E)(implicit member: Member[(E Xor ?), R]): Eff[R, A] =
+  def optionXor[R, E, A](option: Option[A], e: E)(implicit member: (E Xor ?) <=R): Eff[R, A] =
     option.fold[Eff[R, A]](left[R, E, A](e))(right[R, E, A])
 
   /** create an Xor effect from a single Xor value */
-  def fromXor[R, E, A](xor: E Xor A)(implicit member: Member[(E Xor ?), R]): Eff[R, A] =
+  def fromXor[R, E, A](xor: E Xor A)(implicit member: (E Xor ?) <=R): Eff[R, A] =
     xor.fold[Eff[R, A]](left[R, E, A], right[R, E, A])
 
   /** create a failed value */
-  def left[R, E, A](e: E)(implicit member: Member[(E Xor ?), R]): Eff[R, A] =
+  def left[R, E, A](e: E)(implicit member: (E Xor ?) <=R): Eff[R, A] =
     send[E Xor ?, R, A](Left(e))
 
   /** create a correct value */
-  def right[R, E, A](a: A)(implicit member: Member[(E Xor ?), R]): Eff[R, A] =
+  def right[R, E, A](a: A)(implicit member: (E Xor ?) <=R): Eff[R, A] =
     send[E Xor ?, R, A](Right(a))
 
 }
@@ -55,7 +55,7 @@ trait XorInterpretation {
     runXor(r).map(_.fold(util.Left.apply, util.Right.apply))
 
   /** catch and handle a possible left value */
-  def catchLeft[R <: Effects, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Member[(E Xor ?), R]): Eff[R, A] = {
+  def catchLeft[R <: Effects, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Xor ?) <=R): Eff[R, A] = {
     val recurse = new Recurse[(E Xor ?), R, A] {
       def apply[X](m: E Xor X) =
         m match {

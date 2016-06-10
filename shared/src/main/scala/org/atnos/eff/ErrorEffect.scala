@@ -34,27 +34,29 @@ trait ErrorTypes[F] {
    * scala.Name represents "by-name" value: values not yet evaluated
    */
   type ErrorOrOk[A] = Error Xor cats.Eval[A]
+
+  type _ErrorOrOk[R] = ErrorOrOk <= R
 }
 
 trait ErrorCreation[F] extends ErrorTypes[F] {
   /** create an Eff value from a computation */
-  def ok[R, A](a: => A)(implicit m: ErrorOrOk <= R): Eff[R, A] =
+  def ok[R :_ErrorOrOk, A](a: => A): Eff[R, A] =
     send[ErrorOrOk, R, A](Right(cats.Eval.later(a)))
 
   /** create an Eff value from a computation */
-  def eval[R, A](a: Eval[A])(implicit m: ErrorOrOk <= R): Eff[R, A] =
+  def eval[R :_ErrorOrOk , A](a: Eval[A]): Eff[R, A] =
     send[ErrorOrOk, R, A](Right(a))
 
   /** create an Eff value from an error */
-  def error[R, A](error: Error)(implicit m: ErrorOrOk <= R): Eff[R, A] =
+  def error[R :_ErrorOrOk, A](error: Error): Eff[R, A] =
     send[ErrorOrOk, R, A](Left(error))
 
   /** create an Eff value from a failure */
-  def fail[R, A](failure: F)(implicit m: ErrorOrOk <= R): Eff[R, A] =
+  def fail[R :_ErrorOrOk, A](failure: F): Eff[R, A] =
     error(Right(failure))
 
   /** create an Eff value from an exception */
-  def exception[R, A](t: Throwable)(implicit m: ErrorOrOk <= R): Eff[R, A] =
+  def exception[R :_ErrorOrOk, A](t: Throwable): Eff[R, A] =
     error(Left(t))
 }
 

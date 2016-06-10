@@ -16,20 +16,22 @@ object ListEffect extends ListEffect
 
 trait ListCreation {
 
+  type _List[R] = List <= R
+
   /** create a list effect with no values */
-  def empty[R, A](implicit m: List <= R): Eff[R, A] =
+  def empty[R :_List, A]: Eff[R, A] =
     fromList(List())
 
   /** create a list effect from a single value */
-  def singleton[R, A](a: A)(implicit m: List <= R): Eff[R, A] =
+  def singleton[R :_List, A](a: A): Eff[R, A] =
     fromList(List(a))
 
   /** create a list effect from a list of values */
-  def values[R, A](as: A*)(implicit m: List <= R): Eff[R, A] =
+  def values[R :_List, A](as: A*): Eff[R, A] =
     fromList(as.toList)
 
   /** create a list effect from a list of values */
-  def fromList[R, A](as: List[A])(implicit m: List <= R): Eff[R, A] =
+  def fromList[R :_List, A](as: List[A]): Eff[R, A] =
     send[List, R, A](as)
 }
 

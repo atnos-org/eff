@@ -18,13 +18,14 @@ trait ReaderEffect extends
 object ReaderEffect extends ReaderEffect
 
 trait ReaderCreation {
+
   /** get the environment */
-  def ask[R, T](implicit member: Member[Reader[T, ?], R]): Eff[R, T] =
+  def ask[R, T](implicit member: Reader[T, ?] <= R): Eff[R, T] =
     local[R, T, T](identity)
 
   /** get the environment */
   /** modify the environment */
-  def local[R, T, U](f: T => U)(implicit member: Member[Reader[T, ?], R]): Eff[R, U] =
+  def local[R, T, U](f: T => U)(implicit member: Reader[T, ?] <= R): Eff[R, U] =
     send[Reader[T, ?], R, U](Reader(f))
 
 }
