@@ -1,0 +1,8 @@
+Maintenance version
+
+Improvements:
+
+ * added an `interpretUnsafe` method to interpret an effect to side-effects (if you are really desperate)
+ * added a `translate` method to interpret an effect into other effects in the stack
+ * added a tutorial based on cats `Free` tutorial
+ 
