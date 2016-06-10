@@ -37,6 +37,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  A stack can be added a new effect when the effect is in stack     $inStack
 
  An effect of the stack can be transformed into another one        $transformEffect
+ An effect of the stack can be translated into other effects on that stack $translateEffect
 
 """
 
@@ -197,6 +198,23 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
   }
 
+  def translateEffect = {
+    type S = Reader[String, ?] |: State[String, ?] |: Option |: NoEffect
+    type S2 = State[String, ?] |: Option |: NoEffect
+
+    implicit val m: Member.Aux[Reader[String, ?], S, S2] = Member.first
+
+    def readSize[R](implicit m: Member[Reader[String, ?], R]): Eff[R, Int] =
+      ReaderEffect.ask.map(_.size)
+
+    val readerToStateTranslation = new Interpret.Translate[Reader[String, ?], S2] {
+      def apply[A](fa: Reader[String, A]): Eff[S2, A] =
+        Eff.send(State((s: String) => (s, fa.run(s))))
+    }
+
+    readSize.translate(readerToStateTranslation).runState("hello").runOption.run ==== Option((5, "hello"))
+
+  }
   /**
    * Helpers
    */
