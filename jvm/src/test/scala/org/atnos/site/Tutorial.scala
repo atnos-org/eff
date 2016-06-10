@@ -191,7 +191,7 @@ Real world applications often time combine different algebras. The typelevel lis
 lets us compose different algebras in the context of `Eff`.
 
 Let's see a trivial example of unrelated ADT's getting composed that can form a more complex program. First you define
-your ADTs with smart constructors: s${definition[UserInteractionInterpretersSnippet]}
+your ADTs with smart constructors:${definition[UserInteractionSnippet]}
 
 Then you simply require your program to have `Member` instances for those effects:${definition[UserInteractionProgramSnippet]}
 
