@@ -84,7 +84,8 @@ This all works thanks to some implicits definitions guiding Scala type inference
 right return types. You can learn more on implicits and how to remove the type annotations in the example above
  in the ${"implicits" ~/ Implicits} section.
 
-Otherwise you can also learn about ${"other effects" ~/ OutOfTheBox} supported by this library.
+You can now get a more detailled presentation of the use of the Eff monad by reading the ${"tutorial" ~/ Tutorial} or
+you can learn about ${"other effects" ~/ OutOfTheBox} supported by this library.
 """
 
   type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect
