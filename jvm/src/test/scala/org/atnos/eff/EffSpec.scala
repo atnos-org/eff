@@ -9,6 +9,7 @@ import cats.syntax.all._
 import cats.std.all._
 import cats.Eq
 import cats.arrow.NaturalTransformation
+import org.atnos.eff.Interpret.Translate
 //import cats.laws.discipline.{arbitrary => _, _}
 //import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
@@ -38,6 +39,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
  An effect of the stack can be transformed into another one        $transformEffect
  An effect of the stack can be translated into other effects on that stack $translateEffect
+ An effect of the stack can be locally translated into other effects on that stack $translateEffectLocal
 
 """
 
@@ -195,14 +197,11 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     } yield s
 
     both.runState("universe").runOption.run ==== Option((5, "hello"))
-
   }
 
   def translateEffect = {
     type S = Reader[String, ?] |: State[String, ?] |: Option |: NoEffect
     type S2 = State[String, ?] |: Option |: NoEffect
-
-    implicit val m: Member.Aux[Reader[String, ?], S, S2] = Member.first
 
     def readSize[R](implicit m: Member[Reader[String, ?], R]): Eff[R, Int] =
       ReaderEffect.ask.map(_.size)
@@ -212,9 +211,40 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
         Eff.send(State((s: String) => (s, fa.run(s))))
     }
 
+    implicit val m: Member.Aux[Reader[String, ?], S, S2] = Member.first
+
     readSize.translate(readerToStateTranslation).runState("hello").runOption.run ==== Option((5, "hello"))
 
   }
+
+  def translateEffectLocal = {
+    type S2 = State[String, ?] |: Option |: NoEffect
+
+    def readSize[R](implicit m: Member[Reader[String, ?], R]): Eff[R, Int] =
+      ReaderEffect.ask.map(_.size)
+
+    def setString[R](implicit m: Member[State[String, ?], R]): Eff[R, Unit] =
+      StateEffect.put("hello")
+
+    def readerToState[R](implicit s: State[String, ?] <= R): Translate[Reader[String, ?], R] = new Translate[Reader[String, ?], R] {
+      def apply[A](fa: Reader[String, A]): Eff[R, A] =
+        send(State((s: String) => (s, fa.run(s))))
+    }
+
+    def both[R <: Effects](implicit s: State[String, ?] <= R): Eff[R, Int] = {
+      type R1 = Reader[String, ?] |: R
+
+      val action: Eff[R1, Int] = for {
+        _ <- setString[R1]
+        s <- readSize[R1]
+      } yield s
+
+      action.translate(readerToState)
+    }
+
+    both[S2].runState("universe").runOption.run ==== Option((5, "hello"))
+  }
+
   /**
    * Helpers
    */

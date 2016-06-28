@@ -91,8 +91,15 @@ trait MemberImplicits1 extends MemberImplicits2 {
     Member.ZeroMember[T, R]
 }
 
-trait MemberImplicits2 {
+trait MemberImplicits2 extends MemberImplicits3 {
   implicit def successor[T[_], O[_], R <: Effects, U <: Effects](implicit m: Member.Aux[T, R, U]): Member.Aux[T, O |: R, O |: U] =
     Member.SuccessorMember[T, O, R, U](m)
+}
+
+trait MemberImplicits3 {
+
+  implicit def successor_[T[_], O[_], R <: Effects](implicit m: Member[T, R]): Member[T, O |: R] =
+    Member.SuccessorMember[T, O, R, m.Out](m)
+
 }
 
