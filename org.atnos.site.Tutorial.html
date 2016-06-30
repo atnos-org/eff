@@ -1,0 +1,387 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Tutorial</title>
+    <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
+    <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css"     rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css"     rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css"     rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10">
+<h1>Tutorial</h1>
+<div id="tipue_search_content"></div>
+
+<p>This tutorial is intentionally structured like the <a href="https://github.com/typelevel/cats/blob/master/docs/src/main/tut/freemonad.md">Free monad tutorial for cats</a> so that a side-by-side comparison of the 2 approaches is possible.</p>
+<h3 id="study-your-topic">Study your topic</h3>
+<p>Let’s imagine that we want to create a DSL for a key-value store. We want to be able to do three things with keys:</p>
+<ul>
+<li>put a value into the store, associated with its key.</li>
+<li>get a value from the store given its key.</li>
+<li>delete a value from the store given its key.
+<p/></li>
+</ul>
+<p>The idea is to write a sequence of these operations in the embedded DSL as a “program”, interpret the “program”, and finally execute the “program” to interact with the actual key-value store.</p>
+<p>For example:</p>
+<pre><code class="prettyprint"> put(&quot;toto&quot;, 3)
+ get(&quot;toto&quot;) // returns 3
+ delete(&quot;toto&quot;)</code></pre>
+<p>But we want:</p>
+<ul>
+<li>the computation to be represented as a pure, immutable value</li>
+<li>to separate the creation and execution of the program</li>
+<li>to be able to support many different methods of execution</li>
+</ul>
+<h3 id="create-an-adt-representing-your-grammar">Create an ADT representing your grammar</h3>
+<p>ADT stands for “Algebraic Data Type”. In this context, it refers to a closed set of types which can be combined to build up complex, recursive values.</p>
+<p>We need to create an ADT to represent our key-value operations:</p>
+<pre><code class="prettyprint">// the type parameter A can be read as the type of value returned by the operation
+sealed trait KVStore[+A]
+
+case class Put[T](key: String, value: T) extends KVStore[Unit]
+case class Get[T](key: String) extends KVStore[Option[T]]
+case class Delete(key: String) extends KVStore[Unit]
+</code></pre>
+<h3 id="free-your-adt">Free your ADT</h3>
+<p>There are four basic steps to “freeing” the ADT:</p>
+<ol style="list-style-type: decimal">
+<li>Create smart constructors for <code class="prettyprint">KVStore[_]</code> using <code class="prettyprint">Eff.send</code></li>
+<li>Build a program out of key-value DSL operations</li>
+<li>Build an interpreter for programs of DSL operations</li>
+<li>Execute our interpreted program</li>
+<li>[optional] add some syntax for the interpreter</li>
+</ol>
+<h3 id="create-smart-constructors-using-eff.send">Create smart constructors using <code class="prettyprint">Eff.send</code></h3>
+<p>These methods will let you create <code class="prettyprint">Eff</code> values for your key-value store “Effect”:</p>
+<pre><code class="prettyprint">import cats.implicits._
+
+// T &lt;= R is an alias for Member[T, R]
+// stating that T is an effect member of the effect stack R
+type _KVStore[R] = KVStore &lt;= R
+
+/** put returns nothing (i.e. Unit) */
+def put[T, R :_KVStore](key: String, value: T): Eff[R, Unit] =
+  Eff.send[KVStore, R, Unit](Put(key, value))
+
+/** get returns a T value if the key exists */
+def get[T, R :_KVStore](key: String): Eff[R, Option[T]] =
+  Eff.send[KVStore, R, Option[T]](Get(key))
+
+/** delete returns nothing (i.e. Unit) */
+def delete[T, R :_KVStore](key: String): Eff[R, Unit] =
+  Eff.send(Delete(key))
+
+/** update composes get and set, and returns nothing. */
+def update[T, R :_KVStore](key: String, f: T =&gt; T): Eff[R, Unit] =
+  get[T, R](key).map(_.map(f)).void
+</code></pre>
+<p>Each method requires the “KVStore” effect to be a member of an “effect stack” <code class="prettyprint">R</code>. The return values are of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> is a stack of effects possibly containing other effects than key-value store operations and yielding values of type <code class="prettyprint">A</code>.</p>
+<h3 id="build-a-program">Build a program</h3>
+<p>Now that we can construct values with <code class="prettyprint">KVStore</code> effects we can use our DSL to write “programs” using a for-comprehension:</p>
+<pre><code class="prettyprint">import org.atnos.eff._
+
+def program[R :_KVStore]: Eff[R, Option[Int]] =
+  for {
+    _ &lt;- put(&quot;wild-cats&quot;, 2)
+    _ &lt;- update[Int, R](&quot;wild-cats&quot;, _ + 12)
+    _ &lt;- put(&quot;tame-cats&quot;, 5)
+    n &lt;- get[Int, R](&quot;wild-cats&quot;)
+    _ &lt;- delete(&quot;tame-cats&quot;)
+  } yield n
+</code></pre>
+<p>This looks like a monadic flow. However, it just builds a recursive data structure representing the sequence of operations.</p>
+<h3 id="write-an-interpreter-for-your-program">Write an interpreter for your program</h3>
+<p>As you may have understood now, <code class="prettyprint">Eff</code> is used to create an embedded DSL. By itself, this DSL only represents a sequence of operations (defined by a recursive data structure); it doesn’t produce anything.</p>
+<p><code class="prettyprint">Eff</code> is a programming language inside your programming language!</p>
+<p>So, like any other programming language, we need to interpret our abstract language into concrete values.</p>
+<p>To do this, we will use an interpreter transforming our <code class="prettyprint">KVStore</code> effects using a simple mutable map:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, interpret._
+import cats.implicits._
+import cats.data._
+import scala.collection.mutable._
+
+/**
+ * Unsafe interpreter for KVStore effects
+ *
+ * the program will crash if a type is incorrectly specified.
+ *
+ * The interpreter uses the `interpretUnsafe` method from `org.atnos.eff.Interpreter` to implement a
+ * stack-safe interpretation of effects as a side-effect.
+ *
+ * `interpretUnsafe` needs the definition of a side-effect where
+ * we get each `KVStore[X]` effect, run side-effects and return a value `X`.
+ *
+ * The resulting effect stack is m.Out which is R without the KVStore effects
+ */
+def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff[m.Out, A] = {
+  // a very simple (and imprecise) key-value store
+  val kvs = Map.empty[String, Any]
+
+  val sideEffect = new SideEffect[KVStore] {
+    def apply[X](kv: KVStore[X]): X =
+      kv match {
+        case Put(key, value) =&gt;
+          println(s&quot;put($key, $value)&quot;)
+          kvs.put(key, value)
+          ().asInstanceOf[X]
+
+        case Get(key) =&gt;
+          println(s&quot;get($key)&quot;)
+          kvs.get(key).asInstanceOf[X]
+
+        case Delete(key) =&gt;
+          println(s&quot;delete($key)&quot;)
+          kvs.remove(key)
+          ().asInstanceOf[X]
+      }
+  }
+  interpretUnsafe(effects)(sideEffect)(m)
+
+}
+</code></pre>
+<p>Please note this interpreter is impure – it mutates <code class="prettyprint">kvs</code> and also produces logging output using <code class="prettyprint">println</code>. The whole purpose of functional programming isn’t to prevent side-effects, it is just to push side-effects to the boundaries of your system in a well-known and controlled way.</p>
+<p>We can also interpret <code class="prettyprint">KVStore</code> effects differently and delegate the results to other effects:</p>
+<ul>
+<li><code class="prettyprint">State</code> for maintaining the map of values</li>
+<li><code class="prettyprint">Writer</code> for logging</li>
+<li><code class="prettyprint">Xor[E, ?]</code> for typing errors
+<p/></li>
+</ul>
+<pre><code class="prettyprint">import org.atnos.eff._, all._, interpret._, syntax._
+import cats.implicits._
+import cats.data._
+
+/**
+ * Safe interpreter for KVStore effects
+ *
+ * It uses the following effects:
+ *
+ *  - Writer to create log statements
+ *  - State to update a key-value Map
+ *  - Xor to raise errors if the type of an object in the map is not of the expected type
+ *
+ *  The resulting effect stack is U which is R without the KVStore effects
+ */
+def runKVStore[R, U, A](effects: Eff[R, A])
+  (implicit
+   m: Member.Aux[KVStore, R, U],
+   x: Throwable Xor ? &lt;= U,
+   w: Writer[String, ?] &lt;= U,
+   s: State[Map[String, Any], ?] &lt;= U
+  ): Eff[U, A] = {
+
+  val translation = new Translate[KVStore, U] {
+    def apply[X](kv: KVStore[X]): Eff[U, X] =
+      kv match {
+        case Put(key, value) =&gt;
+          for {
+            _ &lt;- tell(s&quot;put($key, $value)&quot;)
+            _ &lt;- modify((map: Map[String, Any]) =&gt; map.updated(key, value))
+            r &lt;- fromXor(Xor.catchNonFatal(().asInstanceOf[X]))
+          } yield r
+
+        case Get(key) =&gt;
+          for {
+            _ &lt;- tell(s&quot;get($key)&quot;)
+            m &lt;- get[U, Map[String, Any]]
+            r &lt;- fromXor(Xor.catchNonFatal(m.get(key).asInstanceOf[X]))
+          } yield r
+
+        case Delete(key) =&gt;
+          for {
+            _ &lt;- tell(s&quot;delete($key)&quot;)
+            u &lt;- modify((map: Map[String, Any]) =&gt; map - key)
+            r &lt;- fromXor(Xor.catchNonFatal(().asInstanceOf[X]))
+          } yield r
+      }
+  }
+
+  translate(effects)(translation)
+}
+</code></pre>
+<p><code class="prettyprint">Eff</code> is just a recursive structure that can be seen as sequence of operations producing other operations, with potentially other effects. In this way it is similar to folding a <code class="prettyprint">List</code>. We often use folds (e.g. foldRight) to obtain a single value from a list; this recurses over the structure, combining its contents.</p>
+<p>The idea behind an <code class="prettyprint">Eff</code> interpreter is exactly the same. We “fold” the recursive structure by:</p>
+<ul>
+<li>consuming each operation.</li>
+<li>compiling the operation into a target language</li>
+<li>computing next operation.
+<p/></li>
+</ul>
+<p>An important aspect of interpreters is stack-safety. An interpreter evaluates each step of a computation on the stack then calls itself to evaluate the other steps. The <code class="prettyprint">org.atnos.eff.Interpreter</code> object provides various methods helping you write a stack-safe interpreter:</p>
+<ul>
+<li><p><code class="prettyprint">interpretUnsafe</code> makes you define a <code class="prettyprint">SideEffect</code> trait to return a value <code class="prettyprint">X</code> from an effect</p></li>
+<li><p><code class="prettyprint">translate</code> makes you define a <code class="prettyprint">Translate</code> trait to “translate” your effect into another <code class="prettyprint">Eff</code> computation</p></li>
+<li><p>both are specialized version of <code class="prettyprint">interpret1</code> which makes you define a <code class="prettyprint">Recurse</code> trait to either return a value <code class="prettyprint">X</code> from an effect or produce another <code class="prettyprint">Eff</code> computation</p></li>
+</ul>
+<h3 id="run-your-program">Run your program</h3>
+<p>The final step is naturally running your program after interpreting it to another <code class="prettyprint">Eff</code> value. We need to</p>
+<ul>
+<li>specify a concrete stack of effects containing the effect we want to interpret <code class="prettyprint">KVStore |: NoEffect</code></li>
+<li>call our interpreter to get a <code class="prettyprint">Eff[NoEffect, A]</code> value</li>
+<li>call a final <code class="prettyprint">run</code> to get an <code class="prettyprint">A</code> value
+<p/></li>
+</ul>
+<p>Like this:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
+
+// run the program with the unsafe interpreter
+runKVStoreUnsafe(program[KVStore |: NoEffect]).run</code></pre>
+<p><code class="prettyprint">&gt; Some(2)</code></p>
+<p>With the safe interpreter, the process is the same and we need to</p>
+<ul>
+<li>specify an effect stack definition with all the effects</li>
+<li>call our “safe” interpreter</li>
+<li>call interpreters for all the other effects, including the final <code class="prettyprint">NoEffect</code> with <code class="prettyprint">run</code>
+<p/></li>
+</ul>
+<p>Like that:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
+import cats._, data._
+
+// run the program with the safe interpreter
+type Stack = KVStore |: (Throwable Xor ?) |: State[Map[String, Any], ?] |: Writer[String, ?] |: NoEffect
+
+val (result, logs) =
+  runKVStore(program[Stack]).runXor.evalState(Map.empty[String, Any]).runWriter.run
+
+(result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
+<pre><code class="prettyprint">&gt; Right(Some(2))
+put(wild-cats, 2)
+get(wild-cats)
+put(tame-cats, 5)
+get(wild-cats)
+delete(tame-cats)</code></pre>
+<h3 id="add-some-syntax">Add some syntax</h3>
+<p>It is nice to be able to “chain” <code class="prettyprint">run</code> methods with this additional piece of syntax:</p>
+<pre><code class="prettyprint">implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
+  def runStore[U](implicit
+            m: Member.Aux[KVStore, R, U], x: Throwable Xor ? &lt;= U,
+            w: Writer[String, ?] &lt;= U, s: State[Map[String, Any], ?] &lt;= U): Eff[U, A] =
+    runKVStore(effects)
+}
+
+val (result, logs) =
+  program[Stack].runStore.runXor.evalState(Map.empty[String, Any]).runWriter.run
+
+(result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
+<pre><code class="prettyprint">&gt; Right(Some(2))
+put(wild-cats, 2)
+get(wild-cats)
+put(tame-cats, 5)
+get(wild-cats)
+delete(tame-cats)</code></pre>
+<h3 id="composing-adts-with-the-eff-monad">Composing ADTs with the Eff monad</h3>
+<p>Real world applications often time combine different algebras. The typelevel list of effects <code class="prettyprint">R</code> in <code class="prettyprint">Eff[R, A]</code> lets us compose different algebras in the context of <code class="prettyprint">Eff</code>.</p>
+<p>Let’s see a trivial example of unrelated ADT’s getting composed that can form a more complex program. First you define your ADTs with smart constructors:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._
+
+sealed trait Interact[A]
+
+case class Ask(prompt: String) extends Interact[String]
+case class Tell(msg: String) extends Interact[Unit]
+
+type _Interact[R] = Member[Interact, R]
+
+def askUser[R](prompt: String)(implicit m: Member[Interact, R]): Eff[R, String] =
+  send(Ask(prompt))
+
+def tellUser[R](message: String)(implicit m: Member[Interact, R]): Eff[R, Unit] =
+  send(Tell(message))
+
+sealed trait DataOp[A]
+
+type _DataOp[R] = Member[DataOp, R]
+
+case class AddCat(a: String) extends DataOp[Unit]
+case class GetAllCats() extends DataOp[List[String]]
+
+def addCat[R](a: String)(implicit m: Member[DataOp, R]): Eff[R, Unit] =
+  send(AddCat(a))
+
+def getAllCats[R](implicit m: Member[DataOp, R]): Eff[R, List[String]] =
+  send(GetAllCats())
+
+</code></pre>
+<p>Then you simply require your program to have <code class="prettyprint">Member</code> instances for those effects:</p>
+<pre><code class="prettyprint">import org.atnos.eff._
+import cats.implicits._
+
+def program[R :_Interact :_DataOp]: Eff[R, Unit] =
+  for {
+    cat  &lt;- askUser(&quot;What&#39;s the kitty&#39;s name?&quot;)
+    _    &lt;- addCat(cat)
+    cats &lt;- getAllCats
+    _    &lt;- tellUser(&quot;Current cats: &quot;+cats.mkString(&quot;, &quot;))
+  } yield ()</code></pre>
+<p>Finally we write one interpreter per ADT and use them to run our program:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, interpret._
+import cats.data._
+
+
+def runInteract[R, A](effects: Eff[R, A])(implicit m: Member[Interact, R]): Eff[m.Out, A] = {
+  val recurse = new Recurse[Interact, m.Out, A] {
+    def apply[X](i: Interact[X]): X Xor Eff[m.Out, A] = Xor.left {
+      i match {
+        case Ask(prompt) =&gt;
+          println(prompt)
+          readLine()
+
+        case Tell(msg) =&gt;
+          println(msg)
+      }
+    }
+  }
+  interpret1[R, m.Out, Interact, A, A](a =&gt; a)(recurse)(effects)(m)
+}
+
+def runDataOp[R, A](effects: Eff[R, A])(implicit m: Member[DataOp, R]): Eff[m.Out, A] = {
+  val memDataSet = new scala.collection.mutable.ListBuffer[String]
+
+  val recurse = new Recurse[DataOp, m.Out, A] {
+    def apply[X](i: DataOp[X]): X Xor Eff[m.Out, A] = Xor.left {
+      i match {
+        case AddCat(a)    =&gt; memDataSet.append(a); ()
+        case GetAllCats() =&gt; memDataSet.toList
+      }
+    }
+  }
+  interpret1[R, m.Out, DataOp, A, A](a =&gt; a)(recurse)(effects)(m)
+}
+</code></pre>
+<p>Now if we run our program and type in “snuggles” when prompted, we see something like this:</p>
+<pre><code class="prettyprint"></code></pre>
+<pre><code class="prettyprint">What&#39;s the kitty&#39;s name?
+Current cats: snuggles</code></pre>
+</div>
+
+</div>
+
+</body>
+</html>

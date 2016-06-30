@@ -1,0 +1,198 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Transforming stacks</title>
+    <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
+    <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css"     rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css"     rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css"     rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10">
+<h1>Transforming stacks</h1>
+<div id="tipue_search_content"></div>
+
+<h3 id="transform-an-effect-to-another">Transform an effect to another</h3>
+<h4 id="change-the-effect">Change the effect</h4>
+<p>A typical use case for this is to transform a stack having a <code class="prettyprint">Reader[S, ?]</code> effect to a stack having a <code class="prettyprint">Reader[B, ?]</code> effect where <code class="prettyprint">S</code> is “contained” in <code class="prettyprint">B</code> (meaning that there is a mapping from <code class="prettyprint">B</code>, “big”, to <code class="prettyprint">S</code>, “small”). Here is an example:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._
+import org.atnos.eff.syntax.all._
+import cats.data._
+
+case class Conf(host: String, port: Int)
+
+type ReaderPort[A] = Reader[Int, A]
+type ReaderHost[A] = Reader[String, A]
+type ReaderConf[A] = Reader[Conf, A]
+
+type S1 = ReaderHost |: Option |: NoEffect
+type S2 = ReaderPort |: Option |: NoEffect
+type SS = ReaderConf |: Option |: NoEffect
+
+implicit val ReaderHostMember: Member.Aux[ReaderHost, S1, Option |: NoEffect] =
+  Member.first
+
+implicit val ReaderPortMember: Member.Aux[ReaderPort, S2, Option |: NoEffect] =
+  Member.first
+
+implicit val ReaderConfMember: Member.Aux[ReaderConf, SS, Option |: NoEffect] =
+  Member.first
+
+val readHost: Eff[S1, String] = for {
+  c &lt;- ask[S1, String]
+  h &lt;- OptionEffect.some[S1, String](&quot;hello&quot;)
+} yield h
+
+val readPort: Eff[S2, String] = for {
+  c &lt;- ask[S2, Int]
+  h &lt;- OptionEffect.some[S2, String](&quot;world&quot;)
+} yield h
+
+val fromHost = new (ReaderHost ~&gt; ReaderConf) {
+  def apply[X](r: ReaderHost[X]) = Reader((c: Conf) =&gt; r.run(c.host))
+}
+
+val fromPort = new (ReaderPort ~&gt; ReaderConf) {
+  def apply[X](r: ReaderPort[X]) = Reader((c: Conf) =&gt; r.run(c.port))
+}
+
+val action: Eff[SS, String] = for {
+  s1 &lt;- readHost.transform(fromHost)
+  s2 &lt;- readPort.transform(fromPort)
+} yield s1 + &quot; &quot; + s2
+
+action.runReader(Conf(&quot;www.me.com&quot;, 8080)).runOption.run</code></pre>
+<p><code class="prettyprint">&gt; Some(hello world)</code></p>
+<p>There are also specialized versions of <code class="prettyprint">transform</code> for <code class="prettyprint">Reader</code> and <code class="prettyprint">State</code>:</p>
+<ul>
+<li><code class="prettyprint">ReaderEffect.localReader</code> takes a “getter” <code class="prettyprint">B =&gt; A</code> to transform a stack with a <code class="prettyprint">Reader[A, ?]</code> into a stack with a <code class="prettyprint">Reader[B, ?]</code></li>
+<li><code class="prettyprint">StateEffect.lensState</code> takes a “getter” <code class="prettyprint">S =&gt; T</code> and a “setter” <code class="prettyprint">(S, T) =&gt; S</code> to to transform a stack with a <code class="prettyprint">State[T, ?]</code> into a stack with a <code class="prettyprint">State[S, ?]</code></li>
+</ul>
+<h3 id="merge-stacks">Merge stacks</h3>
+<p>We can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._
+import cats.data._
+
+object HadoopStack {
+
+  case class HadoopConf(mappers: Int)
+
+  type HadoopReader[A] = Reader[HadoopConf, A]
+  type WriterString[A] = Writer[String, A]
+  type Hadoop = HadoopReader |: WriterString |: Eval |: NoEffect
+
+  object Hadoop {
+    implicit val HadoopReaderMember: Member.Aux[HadoopReader, Hadoop, WriterString |: Eval |: NoEffect] =
+      Member.first
+
+    implicit val WriterStringMember: Member.Aux[WriterString, Hadoop, HadoopReader |: Eval |: NoEffect] =
+      Member.successor
+
+    implicit val EvalMember: Member.Aux[Eval, Hadoop, HadoopReader |: WriterString |: NoEffect] =
+      Member.successor
+  }
+
+  import Hadoop._
+
+  def readFile(path: String): Eff[Hadoop, String] =
+    for {
+      c &lt;- ask[Hadoop, HadoopConf]
+      _ &lt;- tell(&quot;Reading from &quot;+path)
+    } yield c.mappers.toString
+
+  def runHadoopReader[R, A](conf: HadoopConf): Eff[HadoopReader |: R, A] =&gt; Eff[R, A] =
+    (e: Eff[HadoopReader |: R, A]) =&gt; ReaderEffect.runReader(conf)(e)
+
+}
+
+object S3Stack {
+
+  case class S3Conf(bucket: String)
+
+  type S3Reader[A] = Reader[S3Conf, A]
+  type WriterString[A] = Writer[String, A]
+
+  type S3 = S3Reader |: WriterString |: Eval |: NoEffect
+
+  object S3 {
+    implicit val S3ReaderMember: Member.Aux[S3Reader, S3, WriterString |: Eval |: NoEffect] =
+      Member.first
+
+    implicit val WriterStringMember: Member.Aux[WriterString, S3, S3Reader |: Eval |: NoEffect] =
+      Member.successor
+
+    implicit val EvalMember: Member.Aux[Eval, S3, S3Reader |: WriterString |: NoEffect] =
+      Member.successor
+  }
+
+  import S3._
+
+
+  def writeFile(key: String, content: String): Eff[S3, Unit] =
+    for {
+      c &lt;- ask[S3, S3Conf]
+      _ &lt;- tell(&quot;Writing to bucket &quot;+c.bucket+&quot;: &quot;+content)
+    } yield ()
+
+  def runS3Reader[R, A](conf: S3Conf): Eff[S3Reader |: R, A] =&gt; Eff[R, A] =
+    (e: Eff[S3Reader |: R, A]) =&gt; ReaderEffect.runReader(conf)(e)
+}
+</code></pre>
+<p>So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share some common effects, so the resulting stack we want to work with is:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, Effects._
+import cats.Eval
+import HadoopStack._
+import S3Stack.{WriterString=&gt;_,_}
+
+type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect</code></pre>
+<p>Then we can use the <code class="prettyprint">into</code> method to inject effects from each stack into this common stack:</p>
+<pre><code class="prettyprint">// this imports the `into` and runXXX syntax
+import org.atnos.eff.syntax.all._
+
+val action = for {
+  // read a file from hadoop
+  s &lt;- readFile(&quot;/tmp/data&quot;).into[HadoopS3]
+
+  // write a file on S3
+  _ &lt;- writeFile(&quot;key&quot;, s)  .into[HadoopS3]
+} yield ()
+
+import HadoopS3._
+
+// and we can run the composite action
+action.runReader(S3Conf(&quot;bucket&quot;)).runReader(HadoopConf(10)).runWriter.runEval.run</code></pre>
+<p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket: 10))</code></p>
+<p>You can find a fully working example of this approach in <code class="prettyprint">src/test/org/atnos/example/StacksSpec</code>.</p>
+</div>
+
+</div>
+
+</body>
+</html>
