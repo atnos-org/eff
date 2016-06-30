@@ -6,7 +6,7 @@ object depend {
 
   val catsVersion     = "0.6.0"
   val monixVersion    = "2.0-RC2"
-  val specs2Version   = "3.8.3"
+  val specs2Version   = "3.8.4"
 
 
   val cats = Seq(
