@@ -18,7 +18,7 @@ lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff-cats")
   .settings(promulgate.library("org.atnos.eff", "eff-cats"):_*)
   .jsSettings(commonJsSettings:_*)
-  .jvmSettings(commonJvmSettings ++ Seq(libraryDependencies ++= depend.scalameter):_*)
+  .jvmSettings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter):_*)
   .settings(effSettings:_*)
 
 lazy val coreJVM = core.jvm
@@ -28,10 +28,10 @@ lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
   .settings(moduleName := "eff-cats-monix")
   .dependsOn(core)
   .settings(promulgate.library("org.atnos.eff", "eff-cats-monix"):_*)
-  .settings(libraryDependencies ++= depend.monix)
+  .settings(libraryDependencies ++= monixEval)
   .settings(effSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
-  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= depend.monixjs):_*)
+  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= monixjs):_*)
 
 lazy val monixJVM = monix.jvm
 lazy val monixJS =  monix.js
@@ -51,8 +51,7 @@ lazy val buildSettings = Seq(
 
 lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
-  resolvers ++= depend.resolvers,
-  libraryDependencies ++= depend.cats,
+  resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1"),
   addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
@@ -66,11 +65,13 @@ lazy val commonJsSettings = Seq(
   scalaJSStage in Global := FastOptStage,
   parallelExecution := false,
   requiresDOM := false,
+  libraryDependencies ++= catsJs,
   jsEnv := NodeJSEnv().value
 )
 
 lazy val commonJvmSettings = Seq(
-  libraryDependencies ++= depend.specs2
+  libraryDependencies ++= catsJvm,
+  libraryDependencies ++= specs2
 )
 
 lazy val effSettings =
@@ -215,3 +216,34 @@ def testTask(task: TaskKey[Tests.Output]) =
   task <<= (streams in Test, loadedTestFrameworks in Test, testLoader in Test,
     testGrouping in Test in test, testExecution in Test in task,
     fullClasspath in Test in test, javaHome in test) flatMap Defaults.allTestGroupsTask
+
+lazy val catsVersion     = "0.6.0"
+lazy val monixVersion    = "2.0-RC2"
+lazy val specs2Version   = "3.8.4"
+
+lazy val catsJvm = Seq(
+  "org.typelevel" %% "cats-core" % catsVersion)
+
+lazy val catsJs = Seq(
+  "org.typelevel" %%%! "cats-core" % catsVersion)
+
+lazy val monixEval = Seq(
+  "io.monix" %% "monix-eval" % monixVersion)
+
+lazy val monixjs = Seq(
+  "io.monix" %%%! "monix-eval" % monixVersion)
+
+lazy val specs2 = Seq(
+  "org.specs2" %% "specs2-core"
+  , "org.specs2" %% "specs2-matcher-extra"
+  , "org.specs2" %% "specs2-scalacheck"
+  , "org.specs2" %% "specs2-html"
+  , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
+
+lazy val scalameter = Seq(
+  "com.storm-enroute" %% "scalameter" % "0.7" % "test")
+
+lazy val commonResolvers = Seq(
+  Resolver.sonatypeRepo("releases")
+  , Resolver.typesafeRepo("releases")
+  , Resolver.url("ambiata-oss", new URL("https://ambiata-oss.s3.amazonaws.com"))(Resolver.ivyStylePatterns))
