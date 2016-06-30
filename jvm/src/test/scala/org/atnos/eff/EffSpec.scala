@@ -150,7 +150,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
 
-  def functionReader[R <: Effects, A, B](f: A => Eff[R, B]): Eff[Reader[A, ?] |: R, B] =
+  def functionReader[R, A, B](f: A => Eff[R, B]): Eff[Reader[A, ?] |: R, B] =
     ask[Reader[A, ?] |: R, A].flatMap(f(_).into[Reader[A, ?] |: R])
 
   def notInStack = {
@@ -231,7 +231,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
         send(State((s: String) => (s, fa.run(s))))
     }
 
-    def both[R <: Effects](implicit s: State[String, ?] <= R): Eff[R, Int] = {
+    def both[R](implicit s: State[String, ?] <= R): Eff[R, Int] = {
       type R1 = Reader[String, ?] |: R
 
       val action: Eff[R1, Int] = for {

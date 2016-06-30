@@ -14,7 +14,7 @@ import scala.annotation.implicitNotFound
  */
 @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
 trait Member[T[_], R] {
-  type Out <: Effects
+  type Out
 
   def inject[V](tv: T[V]): Union[R, V]
 
@@ -43,7 +43,7 @@ object Member extends MemberImplicits {
   def unaux[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member[T, R] =
     m
 
-  def ZeroMember[T[_], R <: Effects]: Member.Aux[T, T |: R, R] = new Member[T, T |: R] {
+  def ZeroMember[T[_], R]: Member.Aux[T, T |: R, R] = new Member[T, T |: R] {
     type Out = R
 
     def inject[V](effect: T[V]): Union[T |: R, V] =
@@ -60,7 +60,7 @@ object Member extends MemberImplicits {
       }
   }
 
-  def SuccessorMember[T[_], O[_], R <: Effects, U <: Effects](implicit m: Member.Aux[T, R, U]): Member.Aux[T, O |: R, O |: U] = new Member[T, O |: R] {
+  def SuccessorMember[T[_], O[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, O |: R, O |: U] = new Member[T, O |: R] {
     type Out = O |: U
 
     def inject[V](effect: T[V]) =
@@ -87,18 +87,18 @@ trait MemberImplicits extends MemberImplicits1 {
 }
 
 trait MemberImplicits1 extends MemberImplicits2 {
-  implicit def first[T[_], R <: Effects]: Member.Aux[T, T |: R, R] =
+  implicit def first[T[_], R]: Member.Aux[T, T |: R, R] =
     Member.ZeroMember[T, R]
 }
 
 trait MemberImplicits2 extends MemberImplicits3 {
-  implicit def successor[T[_], O[_], R <: Effects, U <: Effects](implicit m: Member.Aux[T, R, U]): Member.Aux[T, O |: R, O |: U] =
+  implicit def successor[T[_], O[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, O |: R, O |: U] =
     Member.SuccessorMember[T, O, R, U](m)
 }
 
 trait MemberImplicits3 {
 
-  implicit def successor_[T[_], O[_], R <: Effects](implicit m: Member[T, R]): Member[T, O |: R] =
+  implicit def successor_[T[_], O[_], R](implicit m: Member[T, R]): Member[T, O |: R] =
     Member.SuccessorMember[T, O, R, m.Out](m)
 
 }

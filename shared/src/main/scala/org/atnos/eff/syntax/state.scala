@@ -8,7 +8,7 @@ object state extends state
 
 trait state {
 
-  implicit class StateEffectOps[R <: Effects, A](e: Eff[R, A]) {
+  implicit class StateEffectOps[R, A](e: Eff[R, A]) {
 
     def runState[S](s: S)(implicit member: Member[State[S, ?], R]): Eff[member.Out, (A, S)] =
       StateInterpretation.runState(s)(e)(member.aux)
@@ -28,7 +28,7 @@ trait state {
     def execStateZero[S : Monoid](implicit member: Member[State[S, ?], R]): Eff[member.Out, S] =
       StateInterpretation.execStateZero(e)(Monoid[S], member.aux)
 
-    def lensState[BR, U <: Effects, T, S](getter: S => T, setter: (S, T) => S)(implicit m1: Member.Aux[State[T, ?], R, U], m2: Member.Aux[State[S, ?], BR, U]): Eff[BR, A] =
+    def lensState[BR, U, T, S](getter: S => T, setter: (S, T) => S)(implicit m1: Member.Aux[State[T, ?], R, U], m2: Member.Aux[State[S, ?], BR, U]): Eff[BR, A] =
       StateInterpretation.lensState[R, BR, U, T, S, A](e, getter, setter)
 
   }

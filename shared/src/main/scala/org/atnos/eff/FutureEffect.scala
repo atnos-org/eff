@@ -35,7 +35,7 @@ trait FutureCreation {
 
 trait FutureInterpretation {
 
-  def awaitFuture[R <: Effects, U <: Effects, A](r: Eff[R, A])(atMost: Duration)
+  def awaitFuture[R, U, A](r: Eff[R, A])(atMost: Duration)
       (implicit m: Member.Aux[Future, R, U], ec: ExecutionContext): Eff[U, Throwable Xor A] = {
     val recurse = new Recurse[Future, U, Throwable Xor A] {
       def apply[X](m: Future[X]) =

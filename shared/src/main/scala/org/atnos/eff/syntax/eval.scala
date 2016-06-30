@@ -7,7 +7,7 @@ object eval extends eval
 
 trait eval {
 
-  implicit class EvalEffectOps[R <: Effects, A](e: Eff[R, A]) {
+  implicit class EvalEffectOps[R, A](e: Eff[R, A]) {
 
     def runEval(implicit member: Member[Eval, R]): Eff[member.Out, A] =
       EvalInterpretation.runEval(e)(member.aux)

@@ -62,7 +62,7 @@ class ReadmeSpec extends Specification { def is = s2"""
       def future[R, A](a: =>A)(implicit m: Fut <= R): Eff[R, A] =
         send[Fut, R, A](Future(() => a))
 
-      def runFuture[R <: Effects, A, B](atMost: Duration)(effects: Eff[Fut |: R, A]): Eff[R, A] = {
+      def runFuture[R, A, B](atMost: Duration)(effects: Eff[Fut |: R, A]): Eff[R, A] = {
         val recurse = new Recurse[Fut, R, A] {
           def apply[X](m: Fut[X]): X Xor Eff[R, A] =
             Left(Await.result(m.map(_()), atMost))

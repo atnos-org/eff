@@ -83,7 +83,7 @@ class StacksSpec extends Specification { def is = s2"""
         _ <- tell[R, String]("Reading from "+path)(w)
       } yield c.mappers.toString
 
-    def runHadoopReader[R <: Effects, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
+    def runHadoopReader[R, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
       (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runReader(conf)(e)
 
   }
@@ -103,7 +103,7 @@ class StacksSpec extends Specification { def is = s2"""
         _ <- tell[R, String]("Writing to bucket "+c.bucket+": "+content)(w)
       } yield ()
 
-    def runS3Reader[R <: Effects, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
+    def runS3Reader[R, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
       (e: Eff[S3Reader |: R, A]) => ReaderEffect.runReader(conf)(e)
   }
 
@@ -121,7 +121,7 @@ class StacksSpec extends Specification { def is = s2"""
         _ <- tell[Hadoop, String]("Reading from "+path)
       } yield c.mappers.toString
 
-    def runHadoopReader[R <: Effects, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
+    def runHadoopReader[R, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
       (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runReader(conf)(e)
 
   }
@@ -141,7 +141,7 @@ class StacksSpec extends Specification { def is = s2"""
         _ <- tell[S3, String]("Writing to bucket "+c.bucket+": "+content)
       } yield ()
 
-    def runS3Reader[R <: Effects, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
+    def runS3Reader[R, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
       (e: Eff[S3Reader |: R, A]) => ReaderEffect.runReader(conf)(e)
   }
 

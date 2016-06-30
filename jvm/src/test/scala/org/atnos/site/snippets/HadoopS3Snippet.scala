@@ -38,7 +38,7 @@ object HadoopStack {
       _ <- tell("Reading from "+path)
     } yield c.mappers.toString
 
-  def runHadoopReader[R <: Effects, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
+  def runHadoopReader[R, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
     (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runReader(conf)(e)
 
 }
@@ -72,7 +72,7 @@ object S3Stack {
       _ <- tell("Writing to bucket "+c.bucket+": "+content)
     } yield ()
 
-  def runS3Reader[R <: Effects, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
+  def runS3Reader[R, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
     (e: Eff[S3Reader |: R, A]) => ReaderEffect.runReader(conf)(e)
 }
 

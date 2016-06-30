@@ -8,9 +8,9 @@ object future extends future
 
 trait future {
 
-  implicit class FutureEffectOps[R <: Effects, A](e: Eff[R, A]) {
+  implicit class FutureEffectOps[R, A](e: Eff[R, A]) {
 
-    def awaitFuture[U <: Effects](atMost: Duration)
+    def awaitFuture[U](atMost: Duration)
       (implicit member: Member.Aux[Future, R, U], ec: ExecutionContext): Eff[U, Throwable Xor A] =
       FutureInterpretation.awaitFuture(e)(atMost)
 
@@ -18,7 +18,7 @@ trait future {
 
   implicit class FutureOps[A](f: Future[A]) {
 
-    def liftFuture[R <: Effects](implicit m: Member[Future, R], e: Member[EvalEffect.Eval, R]) =
+    def liftFuture[R](implicit m: Member[Future, R], e: Member[EvalEffect.Eval, R]) =
       FutureEffect.liftFuture(f)
   }
 

@@ -171,8 +171,8 @@ import cats._, data._
 type Stack = KVStore |: (Throwable Xor ?) |: State[Map[String, Any], ?] |: Writer[String, ?] |: NoEffect
 // 8<---
 
-implicit class KVStoreOps[R <: Effects, A](effects: Eff[R, A]) {
-  def runStore[U <: Effects](implicit
+implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
+  def runStore[U](implicit
             m: Member.Aux[KVStore, R, U], x: Throwable Xor ? <= U,
             w: Writer[String, ?] <= U, s: State[Map[String, Any], ?] <= U): Eff[U, A] =
     runKVStore(effects)

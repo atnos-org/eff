@@ -31,7 +31,7 @@ trait TaskCreation {
 
 trait TaskInterpretation {
   
-  def awaitTask[R <: Effects, U <: Effects, A](r: Eff[R, A])(atMost: Duration)
+  def awaitTask[R, U, A](r: Eff[R, A])(atMost: Duration)
       (implicit m: Member.Aux[Task, R, U], ec: ExecutionContext, s: Scheduler): Eff[U, Throwable Xor A] = {
     val recurse = new Recurse[Task, U, Throwable Xor A] {
       def apply[X](m: Task[X]) =

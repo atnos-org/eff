@@ -12,9 +12,9 @@ object monix extends monix
 
 trait monix {
 
-  implicit class TaskEffectOps[R <: Effects, A](e: Eff[R, A]) {
+  implicit class TaskEffectOps[R, A](e: Eff[R, A]) {
 
-    def awaitTask[U <: Effects](atMost: Duration)
+    def awaitTask[U](atMost: Duration)
                                (implicit member: Member.Aux[Task, R, U], ec: ExecutionContext, s: Scheduler): Eff[U, Throwable Xor A] =
       org.atnos.eff.monix.TaskEffect.awaitTask(e)(atMost)
 

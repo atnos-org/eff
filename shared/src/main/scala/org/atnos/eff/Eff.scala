@@ -185,7 +185,7 @@ trait EffInterpretation {
    * An Eff[R, A] value can be transformed into an Eff[U, A]
    * value provided that all the effects in R are also in U
    */
-  def effInto[R <: Effects, U, A](e: Eff[R, A])(implicit f: IntoPoly[R, U, A]): Eff[U, A] =
+  def effInto[R, U, A](e: Eff[R, A])(implicit f: IntoPoly[R, U, A]): Eff[U, A] =
     f(e)
 }
 
@@ -207,7 +207,7 @@ object EffInterpretation extends EffInterpretation
  *    there should be at least something producing a value of type A
  *
  */
-trait IntoPoly[R <: Effects, U, A] {
+trait IntoPoly[R, U, A] {
   def apply(e: Eff[R, A]): Eff[U, A]
 }
 
@@ -237,7 +237,7 @@ object IntoPoly extends IntoPolyLower {
       }
     }
 
-  implicit def intoOne[M[_], R <: Effects, A]: IntoPoly[R, M |: R, A] =
+  implicit def intoOne[M[_], R, A]: IntoPoly[R, M |: R, A] =
     new IntoPoly[R, M |: R, A] {
       def apply(e: Eff[R, A]): Eff[M |: R, A] = {
         e match {
@@ -255,7 +255,7 @@ object IntoPoly extends IntoPolyLower {
     }
 }
 trait IntoPolyLower {
-  implicit def intoEff[M[_], R <: Effects, U, A](implicit m: Member[M, M |: R], mu: Member[M, U], recurse: IntoPoly[R, U, A]): IntoPoly[M |: R, U, A] =
+  implicit def intoEff[M[_], R, U, A](implicit m: Member[M, M |: R], mu: Member[M, U], recurse: IntoPoly[R, U, A]): IntoPoly[M |: R, U, A] =
     new IntoPoly[M |: R, U, A] {
       def apply(e: Eff[M |: R, A]): Eff[U, A] = {
 

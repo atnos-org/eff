@@ -40,13 +40,13 @@ trait WriterInterpretation {
    *
    * This uses a ListBuffer internally to append values
    */
-  def runWriter[R <: Effects, U <: Effects, O, A, B](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, List[O])] =
+  def runWriter[R, U, O, A, B](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, List[O])] =
     runWriterFold(w)(ListFold)
 
   /**
    * More general fold of runWriter where we can use a fold to accumulate values in a mutable buffer
    */
-  def runWriterFold[R <: Effects, U <: Effects, O, A, B](w: Eff[R, A])(fold: Fold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
+  def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: Fold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
     val recurse: StateRecurse[Writer[O, ?], A, (A, B)] = new StateRecurse[Writer[O, ?], A, (A, B)] {
       type S = fold.S
       val init = fold.init
@@ -60,7 +60,7 @@ trait WriterInterpretation {
   /**
    * Run a side-effecting fold
    */
-  def runWriterUnsafe[R <: Effects, U <: Effects, O, A](w: Eff[R, A])(f: O => Unit)(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
+  def runWriterUnsafe[R, U, O, A](w: Eff[R, A])(f: O => Unit)(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
     runWriterFold(w)(UnsafeFold(f)).map(_._1)
 
   implicit def ListFold[A]: Fold[A, List[A]] = new Fold[A, List[A]] {

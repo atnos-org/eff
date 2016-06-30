@@ -45,7 +45,7 @@ trait ActionCreation extends ActionTypes {
    * warn the user about something that is probably wrong on his side,
    * and then fail all other computations
    */
-  def warnAndFail[R <: Effects, A](message: String, failureMessage: String)(implicit m1: Warnings <= R, m2: ErrorOrOk <= R): Eff[R, A] =
+  def warnAndFail[R, A](message: String, failureMessage: String)(implicit m1: Warnings <= R, m2: ErrorOrOk <= R): Eff[R, A] =
     warn(message)(m1) >>
       fail(failureMessage)
 

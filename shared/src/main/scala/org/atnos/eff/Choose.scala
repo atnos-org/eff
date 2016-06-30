@@ -52,7 +52,7 @@ trait ChooseCreation {
 object ChooseCreation extends ChooseCreation
 
 trait ChooseInterpretation {
-  def runChoose[R <: Effects, U <: Effects, A, F[_] : Alternative](r: Eff[R, A])(implicit m: Member.Aux[Choose, R, U]): Eff[U, F[A]] = {
+  def runChoose[R, U, A, F[_] : Alternative](r: Eff[R, A])(implicit m: Member.Aux[Choose, R, U]): Eff[U, F[A]] = {
     r match {
       case Pure(a) =>
         EffMonad[U].pure(Alternative[F].pure(a))

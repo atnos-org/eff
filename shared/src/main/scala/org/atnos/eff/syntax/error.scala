@@ -10,7 +10,7 @@ object error extends error
 
 trait error {
 
-  implicit class ErrorEffectOps[R <: Effects, A](action: Eff[R, A]) {
+  implicit class ErrorEffectOps[R, A](action: Eff[R, A]) {
 
     def runError(implicit m: Member[ErrorOrOk, R]): Eff[m.Out, Error Xor A] =
       ErrorEffect.runError(action)(m.aux)

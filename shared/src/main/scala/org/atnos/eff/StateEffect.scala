@@ -42,27 +42,27 @@ object StateCreation extends StateCreation
 
 trait StateInterpretation {
   /** run a state effect, with a Monoidal state */
-  def evalStateZero[R <: Effects, U <: Effects, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, A] =
+  def evalStateZero[R, U, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, A] =
     evalState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value, return only the value */
-  def evalState[R <: Effects, U <: Effects, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, A] =
+  def evalState[R, U, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, A] =
     runState(initial)(w).map(_._1)
 
   /** run a state effect, with a monoidal state, return only the state */
-  def execStateZero[R <: Effects, U <: Effects, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, S] =
+  def execStateZero[R, U, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, S] =
     execState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value, return only the state */
-  def execState[R <: Effects, U <: Effects, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, S] =
+  def execState[R, U, S, A](initial: S)(w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, S] =
     runState(initial)(w).map(_._2)
 
   /** run a state effect, with an initial value */
-  def runStateZero[R <: Effects, U <: Effects, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, (A, S)] =
+  def runStateZero[R, U, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, ?], R, U]): Eff[U, (A, S)] =
     runState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value */
-  def runState[R <: Effects, U <: Effects, S1, A](initial: S1)(w: Eff[R, A])(implicit m: Member.Aux[State[S1, ?], R, U]): Eff[U, (A, S1)] = {
+  def runState[R, U, S1, A](initial: S1)(w: Eff[R, A])(implicit m: Member.Aux[State[S1, ?], R, U]): Eff[U, (A, S1)] = {
     val recurse: StateRecurse[State[S1, ?], A, (A, S1)] = new StateRecurse[State[S1, ?], A, (A, S1)] {
       type S = S1
       val init = initial

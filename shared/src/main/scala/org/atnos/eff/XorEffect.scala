@@ -38,7 +38,7 @@ object XorCreation extends XorCreation
 trait XorInterpretation {
 
   /** run the xor effect, yielding E Xor A */
-  def runXor[R <: Effects, U <: Effects, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, E Xor A] = {
+  def runXor[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, E Xor A] = {
     val recurse = new Recurse[(E Xor ?), U, E Xor A] {
       def apply[X](m: E Xor X) =
         m match {
@@ -51,11 +51,11 @@ trait XorInterpretation {
   }
 
   /** run the xor effect, yielding Either[E, A] */
-  def runEither[R <: Effects, U <: Effects, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, Either[E, A]] =
+  def runEither[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Xor ?), R, U]): Eff[U, Either[E, A]] =
     runXor(r).map(_.fold(util.Left.apply, util.Right.apply))
 
   /** catch and handle a possible left value */
-  def catchLeft[R <: Effects, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Xor ?) <=R): Eff[R, A] = {
+  def catchLeft[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Xor ?) <=R): Eff[R, A] = {
     val recurse = new Recurse[(E Xor ?), R, A] {
       def apply[X](m: E Xor X) =
         m match {

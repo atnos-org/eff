@@ -7,7 +7,7 @@ package org.atnos.eff
  * Note that each "effect" is a type constructor
  */
 trait Effects  {
-  type |:[H[_], T <: Effects] = EffectsCons[H, T]
+  type |:[H[_], T] = EffectsCons[H, T]
 
   val |: = EffectsCons
 }
@@ -18,7 +18,7 @@ sealed trait Effect[F[_]]
 /**
  * Append an effect at the beginning of a list of effects
  */
-final case class EffectsCons[F[_], T <: Effects](head: Effect[F], tail: T) extends Effects {
+final case class EffectsCons[F[_], T](head: Effect[F], tail: T) extends Effects {
   def |:[G[_]](g: Effect[G]) = EffectsCons[G, F |: T](g, this)
 }
 

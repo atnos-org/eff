@@ -39,7 +39,7 @@ object ListCreation extends ListCreation
 
 trait ListInterpretation {
   /** run an effect stack starting with a list effect */
-  def runList[R <: Effects, U <: Effects, A](effects: Eff[R, A])(implicit m: Member.Aux[List, R, U]): Eff[U, List[A]] = {
+  def runList[R, U, A](effects: Eff[R, A])(implicit m: Member.Aux[List, R, U]): Eff[U, List[A]] = {
     val loop = new Loop[List, R, A, Eff[U, List[A]]] {
       type S = (List[Eff[R, A]], ListBuffer[A])
       val init = (List[Eff[R, A]](), new ListBuffer[A])

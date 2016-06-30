@@ -37,7 +37,7 @@ trait OptionInterpretation {
    *
    * Stop all computations if None is present once
    */
-  def runOption[R <: Effects, U <: Effects, A](r: Eff[R, A])(implicit m: Member.Aux[Option, R, U]): Eff[U, Option[A]] = {
+  def runOption[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Option, R, U]): Eff[U, Option[A]] = {
     val recurse = new Recurse[Option, U, Option[A]] {
       def apply[X](m: Option[X]) =
         m match {

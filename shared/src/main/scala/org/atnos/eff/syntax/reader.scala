@@ -7,7 +7,7 @@ object reader extends reader
 
 trait reader {
 
-  implicit class ReaderEffectOps[R <: Effects, A](e: Eff[R, A]) {
+  implicit class ReaderEffectOps[R, A](e: Eff[R, A]) {
 
     def runReader[C](c: C)(implicit member: Member[Reader[C, ?], R]): Eff[member.Out, A] =
       ReaderInterpretation.runReader(c)(e)(member.aux)

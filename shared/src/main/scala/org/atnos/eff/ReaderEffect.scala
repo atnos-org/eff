@@ -34,7 +34,7 @@ object ReaderCreation extends ReaderCreation
 
 trait ReaderInterpretation {
   /** interpret the Reader effect by providing an environment when required */
-  def runReader[R <: Effects, U <: Effects, A, B](env: A)(r: Eff[R, B])(implicit m: Member.Aux[Reader[A, ?], R, U]): Eff[U, B] = {
+  def runReader[R, U, A, B](env: A)(r: Eff[R, B])(implicit m: Member.Aux[Reader[A, ?], R, U]): Eff[U, B] = {
     val recurse = new Recurse[Reader[A, ?], U, B] {
       def apply[X](m: Reader[A, X]) = left(m.run(env))
     }

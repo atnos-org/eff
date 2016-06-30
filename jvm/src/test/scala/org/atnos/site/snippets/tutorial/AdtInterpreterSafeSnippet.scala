@@ -23,7 +23,7 @@ import cats.data._
  *
  *  The resulting effect stack is U which is R without the KVStore effects
  */
-def runKVStore[R <: Effects, U <: Effects, A](effects: Eff[R, A])
+def runKVStore[R, U, A](effects: Eff[R, A])
   (implicit
    m: Member.Aux[KVStore, R, U],
    x: Throwable Xor ? <= U,

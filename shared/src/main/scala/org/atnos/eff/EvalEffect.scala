@@ -33,7 +33,7 @@ trait EvalCreation extends EvalTypes {
 }
 
 trait EvalInterpretation extends EvalTypes {
-  def runEval[R <: Effects, U <: Effects, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] = {
+  def runEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] = {
     val recurse = new Recurse[Eval, U, A] {
       def apply[X](m: Eval[X]) = Left(m.value)
     }
@@ -41,7 +41,7 @@ trait EvalInterpretation extends EvalTypes {
     interpret1((a: A) => a)(recurse)(r)
   }
 
-  def attemptEval[R <: Effects, U <: Effects, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Throwable Xor A] = {
+  def attemptEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Throwable Xor A] = {
     val recurse = new Recurse[Eval, U, Throwable Xor A] {
       def apply[X](m: Eval[X]) =
         try { Left(m.value) }
