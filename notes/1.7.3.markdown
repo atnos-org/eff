@@ -1,0 +1,7 @@
+Maintenance version, now using `cats-0.6.0`.
+
+Improvements:
+
+ * removed the type constraint when having a type variable representing a stack of 
+   effects. Now it does not need to `<: Effects` and we can still append other effects to it
+   
