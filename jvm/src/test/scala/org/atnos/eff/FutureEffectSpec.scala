@@ -7,6 +7,7 @@ import all._
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.data.Xor
+import cats.Eval
 
 class FutureEffectSpec extends Specification { def is = s2"""
 

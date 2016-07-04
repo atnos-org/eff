@@ -4,6 +4,7 @@ import org.specs2.Specification
 import org.atnos.eff._
 import cats.syntax.all._
 import cats.data._, Xor._
+import cats.Eval
 import ReaderEffect._
 import WriterEffect._
 import EvalEffect._

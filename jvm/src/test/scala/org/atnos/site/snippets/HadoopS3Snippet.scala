@@ -10,6 +10,7 @@ trait HadoopS3Snippet {
 
 import org.atnos.eff._, all._
 import cats.data._
+import cats.Eval
 
 object HadoopStack {
 

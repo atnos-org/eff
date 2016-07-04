@@ -1,14 +1,13 @@
 package org.atnos.eff
 
 import scala.util.control.NonFatal
+import cats.syntax.functor._
+import cats.Eval
 import cats.data._
 import Xor._
-import cats.syntax.functor._
+import cats.~>
 import Eff._
 import Interpret._
-import cats.~>
-import org.atnos.eff.EvalEffect.Eval
-
 import scala.reflect.ClassTag
 
 /**

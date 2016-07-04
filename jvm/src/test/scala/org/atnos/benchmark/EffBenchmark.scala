@@ -6,6 +6,7 @@ import EvalEffect._
 import Effects._
 import Eff._
 import cats.implicits._
+import cats.Eval
 import org.scalameter.picklers.Implicits._
 
 object EffBenchmark extends Bench.OfflineReport {

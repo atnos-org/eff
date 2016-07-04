@@ -1,6 +1,7 @@
 package org.atnos.site
 
 import cats.data._
+import cats.Eval
 import org.atnos.eff._, all._
 
 object Introduction extends UserGuidePage { def is = "Introduction".title ^ s2"""
@@ -29,7 +30,7 @@ A monadic action is modelled as a value of type `Eff[R, A]` where `R` denotes a 
 returned by the computation, possibly triggering some effects when evaluated.
 
 The effects `R` are modelled by a type-level list of "effect constructors", for example:${snippet{
-import cats.data._
+import cats._, data._
 import org.atnos.eff._, all._
 
 type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect

@@ -8,6 +8,7 @@ import cats.syntax.all._
 import cats.std.all._
 import cats.std.all._
 import cats.data._, Xor._
+import cats.Eval
 
 class EvalEffectSpec extends Specification { def is = s2"""
 

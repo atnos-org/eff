@@ -4,6 +4,7 @@ import org.atnos.eff._
 import Effects._, Eff._
 import cats.syntax.all._
 import cats.data._
+import cats.Eval
 import WarningsEffect._
 import ConsoleEffect._
 import EvalEffect._

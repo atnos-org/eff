@@ -18,7 +18,7 @@ trait future {
 
   implicit class FutureOps[A](f: Future[A]) {
 
-    def liftFuture[R](implicit m: Member[Future, R], e: Member[EvalEffect.Eval, R]) =
+    def liftFuture[R](implicit m: Member[Future, R], e: Member[cats.Eval, R]) =
       FutureEffect.liftFuture(f)
   }
 

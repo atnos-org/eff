@@ -8,6 +8,7 @@ import scala.concurrent._
 import duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.data.Xor
+import cats.Eval
 import cats.implicits._
 import org.specs2.matcher.ThrownExpectations
 import org.scalacheck.Gen.{listOfN, choose => chooseInt}

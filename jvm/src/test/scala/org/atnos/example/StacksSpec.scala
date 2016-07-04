@@ -3,6 +3,7 @@ package example
 
 import org.specs2._
 import cats.data._
+import cats.Eval
 import org.atnos.eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._

@@ -2,6 +2,7 @@ package org.atnos.eff
 
 import scala.util.control.NonFatal
 import cats.data._, Xor._
+import cats.Eval
 import Eff._
 import Interpret._
 
@@ -18,7 +19,6 @@ trait EvalEffect extends
 object EvalEffect extends EvalEffect
 
 trait EvalTypes {
-  type Eval[A] = cats.Eval[A]
   type _Eval[R] = Eval <= R
 }
 

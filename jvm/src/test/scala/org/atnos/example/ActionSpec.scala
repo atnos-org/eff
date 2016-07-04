@@ -11,6 +11,7 @@ import ConsoleEffect._
 import ErrorEffect._
 import Member.{<=}
 import cats.data._, Xor._
+import cats.Eval
 import org.specs2._
 
 class ActionSpec extends Specification with ScalaCheck { def is = s2"""

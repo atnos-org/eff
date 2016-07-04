@@ -9,6 +9,7 @@ import org.atnos.eff.syntax.monix._
 
 import scala.concurrent._, duration._
 import cats.data.Xor
+import cats.Eval
 import cats.implicits._
 import _root_.monix.execution.Scheduler.Implicits.global
 import _root_.monix.eval._
