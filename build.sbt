@@ -16,9 +16,9 @@ lazy val eff = project.in(file("."))
 
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff-cats")
-  .settings(promulgate.library("org.atnos.eff", "eff-cats"):_*)
   .jsSettings(commonJsSettings:_*)
   .jvmSettings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter):_*)
+  .jvmSettings(promulgate.library("org.atnos.eff", "eff-cats"):_*)
   .settings(effSettings:_*)
 
 lazy val coreJVM = core.jvm
@@ -27,7 +27,6 @@ lazy val coreJS = core.js
 lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
   .settings(moduleName := "eff-cats-monix")
   .dependsOn(core)
-  .settings(promulgate.library("org.atnos.eff", "eff-cats-monix"):_*)
   .settings(libraryDependencies ++= monixEval)
   .settings(effSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
