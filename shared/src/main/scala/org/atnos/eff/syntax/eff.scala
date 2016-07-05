@@ -33,6 +33,11 @@ trait eff {
       Eff.detach(e)
   }
 
+  implicit class EffOnePureValueOps[R, A](e: Eff[R, A]) {
+    def runPure: Option[A] =
+      Eff.runPure(e)
+  }
+
   implicit class EffMonadicOps[R, M[_], A](e: Eff[R, M[A]]) {
     def collapse(implicit m: M <= R): Eff[R, A] =
       Eff.collapse[R, M, A](e)

@@ -167,8 +167,8 @@ trait EffInterpretation {
    * peel-off the only present effect
    */
   def detach[M[_] : Monad, A](eff: Eff[M |: NoEffect, A]): M[A] = {
-    def go(eff: Eff[M |: NoEffect, A]): M[A] = {
-      eff match {
+    def go(e: Eff[M |: NoEffect, A]): M[A] = {
+      e match {
         case Pure(a) => Monad[M].pure(a)
 
         case Impure(UnionNow(mx), continuation) =>
@@ -180,6 +180,15 @@ trait EffInterpretation {
     }
     go(eff)
   }
+
+  /**
+   * get the pure value if there is no effect
+   */
+  def runPure[R, A](eff: Eff[R, A]): Option[A] =
+    eff match {
+      case Pure(a) => Option(a)
+      case _ => None
+    }
 
   /**
    * An Eff[R, A] value can be transformed into an Eff[U, A]

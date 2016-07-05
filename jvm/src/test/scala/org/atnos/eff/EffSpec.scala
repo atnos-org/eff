@@ -29,8 +29,9 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  The Eff monad is stack safe with Reader                 $stacksafeReader
  The Eff monad is stack safe with both Reader and Writer $stacksafeReaderWriter
 
- It is possible to run a Eff value with no effects $noEffect
- It is possible to run a Eff value with just one effect and get it back $oneEffect
+ It is possible to run a pure Eff value $runPureValue
+ It is possible to run a Eff value with one effects $runOneEffect
+ It is possible to run a Eff value with just one effect and detach it back $detachOneEffect
 
  Eff values can be traversed with an applicative instance $traverseEff
 
@@ -135,10 +136,14 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     action.runReader("h").runWriter.run ==== ((list.as(()), list.as("h")))
   }
 
-  def noEffect =
+  def runPureValue =
+    (EffMonad[Eval |: NoEffect].pure(1).runPure === Option(1)) and
+    (delay(1).runPure === None)
+
+  def runOneEffect =
     delay(1).runEval.run === 1
 
-  def oneEffect =
+  def detachOneEffect =
     delay(1).detach.value === 1
 
   def traverseEff = {
