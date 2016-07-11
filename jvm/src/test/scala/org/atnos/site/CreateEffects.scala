@@ -12,7 +12,7 @@ New effects can be added to the library pretty easily. Let's create an Effect fo
 
 We need:
 
- - a base type. We select `Future[A]` (instead of `Future[A]` in order to avoid values to be evaluated straight away)
+ - a base type. We select `Future[() => A]` (instead of `Future[A]` in order to avoid values to be evaluated straight away)
 
  - a method to send values of type `A` into `Eff[R, A]`
 
@@ -40,16 +40,16 @@ The `runFuture` method needs an implicit `Member.Aux[Fut, R, U]`. This must be r
 
 Then we can use this effect in a computation:${snippet{
 
-type F = Fut |: NoEffect
-
-val action: Eff[F, Int] = for {
-  a <- fut(2)
-  b <- fut(3)
-} yield a + b
+val action: Eff[Fut |: NoEffect, Int] =
+  for {
+    a <- fut(2)
+    b <- fut(3)
+  } yield a + b
 
 run(runFuture(3.seconds)(action))
 }.eval}
 
+----
 """
 
 
