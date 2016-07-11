@@ -2,9 +2,12 @@ package org.atnos.eff
 
 import cats.Eval
 import cats.data._
+import cats.implicits._
 import org.specs2.{ScalaCheck, Specification}
-import org.atnos.eff.all._
+import org.atnos.eff.all._, interpret._, syntax.all._
 import org.scalacheck._
+
+import scala.concurrent.Future
 
 class MemberSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -15,7 +18,51 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
 
  project fold (accept, inject) === identity $law
 
+ it is possible to inject an effect which is part of the remaining stack of a member effect $outMember1
+   with a different arrangement $outMember2
+
 """
+
+  def reader =
+    readerMember.project(readerMember.inject(read1)).toEither must beRight(read1)
+
+  def writer =
+    writerMember.project(writerMember.inject(write1)).toEither must beRight(write1)
+
+  def eval =
+    evalMember.project(evalMember.inject(eval1)).toEither must beRight(eval1)
+
+   def outMember1 = {
+
+    type S = Future |: Eval |: Option |: NoEffect
+
+    def run[R :_Eval, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
+      translate(e) { new Translate[Future, U] {
+        def apply[X](fx: Future[X]): Eff[U, X] =
+          delay[U, X](fx.value.get.get)(m.out[Eval])
+      }}
+    }
+
+    run(pure[S, Int](1) >>= (i => option.some(i * 2))).runEval.runOption.run ==== Option(2)
+  }
+
+  def outMember2 = {
+
+    type S = Future |: Eval |: Option |: NoEffect
+
+    def run[R :_Option, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
+      translate(e) { new Translate[Future, U] {
+        def apply[X](fx: Future[X]): Eff[U, X] =
+          option.some[U, X](fx.value.get.get)(m.out[Option])
+      }}
+    }
+
+    run(pure[S, Int](1) >>= (i => option.some(i * 2))).runEval.runOption.run ==== Option(2)
+  }
+
+  /**
+   * HELPERS
+   */
   type WriterString[A] = Writer[String, A]
   type ReaderInt[A] = Reader[Int, A]
 
@@ -34,14 +81,6 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
   val write1 = Writer[String, String]("hey", "hey")
   val eval1 = Eval.later("hey")
 
-  def reader =
-    readerMember.project(readerMember.inject(read1)).toEither must beRight(read1)
-
-  def writer =
-    writerMember.project(writerMember.inject(write1)).toEither must beRight(write1)
-
-  def eval =
-    evalMember.project(evalMember.inject(eval1)).toEither must beRight(eval1)
 
   trait SMember {
     type T[_]

@@ -24,6 +24,9 @@ trait Member[T[_], R] {
 
   def aux: Member.Aux[T, R, Out] =
     this
+
+  /** @return a member instance for another effect in the remaining stack */
+  def out[W[_]](implicit w: Member[W, R]): Member[W, Out]
 }
 
 object Member extends MemberImplicits {
@@ -58,6 +61,25 @@ object Member extends MemberImplicits {
         case UnionNext(u@UnionNow(x)) => Xor.Left(UnionNow(x).asInstanceOf[Union[R, V]])
         case UnionNext(u@UnionNext(x)) => Xor.Left(UnionNext(x).asInstanceOf[Union[R, V]])
       }
+
+    def out[W[_]](implicit w: Member[W, T |: R]): Member[W, Out] = new Member[W, R] {
+      type Out = Any
+
+      def inject[V](effect: W[V]) =
+        w.inject[V](effect) match {
+          case UnionNow(x)  => sys.error("can not happen, W is not the first effect of T |: R")
+          case UnionNext(u) => u.asInstanceOf[Union[R, V]]
+        }
+
+      def accept[V](union: Union[Out, V]): Union[R, V] =
+        sys.error("this method should not be used - this is a member instance used for inject only")
+
+      def project[V](union: Union[R, V]): Union[R, V] Xor W[V] =
+        sys.error("this method should not be used - this is a member instance used for inject only")
+
+      def out[W1[_]](implicit w: Member[W1, R]): Member[W1, Out] =
+        sys.error("this method should not be used - this is a member instance used for inject only")
+    }
   }
 
   def SuccessorMember[T[_], O[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, O |: R, O |: U] = new Member[T, O |: R] {
@@ -77,8 +99,27 @@ object Member extends MemberImplicits {
         case UnionNow(x) => Xor.left(UnionNow(x).asInstanceOf[Union[Out, V]])
         case UnionNext(u) => m.project[V](u).leftMap(u1 => UnionNext(u1).asInstanceOf[Union[Out, V]])
       }
-  }
 
+    def out[W[_]](implicit w: Member[W, O |: R]): Member[W, O |: U] = new Member[W, O |: U] {
+      type Out = Any
+
+      def inject[V](effect: W[V]) =
+        w.inject[V](effect) match {
+          case UnionNow(x)  => sys.error("can not happen, W is not the first effect of O |: R")
+          case UnionNext(u) => u.asInstanceOf[Union[O |: U, V]]
+        }
+
+      def accept[V](union: Union[Any, V]): Union[O |: U, V] =
+        sys.error("this method should not be used - this is a member instance used for inject only")
+
+      def out[W1[_]](implicit w1: Member[W1, O |: U]): Member[W1, Any] =
+        sys.error("this method should not be used - this is a member instance used for inject only")
+
+      def project[V](union: Union[O |:U, V]): Union[Any,V] Xor W[V] =
+        sys.error("this method should not be used - this is a member instance used for inject only")
+
+    }
+  }
 }
 
 trait MemberImplicits extends MemberImplicits1 {
