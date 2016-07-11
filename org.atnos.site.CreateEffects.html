@@ -77,7 +77,16 @@ object FutEffect {
 <li><code class="prettyprint">Fut</code> must be member of the effect stack <code class="prettyprint">R</code> and its removal from <code class="prettyprint">R</code> should be the effect stack <code class="prettyprint">U</code></li>
 </ul>
 <p><br/></p>
-<p>Then we can use this effect in a computation:`<code class="prettyprint"></code>&gt; 5`</p>
+<p>Then we can use this effect in a computation:</p>
+<pre><code class="prettyprint">val action: Eff[Fut |: NoEffect, Int] =
+  for {
+    a &lt;- fut(2)
+    b &lt;- fut(3)
+  } yield a + b
+
+run(runFuture(3.seconds)(action))</code></pre>
+<p><code class="prettyprint">&gt; 5</code></p>
+<hr/>
 </div>
 
 </div>
