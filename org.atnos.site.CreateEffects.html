@@ -43,7 +43,7 @@
 <p>New effects can be added to the library pretty easily. Let’s create an Effect for <code class="prettyprint">scala.concurrent.Future</code> for example.</p>
 <p>We need:</p>
 <ul>
-<li><p>a base type. We select <code class="prettyprint">Future[A]</code> (instead of <code class="prettyprint">Future[A]</code> in order to avoid values to be evaluated straight away)</p></li>
+<li><p>a base type. We select <code class="prettyprint">Future[() => A]</code> (instead of <code class="prettyprint">Future[A]</code> in order to avoid values to be evaluated straight away)</p></li>
 <li><p>a method to send values of type <code class="prettyprint">A</code> into <code class="prettyprint">Eff[R, A]</code></p></li>
 <li><p>an interpreter</p></li>
 </ul>
