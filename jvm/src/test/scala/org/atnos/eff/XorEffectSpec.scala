@@ -21,7 +21,8 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
  run is stack safe with Xor                   $stacksafeRun
  a left value can be caught and transformed to a right value $leftToRight
 
- the left type can be modified with local     $local
+ the left type can be modified with local in a different stack $local
+ the left type can be run with local in the same stack  $localRun
 
 """
 
@@ -128,6 +129,19 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
       action1.localXor(Error2)
 
     action2.runXor.run ==== Xor.left(Error2(Error1("boom")))
+  }
+
+  def localRun = {
+    case class Error1(m: String)
+
+    case class Error2(e1: Error1)
+
+    type R1 = (Error1 Xor ?) |: (Error2 Xor ?) |: NoEffect
+
+    val action1: Eff[R1, Unit] =
+      XorEffect.left(Error1("boom"))
+
+    action1.runLocalXor(Error2).runXor.run ==== Xor.left(Error2(Error1("boom")))
   }
 }
 

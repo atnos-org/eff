@@ -80,6 +80,20 @@ trait XorInterpretation {
           r.leftMap(getter)
       })
 
+  /**
+   * Translate an error effect to another one in the same stack
+   * a computation over a "bigger" error (for the full application)
+   */
+  def runLocalXor[R, U, E1, E2, A](r: Eff[R, A], getter: E1 => E2)
+                                  (implicit sr: Member.Aux[E1 Xor ?, R, U], br: (E2 Xor ?) |= R): Eff[U, A] =
+    translate(r) { new Translate[E1 Xor ?, U] {
+      def apply[X](ex: E1 Xor X): Eff[U, X] =
+        ex match {
+          case Xor.Left(e1) => xor.left(getter(e1))(sr.out[E2 Xor ?])
+          case Xor.Right(x) => pure(x)
+        }
+    }}
+
 }
 
 object XorInterpretation extends XorInterpretation
