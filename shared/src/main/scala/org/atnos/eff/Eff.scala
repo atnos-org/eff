@@ -116,11 +116,11 @@ object EffImplicits extends EffImplicits
 
 trait EffCreation {
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
-  def send[T[_], R, V](tv: T[V])(implicit member: Member[T, R]): Eff[R, V] =
+  def send[T[_], R, V](tv: T[V])(implicit member: T |= R): Eff[R, V] =
     impure(member.inject(tv), Arrs.unit)
 
   /** use the internal effect as one of the stack effects */
-  def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: Member[M, R]): Eff[R, A] =
+  def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: M |= R): Eff[R, A] =
     EffMonad[R].flatMap(r)(mx => send(mx)(m))
 
   /** create an Eff value for () */

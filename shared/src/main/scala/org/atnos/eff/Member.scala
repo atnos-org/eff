@@ -12,11 +12,9 @@ import scala.annotation.implicitNotFound
  * - create a Union of effects from a single effect with "inject"
  * - extract an effect value from a union if there is such an effect in the stack
  */
-@implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
-trait Member[T[_], R] {
+@implicitNotFound("No instance found for MemberAux[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
+trait Member[T[_], R] extends MemberIn[T, R] {
   type Out
-
-  def inject[V](tv: T[V]): Union[R, V]
 
   def accept[V](union: Union[Out, V]): Union[R, V]
 
@@ -26,13 +24,36 @@ trait Member[T[_], R] {
     this
 
   /** @return a member instance for another effect in the remaining stack */
-  def out[W[_]](implicit w: Member[W, R]): Member[W, Out]
+  def out[W[_]](implicit w: MemberIn[W, R]): MemberIn[W, Out]
+}
+
+trait MemberIn[T[_], R] {
+  def inject[V](tv: T[V]): Union[R, V]
+}
+
+object MemberIn extends MemberInImplicits {
+  @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R}")
+  type |=[T[_], R] = MemberIn[T, R]
+
+  def apply[T[_], R](implicit m: Member[T, R]): Member[T, R] =
+    m
+
+  def ZeroMember[T[_], R]: MemberIn[T, T |: R] = new MemberIn[T, T |: R] {
+    def inject[V](effect: T[V]): Union[T |: R, V] =
+      Union.now(effect)
+  }
+
+  def SuccessorMember[T[_], O[_], R](implicit m: MemberIn[T, R]): MemberIn[T, O |: R] = new MemberIn[T, O |: R] {
+
+    def inject[V](effect: T[V]) =
+      Union.next(m.inject[V](effect))
+  }
 }
 
 object Member extends MemberImplicits {
 
   @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
-  type Aux[T[_], R, U] = Member[T, R] { type Out = U }
+  type Aux[T[_], R, U] = Member[T, R] {type Out = U}
 
   @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
   type <=[T[_], R] = Member[T, R]
@@ -62,23 +83,12 @@ object Member extends MemberImplicits {
         case UnionNext(u@UnionNext(x)) => Xor.Left(UnionNext(x).asInstanceOf[Union[R, V]])
       }
 
-    def out[W[_]](implicit w: Member[W, T |: R]): Member[W, Out] = new Member[W, R] {
-      type Out = Any
-
+    def out[W[_]](implicit w: MemberIn[W, T |: R]): MemberIn[W, Out] = new MemberIn[W, R] {
       def inject[V](effect: W[V]) =
         w.inject[V](effect) match {
           case UnionNow(x)  => sys.error("can not happen, W is not the first effect of T |: R")
           case UnionNext(u) => u.asInstanceOf[Union[R, V]]
         }
-
-      def accept[V](union: Union[Out, V]): Union[R, V] =
-        sys.error("this method should not be used - this is a member instance used for inject only")
-
-      def project[V](union: Union[R, V]): Union[R, V] Xor W[V] =
-        sys.error("this method should not be used - this is a member instance used for inject only")
-
-      def out[W1[_]](implicit w: Member[W1, R]): Member[W1, Out] =
-        sys.error("this method should not be used - this is a member instance used for inject only")
     }
   }
 
@@ -100,26 +110,36 @@ object Member extends MemberImplicits {
         case UnionNext(u) => m.project[V](u).leftMap(u1 => UnionNext(u1).asInstanceOf[Union[Out, V]])
       }
 
-    def out[W[_]](implicit w: Member[W, O |: R]): Member[W, O |: U] = new Member[W, O |: U] {
-      type Out = Any
-
+    def out[W[_]](implicit w: MemberIn[W, O |: R]): MemberIn[W, O |: U] = new MemberIn[W, O |: U] {
       def inject[V](effect: W[V]) =
         w.inject[V](effect) match {
           case UnionNow(x)  => sys.error("can not happen, W is not the first effect of O |: R")
           case UnionNext(u) => u.asInstanceOf[Union[O |: U, V]]
         }
-
-      def accept[V](union: Union[Any, V]): Union[O |: U, V] =
-        sys.error("this method should not be used - this is a member instance used for inject only")
-
-      def out[W1[_]](implicit w1: Member[W1, O |: U]): Member[W1, Any] =
-        sys.error("this method should not be used - this is a member instance used for inject only")
-
-      def project[V](union: Union[O |:U, V]): Union[Any,V] Xor W[V] =
-        sys.error("this method should not be used - this is a member instance used for inject only")
-
     }
   }
+}
+
+trait MemberInImplicits extends MemberInImplicits1 {
+  implicit def zero[T[_]]: MemberIn[T, T |: NoEffect] =
+    MemberIn.ZeroMember[T, NoEffect]
+}
+
+trait MemberInImplicits1 extends MemberInImplicits2 {
+  implicit def first[T[_], R]: MemberIn[T, T |: R] =
+    MemberIn.ZeroMember[T, R]
+}
+
+trait MemberInImplicits2 extends MemberInImplicits3 {
+  implicit def successor[T[_], O[_], R](implicit m: MemberIn[T, R]): MemberIn[T, O |: R] =
+    MemberIn.SuccessorMember[T, O, R](m)
+}
+
+trait MemberInImplicits3 {
+
+  implicit def successor_[T[_], O[_], R](implicit m: MemberIn[T, R]): MemberIn[T, O |: R] =
+    MemberIn.SuccessorMember[T, O, R](m)
+
 }
 
 trait MemberImplicits extends MemberImplicits1 {

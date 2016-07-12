@@ -20,6 +20,7 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
 
  it is possible to inject an effect which is part of the remaining stack of a member effect $outMember1
    with a different arrangement $outMember2
+   with a another arrangement   $outMember3
 
 """
 
@@ -36,10 +37,10 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
 
     type S = Future |: Eval |: Option |: NoEffect
 
-    def run[R :_Eval, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
+    def run[R :_eval, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
       translate(e) { new Translate[Future, U] {
         def apply[X](fx: Future[X]): Eff[U, X] =
-          delay[U, X](fx.value.get.get)(m.out[Eval])
+          delay(fx.value.get.get)(m.out[Eval])
       }}
     }
 
@@ -50,10 +51,24 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
 
     type S = Future |: Eval |: Option |: NoEffect
 
-    def run[R :_Option, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
+    def run[R :_option, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
       translate(e) { new Translate[Future, U] {
         def apply[X](fx: Future[X]): Eff[U, X] =
-          option.some[U, X](fx.value.get.get)(m.out[Option])
+          option.some(fx.value.get.get)(m.out[Option])
+      }}
+    }
+
+    run(pure[S, Int](1) >>= (i => option.some(i * 2))).runEval.runOption.run ==== Option(2)
+  }
+
+  def outMember3 = {
+
+    type S = Option |: Future |: Eval |: NoEffect
+
+    def run[R :_option, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
+      translate(e) { new Translate[Future, U] {
+        def apply[X](fx: Future[X]): Eff[U, X] =
+          option.some(fx.value.get.get)(m.out[Option])
       }}
     }
 

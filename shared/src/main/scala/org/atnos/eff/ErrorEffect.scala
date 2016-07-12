@@ -35,6 +35,7 @@ trait ErrorTypes[F] {
   type ErrorOrOk[A] = Error Xor cats.Eval[A]
 
   type _ErrorOrOk[R] = ErrorOrOk <= R
+  type _errorOrOk[R] = ErrorOrOk |= R
 }
 
 trait ErrorCreation[F] extends ErrorTypes[F] {

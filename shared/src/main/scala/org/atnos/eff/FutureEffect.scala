@@ -5,7 +5,7 @@ import cats.data._
 import Xor._
 import Eff._
 import Interpret._
-import EvalTypes._Eval
+import EvalTypes._
 import scala.concurrent._
 import duration._
 
@@ -21,14 +21,15 @@ object FutureEffect extends FutureEffect
 trait FutureCreation {
 
   type _Future[R] = Future <= R
+  type _future[R] = Future |= R
 
-  def sync[R :_Future, A](a: A): Eff[R, A] =
+  def sync[R :_future, A](a: A): Eff[R, A] =
     pure(a)
 
-  def async[R :_Future, A](a: =>A)(implicit ec: ExecutionContext): Eff[R, A] =
+  def async[R :_future, A](a: =>A)(implicit ec: ExecutionContext): Eff[R, A] =
     send(Future(a))
 
-  def liftFuture[R :_Future :_Eval, A](f: => Future[A]): Eff[R, A] =
+  def liftFuture[R :_future :_eval, A](f: => Future[A]): Eff[R, A] =
     EvalEffect.delay(f).flatMap(v => Eff.send[Future, R, A](v))
 
 }
