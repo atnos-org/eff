@@ -222,7 +222,7 @@ trait IntoPoly[R, U, A] {
 
 object IntoPoly extends IntoPolyLower {
 
-  implicit def intoNoEff[M[_], U, A](implicit m: Member[M, M |: NoEffect], mu: Member[M, U]): IntoPoly[M |: NoEffect, U, A] =
+  implicit def intoNoEff[M[_], U, A](implicit m: M |= (M |: NoEffect), mu: M |= U): IntoPoly[M |: NoEffect, U, A] =
     new IntoPoly[M |: NoEffect, U, A] {
       def apply(e: Eff[M |: NoEffect, A]): Eff[U, A] = {
 
@@ -264,7 +264,7 @@ object IntoPoly extends IntoPolyLower {
     }
 }
 trait IntoPolyLower {
-  implicit def intoEff[M[_], R, U, A](implicit m: Member[M, M |: R], mu: Member[M, U], recurse: IntoPoly[R, U, A]): IntoPoly[M |: R, U, A] =
+  implicit def intoEff[M[_], R, U, A](implicit m: M |= (M |: R), mu: M |= U, recurse: IntoPoly[R, U, A]): IntoPoly[M |: R, U, A] =
     new IntoPoly[M |: R, U, A] {
       def apply(e: Eff[M |: R, A]): Eff[U, A] = {
 
