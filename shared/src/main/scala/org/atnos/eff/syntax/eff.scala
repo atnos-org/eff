@@ -39,7 +39,7 @@ trait eff {
   }
 
   implicit class EffMonadicOps[R, M[_], A](e: Eff[R, M[A]]) {
-    def collapse(implicit m: M <= R): Eff[R, A] =
+    def collapse(implicit m: M |= R): Eff[R, A] =
       Eff.collapse[R, M, A](e)
   }
 
