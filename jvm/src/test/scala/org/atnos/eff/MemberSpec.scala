@@ -4,12 +4,15 @@ import cats.Eval
 import cats.data._
 import cats.implicits._
 import org.specs2.{ScalaCheck, Specification}
-import org.atnos.eff.all._, interpret._, syntax.all._
+import org.atnos.eff.all._
+import interpret._
+import syntax.all._
 import org.scalacheck._
+import org.specs2.concurrent.ExecutionEnv
 
 import scala.concurrent.Future
 
-class MemberSpec extends Specification with ScalaCheck { def is = s2"""
+class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
 
  inject / project must work at the value level
    for reader $reader
@@ -19,8 +22,9 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
  project fold (accept, inject) === identity $law
 
  it is possible to inject an effect which is part of the remaining stack of a member effect $outMember1
-   with a different arrangement $outMember2
-   with a another arrangement   $outMember3
+   with a different arrangement                                                             $outMember2
+   with a another arrangement                                                               $outMember3
+   if the effect is the same as the member effect                                           $outMember4
 
 """
 
@@ -73,6 +77,20 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
     }
 
     run(pure[S, Int](1) >>= (i => option.some(i * 2))).runEval.runOption.run ==== Option(2)
+  }
+
+  def outMember4 = {
+
+    type S = Option |: Option |: Future |: Eval |: NoEffect
+
+    def run[R :_option, U](e: Eff[R, Int])(implicit m: Member.Aux[Option, R, U]): Eff[U, Int] = {
+      translate(e) { new Translate[Option, U] {
+        def apply[X](fx: Option[X]): Eff[U, X] =
+          send(fx)(m.out[Option])
+      }}
+    }
+
+    run(pure[S, Int](1) >>= (i => option.some(i * 2))).runEval.runOption.detach.value.get.get ==== Option(2)
   }
 
   /**

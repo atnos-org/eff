@@ -86,7 +86,7 @@ object Member extends MemberImplicits {
     def out[W[_]](implicit w: MemberIn[W, T |: R]): MemberIn[W, Out] = new MemberIn[W, R] {
       def inject[V](effect: W[V]) =
         w.inject[V](effect) match {
-          case UnionNow(x)  => sys.error("can not happen, W is not the first effect of T |: R")
+          case UnionNow(x)  => UnionNow(x).asInstanceOf[Union[R, V]]
           case UnionNext(u) => u.asInstanceOf[Union[R, V]]
         }
     }
@@ -113,7 +113,7 @@ object Member extends MemberImplicits {
     def out[W[_]](implicit w: MemberIn[W, O |: R]): MemberIn[W, O |: U] = new MemberIn[W, O |: U] {
       def inject[V](effect: W[V]) =
         w.inject[V](effect) match {
-          case UnionNow(x)  => sys.error("can not happen, W is not the first effect of O |: R")
+          case UnionNow(x)  => UnionNow(x).asInstanceOf[Union[O |: U, V]]
           case UnionNext(u) => u.asInstanceOf[Union[O |: U, V]]
         }
     }
