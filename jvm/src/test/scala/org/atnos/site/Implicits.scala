@@ -90,7 +90,66 @@ The implicit `StateIntMember` declares that:
 
 ### Effect deduction
 
-A common thing to do is to 
+A common thing to do is to translate "high-level" effects (a webservice DSL for example) into low-level ones (`Future`, `Eval`, `Xor`, etc...).
+
+For example you might have this stack:
+```
+type S = Authenticated |: Future |: (Throwable Xor ?) |: NoEffect
+```
+
+And you want to write an interpreter which will translate authentication actions into `Future` and `Xor`:${snippet{
+import org.atnos.eff.eff._
+import org.atnos.eff.syntax.eff._
+import org.atnos.eff.future._
+import org.atnos.eff.interpret._
+import scala.concurrent.Future
+
+// list of access rights for a valid token
+case class AccessRights(rights: List[String])
+
+// authentication error
+case class AuthError(message: String)
+
+// DSL for authenticating users
+sealed trait Authenticated[A]
+case class Authenticate(token: String) extends Authenticated[AccessRights]
+
+type _error[R] = (AuthError Xor ?) |= R
+
+
+def runAuth[R :_future :_error, U, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A] =
+  translate(e) { new Translate[Authenticated, U] {
+    def apply[X](ax: Authenticated[X]): Eff[U, X] =
+      ax match {
+        case Authenticate(token) =>
+          // send the future effect in the stack U
+          send(authenticate(token))(m.out[Future]).
+          // send the Xor value in the stack U
+          collapse(m.out[AuthError Xor ?])
+      }
+  }}
+
+// call to a service to authenticate tokens
+def authenticate(token: String): Future[AuthError Xor AccessRights] = ???
+
+}}
+
+The call to `send` above needs to send a `Future` value in the stack `U`. But the type signature of `runAuth` only indicates that:
+
+ - `Future` is an effect in `R`
+ - `Authenticated` is an effect in `R` and removing it from `R` leaves us with `U`
+
+We should be able to deduce from those 2 facts that `Future` is also an effect of `U` but we need to show a proof of that.
+ This is what `m.out[Future]` does. It builds a `MemberIn[Future, U]` instance which can then be used to inject a `Future`
+ into `U`.
+
+You might wonder why we don't use a more direct type signature like:
+```
+def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A] =
+```
+
+The reason is that Scala has some difficulty to infer the type parameters when calling `runAuth2` and they have to be explicitly
+provided. The first declaration works fine with type inference.
 
 """
 
