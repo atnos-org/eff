@@ -52,7 +52,7 @@
 <h3 id="first-example">First example</h3>
 <p>A monadic action is modelled as a value of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> denotes a set of effects and <code class="prettyprint">A</code> is the value returned by the computation, possibly triggering some effects when evaluated.</p>
 <p>The effects <code class="prettyprint">R</code> are modelled by a type-level list of “effect constructors”, for example:</p>
-<pre><code class="prettyprint">import cats.data._
+<pre><code class="prettyprint">import cats._, data._
 import org.atnos.eff._, all._
 
 type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect</code></pre>

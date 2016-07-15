@@ -99,6 +99,7 @@ action.runReader(Conf(&quot;www.me.com&quot;, 8080)).runOption.run</code></pre>
 <p>We can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._
 import cats.data._
+import cats.Eval
 
 object HadoopStack {
 

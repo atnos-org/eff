@@ -43,7 +43,7 @@
 <h3 id="running-effects-with-several-type-parameters">Running effects with several type parameters</h3>
 <p>Some effects use 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. If you want to use those effects in an effect stack you need to add a compiler plugin to your build:</p>
 <pre><code class="prettyprint">addCompilerPlugin(&quot;com.milessabin&quot; % &quot;si2712fix-plugin_2.11.8&quot; % &quot;1.1.0&quot;)</code></pre>
-<h3 id="use-context-bounds">Use context bounds</h3>
+<h3 id="use-context-bounds-and-type-aliases">Use context bounds and type aliases</h3>
 <p>When creating effects you can always “require” a stack containing the right effects with the <code class="prettyprint">Member</code> typeclass:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 import org.atnos.eff.all._
@@ -51,6 +51,7 @@ import org.atnos.eff.all._
 type StateInt[A] = State[Int, A]
 type WriterString[A] = Writer[String, A]
 
+// for creating state effects
 def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R): Eff[R, Int] =
   for {
     // no type annotations needed!
@@ -60,10 +61,10 @@ def putAndTell[R](i: Int)(implicit s: StateInt &lt;= R, w: WriterString &lt;= R)
 <p>You can even use context bounds to make the declaration of <code class="prettyprint">putAndTell</code> more concise:</p>
 <pre><code class="prettyprint">import org.atnos.eff.all._
 
-type StateInt[R] = State[Int, ?] &lt;= R
-type WriterString[R] = Writer[String, ?] &lt;= R
+type _stateInt[R] = State[Int, ?] |= R
+type _writerString[R] = Writer[String, ?] |= R
 
-def putAndTell[R : StateInt : WriterString](i: Int): Eff[R, Int] =
+def putAndTell[R :_stateInt :_writerString](i: Int): Eff[R, Int] =
   for {
     _ &lt;- put(i)
     _ &lt;- tell(&quot;stored &quot; + i)
@@ -80,9 +81,11 @@ object S {
 
   type S = StateInt |: WriterString |: NoEffect
 
+  // for the first effect of the stack
   implicit val StateIntMember: Member.Aux[StateInt, S, WriterString |: NoEffect] =
     Member.first
 
+  // for the next effect
   implicit val WriterStringMember: Member.Aux[WriterString, S, StateInt |: NoEffect] =
     Member.successor
 }
@@ -100,6 +103,53 @@ def putAndTell(i: Int): Eff[S, Int] =
 <li><p><code class="prettyprint">StateInt</code> is a member of <code class="prettyprint">S</code></p></li>
 <li><p>if you remove <code class="prettyprint">StateInt</code> from <code class="prettyprint">S</code>, you are left with the <code class="prettyprint">WriterString |: NoEffect</code> stack</p></li>
 </ul>
+<h3 id="effect-deduction">Effect deduction</h3>
+<p>A common thing to do is to translate “high-level” effects (a webservice DSL for example) into low-level ones (<code class="prettyprint">Future</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Xor</code>, etc…).</p>
+<p>For example you might have this stack:</p>
+<pre><code class="prettyprint">type S = Authenticated |: Future |: (Throwable Xor ?) |: NoEffect</code></pre>
+<p>And you want to write an interpreter which will translate authentication actions into <code class="prettyprint">Future</code> and <code class="prettyprint">Xor</code>:</p>
+<pre><code class="prettyprint">import org.atnos.eff.eff._
+import org.atnos.eff.syntax.eff._
+import org.atnos.eff.future._
+import org.atnos.eff.interpret._
+import scala.concurrent.Future
+
+// list of access rights for a valid token
+case class AccessRights(rights: List[String])
+
+// authentication error
+case class AuthError(message: String)
+
+// DSL for authenticating users
+sealed trait Authenticated[A]
+case class Authenticate(token: String) extends Authenticated[AccessRights]
+
+type _error[R] = (AuthError Xor ?) |= R
+
+
+def runAuth[R :_future :_error, U, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A] =
+  translate(e) { new Translate[Authenticated, U] {
+    def apply[X](ax: Authenticated[X]): Eff[U, X] =
+      ax match {
+        case Authenticate(token) =&gt;
+          // send the future effect in the stack U
+          send(authenticate(token))(m.out[Future]).
+          // send the Xor value in the stack U
+          collapse(m.out[AuthError Xor ?])
+      }
+  }}
+
+// call to a service to authenticate tokens
+def authenticate(token: String): Future[AuthError Xor AccessRights] = ???</code></pre>
+<p>The call to <code class="prettyprint">send</code> above needs to send a <code class="prettyprint">Future</code> value in the stack <code class="prettyprint">U</code>. But the type signature of <code class="prettyprint">runAuth</code> only indicates that:</p>
+<ul>
+<li><code class="prettyprint">Future</code> is an effect in <code class="prettyprint">R</code></li>
+<li><code class="prettyprint">Authenticated</code> is an effect in <code class="prettyprint">R</code> and removing it from <code class="prettyprint">R</code> leaves us with <code class="prettyprint">U</code></li>
+</ul>
+<p>We should be able to deduce from those 2 facts that <code class="prettyprint">Future</code> is also an effect of <code class="prettyprint">U</code> but we need to show a proof of that. This is what <code class="prettyprint">m.out[Future]</code> does. It builds a <code class="prettyprint">MemberIn[Future, U]</code> instance which can then be used to inject a <code class="prettyprint">Future</code> into <code class="prettyprint">U</code>.</p>
+<p>You might wonder why we don’t use a more direct type signature like:</p>
+<pre><code class="prettyprint">def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A] =</code></pre>
+<p>The reason is that Scala has some difficulty to infer the type parameters when calling <code class="prettyprint">runAuth2</code> and they have to be explicitly provided. The first declaration works fine with type inference.</p>
 </div>
 
 </div>

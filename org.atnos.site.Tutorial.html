@@ -82,24 +82,29 @@ case class Delete(key: String) extends KVStore[Unit]
 <p>These methods will let you create <code class="prettyprint">Eff</code> values for your key-value store “Effect”:</p>
 <pre><code class="prettyprint">import cats.implicits._
 
+// T |= R is an alias for MemberIn[T, R]
+// stating that effects of type T[_] can be injected in the effect stack R
+type _kvstore[R] = KVStore |= R
+
 // T &lt;= R is an alias for Member[T, R]
-// stating that T is an effect member of the effect stack R
+// stating that effects of type T[_] can be injected in the effect stack R or extracted from R
 type _KVStore[R] = KVStore &lt;= R
 
+
 /** put returns nothing (i.e. Unit) */
-def put[T, R :_KVStore](key: String, value: T): Eff[R, Unit] =
+def put[T, R :_kvstore](key: String, value: T): Eff[R, Unit] =
   Eff.send[KVStore, R, Unit](Put(key, value))
 
 /** get returns a T value if the key exists */
-def get[T, R :_KVStore](key: String): Eff[R, Option[T]] =
+def get[T, R :_kvstore](key: String): Eff[R, Option[T]] =
   Eff.send[KVStore, R, Option[T]](Get(key))
 
 /** delete returns nothing (i.e. Unit) */
-def delete[T, R :_KVStore](key: String): Eff[R, Unit] =
+def delete[T, R :_kvstore](key: String): Eff[R, Unit] =
   Eff.send(Delete(key))
 
 /** update composes get and set, and returns nothing. */
-def update[T, R :_KVStore](key: String, f: T =&gt; T): Eff[R, Unit] =
+def update[T, R :_kvstore](key: String, f: T =&gt; T): Eff[R, Unit] =
   get[T, R](key).map(_.map(f)).void
 </code></pre>
 <p>Each method requires the “KVStore” effect to be a member of an “effect stack” <code class="prettyprint">R</code>. The return values are of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> is a stack of effects possibly containing other effects than key-value store operations and yielding values of type <code class="prettyprint">A</code>.</p>
@@ -107,7 +112,7 @@ def update[T, R :_KVStore](key: String, f: T =&gt; T): Eff[R, Unit] =
 <p>Now that we can construct values with <code class="prettyprint">KVStore</code> effects we can use our DSL to write “programs” using a for-comprehension:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 
-def program[R :_KVStore]: Eff[R, Option[Int]] =
+def program[R :_kvstore]: Eff[R, Option[Int]] =
   for {
     _ &lt;- put(&quot;wild-cats&quot;, 2)
     _ &lt;- update[Int, R](&quot;wild-cats&quot;, _ + 12)
@@ -188,13 +193,16 @@ import cats.data._
  *  - Xor to raise errors if the type of an object in the map is not of the expected type
  *
  *  The resulting effect stack is U which is R without the KVStore effects
+ *
+ *  Note that we just require the Throwable, Writer and State effects to
+ *  be able to be created in the stack U with |= (and not &lt;=)
  */
 def runKVStore[R, U, A](effects: Eff[R, A])
   (implicit
    m: Member.Aux[KVStore, R, U],
-   x: Throwable Xor ? &lt;= U,
-   w: Writer[String, ?] &lt;= U,
-   s: State[Map[String, Any], ?] &lt;= U
+   x: Throwable Xor ? |= U,
+   w: Writer[String, ?] |= U,
+   s: State[Map[String, Any], ?] |= U
   ): Eff[U, A] = {
 
   val translation = new Translate[KVStore, U] {
@@ -282,8 +290,8 @@ delete(tame-cats)</code></pre>
 <p>It is nice to be able to “chain” <code class="prettyprint">run</code> methods with this additional piece of syntax:</p>
 <pre><code class="prettyprint">implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
   def runStore[U](implicit
-            m: Member.Aux[KVStore, R, U], x: Throwable Xor ? &lt;= U,
-            w: Writer[String, ?] &lt;= U, s: State[Map[String, Any], ?] &lt;= U): Eff[U, A] =
+            m: Member.Aux[KVStore, R, U], x: Throwable Xor ? |= U,
+            w: Writer[String, ?] |= U, s: State[Map[String, Any], ?] |= U): Eff[U, A] =
     runKVStore(effects)
 }
 
@@ -307,25 +315,27 @@ sealed trait Interact[A]
 case class Ask(prompt: String) extends Interact[String]
 case class Tell(msg: String) extends Interact[Unit]
 
-type _Interact[R] = Member[Interact, R]
+type _Interact[R] = Interact &lt;= R
+type _interact[R] = Interact |= R
 
-def askUser[R](prompt: String)(implicit m: Member[Interact, R]): Eff[R, String] =
+def askUser[R :_interact](prompt: String): Eff[R, String] =
   send(Ask(prompt))
 
-def tellUser[R](message: String)(implicit m: Member[Interact, R]): Eff[R, Unit] =
+def tellUser[R :_interact](message: String): Eff[R, Unit] =
   send(Tell(message))
 
 sealed trait DataOp[A]
 
-type _DataOp[R] = Member[DataOp, R]
+type _DataOp[R] = DataOp &lt;= R
+type _dataOp[R] = DataOp |= R
 
 case class AddCat(a: String) extends DataOp[Unit]
 case class GetAllCats() extends DataOp[List[String]]
 
-def addCat[R](a: String)(implicit m: Member[DataOp, R]): Eff[R, Unit] =
+def addCat[R :_dataOp](a: String): Eff[R, Unit] =
   send(AddCat(a))
 
-def getAllCats[R](implicit m: Member[DataOp, R]): Eff[R, List[String]] =
+def getAllCats[R :_dataOp]: Eff[R, List[String]] =
   send(GetAllCats())
 
 </code></pre>
@@ -333,7 +343,7 @@ def getAllCats[R](implicit m: Member[DataOp, R]): Eff[R, List[String]] =
 <pre><code class="prettyprint">import org.atnos.eff._
 import cats.implicits._
 
-def program[R :_Interact :_DataOp]: Eff[R, Unit] =
+def program[R :_interact :_dataOp]: Eff[R, Unit] =
   for {
     cat  &lt;- askUser(&quot;What&#39;s the kitty&#39;s name?&quot;)
     _    &lt;- addCat(cat)
