@@ -3,7 +3,7 @@ import org.atnos.site._
 object index extends UserGuidePage { def is = "eff-cats".title ^ s2"""
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
-This library is based on the "free-er" monad and an "open union" of effects described in
+This library is based on the "free-er" monad and an "open union" of effects described by
 Oleg Kiselyov in [Freer monads, more extensible effects](http://okmij.org/ftp/Haskell/extensible/more.pdf).
 
 You can learn more in the following sections:

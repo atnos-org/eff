@@ -22,13 +22,16 @@ import cats.data._
  *  - Xor to raise errors if the type of an object in the map is not of the expected type
  *
  *  The resulting effect stack is U which is R without the KVStore effects
+ *
+ *  Note that we just require the Throwable, Writer and State effects to
+ *  be able to be created in the stack U with |= (and not <=)
  */
 def runKVStore[R, U, A](effects: Eff[R, A])
   (implicit
    m: Member.Aux[KVStore, R, U],
-   x: Throwable Xor ? <= U,
-   w: Writer[String, ?] <= U,
-   s: State[Map[String, Any], ?] <= U
+   x: Throwable Xor ? |= U,
+   w: Writer[String, ?] |= U,
+   s: State[Map[String, Any], ?] |= U
   ): Eff[U, A] = {
 
   val translation = new Translate[KVStore, U] {

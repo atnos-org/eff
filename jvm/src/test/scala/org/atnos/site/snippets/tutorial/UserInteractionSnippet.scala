@@ -10,25 +10,27 @@ sealed trait Interact[A]
 case class Ask(prompt: String) extends Interact[String]
 case class Tell(msg: String) extends Interact[Unit]
 
-type _Interact[R] = Member[Interact, R]
+type _Interact[R] = Interact <= R
+type _interact[R] = Interact |= R
 
-def askUser[R](prompt: String)(implicit m: Member[Interact, R]): Eff[R, String] =
+def askUser[R :_interact](prompt: String): Eff[R, String] =
   send(Ask(prompt))
 
-def tellUser[R](message: String)(implicit m: Member[Interact, R]): Eff[R, Unit] =
+def tellUser[R :_interact](message: String): Eff[R, Unit] =
   send(Tell(message))
 
 sealed trait DataOp[A]
 
-type _DataOp[R] = Member[DataOp, R]
+type _DataOp[R] = DataOp <= R
+type _dataOp[R] = DataOp |= R
 
 case class AddCat(a: String) extends DataOp[Unit]
 case class GetAllCats() extends DataOp[List[String]]
 
-def addCat[R](a: String)(implicit m: Member[DataOp, R]): Eff[R, Unit] =
+def addCat[R :_dataOp](a: String): Eff[R, Unit] =
   send(AddCat(a))
 
-def getAllCats[R](implicit m: Member[DataOp, R]): Eff[R, List[String]] =
+def getAllCats[R :_dataOp]: Eff[R, List[String]] =
   send(GetAllCats())
 
 

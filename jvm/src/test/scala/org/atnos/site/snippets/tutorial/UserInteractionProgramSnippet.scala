@@ -8,7 +8,7 @@ trait UserInteractionProgramSnippet {
 import org.atnos.eff._
 import cats.implicits._
 
-def program[R :_Interact :_DataOp]: Eff[R, Unit] =
+def program[R :_interact :_dataOp]: Eff[R, Unit] =
   for {
     cat  <- askUser("What's the kitty's name?")
     _    <- addCat(cat)

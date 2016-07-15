@@ -9,7 +9,7 @@ trait AdtUsageSnippet {
 
 import org.atnos.eff._
 
-def program[R :_KVStore]: Eff[R, Option[Int]] =
+def program[R :_kvstore]: Eff[R, Option[Int]] =
   for {
     _ <- put("wild-cats", 2)
     _ <- update[Int, R]("wild-cats", _ + 12)
