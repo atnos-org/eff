@@ -102,13 +102,13 @@ class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaChec
 
   type S = WriterString |: ReaderInt |: Eval |: NoEffect
 
-  implicit def writerMember =
+  def writerMember =
     Member.aux[WriterString, S, ReaderInt |: Eval |: NoEffect]
 
-  implicit def readerMember =
+  def readerMember =
     Member.aux[ReaderInt, S, WriterString |: Eval |: NoEffect]
 
-  implicit def evalMember =
+  def evalMember =
     Member.aux[Eval, S, WriterString |: ReaderInt |: NoEffect]
 
   val read1 = Reader((i: Int) => "hey")

@@ -28,15 +28,6 @@ type S1 = ReaderHost |: Option |: NoEffect
 type S2 = ReaderPort |: Option |: NoEffect
 type SS = ReaderConf |: Option |: NoEffect
 
-implicit val ReaderHostMember: Member.Aux[ReaderHost, S1, Option |: NoEffect] =
-  Member.first
-
-implicit val ReaderPortMember: Member.Aux[ReaderPort, S2, Option |: NoEffect] =
-  Member.first
-
-implicit val ReaderConfMember: Member.Aux[ReaderConf, SS, Option |: NoEffect] =
-  Member.first
-
 val readHost: Eff[S1, String] = for {
   c <- ask[S1, String]
   h <- OptionEffect.some[S1, String]("hello")

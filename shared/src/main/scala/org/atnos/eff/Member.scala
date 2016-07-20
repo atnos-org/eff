@@ -32,6 +32,7 @@ trait MemberIn[T[_], R] {
 }
 
 object MemberIn extends MemberInImplicits {
+
   @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R}")
   type |=[T[_], R] = MemberIn[T, R]
 
@@ -121,6 +122,7 @@ object Member extends MemberImplicits {
 }
 
 trait MemberInImplicits extends MemberInImplicits1 {
+
   implicit def zero[T[_]]: MemberIn[T, T |: NoEffect] =
     MemberIn.ZeroMember[T, NoEffect]
 }
@@ -135,11 +137,16 @@ trait MemberInImplicits2 extends MemberInImplicits3 {
     MemberIn.SuccessorMember[T, O, R](m)
 }
 
-trait MemberInImplicits3 {
+trait MemberInImplicits3 extends MemberInImplicits4 {
 
   implicit def successor_[T[_], O[_], R](implicit m: MemberIn[T, R]): MemberIn[T, O |: R] =
     MemberIn.SuccessorMember[T, O, R](m)
 
+}
+
+trait MemberInImplicits4  {
+  implicit def outMember[R, U, O[_], T[_]](implicit t: MemberIn[T, R], m: Member.Aux[O, R, U]): MemberIn[T, U] =
+    m.out[T]
 }
 
 trait MemberImplicits extends MemberImplicits1 {
@@ -158,9 +165,7 @@ trait MemberImplicits2 extends MemberImplicits3 {
 }
 
 trait MemberImplicits3 {
-
   implicit def successor_[T[_], O[_], R](implicit m: Member[T, R]): Member[T, O |: R] =
     Member.SuccessorMember[T, O, R, m.Out](m)
-
 }
 
