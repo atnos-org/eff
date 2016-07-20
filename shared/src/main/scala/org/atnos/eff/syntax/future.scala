@@ -3,6 +3,8 @@ package org.atnos.eff.syntax
 import org.atnos.eff._
 import scala.concurrent._, duration._
 import cats.data._
+import FutureEffect._
+import EvalEffect._
 
 object future extends future
 
@@ -18,7 +20,7 @@ trait future {
 
   implicit class FutureOps[A](f: Future[A]) {
 
-    def liftFuture[R](implicit m: Member[Future, R], e: Member[cats.Eval, R]) =
+    def liftFuture[R :_future :_eval] =
       FutureEffect.liftFuture(f)
   }
 

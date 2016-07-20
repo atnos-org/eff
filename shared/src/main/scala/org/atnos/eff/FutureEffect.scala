@@ -29,7 +29,7 @@ trait FutureCreation {
   def async[R :_future, A](a: =>A)(implicit ec: ExecutionContext): Eff[R, A] =
     send(Future(a))
 
-  def liftFuture[R :_future :_eval, A](f: => Future[A]): Eff[R, A] =
+  def liftFuture[R :_future :_eval, A](f: =>Future[A]): Eff[R, A] =
     EvalEffect.delay(f).flatMap(v => Eff.send[Future, R, A](v))
 
 }

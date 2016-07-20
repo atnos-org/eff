@@ -21,50 +21,42 @@ class FutureEffectSpec extends Specification { def is = s2"""
 """
 
   def e1 = {
-    type S = Future |: Option |: NoEffect
-    implicit val f: Member.Aux[Future, S, Option |: NoEffect] = Member.first
-    implicit val o: Member.Aux[Option, S, Future |: NoEffect] = Member.successor
-
-    val action: Eff[S, Int] = for {
+    def action[R :_future :_option]: Eff[R, Int] = for {
       a <- async(10)
       b <- option.some(a)
     } yield a + b
 
-    action.runOption.awaitFuture(1.second).run ==== Xor.right(Some(20))
+    type S = Future |: Option |: NoEffect
 
+    action[S].runOption.awaitFuture(1.second).run ==== Xor.right(Some(20))
   }
 
   def e2 = {
+    def action[R :_future :_eval]: Eff[R, Int] =
+      delay(10).flatMap(v => async(v))
+
     type S = Future |: Eval |: NoEffect
-    implicit val f: Member.Aux[Future, S, Eval |: NoEffect] = Member.first
-    implicit val e: Member.Aux[Eval, S, Future |: NoEffect] = Member.successor
 
-    val action: Eff[S, Int] =
-      delay(10).flatMap(v => async[S, Int](v))
-
-    action.runEval.awaitFuture(1.second).run ==== Xor.right(10)
+    action[S].runEval.awaitFuture(1.second).run ==== Xor.right(10)
 
   }
 
   def e3 = {
+    def action[R :_future :_eval]: Eff[R, Int] =
+      delay(Future(10)).flatMap(v => send(v))
+
     type S = Future |: Eval |: NoEffect
-    implicit val f: Member.Aux[Future, S, Eval |: NoEffect] = Member.first
-    implicit val e: Member.Aux[Eval, S, Future |: NoEffect] = Member.successor
 
-    val action: Eff[S, Int] =
-      delay(Future(10)).flatMap(v => send[Future, S, Int](v))
-
-    action.runEval.awaitFuture(1.second).run ==== Xor.right(10)
-
+    action[S].runEval.awaitFuture(1.second).run ==== Xor.right(10)
   }
 
   def e4 = {
-    type S = Future |: Eval |: NoEffect
 
     def future: Future[Int] = Future(10)
+    def action[R :_future :_eval]: Eff[R, Int] = future.liftFuture
 
-    val action: Eff[S, Int] = future.liftFuture
+    type S = Future |: Eval |: NoEffect
 
-    action.runEval.awaitFuture(1.second).run ==== Xor.right(10)
+    action[S].runEval.awaitFuture(1.second).run ==== Xor.right(10)
   }
 }
