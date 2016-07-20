@@ -3,7 +3,7 @@ package org.atnos.eff
 import org.specs2.{ScalaCheck, Specification}
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.all._
-
+import org.atnos.eff.member._
 import scala.concurrent._
 import duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,9 +28,6 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
 """
 
   type S = Future |: Eval |: NoEffect
-  implicit val f: Member.Aux[Future, S, Eval |: NoEffect] = Member.first
-  implicit val e: Member.Aux[Eval, S, Future |: NoEffect] = Member.successor
-
 
   val elements = List(1000, 500, 300, 100, 50)
 

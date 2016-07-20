@@ -5,6 +5,7 @@ import cats.data._
 import cats.implicits._
 import org.specs2.{ScalaCheck, Specification}
 import org.atnos.eff.all._
+import org.atnos.eff.member._
 import interpret._
 import syntax.all._
 import org.scalacheck._
@@ -41,10 +42,10 @@ class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaChec
 
     type S = Future |: Eval |: Option |: NoEffect
 
-    def run[R :_eval, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
+     def run[R :_eval, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
       translate(e) { new Translate[Future, U] {
         def apply[X](fx: Future[X]): Eff[U, X] =
-          delay(fx.value.get.get)(m.out[Eval])
+          delay(fx.value.get.get)
       }}
     }
 
@@ -58,7 +59,7 @@ class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaChec
     def run[R :_option, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
       translate(e) { new Translate[Future, U] {
         def apply[X](fx: Future[X]): Eff[U, X] =
-          option.some(fx.value.get.get)(m.out[Option])
+          option.some(fx.value.get.get)
       }}
     }
 
@@ -72,7 +73,7 @@ class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaChec
     def run[R :_option, U](e: Eff[R, Int])(implicit m: Member.Aux[Future, R, U]): Eff[U, Int] = {
       translate(e) { new Translate[Future, U] {
         def apply[X](fx: Future[X]): Eff[U, X] =
-          option.some(fx.value.get.get)(m.out[Option])
+          option.some(fx.value.get.get)
       }}
     }
 
@@ -86,7 +87,7 @@ class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaChec
     def run[R :_option, U](e: Eff[R, Int])(implicit m: Member.Aux[Option, R, U]): Eff[U, Int] = {
       translate(e) { new Translate[Option, U] {
         def apply[X](fx: Option[X]): Eff[U, X] =
-          send(fx)(m.out[Option])
+          send(fx)
       }}
     }
 

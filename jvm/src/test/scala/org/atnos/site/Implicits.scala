@@ -143,6 +143,10 @@ We should be able to deduce from those 2 facts that `Future` is also an effect o
  This is what `m.out[Future]` does. It builds a `MemberIn[Future, U]` instance which can then be used to inject a `Future`
  into `U`.
 
+There is an implicit conversion from `Member.Aux[O, R, U]` to `MemberIn[T, R]` (when `MemberIn[T, R]` exists) in the
+`org.atnos.eff.member` object to avoid calling `m.out` explicitely. However this conversion cannot be used all the time
+because it might infer the wrong member instances in some cases.
+
 You might wonder why we don't use a more direct type signature like:
 ```
 def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A] =
