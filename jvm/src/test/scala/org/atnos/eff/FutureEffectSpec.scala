@@ -4,12 +4,17 @@ import org.specs2.Specification
 import org.atnos.eff.syntax.all._
 import all._
 
-import scala.concurrent._, duration._
+import scala.concurrent._
+import duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.data.Xor
 import cats.Eval
+import org.specs2.concurrent.ExecutionEnv
+import cats.implicits._
+import cats.data.Writer
+import scala.collection.mutable.ListBuffer
 
-class FutureEffectSpec extends Specification { def is = s2"""
+class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is = s2"""
 
  A future effect can be added to a stack of effects $e1
  A future execution can be delayed $e2
@@ -17,6 +22,8 @@ class FutureEffectSpec extends Specification { def is = s2"""
  A Future value execution can be delayed $e3
 
  A Future can be lifted to a stack of effects $e4
+
+ We can use a partial function to recover from an exception $e5
 
 """
 
@@ -58,5 +65,23 @@ class FutureEffectSpec extends Specification { def is = s2"""
     type S = Future |: Eval |: NoEffect
 
     action[S].runEval.awaitFuture(1.second).run ==== Xor.right(10)
+  }
+
+  def e5 = {
+    type WriterString[A] = Writer[String, A]
+    type _log[R] = WriterString |= R
+
+    def action[R :_future :_log] =
+      tell("message") >>
+      async { throw new TimeoutException; 1 }
+
+    type S = WriterString |: Future |: NoEffect
+
+    val messages = new ListBuffer[String]
+    val action1 = send(action[S].runWriterUnsafe((s: String) => messages.append(s)).detach.recover { case e: TimeoutException => 2 })
+
+    (action1.detach must be_==(2).await) and
+     (messages.toList === List("message"))
+
   }
 }
