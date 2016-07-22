@@ -11,17 +11,18 @@ package object eff {
       m.out[T]
   }
 
-  object eff extends EffCreation with EffInterpretation with Effects
-  object reader extends ReaderCreation with ReaderInterpretation
-  object writer extends WriterCreation with WriterInterpretation
-  object state extends StateCreation with StateInterpretation
-  object eval extends EvalCreation with EvalInterpretation
-  object option extends OptionCreation with OptionInterpretation
-  object list extends ListCreation with ListInterpretation
-  object xor extends XorCreation with XorInterpretation
-  object validate extends ValidateCreation with ValidateInterpretation
-  object choose extends ChooseCreation with ChooseInterpretation
-  object future extends FutureCreation with FutureInterpretation
+  object eff        extends EffCreation        with EffInterpretation with Effects
+  object reader     extends ReaderCreation     with ReaderInterpretation
+  object writer     extends WriterCreation     with WriterInterpretation
+  object state      extends StateCreation      with StateInterpretation
+  object eval       extends EvalCreation       with EvalInterpretation
+  object option     extends OptionCreation     with OptionInterpretation
+  object list       extends ListCreation       with ListInterpretation
+  object xor        extends XorCreation        with XorInterpretation
+  object validate   extends ValidateCreation   with ValidateInterpretation
+  object choose     extends ChooseCreation     with ChooseInterpretation
+  object future     extends FutureCreation     with FutureInterpretation
+  object safeFuture extends SafeFutureCreation with SafeFutureInterpretation
 
   object create extends
     ReaderCreation with
@@ -34,6 +35,7 @@ package object eff {
     ValidateCreation with
     ChooseCreation with
     FutureCreation with
+    SafeFutureCreation with
     EffCreation with
     Effects
 
@@ -48,6 +50,7 @@ package object eff {
     ValidateEffect with
     ChooseEffect with
     FutureEffect with
+    SafeFutureEffect with
     EffInterpretation with
     EffCreation with
     EffImplicits with

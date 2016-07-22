@@ -20,6 +20,7 @@ This library comes with the following effects:
  `ListEffect`        | an effect for computations returning several values
  `ChooseEffect`      | an effect for modeling non-determinism
  `FutureEffect`      | an effect using Scala's Future
+ `SafeFutureEffect`  | an effect using Scala's Future but delaying side-effects and attempting the Future on execution
 
 <small>(from `org.atnos.eff._`)</small>
 
