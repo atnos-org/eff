@@ -15,6 +15,10 @@ object XorEffect extends XorEffect
 
 trait XorCreation {
 
+  type ThrowableXor[A] = Throwable Xor A
+  type _ThrowableXor[R] = ThrowableXor <= R
+  type _throwableXor[R] = ThrowableXor |= R
+
   /** create an Xor effect from a single Option value */
   def optionXor[R, E, A](option: Option[A], e: E)(implicit member: (E Xor ?) |= R): Eff[R, A] =
     option.fold[Eff[R, A]](left[R, E, A](e))(right[R, E, A])

@@ -13,6 +13,7 @@ import org.specs2.concurrent.ExecutionEnv
 import cats.implicits._
 import cats.data.Writer
 import scala.collection.mutable.ListBuffer
+import org.specs2.matcher.XorMatchers._
 
 class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is = s2"""
 
@@ -24,6 +25,8 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is
  A Future can be lifted to a stack of effects $e4
 
  We can use a partial function to recover from an exception $e5
+
+ We can attempt a future and use an Xor effect for the exception $e6
 
 """
 
@@ -83,5 +86,14 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is
     (action1.detach must be_==(2).await) and
      (messages.toList === List("message"))
 
+  }
+
+  def e6 = {
+    def action[R :_future :_eval :_throwableXor] =
+      FutureEffect.attempt(Future { throw new TimeoutException; 1 })
+
+    type S = ThrowableXor |: Eval |: Future |: NoEffect
+
+    action[S].runXor.runEval.detach must beXorLeft((e: Throwable) => e must haveClass[TimeoutException]).await
   }
 }

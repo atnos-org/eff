@@ -8,6 +8,9 @@ import Interpret._
 import EvalTypes._
 import scala.concurrent._
 import duration._
+import XorCreation._
+import cats.syntax.applicativeError._
+import cats.std.future._
 
 /**
  * Effect for Future computations
@@ -31,6 +34,9 @@ trait FutureCreation {
 
   def liftFuture[R :_future :_eval, A](f: =>Future[A]): Eff[R, A] =
     EvalEffect.delay(f).flatMap(v => Eff.send[Future, R, A](v))
+
+  def attempt[R :_future :_eval :_throwableXor, A](f: =>Future[A])(implicit ec: ExecutionContext): Eff[R, A] =
+    liftFuture(f.attempt).flatMap(send(_))
 
 }
 
