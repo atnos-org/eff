@@ -90,7 +90,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is
 
   def e6 = {
     def action[R :_future :_eval :_throwableXor] =
-      FutureEffect.attempt(Future { throw new TimeoutException; 1 })
+      FutureEffect.attemptFuture(Future { throw new TimeoutException; 1 })
 
     type S = ThrowableXor |: Eval |: Future |: NoEffect
 

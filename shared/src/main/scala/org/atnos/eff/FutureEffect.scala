@@ -35,7 +35,7 @@ trait FutureCreation {
   def liftFuture[R :_future :_eval, A](f: =>Future[A]): Eff[R, A] =
     EvalEffect.delay(f).flatMap(v => Eff.send[Future, R, A](v))
 
-  def attempt[R :_future :_eval :_throwableXor, A](f: =>Future[A])(implicit ec: ExecutionContext): Eff[R, A] =
+  def attemptFuture[R :_future :_eval :_throwableXor, A](f: =>Future[A])(implicit ec: ExecutionContext): Eff[R, A] =
     liftFuture(f.attempt).flatMap(send(_))
 
 }

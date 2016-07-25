@@ -24,8 +24,8 @@ trait future {
     def liftFuture[R :_future :_eval] =
       FutureEffect.liftFuture(f)
 
-    def attempt[R :_future :_eval :_throwableXor](implicit ec: ExecutionContext) =
-      FutureEffect.attempt(f)
+    def attemptFuture[R :_future :_eval :_throwableXor](implicit ec: ExecutionContext) =
+      FutureEffect.attemptFuture(f)
   }
 
 }
