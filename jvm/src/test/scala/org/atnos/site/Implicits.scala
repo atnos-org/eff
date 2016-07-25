@@ -116,6 +116,7 @@ case class Authenticate(token: String) extends Authenticated[AccessRights]
 
 type _error[R] = (AuthError Xor ?) |= R
 
+import org.atnos.eff.member._
 
 def runAuth[R :_future :_error, U, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A] =
   translate(e) { new Translate[Authenticated, U] {
@@ -142,6 +143,8 @@ The call to `send` above needs to send a `Future` value in the stack `U`. But th
 We should be able to deduce from those 2 facts that `Future` is also an effect of `U` but we need to show a proof of that.
  This is what `m.out[Future]` does. It builds a `MemberIn[Future, U]` instance which can then be used to inject a `Future`
  into `U`.
+
+The call to `collapse` would also require the passing of `m.out[AuthError Xor ?]` but the `member` import provides it.
 
 
 You might wonder why we don't use a more direct type signature like:

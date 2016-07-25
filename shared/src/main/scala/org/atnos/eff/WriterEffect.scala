@@ -65,7 +65,7 @@ trait WriterInterpretation {
     runWriterFold(w)(UnsafeFold(f)).map(_._1)
 
   def runWriterEval[R :_eval, U, O, A](w: Eff[R, A])(f: O => Eval[Unit])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
-    runWriterFold(w)(EvalFold(f)).flatMap { case (a, e) => send[Eval, U, Unit](e).as(a) }
+    runWriterFold(w)(EvalFold(f)).flatMap { case (a, e) => send[Eval, U, Unit](e)(m.out[Eval]).as(a) }
 
   implicit def ListFold[A]: Fold[A, List[A]] = new Fold[A, List[A]] {
     type S = ListBuffer[A]

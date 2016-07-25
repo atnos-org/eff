@@ -137,16 +137,11 @@ trait MemberInImplicits2 extends MemberInImplicits3 {
     MemberIn.SuccessorMember[T, O, R](m)
 }
 
-trait MemberInImplicits3 extends MemberInImplicits4 {
+trait MemberInImplicits3 {
 
   implicit def successor_[T[_], O[_], R](implicit m: MemberIn[T, R]): MemberIn[T, O |: R] =
     MemberIn.SuccessorMember[T, O, R](m)
 
-}
-
-trait MemberInImplicits4  {
-  implicit def outMember[R, U, O[_], T[_]](implicit t: MemberIn[T, R], m: Member.Aux[O, R, U]): MemberIn[T, U] =
-    m.out[T]
 }
 
 trait MemberImplicits extends MemberImplicits1 {
