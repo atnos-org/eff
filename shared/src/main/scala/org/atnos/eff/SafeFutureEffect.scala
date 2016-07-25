@@ -61,6 +61,9 @@ case class SafeFuture[A](run: () => Future[Throwable Xor A]) {
 
   def flatMap[B](f: A => SafeFuture[B])(implicit ec: ExecutionContext): SafeFuture[B] =
     SafeFuture(() => run().flatMap(xor => xor.fold(t => Future.successful(Xor.Left(t)), a => f(a).run())))
+
+  lazy val value: Future[Throwable Xor A] =
+    run()
 }
 
 object SafeFuture {

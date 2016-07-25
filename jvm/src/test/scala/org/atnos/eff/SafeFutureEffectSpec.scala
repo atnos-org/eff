@@ -31,7 +31,7 @@ class SafeFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { de
 
   def e2 = {
     def action[R :_safeFuture]: Eff[R, Throwable Xor Int] =
-      (Future { throw new TimeoutException; 1 }).safeAttempt[R](implicitly[_safeFuture[R]], global)
+      Future { throw new TimeoutException; 1 }.safeAttempt[R](implicitly[_safeFuture[R]], global)
 
     type S = Option |: SafeFuture |: NoEffect
 
