@@ -1,7 +1,8 @@
 package org.atnos.eff.syntax
 
+import cats.Eval
 import cats.data.Writer
-import org.atnos.eff._
+import org.atnos.eff._, eff._
 
 object writer extends writer
 
@@ -21,6 +22,8 @@ trait writer {
     def runWriterUnsafe[O](f: O => Unit)(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =
       WriterInterpretation.runWriterUnsafe(e)(f)(member.aux)
 
+    def runWriterEval[O](f: O => Eval[Unit])(implicit member: Member[Writer[O, ?], R], v: Eval |= R): Eff[member.Out, A] =
+      WriterInterpretation.runWriterEval(e)(f)(v, member)
   }
 
 }

@@ -3,9 +3,10 @@ package org.atnos.eff
 import scala.collection.mutable._
 import cats._
 import data._
-import cats.syntax.semigroup._
+import cats.implicits._
 import Eff._
 import Interpret._
+import EvalEffect._
 
 /**
  * Effect for logging values alongside computations
@@ -63,6 +64,9 @@ trait WriterInterpretation {
   def runWriterUnsafe[R, U, O, A](w: Eff[R, A])(f: O => Unit)(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
     runWriterFold(w)(UnsafeFold(f)).map(_._1)
 
+  def runWriterEval[R :_eval, U, O, A](w: Eff[R, A])(f: O => Eval[Unit])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
+    runWriterFold(w)(EvalFold(f)).flatMap { case (a, e) => send[Eval, U, Unit](e).as(a) }
+
   implicit def ListFold[A]: Fold[A, List[A]] = new Fold[A, List[A]] {
     type S = ListBuffer[A]
     val init = new ListBuffer[A]
@@ -81,6 +85,13 @@ trait WriterInterpretation {
     type S = Unit
     val init = ()
     def fold(a: A, s: S) = f(a)
+    def finalize(s: S) = s
+  }
+
+  def EvalFold[A](f: A => Eval[Unit]): Fold[A, Eval[Unit]] = new Fold[A, Eval[Unit]] {
+    type S = Eval[Unit]
+    val init = Eval.now(())
+    def fold(a: A, s: S) = s >> f(a)
     def finalize(s: S) = s
   }
 
