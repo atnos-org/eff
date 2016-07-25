@@ -14,6 +14,5 @@ trait all extends
   list with
   state with
   future with
-  safeFuture with
   eff
 

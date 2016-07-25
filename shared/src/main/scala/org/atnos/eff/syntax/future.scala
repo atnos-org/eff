@@ -5,6 +5,7 @@ import scala.concurrent._, duration._
 import cats.data._
 import FutureEffect._
 import EvalEffect._
+import XorEffect._
 
 object future extends future
 
@@ -18,10 +19,13 @@ trait future {
 
   }
 
-  implicit class FutureOps[A](f: Future[A]) {
+  implicit class FutureOps[A](f: =>Future[A]) {
 
     def liftFuture[R :_future :_eval] =
       FutureEffect.liftFuture(f)
+
+    def attempt[R :_future :_eval :_throwableXor](implicit ec: ExecutionContext) =
+      FutureEffect.attempt(f)
   }
 
 }
