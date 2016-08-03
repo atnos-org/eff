@@ -15,7 +15,6 @@ import Eff._
 class ReadmeSpec extends Specification { def is = s2"""
 
  run the first example $firstExample
- future effect $futureEffect
 
 """
 
@@ -51,40 +50,6 @@ class ReadmeSpec extends Specification { def is = s2"""
     result === ((32, List("START: the start value is 5", "END")))
   }
 
-  import scala.concurrent._, duration._
-  import scala.concurrent.ExecutionContext.Implicits.global
-  import Interpret._
-
-  def futureEffect = {
-    object FutureEffect {
-
-      type Fut[A] = Future[() => A]
-
-      def future[R, A](a: =>A)(implicit m: Fut <= R): Eff[R, A] =
-        send[Fut, R, A](Future(() => a))
-
-      def runFuture[R, A, B](atMost: Duration)(effects: Eff[Fut |: R, A]): Eff[R, A] = {
-        val recurse = new Recurse[Fut, R, A] {
-          def apply[X](m: Fut[X]): X Xor Eff[R, A] =
-            Left(Await.result(m.map(_()), atMost))
-        }
-        interpret1((a: A) => a)(recurse)(effects)
-      }
-    }
-
-    import FutureEffect._
-
-    type F = Fut |: NoEffect
-
-    val action: Eff[F, Int] = for {
-      a <- future[F, Int](1)
-      b <- future[F, Int](2)
-    } yield a + b
-
-    run(runFuture(3.seconds)(action)) ==== 3
-  }
-
   def powerOfTwo(n: Int): Int =
     math.pow(2, n.toDouble).toInt
 }
-

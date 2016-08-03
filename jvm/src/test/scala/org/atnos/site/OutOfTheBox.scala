@@ -31,9 +31,9 @@ This effect is a very simple one. It allows the delayed execution of computation
 
 Two methods are available to execute this effect:
 
- - `runEval[R, A](r: Eff[Eval |: R, A]): Eff[R, A]` to just execute the computations
+ - `runEval: Eff[U, A]` to just execute the computations
 
- - `attemptEval[R, A](r: Eff[Eval |: R, A]): Eff[R, Throwable \/ A]` to execute the computations but also catch any `Throwable` that would be thrown
+ - `attemptEval: Eff[U, Throwable \/ A]` to execute the computations but also catch any `Throwable` that would be thrown
 
 ${snippet{
 import org.atnos.eff._, all._, syntax.all._

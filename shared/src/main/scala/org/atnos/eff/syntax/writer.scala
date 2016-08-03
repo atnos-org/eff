@@ -22,8 +22,8 @@ trait writer {
     def runWriterUnsafe[O](f: O => Unit)(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =
       WriterInterpretation.runWriterUnsafe(e)(f)(member.aux)
 
-    def runWriterEval[O](f: O => Eval[Unit])(implicit member: Member[Writer[O, ?], R], v: Eval |= R): Eff[member.Out, A] =
-      WriterInterpretation.runWriterEval(e)(f)(v, member)
+    def runWriterEval[O, U](f: O => Eval[Unit])(implicit member: Member.Aux[Writer[O, ?], R, U], v: Eval |= U): Eff[U, A] =
+      WriterInterpretation.runWriterEval(e)(f)(member, v)
   }
 
 }

@@ -28,11 +28,13 @@ trait ErrorTypes[F] {
   /** type of errors: exceptions or failure messages */
   type Error = Throwable Xor F
 
+
   /**
    * base type for this effect: either an error or a computation to evaluate
-   * scala.Name represents "by-name" value: values not yet evaluated
+   * a "by-name" value
    */
-  type ErrorOrOk[A] = Error Xor cats.Eval[A]
+  type ErrorOrOkE[E, A] = (Throwable Xor E) Xor cats.Eval[A]
+  type ErrorOrOk[A] = ErrorOrOkE[F, A]
 
   type _ErrorOrOk[R] = ErrorOrOk <= R
   type _errorOrOk[R] = ErrorOrOk |= R
@@ -40,23 +42,23 @@ trait ErrorTypes[F] {
 
 trait ErrorCreation[F] extends ErrorTypes[F] {
   /** create an Eff value from a computation */
-  def ok[R :_ErrorOrOk, A](a: => A): Eff[R, A] =
+  def ok[R :_errorOrOk, A](a: => A): Eff[R, A] =
     send[ErrorOrOk, R, A](Right(cats.Eval.later(a)))
 
   /** create an Eff value from a computation */
-  def eval[R :_ErrorOrOk , A](a: Eval[A]): Eff[R, A] =
+  def eval[R :_errorOrOk , A](a: Eval[A]): Eff[R, A] =
     send[ErrorOrOk, R, A](Right(a))
 
   /** create an Eff value from an error */
-  def error[R :_ErrorOrOk, A](error: Error): Eff[R, A] =
+  def error[R :_errorOrOk, A](error: Error): Eff[R, A] =
     send[ErrorOrOk, R, A](Left(error))
 
   /** create an Eff value from a failure */
-  def fail[R :_ErrorOrOk, A](failure: F): Eff[R, A] =
+  def fail[R :_errorOrOk, A](failure: F): Eff[R, A] =
     error(Right(failure))
 
   /** create an Eff value from an exception */
-  def exception[R :_ErrorOrOk, A](t: Throwable): Eff[R, A] =
+  def exception[R :_errorOrOk, A](t: Throwable): Eff[R, A] =
     error(Left(t))
 }
 
@@ -161,6 +163,21 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
       def apply[X](r: (Throwable Xor E1) Xor Eval[X]): (Throwable Xor E2) Xor Eval[X] =
         r.leftMap(_.map(getter))
     })
+
+  /**
+    * Translate an error effect to another one in the same stack
+    * a computation over a "bigger" error (for the full application)
+    */
+  def runLocalError[R, U, E1, E2, A](r: Eff[R, A], getter: E1 => E2)
+                                  (implicit sr: Member.Aux[ErrorOrOkE[E1, ?], R, U], br: ErrorOrOkE[E2, ?] |= U): Eff[U, A] =
+    translate[R, U, ErrorOrOkE[E1, ?], A](r) { new Translate[ErrorOrOkE[E1, ?], U] {
+      def apply[X](ex: ErrorOrOkE[E1, X]): Eff[U, X] =
+        ex match {
+          case Xor.Left(Xor.Left(t))   => send[ErrorOrOkE[E2, ?], U, X](Xor.Left(Xor.Left(t)))
+          case Xor.Left(Xor.Right(e1)) => send[ErrorOrOkE[E2, ?], U, X](Xor.Left(Xor.Right(getter(e1))))
+          case Xor.Right(x)            => send[ErrorOrOkE[E2, ?], U, X](Xor.Right(x))
+        }
+    }}
 
 }
 

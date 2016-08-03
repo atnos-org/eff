@@ -10,7 +10,7 @@ import _root_.monix.execution._
 import scala.concurrent._
 import scala.util._
 import duration._
-
+import TaskEffect._
 /**
  * Effect for Task computations
  */
@@ -18,13 +18,16 @@ trait TaskEffect extends
   TaskCreation with
   TaskInterpretation
 
-object TaskEffect extends TaskEffect
+object TaskEffect extends TaskEffect {
+  type _task[R] = Task |= R
+  type _Task[R] = Task <= R
+}
 
 trait TaskCreation {
-  def sync[R, A](a: A)(implicit m: Member[Task, R]): Eff[R, A] =
+  def sync[R :_task, A](a: A): Eff[R, A] =
     pure(a)
 
-  def async[R, A](a: =>A)(implicit m: Member[Task, R]): Eff[R, A] =
+  def async[R :_task, A](a: =>A): Eff[R, A] =
     send(Task.fork(Task.evalOnce(a)))
 
 }

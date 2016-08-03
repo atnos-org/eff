@@ -3,7 +3,6 @@ package org.atnos.eff
 import org.specs2.{ScalaCheck, Specification}
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.all._
-import org.atnos.eff.member._
 import scala.concurrent._
 import duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,21 +17,20 @@ import scala.collection.mutable.ListBuffer
 class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  It is possible to use an applicative instance to execute effects "in parallel"
-  as a monad $asMonad
-  as an applicative $asApplicative
-  as a monad prop $asMonadProp
-  as an applicative prop $asApplicativeProp
+  as a monad                         $asMonad
+  as an applicative                  $asApplicative
+  as a monad prop                    $asMonadProp
+  as an applicative prop             $asApplicativeProp
   it is stacksafe with list.traverse $stacksafeList
   it is stacksafe with eff.traverse  $stacksafeEff
 
 """
 
-  type S = Future |: Eval |: NoEffect
+  type S = Future |:: Eval
 
   val elements = List(1000, 500, 300, 100, 50)
 
   def asMonad = {
-
     val messages = new ListBuffer[String]
 
     val actionMonadic: Eff[S, List[Int]] =

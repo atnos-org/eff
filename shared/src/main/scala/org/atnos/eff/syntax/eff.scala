@@ -3,7 +3,6 @@ package syntax
 
 import cats.{Monad, Traverse}
 import cats.arrow.NaturalTransformation
-import org.atnos.eff.Effects.|:
 
 /**
  * Operations of Eff[R, A] values
@@ -13,22 +12,27 @@ object eff extends eff
 trait eff {
 
   implicit class EffOps[R, A](e: Eff[R, A]) {
-    def into[U](implicit f: IntoPoly[R, U, A]): Eff[U, A] =
+    def into[U](implicit f: IntoPoly[R, U]): Eff[U, A] =
       Eff.effInto(e)(f)
 
     def transform[BR, U, M[_], N[_]](t: NaturalTransformation[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, BR, U]): Eff[BR, A] =
       Interpret.transform(e, t)(m, n)
 
-    def translate[U, M[_]](t: Interpret.Translate[M, U])(implicit m: Member.Aux[M, R, U]): Eff[U, A] =
+    def translate[M[_], U](t: Interpret.Translate[M, U])(implicit m: Member.Aux[M, R, U]): Eff[U, A] =
       Interpret.translate(e)(t)(m)
   }
 
-  implicit class EffNoEffectOps[A](e: Eff[NoEffect, A]) {
+  implicit class EffNoEffectOps[A](e: Eff[NoFx, A]) {
     def run: A =
       Eff.run(e)
   }
 
-  implicit class EffOneEffectOps[M[_] : Monad, A](e: Eff[M |: NoEffect, A]) {
+  implicit class EffOneEffectOps_[M[_] : Monad, A](e: Eff[M |: NoEffect, A]) {
+    def detach: M[A] =
+      Eff.detach(e.asInstanceOf[Eff[Fx1[M], A]])
+  }
+
+  implicit class EffOneEffectOps[M[_] : Monad, A](e: Eff[Fx1[M], A]) {
     def detach: M[A] =
       Eff.detach(e)
   }

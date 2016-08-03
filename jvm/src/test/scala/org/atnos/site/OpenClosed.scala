@@ -8,12 +8,12 @@ object OpenClosed extends UserGuidePage { def is = ("Open - Closed").title ^ s2"
 There are 2 ways to create effectful computations for a given effect `M`.
 
 You can create an **open** union of effects:${snippet {
-// '<= ' reads 'is member of '
-import Member.<=
+// '|= ' reads 'is member of '
+import MemberIn.|=
 import StateEffect._
 import WriterEffect._
 
-def putAndTell[R](i: Int)(implicit s: State[Int, ?] <= R, w: Writer[String, ?] <= R): Eff[R, Int] =
+def putAndTell[R](i: Int)(implicit s: State[Int, ?] |= R, w: Writer[String, ?] |= R): Eff[R, Int] =
   for {
     _ <- put(i)
     _ <- tell("stored " + i)
@@ -42,17 +42,11 @@ import cats.data._
 
 type S = State[Int, ?] |: Writer[String, ?] |: NoEffect
 
-object S {
+implicit val StateIntMember =
+  Member.Member2L[State[Int, ?], Writer[String, ?]]
 
-  implicit val StateIntMember: Member.Aux[State[Int, ?], S, Writer[String, ?] |: NoEffect] =
-    Member.ZeroMember
-
-  implicit val WriterStringMember: Member.Aux[Writer[String, ?], S, State[Int, ?] |: NoEffect] =
-    Member.SuccessorMember
-
-}
-
-import S._
+implicit val WriterStringMember =
+  Member.Member2R[State[Int, ?], Writer[String, ?]]
 
 def putAndTell(i: Int): Eff[S, Int] =
   for {
@@ -72,8 +66,5 @@ The implicit `StateIntMember` for example declares that:
 Now you can learn ${"how to create effects" ~/ CreateEffects}
 
 """
-
-  type S = State[Int, ?] |: Writer[String, ?] |: NoEffect
-
 
 }

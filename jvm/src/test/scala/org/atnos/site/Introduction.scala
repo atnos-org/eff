@@ -33,7 +33,7 @@ The effects `R` are modelled by a type-level list of "effect constructors", for 
 import cats._, data._
 import org.atnos.eff._, all._
 
-type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect
+type Stack = Reader[Int, ?] |: Writer[String, ?] |:: Eval
 
 }}
 The stack `Stack` above declares 3 effects:
@@ -44,10 +44,11 @@ The stack `Stack` above declares 3 effects:
 
  - an `Eval` effect to only compute values on demand (a bit like lazy values)
 
+ Note that the last effect of a stack needs to be preceded with `|::` instead of `|:`.
+
 Now we can write a program with those 3 effects, using the primitive operations provided by `ReaderEffect`, `WriterEffect` and `EvalEffect`:${snippet{
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-import Stack._
 
 val program: Eff[Stack, Int] = for {
   // get the configuration
@@ -91,18 +92,6 @@ you can learn about ${"other effects" ~/ OutOfTheBox} supported by this library.
 
   type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect
 
-  object Stack {
-
-    implicit lazy val ReaderMember: Member.Aux[Reader[Int, ?], Stack, Writer[String, ?] |: Eval |: NoEffect] =
-      Member.ZeroMember
-
-    implicit lazy val WriterMember: Member.Aux[Writer[String, ?], Stack, Reader[Int, ?] |: Eval |: NoEffect] =
-      Member.SuccessorMember
-
-    implicit lazy val EvalMember: Member.Aux[Eval, Stack, Reader[Int, ?] |: Writer[String, ?] |: NoEffect] =
-      Member.SuccessorMember
-
-  }
 
 }
 

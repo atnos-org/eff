@@ -3,6 +3,7 @@ package org.atnos.eff.monix
 import org.atnos.eff._
 import org.atnos.eff.eff._
 import org.atnos.eff.eval._
+import org.atnos.eff.option._
 import org.atnos.eff.monix._
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.syntax.monix._
@@ -16,6 +17,7 @@ import _root_.monix.eval._
 import org.specs2._
 import org.scalacheck.Gen.{choose => chooseInt, listOfN}
 import scala.collection.mutable.ListBuffer
+import TaskEffect._
 
 class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -30,40 +32,34 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
 """
 
   def e1 = {
-    type S = Task |: Option |: NoEffect
-    implicit val f: Member.Aux[Task, S, Option |: NoEffect] = Member.first
-    implicit val o: Member.Aux[Option, S, Task |: NoEffect] = Member.successor
+    type S = Task |:: Option
 
-    val action: Eff[S, Int] = for {
+    def action[R :_task :_option]: Eff[R, Int] = for {
       a <- async(10)
       b <- option.some(a)
     } yield a + b
 
-    action.runOption.awaitTask(1.second).run ==== Xor.right(Some(20))
+    action[S].runOption.awaitTask(1.second).run ==== Xor.right(Some(20))
 
   }
 
   def e2 = {
-    type S = Task |: Eval |: NoEffect
-    implicit val f: Member.Aux[Task, S, Eval |: NoEffect] = Member.first
-    implicit val e: Member.Aux[Eval, S, Task |: NoEffect] = Member.successor
+    type S = Task |:: Eval
 
-    val action: Eff[S, Int] =
-      delay(10).flatMap(v => async[S, Int](v))
+    def action[R :_task :_eval]: Eff[R, Int] =
+      delay(10).flatMap(v => async(v))
 
-    action.runEval.awaitTask(1.second).run ==== Xor.right(10)
+    action[S].runEval.awaitTask(1.second).run ==== Xor.right(10)
 
   }
 
   def e3 = {
-    type S = Task |: Eval |: NoEffect
-    implicit val f: Member.Aux[Task, S, Eval |: NoEffect] = Member.first
-    implicit val e: Member.Aux[Eval, S, Task |: NoEffect] = Member.successor
+    type S = Task |:: Eval
 
-    val action: Eff[S, Int] =
-      delay(Task(10)).flatMap(v => send[Task, S, Int](v))
+    def action[R :_task :_eval]: Eff[R, Int] =
+      delay(Task(10)).flatMap(v => send(v))
 
-    action.runEval.awaitTask(1.second).run ==== Xor.right(10)
+    action[S].runEval.awaitTask(1.second).run ==== Xor.right(10)
 
   }
 

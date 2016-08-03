@@ -58,18 +58,6 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     type SS = StateIntPair |: Option |: NoEffect
     type TS = StateInt |: Option |: NoEffect
 
-    implicit val ss1: Member.Aux[StateIntPair, SS, Option |: NoEffect] =
-      Member.first
-
-    implicit val ss2: Member.Aux[Option, SS, StateIntPair |: NoEffect] =
-      Member.successor
-
-    implicit val ts1: Member.Aux[StateInt, TS, Option |: NoEffect] =
-      Member.first
-
-    implicit val ts2: Member.Aux[Option, TS, StateInt |: NoEffect] =
-      Member.successor
-
     val action: Eff[TS, String] =
       for {
         _ <- put[TS, Int](10)

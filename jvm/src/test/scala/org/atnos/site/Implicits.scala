@@ -63,12 +63,12 @@ object S {
   type S = StateInt |: WriterString |: NoEffect
 
   // for the first effect of the stack
-  implicit val StateIntMember: Member.Aux[StateInt, S, WriterString |: NoEffect] =
-    Member.first
+  implicit val StateIntMember =
+    Member.Member2L[StateInt, WriterString]
 
   // for the next effect
-  implicit val WriterStringMember: Member.Aux[WriterString, S, StateInt |: NoEffect] =
-    Member.successor
+  implicit val WriterStringMember =
+    Member.Member2R[StateInt, WriterString]
 }
 
 import S._
@@ -114,17 +114,18 @@ case class AuthError(message: String)
 sealed trait Authenticated[A]
 case class Authenticate(token: String) extends Authenticated[AccessRights]
 
-type _error[R] = (AuthError Xor ?) |= R
+type AuthErroXor[A] = AuthError Xor A
+type _error[R] = AuthErroXor |= R
 
-import org.atnos.eff.member._
-
-def runAuth[R :_future :_error, U, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A] =
+def runAuth[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U],
+                                   f: _future[U],
+                                   x: _error[U]): Eff[U, A] =
   translate(e) { new Translate[Authenticated, U] {
     def apply[X](ax: Authenticated[X]): Eff[U, X] =
       ax match {
         case Authenticate(token) =>
           // send the future effect in the stack U
-          send(authenticate(token))(m.out[Future]).
+          send(authenticate(token)).
           // send the Xor value in the stack U
           collapse
       }
@@ -133,27 +134,33 @@ def runAuth[R :_future :_error, U, A](e: Eff[R, A])(implicit m: Member.Aux[Authe
 // call to a service to authenticate tokens
 def authenticate(token: String): Future[AuthError Xor AccessRights] = ???
 
+type S = Authenticated |: (AuthError Xor ?) |:: Future
+def auth: Eff[S, Int] = ???
+
+runAuth(auth)
+
 }}
 
-The call to `send` above needs to send a `Future` value in the stack `U`. But the type signature of `runAuth` only indicates that:
+The call to `send` above needs to send a `Future` value in the stack `U`. This is possible because `Future` is an
+effect in `U` as evidenced by `f`.
 
- - `Future` is an effect in `R`
- - `Authenticated` is an effect in `R` and removing it from `R` leaves us with `U`
-
-We should be able to deduce from those 2 facts that `Future` is also an effect of `U` but we need to show a proof of that.
- This is what `m.out[Future]` does. It builds a `MemberIn[Future, U]` instance which can then be used to inject a `Future`
- into `U`.
-
-The call to `collapse` would also require the passing of `m.out[AuthError Xor ?]` but the `member` import provides it.
+Furthermore, `authenticate` returns an `AuthError Xor ?` value. We can "collapse" it into `U`
+because `AuthError Xor ?` is an effect of `U` as evidenced by `x`.
 
 
 You might wonder why we don't use a more direct type signature like:
 ```
-def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A] =
+def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U]): Eff[U, A]
 ```
 
-The reason is that Scala has some difficulty to infer the type parameters when calling `runAuth2` and they have to be explicitly
-provided. The first declaration works fine with type inference.
+The reason is that scalac desugars this to:
+```
+def runAuth2[R, U, A](e: Eff[R, A])(implicit f: _future[U],
+                                             x: _error[U],
+                                             m: Member.Aux[Authenticated, R, U]): Eff[U, A] =
+```
+
+At it can not infer the right implicits when `m` comes last.
 
 """
 

@@ -88,8 +88,6 @@ val action = for {
   _ <- writeFile("key", s)  .into[HadoopS3]
 } yield ()
 
-import HadoopS3._
-
 // and we can run the composite action
 action.runReader(S3Conf("bucket")).runReader(HadoopConf(10)).runWriter.runEval.run
 }.eval}

@@ -34,7 +34,6 @@ class StacksSpec extends Specification { def is = s2"""
 
 """
 
-
   def togetherOpen = {
 
     import HadoopOpenStack._
@@ -47,7 +46,7 @@ class StacksSpec extends Specification { def is = s2"""
       _ <- writeFile[HadoopS3]("key", s)
     } yield ()
 
-    run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action))))) ====
+    runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action.fx)).runWriter.runEval.run ====
       (((), List("Reading from /tmp/data", "Writing to bucket bucket: 10")))
   }
 
@@ -55,14 +54,14 @@ class StacksSpec extends Specification { def is = s2"""
     import HadoopClosedStack._
     import S3ClosedStack.{WriterString=>_,_}
 
-    type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect
+    type HadoopS3 = S3Reader |: HadoopReader |: WriterString |:: Eval
 
     val action = for {
       s <- readFile("/tmp/data").into[HadoopS3]
       _ <- writeFile("key", s)  .into[HadoopS3]
     } yield ()
 
-    run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action))))) ====
+    run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action.fx))))) ====
       (((), List("Reading from /tmp/data", "Writing to bucket bucket: 10")))
   }
 
@@ -78,14 +77,14 @@ class StacksSpec extends Specification { def is = s2"""
     type WriterString[A] = Writer[String, A]
     type Hadoop = HadoopReader |: WriterString |: Eval |: NoEffect
 
-    def readFile[R](path: String)(implicit r: HadoopReader <= R, w: WriterString <= R): Eff[R, String] =
+    def readFile[R](path: String)(implicit r: HadoopReader |= R, w: WriterString |= R): Eff[R, String] =
       for {
         c <- ask[R, HadoopConf](r)
         _ <- tell[R, String]("Reading from "+path)(w)
       } yield c.mappers.toString
 
-    def runHadoopReader[R, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
-      (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runReader(conf)(e)
+    def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(implicit m: Member.Aux[HadoopReader, R, U]): Eff[U, A] =
+      ReaderEffect.runReader(conf)(e)
 
   }
 
@@ -98,14 +97,14 @@ class StacksSpec extends Specification { def is = s2"""
 
     type S3 = S3Reader |: WriterString |: Eval |: NoEffect
 
-    def writeFile[R](key: String, content: String)(implicit r: S3Reader <= R, w: WriterString <= R): Eff[R, Unit] =
+    def writeFile[R](key: String, content: String)(implicit r: S3Reader |= R, w: WriterString |= R): Eff[R, Unit] =
       for {
         c <- ask[R, S3Conf](r)
         _ <- tell[R, String]("Writing to bucket "+c.bucket+": "+content)(w)
       } yield ()
 
-    def runS3Reader[R, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
-      (e: Eff[S3Reader |: R, A]) => ReaderEffect.runReader(conf)(e)
+    def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(implicit m: Member.Aux[S3Reader, R, U]): Eff[U, A] =
+      ReaderEffect.runReader(conf)(e)
   }
 
   object HadoopClosedStack {
@@ -122,8 +121,8 @@ class StacksSpec extends Specification { def is = s2"""
         _ <- tell[Hadoop, String]("Reading from "+path)
       } yield c.mappers.toString
 
-    def runHadoopReader[R, A](conf: HadoopConf): Eff[HadoopReader |: R, A] => Eff[R, A] =
-      (e: Eff[HadoopReader |: R, A]) => ReaderEffect.runReader(conf)(e)
+    def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(implicit m: Member.Aux[HadoopReader, R, U]): Eff[U, A] =
+      ReaderEffect.runReader(conf)(e)
 
   }
 
@@ -142,8 +141,7 @@ class StacksSpec extends Specification { def is = s2"""
         _ <- tell[S3, String]("Writing to bucket "+c.bucket+": "+content)
       } yield ()
 
-    def runS3Reader[R, A](conf: S3Conf): Eff[S3Reader |: R, A] => Eff[R, A] =
-      (e: Eff[S3Reader |: R, A]) => ReaderEffect.runReader(conf)(e)
+    def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(implicit m: Member.Aux[S3Reader, R, U]): Eff[U, A] =
+      ReaderEffect.runReader(conf)(e)
   }
-
 }

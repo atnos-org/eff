@@ -72,7 +72,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
       } yield i.toInt + j
 
     // run effects
-    readXor.runXor.runReader(init).run must_==
+    readXor.fx.runXor.runReader(init).run must_==
       Right(init.toInt + someValue)
 
   }.setGens(posNum[Long], posNum[Int])

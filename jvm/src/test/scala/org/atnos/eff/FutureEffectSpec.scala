@@ -93,7 +93,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is
       FutureEffect.attemptFuture(Future { throw new TimeoutException; 1 })
 
     type S = ThrowableXor |: Eval |: Future |: NoEffect
-
-    action[S].runXor.runEval.detach must beXorLeft((e: Throwable) => e must haveClass[TimeoutException]).await
+    val s = Fx[S]
+    action[s.Fx].runXor.runEval.detach must beXorLeft((e: Throwable) => e must haveClass[TimeoutException]).await
   }
 }

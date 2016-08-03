@@ -15,12 +15,12 @@ import cats.syntax.traverse._
 import cats.std.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
 
-type Future_[X] = Member[Future, X]
-type Eval_[X] = Member[Eval, X]
-type Writer_[X] = Member[Writer[String, ?], X]
-type S = Eval |: Future |: Writer[String, ?] |: NoEffect
+type WriterString[A] = Writer[String, A]
+type _writerString[R] = WriterString |= R
 
-def execute[E : Eval_ : Writer_ : Future_](i: Int): Eff[E, Int] =
+type S = Fx.fx3[Eval, Future, WriterString]
+
+def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
     i1 <- delay(i)
     i2 <- async(i1)
@@ -44,12 +44,12 @@ import cats.data.Writer
 import cats.std.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
 
-type Future_[X] = Member[Future, X]
-type Eval_[X] = Member[Eval, X]
-type Writer_[X] = Member[Writer[String, ?], X]
-type S = Eval |: Future |: Writer[String, ?] |: NoEffect
+type WriterString[A] = Writer[String, A]
+type _writerString[R] = WriterString |= R
 
-def execute[E: Eval_ : Writer_ : Future_](i: Int): Eff[E, Int] =
+type S = Fx.fx3[Eval, Future, WriterString]
+
+def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
     i1 <- delay(i)
     i2 <- async(i1)
