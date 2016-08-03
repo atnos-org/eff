@@ -1,7 +1,7 @@
 # eff
 
 [![Build Status](https://travis-ci.org/atnos-org/eff-cats.png?branch=master)](https://travis-ci.org/atnos-org/eff-cats)
-[![Join the chat at https://gitter.im/atnos-org/eff-cats](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/atnos-org/eff-cats?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/atnos-org/eff](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/atnos-org/eff?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
 This library is based on the "free-er" monad and an "open union" of effects described in
