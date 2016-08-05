@@ -24,9 +24,9 @@ type ReaderPort[A] = Reader[Int, A]
 type ReaderHost[A] = Reader[String, A]
 type ReaderConf[A] = Reader[Conf, A]
 
-type S1 = ReaderHost |: Option |: NoEffect
-type S2 = ReaderPort |: Option |: NoEffect
-type SS = ReaderConf |: Option |: NoEffect
+type S1 = Fx.fx2[ReaderHost, Option]
+type S2 = Fx.fx2[ReaderPort, Option]
+type SS = Fx.fx2[ReaderConf, Option]
 
 val readHost: Eff[S1, String] = for {
   c <- ask[S1, String]
@@ -67,12 +67,12 @@ ${definition[HadoopS3Snippet]}
 
 So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share
 some common effects, so the resulting stack we want to work with is:${snippet{
-import org.atnos.eff._, Effects._
+import org.atnos.eff._
 import cats.Eval
 import HadoopStack._
 import S3Stack.{WriterString=>_,_}
 
-type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect
+type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 }}
 
 Then we can use the `into` method to inject effects from each stack into this common stack:${snippet{

@@ -18,10 +18,9 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
 test $test
 """
-  type S = ValidateString |: NoEffect
+  type S = Fx.fx1[ValidateString]
 
   def validateOk = {
-
     val validate: Eff[S, Int] =
       for {
         _ <- ValidateEffect.correct[S, String, Int](1)

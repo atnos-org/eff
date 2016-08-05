@@ -7,7 +7,7 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   tests for member implicits
 
 """
-
+/*
   sealed trait OptionN[A] { def a: A }
   case class Option1[A](a: A)   extends OptionN[A]
   case class Option2[A](a: A)   extends OptionN[A]
@@ -232,5 +232,5 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   option1[SD3].runN.runN.runN
   option2[SD3].runN.runN.runN
   option3[SD3].runN.runN.runN
-
+*/
 }

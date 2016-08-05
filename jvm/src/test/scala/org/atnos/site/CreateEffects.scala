@@ -40,7 +40,7 @@ The `runFuture` method needs an implicit `Member.Aux[Fut, R, U]`. This must be r
 
 Then we can use this effect in a computation:${snippet{
 
-val action: Eff[Fut |: NoEffect, Int] =
+val action: Eff[Fx.fx1[Fut], Int] =
   for {
     a <- fut(2)
     b <- fut(3)

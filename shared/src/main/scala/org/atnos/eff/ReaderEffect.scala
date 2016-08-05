@@ -46,12 +46,14 @@ trait ReaderInterpretation {
    * Lift a computation over a "small" reader (for a subsystem) into
    * a computation over a "bigger" reader (for the full application)
    */
-  def localReader[SR, BR, U, S, B, A](r: Eff[SR, A], getter: B => S)
-                                    (implicit sr: Member.Aux[Reader[S, ?], SR, U], br: Member.Aux[Reader[B, ?], BR, U]): Eff[BR, A] =
-    transform[SR, BR, U, Reader[S, ?], Reader[B, ?], A](r, new ~>[Reader[S, ?], Reader[B, ?]] {
-      def apply[X](r: Reader[S, X]): Reader[B, X] =
-        Reader((b: B) => r.run(getter(b)))
-    })
+  def localReader[R, U, S, B, A](e: Eff[R, A], getter: B => S)
+                             (implicit sr: Member.Aux[Reader[S, ?], R, U], br: (Reader[B, ?]) |= U): Eff[U, A] =
+    translate(e) {
+      new Translate[Reader[S, ?], U] {
+        def apply[X](r: Reader[S, X]): Eff[U, X] =
+          send[Reader[B, ?], U, X](Reader((b: B) => r.run(getter(b))))
+      }
+    }
 }
 
 object ReaderInterpretation extends ReaderInterpretation

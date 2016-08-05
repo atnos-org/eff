@@ -24,13 +24,13 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
   case class Option6[A](a: A) extends OptionLike[A]
   case class Option7[A](a: A) extends OptionLike[A]
 
-  type S1 = Option1 |: NoEffect
-  type S2 = Option1 |:: Option2
-  type S3 = Option1 |:  Option2 |:: Option3
-  type S4 = Option1 |:  Option2 |:  Option3 |:: Option4
-  type S5 = Option1 |:  Option2 |:  Option3 |:  Option4 |:: Option5
-  type S6 = Option1 |:  Option2 |:  Option3 |:  Option4 |:  Option5 |:: Option6
-  type S7 = Option1 |:  Option2 |:  Option3 |:  Option4 |:  Option5 |:  Option6 |:: Option7
+  type S1 = Fx.fx1[Option1]
+  type S2 = Fx.fx2[Option1, Option2]
+  type S3 = Fx.fx3[Option1, Option2, Option3]
+  type S4 = Fx.fx4[Option1, Option2, Option3, Option4]
+  type S5 = Fx.fx5[Option1, Option2, Option3, Option4, Option5]
+  type S6 = Fx.fx6[Option1, Option2, Option3, Option4, Option5, Option6]
+  type S7 = Fx.fx7[Option1, Option2, Option3, Option4, Option5, Option6, Option7]
 
 
   def into1 =

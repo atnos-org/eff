@@ -27,11 +27,6 @@ trait eff {
       Eff.run(e)
   }
 
-  implicit class EffOneEffectOps_[M[_] : Monad, A](e: Eff[M |: NoEffect, A]) {
-    def detach: M[A] =
-      Eff.detach(e.asInstanceOf[Eff[Fx1[M], A]])
-  }
-
   implicit class EffOneEffectOps[M[_] : Monad, A](e: Eff[Fx1[M], A]) {
     def detach: M[A] =
       Eff.detach(e)

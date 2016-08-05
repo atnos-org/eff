@@ -32,7 +32,7 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
 """
 
   def e1 = {
-    type S = Task |:: Option
+    type S = Fx.fx2[Task, Option]
 
     def action[R :_task :_option]: Eff[R, Int] = for {
       a <- async(10)
@@ -44,7 +44,7 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   def e2 = {
-    type S = Task |:: Eval
+    type S = Fx.fx2[Task, Eval]
 
     def action[R :_task :_eval]: Eff[R, Int] =
       delay(10).flatMap(v => async(v))
@@ -54,7 +54,7 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   def e3 = {
-    type S = Task |:: Eval
+    type S = Fx.fx2[Task, Eval]
 
     def action[R :_task :_eval]: Eff[R, Int] =
       delay(Task(10)).flatMap(v => send(v))
@@ -64,7 +64,7 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   def e4 = prop { elements: List[Int] =>
-    type S = Task |: NoEffect
+    type S = Fx.fx1[Task]
 
     val messages = new ListBuffer[String]
     val actionApplicative: Eff[S, List[Int]] =
@@ -79,7 +79,7 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
     set(minTestsOk = 20, workers = 5)
 
   def e5 = prop { elements: List[Int] =>
-    type S = Task |: NoEffect
+    type S = Fx.fx1[Task]
 
     val messages = new ListBuffer[String]
     val actionApplicative: Eff[S, List[Int]] =

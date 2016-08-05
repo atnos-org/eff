@@ -30,32 +30,27 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is
 
 """
 
+  type S = Fx.fx2[Future, Eval]
+
   def e1 = {
     def action[R :_future :_option]: Eff[R, Int] = for {
       a <- async(10)
       b <- option.some(a)
     } yield a + b
 
-    type S = Future |: Option |: NoEffect
-
-    action[S].runOption.awaitFuture(1.second).run ==== Xor.right(Some(20))
+    action[Fx.fx2[Future, Option]].runOption.awaitFuture(1.second).run ==== Xor.right(Some(20))
   }
 
   def e2 = {
     def action[R :_future :_eval]: Eff[R, Int] =
       delay(10).flatMap(v => async(v))
 
-    type S = Future |: Eval |: NoEffect
-
     action[S].runEval.awaitFuture(1.second).run ==== Xor.right(10)
-
   }
 
   def e3 = {
     def action[R :_future :_eval]: Eff[R, Int] =
       delay(Future(10)).flatMap(v => send(v))
-
-    type S = Future |: Eval |: NoEffect
 
     action[S].runEval.awaitFuture(1.second).run ==== Xor.right(10)
   }
@@ -64,8 +59,6 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is
 
     def future: Future[Int] = Future(10)
     def action[R :_future :_eval]: Eff[R, Int] = future.liftFuture
-
-    type S = Future |: Eval |: NoEffect
 
     action[S].runEval.awaitFuture(1.second).run ==== Xor.right(10)
   }
@@ -78,10 +71,10 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is
       tell("message") >>
       async { throw new TimeoutException; 1 }
 
-    type S = WriterString |: Future |: NoEffect
+    type S1 = Fx.fx2[WriterString, Future]
 
     val messages = new ListBuffer[String]
-    val action1 = send(action[S].runWriterUnsafe((s: String) => messages.append(s)).detach.recover { case e: TimeoutException => 2 })
+    val action1 = send(action[S1].runWriterUnsafe((s: String) => messages.append(s)).detach.recover { case e: TimeoutException => 2 })
 
     (action1.detach must be_==(2).await) and
      (messages.toList === List("message"))
@@ -92,8 +85,8 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification { def is
     def action[R :_future :_eval :_throwableXor] =
       FutureEffect.attemptFuture(Future { throw new TimeoutException; 1 })
 
-    type S = ThrowableXor |: Eval |: Future |: NoEffect
-    val s = Fx[S]
-    action[s.Fx].runXor.runEval.detach must beXorLeft((e: Throwable) => e must haveClass[TimeoutException]).await
+    type S1 = Fx.fx3[ThrowableXor, Eval, Future]
+
+    action[S1].runXor.runEval.detach must beXorLeft((e: Throwable) => e must haveClass[TimeoutException]).await
   }
 }

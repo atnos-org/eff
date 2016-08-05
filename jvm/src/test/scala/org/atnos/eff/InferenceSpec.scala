@@ -28,7 +28,7 @@ object Example1  {
   type Log[R] = Member[Writer[String, ?], R]
   type Env[R] = Member[Reader[String, ?], R]
 
-  type S = State[Int, ?] |: Writer[String, ?]  |: Reader[String, ?]|: NoEffect
+  type S = Fx.fx3[State[Int, ?], Writer[String, ?], Reader[String, ?]]
 
   def putAndTell[R : RNG : Log: Env](i: Int) =
     for {

@@ -26,7 +26,7 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
 
 """
 
-  type S = Future |:: Eval
+  type S = Fx.fx2[Future, Eval]
 
   val elements = List(1000, 500, 300, 100, 50)
 

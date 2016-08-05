@@ -17,7 +17,7 @@ class WriterEffectSpec extends Specification { def is = s2"""
 """
 
   def sideEffecting = {
-    type S = (Writer[String, ?]) |: NoEffect
+    type S = Fx.fx1[Writer[String, ?]]
 
     val action: Eff[S, String] = for {
       f <- tell[S, String]("hello")
@@ -33,7 +33,7 @@ class WriterEffectSpec extends Specification { def is = s2"""
   }
 
   def evalWriting = {
-    type S = (Writer[String, ?]) |: Eval |: NoEffect
+    type S = Fx.fx2[Writer[String, ?], Eval]
 
     val action: Eff[S, String] = for {
       f <- tell[S, String]("hello")

@@ -26,7 +26,7 @@ type StateInt[A] = State[Int, A]
 type WriterString[A] = Writer[String, A]
 
 // for creating state effects
-def putAndTell[R](i: Int)(implicit s: StateInt <= R, w: WriterString <= R): Eff[R, Int] =
+def putAndTell[R](i: Int)(implicit s: StateInt |= R, w: WriterString |= R): Eff[R, Int] =
   for {
     // no type annotations needed!
     _ <- put(i)
@@ -48,53 +48,13 @@ def putAndTell[R :_stateInt :_writerString](i: Int): Eff[R, Int] =
 
 }}
 
-### Creating effects for your own stack
-
-When you create your own effect stack you can give a little help to the compiler by adding `Member.Aux` implicits for each effect
-in the stack:${snippet{
-import cats.data._
-import org.atnos.eff._
-import org.atnos.eff.all._
-
-object S {
-  type StateInt[A] = State[Int, A]
-  type WriterString[A] = Writer[String, A]
-
-  type S = StateInt |: WriterString |: NoEffect
-
-  // for the first effect of the stack
-  implicit val StateIntMember =
-    Member.Member2L[StateInt, WriterString]
-
-  // for the next effect
-  implicit val WriterStringMember =
-    Member.Member2R[StateInt, WriterString]
-}
-
-import S._
-
-def putAndTell(i: Int): Eff[S, Int] =
-  for {
-    // no annotations!
-    _ <- put(i)
-    _ <- tell("stored "+i)
-  } yield i
-}}
-
-The implicit `StateIntMember` declares that:
-
- - `StateInt` is a member of `S`
-
- - if you remove `StateInt` from `S`, you are left with the `WriterString |: NoEffect` stack
-
-
-### Effect deduction
+### Effects translation
 
 A common thing to do is to translate "high-level" effects (a webservice DSL for example) into low-level ones (`Future`, `Eval`, `Xor`, etc...).
 
 For example you might have this stack:
 ```
-type S = Authenticated |: Future |: (Throwable Xor ?) |: NoEffect
+type S = Fx.fx3[Authenticated, Future, ThrowableXor]
 ```
 
 And you want to write an interpreter which will translate authentication actions into `Future` and `Xor`:${snippet{
@@ -134,7 +94,7 @@ def runAuth[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[Authenticated, R, U],
 // call to a service to authenticate tokens
 def authenticate(token: String): Future[AuthError Xor AccessRights] = ???
 
-type S = Authenticated |: (AuthError Xor ?) |:: Future
+type S = Fx.fx3[Authenticated, AuthError Xor ?, Future]
 def auth: Eff[S, Int] = ???
 
 runAuth(auth)

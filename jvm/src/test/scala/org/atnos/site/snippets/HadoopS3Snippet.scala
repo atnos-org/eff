@@ -18,7 +18,7 @@ object HadoopStack {
 
   type HadoopReader[A] = Reader[HadoopConf, A]
   type WriterString[A] = Writer[String, A]
-  type Hadoop = HadoopReader |: WriterString |: Eval |: NoEffect
+  type Hadoop = Fx.fx3[HadoopReader, WriterString, Eval]
 
   def readFile(path: String): Eff[Hadoop, String] =
     for {
@@ -38,7 +38,7 @@ object S3Stack {
   type S3Reader[A] = Reader[S3Conf, A]
   type WriterString[A] = Writer[String, A]
 
-  type S3 = S3Reader |: WriterString |: Eval |: NoEffect
+  type S3 = Fx.fx3[S3Reader, WriterString, Eval]
 
   def writeFile(key: String, content: String): Eff[S3, Unit] =
     for {
@@ -52,8 +52,7 @@ object S3Stack {
 
 // 8<---
 
-  type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect
-
+  type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 
 }
 

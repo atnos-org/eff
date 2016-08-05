@@ -26,7 +26,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
  An action with a given failure type can be translated to an action with another failure type $local
 """
 
-  type R = ErrorOrOk |: NoEffect
+  type R = Fx.fx1[ErrorOrOk]
 
   def andFinallyOk = {
 
@@ -88,7 +88,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
 
     type WriterString[A] = Writer[String, A]
 
-    type E = ErrorOrOk |: WriterString |: Eval |: NoEffect
+    type E = Fx.fx3[ErrorOrOk, WriterString, Eval]
 
     val action: Eff[E, Int] = for {
       _ <- tell[E, String]("start")

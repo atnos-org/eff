@@ -8,7 +8,6 @@ import cats.Eval
 import ReaderEffect._
 import WriterEffect._
 import EvalEffect._
-import Effects._
 import Member.<=
 import Eff._
 
@@ -23,7 +22,7 @@ class ReadmeSpec extends Specification { def is = s2"""
     object StackEffects {
       type ReaderInt[A] = Reader[Int, A]
       type WriterString[A] = Writer[String, A]
-      type Stack = ReaderInt |: WriterString |: Eval |: NoEffect
+      type Stack = Fx.fx3[ReaderInt, WriterString, Eval]
     }
 
     import StackEffects._

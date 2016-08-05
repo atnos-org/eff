@@ -1,7 +1,6 @@
 package org.atnos.eff
 
 import cats.data._
-import Effects._
 import cats.data._, Xor._
 
 

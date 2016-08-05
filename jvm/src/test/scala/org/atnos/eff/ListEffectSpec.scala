@@ -15,17 +15,17 @@ class ListEffectSpec extends Specification { def is = s2"""
 
 """
 
-  type L = List |: NoEffect
+  type L = Fx.fx1[List]
 
   def listEffect = {
-    val action: Eff[L, Int] = for {
+    def action[R :_list]: Eff[R, Int] = for {
       a <- singleton(2)
       b <- fromList((1 to a).toList)
       c <- singleton(3)
       d <- fromList((1 to c).toList)
     } yield b + d
 
-    action.runList.run ==== List(2, 3, 4, 3, 4, 5)
+    action[L].runList.run ==== List(2, 3, 4, 3, 4, 5)
   }
 
   def stackSafe = {

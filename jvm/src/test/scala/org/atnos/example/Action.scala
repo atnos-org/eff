@@ -1,7 +1,7 @@
 package org.atnos.example
 
 import org.atnos.eff._
-import Effects._, Eff._
+import Eff._
 import cats.syntax.all._
 import cats.data._
 import cats.Eval
@@ -17,30 +17,12 @@ import Member.<=
  *  - 2 different writers: one for warnings, the other one for logging to the console
  *  - one "IO" effect
  *  - one Error effect
- *
- * The order of the effects in the stack definition is important.
- *
- * For example
- *
- *  Error |: Console |: Warnings |: Eval |: NoEffect
- *
- *  will return warnings *and* failures: (String Xor A, Vector[String])
- *
- * Whereas
- *
- *  Console |: Warnings |: Error |: Eval |: NoEffect
- *
- *  will return not warnings if there is a failure: String Xor (A, Vector[String])
- *
- * Also note that Eval is the last effect which means that nothing get evaluated until we run the last interpreter
- *
  */
 object Action extends ActionCreation with ActionInterpretation
 
 trait ActionTypes {
-  type ActionStack_ = ErrorOrOk |: Console |: Warnings |: Eval |: NoEffect
-  val as = Fx[ActionStack_]
-  type ActionStack = as.Fx
+  type ActionStack = Fx.fx4[ErrorOrOk, Console, Warnings, Eval]
+
 }
 
 trait ActionCreation extends ActionTypes {

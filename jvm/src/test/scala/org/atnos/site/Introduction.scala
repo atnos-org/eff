@@ -33,7 +33,7 @@ The effects `R` are modelled by a type-level list of "effect constructors", for 
 import cats._, data._
 import org.atnos.eff._, all._
 
-type Stack = Reader[Int, ?] |: Writer[String, ?] |:: Eval
+type Stack = Fx.fx3[Reader[Int, ?], Writer[String, ?], Eval]
 
 }}
 The stack `Stack` above declares 3 effects:
@@ -44,29 +44,29 @@ The stack `Stack` above declares 3 effects:
 
  - an `Eval` effect to only compute values on demand (a bit like lazy values)
 
- Note that the last effect of a stack needs to be preceded with `|::` instead of `|:`.
-
 Now we can write a program with those 3 effects, using the primitive operations provided by `ReaderEffect`, `WriterEffect` and `EvalEffect`:${snippet{
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-val program: Eff[Stack, Int] = for {
+def program[R](implicit r: Reader[Int, ?] |= R,
+                        w: Writer[String, ?] |= R,
+                        e: Eval |= R): Eff[R, Int] = for {
   // get the configuration
-  n <- ask[Stack, Int]
+  n <- ask[R, Int]
 
   // log the current configuration value
-  _ <- tell[Stack, String]("the required power is "+n)
+  _ <- tell("the required power is "+n)
 
   // compute the nth power of 2
-  a <- delay[Stack, Int](math.pow(2, n.toDouble).toInt)
+  a <- delay(math.pow(2, n.toDouble).toInt)
 
   // log the result
-  _ <- tell[Stack, String]("the result is "+a)
+  _ <- tell("the result is "+a)
 } yield a
 
 // run the action with all the interpreters
 // each interpreter running one effect
-program.runReader(6).runWriter.runEval.run
+program[Stack].runReader(6).runWriter.runEval.run
 }.eval}
 
 As you can see, all the effects of the `Stack` type are being executed one by one:
@@ -90,7 +90,7 @@ You can now get a more detailled presentation of the use of the Eff monad by rea
 you can learn about ${"other effects" ~/ OutOfTheBox} supported by this library.
 """
 
-  type Stack = Reader[Int, ?] |: Writer[String, ?] |: Eval |: NoEffect
+  type Stack = Fx.fx3[Reader[Int, ?], Writer[String, ?], Eval]
 
 
 }

@@ -16,7 +16,7 @@ class EvalEffectSpec extends Specification { def is = s2"""
 
 """
 
-  type E = Eval |: NoEffect
+  type E = Fx.fx1[Eval]
 
   val list = (1 to 5000).toList
 

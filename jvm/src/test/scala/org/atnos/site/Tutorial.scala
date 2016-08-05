@@ -112,7 +112,7 @@ write a stack-safe interpreter:
 
 The final step is naturally running your program after interpreting it to another `Eff` value. We need to
 
- - specify a concrete stack of effects containing the effect we want to interpret `KVStore |: NoEffect`
+ - specify a concrete stack of effects containing the effect we want to interpret `Fx.fx1[KVStore]` (just one effect in the stack)
  - call our interpreter to get a `Eff[NoEffect, A]` value
  - call a final `run` to get an `A` value
 <p/>
@@ -128,7 +128,7 @@ import AdtInterpreterSnippet._
 import org.atnos.eff._, all._, syntax.all._
 
 // run the program with the unsafe interpreter
-runKVStoreUnsafe(program[KVStore |: NoEffect]).run
+runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run
 
 }.eval}
 
@@ -149,7 +149,7 @@ import org.atnos.eff._, all._, syntax.all._
 import cats._, data._
 
 // run the program with the safe interpreter
-type Stack = KVStore |: (Throwable Xor ?) |: State[Map[String, Any], ?] |: Writer[String, ?] |: NoEffect
+type Stack = Fx.fx4[KVStore, Throwable Xor ?, State[Map[String, Any], ?], Writer[String, ?]]
 
 val (result, logs) =
   runKVStore(program[Stack]).runXor.evalState(Map.empty[String, Any]).runWriter.run
@@ -168,7 +168,7 @@ import org.atnos.eff._, all._, syntax.all._
 import cats._, data._
 
 // run the program with the safe interpreter
-type Stack = KVStore |: (Throwable Xor ?) |: State[Map[String, Any], ?] |: Writer[String, ?] |: NoEffect
+type Stack = Fx.fx4[KVStore, Throwable Xor ?, State[Map[String, Any], ?], Writer[String, ?]]
 // 8<---
 
 implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
@@ -204,7 +204,7 @@ import UserInteractionInterpretersSnippet._
 import UserInteractionProgramSnippet._
 import org.atnos.eff._, all._, syntax.all._
 import cats.implicits._
-runInteract(runDataOp(program[Interact |: DataOp |: NoEffect])).run
+runInteract(runDataOp(program[Fx.fx2[Interact, DataOp]])).run
 }}
 ```
 What's the kitty's name?

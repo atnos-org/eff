@@ -27,7 +27,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
 """
 
   def xorCreation = prop { stringOrInt: String Either Int =>
-    type S = XorString |: NoEffect
+    type S = Fx.fx1[XorString]
 
     val xor = Xor.fromEither(stringOrInt)
     val e: Eff[S, Int] = fromXor(xor)
@@ -35,7 +35,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   def xorMonad = {
-    type S = XorString |: NoEffect
+    type S = Fx.fx1[XorString]
 
     val xor: Eff[S, Int] =
       for {
@@ -47,7 +47,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   def xorWithKoMonad = {
-    type S = XorString |: NoEffect
+    type S = Fx.fx1[XorString]
 
     val xor: Eff[S, Int] =
       for {
@@ -62,7 +62,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     // define a Reader / Xor stack
     type ReaderLong[A] = Reader[Long, A]
-    type S = XorString |: ReaderLong |: NoEffect
+    type S = Fx.fx2[XorString, ReaderLong]
 
     // create actions
     val readXor: Eff[S, Int] =
@@ -72,7 +72,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
       } yield i.toInt + j
 
     // run effects
-    readXor.fx.runXor.runReader(init).run must_==
+    readXor.runXor.runReader(init).run must_==
       Right(init.toInt + someValue)
 
   }.setGens(posNum[Long], posNum[Int])
@@ -80,7 +80,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
   type XorString[A] = String Xor A
 
   def stacksafeRun = {
-    type E = XorString |: NoEffect
+    type E = Fx.fx1[XorString]
 
     val list = (1 to 5000).toList
     val action = list.traverseU(i => XorEffect.right[E, String, String](i.toString))
@@ -91,7 +91,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
   def leftToRight = prop { i: Int =>
     case class TooBig(value: Int)
     type D[A] = TooBig Xor A
-    type E = D |: NoEffect
+    type E = Fx.fx1[D]
 
     val i = 7
 
@@ -119,8 +119,8 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     case class Error2(e1: Error1)
 
-    type R1 = (Error1 Xor ?) |: NoEffect
-    type R2 = (Error2 Xor ?) |: NoEffect
+    type R1 = Fx.fx1[(Error1 Xor ?)]
+    type R2 = Fx.fx1[(Error2 Xor ?)]
 
     val action1: Eff[R1, Unit] =
       XorEffect.left(Error1("boom"))
@@ -136,7 +136,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     case class Error2(e1: Error1)
 
-    type R1 = (Error1 Xor ?) |: (Error2 Xor ?) |: NoEffect
+    type R1 = Fx.fx2[Error1 Xor ?, Error2 Xor ?]
 
     val action1: Eff[R1, Unit] =
       XorEffect.left(Error1("boom"))

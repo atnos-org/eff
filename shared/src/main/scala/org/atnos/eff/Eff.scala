@@ -5,7 +5,6 @@ import cats.arrow.NaturalTransformation
 import scala.annotation.tailrec
 import cats._
 import cats.data._, Xor._
-import Effects._
 import Eff._
 
 /**
@@ -49,8 +48,6 @@ sealed trait Eff[R, A] {
   def flatten[B](implicit ev: A =:= Eff[R, B]): Eff[R, B] =
     flatMap(a => a)
 
-  def fx(implicit e: EffectsToFx[R]): Eff[e.X, A] =
-    this.asInstanceOf[Eff[e.X, A]]
 }
 
 case class Pure[R, A](value: A) extends Eff[R, A]
@@ -73,9 +70,6 @@ object Eff extends EffCreation with
   EffImplicits
 
 trait EffImplicits {
-
-  implicit def ToFx[L, R, A](e: Eff[R, A])(implicit toFx: EffectsToFx.Aux[L, R]): Eff[L, A] =
-    e.asInstanceOf[Eff[L, A]]
 
   /**
    * Monad implementation for the Eff[R, ?] type

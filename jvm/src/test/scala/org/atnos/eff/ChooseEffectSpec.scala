@@ -12,7 +12,7 @@ class ChooseEffectSpec extends Specification { def is = s2"""
 
 """
 
-  type R = Choose |: Option |: NoEffect
+  type R = Fx.fx2[Choose, Option]
 
   def nondetList = {
 

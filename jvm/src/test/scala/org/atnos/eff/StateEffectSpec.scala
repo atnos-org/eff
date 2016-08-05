@@ -22,27 +22,27 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   def putGetState = {
 
-    val action: Eff[E, String] = for {
-      a <- get[E, Int]
-      h <- EffMonad[E].pure("hello")
+    def action[R:_stateInt]: Eff[R, String] = for {
+      a <- get
+      h <- EffMonad.pure("hello")
       _ <- put(a + 5)
-      b <- get[E, Int]
+      b <- get
       _ <- put(b + 10)
-      w <- EffMonad[E].pure("world")
+      w <- EffMonad.pure("world")
     } yield h+" "+w
 
-    action.runState(5).run ==== (("hello world", 20))
+    action[E].runState(5).run ==== (("hello world", 20))
   }
 
   def modifyState = {
 
-    val action: Eff[E, String] = for {
-       a <- get[E, Int]
+    def action[R :_stateInt]: Eff[R, String] = for {
+       a <- get
        _ <- put(a + 1)
        _ <- modify((_:Int) + 10)
     } yield a.toString
 
-    action.execStateZero.run ==== 11
+    action[E].execStateZero.run ==== 11
   }
 
   def stacksafeState = {
@@ -55,8 +55,8 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   def stateLens = {
     type StateIntPair[A] = State[(Int, Int), A]
-    type SS = StateIntPair |: Option |: NoEffect
-    type TS = StateInt |: Option |: NoEffect
+    type SS = Fx.fx2[StateIntPair, Option]
+    type TS = Fx.fx2[StateInt, Option]
 
     val action: Eff[TS, String] =
       for {
@@ -78,6 +78,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   type StateInt[A] = State[Int, A]
 
-  type E = StateInt |: NoEffect
+  type E = Fx.fx1[StateInt]
+  type _stateInt[R] = StateInt |= R
 
 }

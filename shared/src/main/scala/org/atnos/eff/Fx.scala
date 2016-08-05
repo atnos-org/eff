@@ -6,8 +6,6 @@ sealed trait Effect[F[_]]
 sealed trait Fx
 
 object Fx {
-  def apply[S](implicit e: EffectsToFx[S]): Program[S, e.X] = new Program[S, e.X]
-
   type prepend[T[_], R] = FxAppend[Fx1[T], R]
   type append[L, R] = FxAppend[L, R]
 
@@ -22,12 +20,6 @@ object Fx {
   type fx9[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_], T9[_]] = FxAppend[Fx3[T1, T2, T3], FxAppend[Fx3[T4, T5, T6], Fx3[T7, T8, T9]]]
 }
 
-class Program[F, R] {
-  type Fx = R
-}
-
-
-
 /**
   * Append an effect at the beginning of a list of effects
   */
@@ -40,9 +32,6 @@ final case class Fx3[L[_], M[_], R[_]](left: Effect[L], middle: Effect[M], right
 /**
   * Nil case for the list of effects
   */
-class NoFx extends Fx {
-  def |:[G[_]](g: Effect[G]) =
-    FxAppend(Fx1(g), this)
-}
+class NoFx extends Fx
 
 object NoFx extends NoFx

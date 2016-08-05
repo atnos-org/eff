@@ -15,7 +15,7 @@ class ReaderEffectSpec extends Specification { def is = s2"""
 
   def localEffect = {
     type R[A] = Reader[Config, A]
-    type S = R |: NoEffect
+    type S = Fx.fx1[R]
 
     val action: Eff[S, (Int, String)] = for {
       f <- local[S, Config, Int]((_:Config).factor)
@@ -26,27 +26,26 @@ class ReaderEffectSpec extends Specification { def is = s2"""
   }
 
   def localReaderEffect= {
-    type R[A] = Reader[Config, A]
-    type ReaderInt[A] = Reader[Int, A]
+    type ReaderConfig[A] = Reader[Config, A]
+    type ReaderInt[A]    = Reader[Int, A]
     type ReaderString[A] = Reader[String, A]
 
-    type S1 = ReaderInt |: Option |: NoEffect
-    type S2 = ReaderString |: Option |: NoEffect
-    type SS = R |: Option |: NoEffect
-
-    val readFactor: Eff[S1, String] = for {
-      c <- ask[S1, Int]
-      h <- OptionEffect.some[S1, String]("hello")
+    def readFactor[R :_option](implicit r: ReaderInt |= R): Eff[R, String] = for {
+      c <- ask[R, Int]
+      h <- OptionEffect.some("hello")
     } yield h
 
-    val readHost: Eff[S2, String] = for {
-      c <- ask[S2, String]
-      h <- OptionEffect.some[S2, String]("world")
+    def readHost[R :_option](implicit r: ReaderString |= R): Eff[R, String] = for {
+      c <- ask[R, String]
+      h <- OptionEffect.some("world")
     } yield h
 
-    val action: Eff[SS, String] = for {
-      s1 <- localReader(readFactor, (c: Config) => c.factor)
-      s2 <- localReader(readHost, (c: Config) => c.host)
+    type S1 = Fx.fx3[ReaderInt, ReaderConfig, Option]
+    type S2 = Fx.fx3[ReaderString, ReaderConfig, Option]
+
+    def action = for {
+      s1 <- readFactor[S1].localReader((c: Config) => c.factor)
+      s2 <- readHost[S2].localReader((c: Config) => c.host)
     } yield s1 + " " + s2
 
     action.runReader(Config(10, "www.me.com")).runOption.run ==== Some("hello world")

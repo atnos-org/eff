@@ -3,14 +3,13 @@ package org.atnos.benchmark
 import org.scalameter.api._
 import org.atnos.eff._
 import EvalEffect._
-import Effects._
 import Eff._
 import cats.implicits._
 import cats.Eval
 import org.scalameter.picklers.Implicits._
 
 object EffBenchmark extends Bench.OfflineReport {
-  type E = Eval |: NoEffect
+  type E = Fx.fx1[Eval]
 
   val sizes = Gen.enumeration("size")(10, 100, 1000, 10000, 100000)
 

@@ -138,8 +138,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     traversed.runOption.run === Option(List(1, 2, 3))
   }
 
-  def functionReader[R, U, A, B](f: A => Eff[R, B])(implicit p: Prepend.Aux[Reader[A, ?], R, U],
-                                                    into: IntoPoly[R, U],
+  def functionReader[R, U, A, B](f: A => Eff[R, B])(implicit into: IntoPoly[R, U],
                                                     m: MemberIn[Reader[A, ?], U]): Eff[U, B] =
     ask[U, A].flatMap(f(_).into[U])
 
@@ -147,7 +146,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     val a: Eff[Fx.fx1[Option], Int] = OptionEffect.some(1)
 
-    val b = functionReader((s: String) => a.map(_ + s.size))
+    val b: Eff[Fx.fx2[ReaderString, Option], Int] = functionReader((s: String) => a.map(_ + s.size))
 
     b.runReader("start").runOption.run ==== Option(6)
   }
@@ -156,7 +155,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     val a: Eff[Fx.fx2[ReaderString, Option], Int] = OptionEffect.some(1)
 
-    val b = functionReader((s: String) => a.map(_ + s.size))
+    val b: Eff[Fx.fx3[ReaderString, ReaderString, Option], Int] = functionReader((s: String) => a.map(_ + s.size))
 
     b.runReader("start").runReader("start2").runOption.run ==== Option(6)
 

@@ -39,14 +39,14 @@ class StacksSpec extends Specification { def is = s2"""
     import HadoopOpenStack._
     import S3OpenStack.{WriterString=>_,_}
 
-    type HadoopS3 = S3Reader |: HadoopReader |: WriterString |: Eval |: NoEffect
+    type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 
     val action = for {
       s <- readFile[HadoopS3]("/tmp/data")
       _ <- writeFile[HadoopS3]("key", s)
     } yield ()
 
-    runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action.fx)).runWriter.runEval.run ====
+    runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action)).runWriter.runEval.run ====
       (((), List("Reading from /tmp/data", "Writing to bucket bucket: 10")))
   }
 
@@ -54,14 +54,14 @@ class StacksSpec extends Specification { def is = s2"""
     import HadoopClosedStack._
     import S3ClosedStack.{WriterString=>_,_}
 
-    type HadoopS3 = S3Reader |: HadoopReader |: WriterString |:: Eval
+    type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 
     val action = for {
       s <- readFile("/tmp/data").into[HadoopS3]
       _ <- writeFile("key", s)  .into[HadoopS3]
     } yield ()
 
-    run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action.fx))))) ====
+    run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action))))) ====
       (((), List("Reading from /tmp/data", "Writing to bucket bucket: 10")))
   }
 
@@ -75,7 +75,8 @@ class StacksSpec extends Specification { def is = s2"""
 
     type HadoopReader[A] = Reader[HadoopConf, A]
     type WriterString[A] = Writer[String, A]
-    type Hadoop = HadoopReader |: WriterString |: Eval |: NoEffect
+
+    type Hadoop = Fx.fx3[HadoopReader, WriterString, Eval]
 
     def readFile[R](path: String)(implicit r: HadoopReader |= R, w: WriterString |= R): Eff[R, String] =
       for {
@@ -95,7 +96,7 @@ class StacksSpec extends Specification { def is = s2"""
     type S3Reader[A] = Reader[S3Conf, A]
     type WriterString[A] = Writer[String, A]
 
-    type S3 = S3Reader |: WriterString |: Eval |: NoEffect
+    type S3 = Fx.fx3[S3Reader, WriterString, Eval]
 
     def writeFile[R](key: String, content: String)(implicit r: S3Reader |= R, w: WriterString |= R): Eff[R, Unit] =
       for {
@@ -113,7 +114,9 @@ class StacksSpec extends Specification { def is = s2"""
 
     type HadoopReader[A] = Reader[HadoopConf, A]
     type WriterString[A] = Writer[String, A]
-    type Hadoop = HadoopReader |: WriterString |: Eval |: NoEffect
+
+    type Hadoop = Fx.fx3[HadoopReader, WriterString, Eval]
+
 
     def readFile(path: String): Eff[Hadoop, String] =
       for {
@@ -133,7 +136,7 @@ class StacksSpec extends Specification { def is = s2"""
     type S3Reader[A] = Reader[S3Conf, A]
     type WriterString[A] = Writer[String, A]
 
-    type S3 = S3Reader |: WriterString |: Eval |: NoEffect
+    type S3 = Fx.fx3[S3Reader, WriterString, Eval]
 
     def writeFile(key: String, content: String): Eff[S3, Unit] =
       for {
