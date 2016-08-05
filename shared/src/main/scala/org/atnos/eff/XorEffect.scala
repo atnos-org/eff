@@ -59,7 +59,7 @@ trait XorInterpretation {
     runXor(r).map(_.fold(util.Left.apply, util.Right.apply))
 
   /** catch and handle a possible left value */
-  def catchLeft[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Xor ?) <=R): Eff[R, A] = {
+  def catchLeft[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Xor ?) <= R): Eff[R, A] = {
     val recurse = new Recurse[(E Xor ?), R, A] {
       def apply[X](m: E Xor X) =
         m match {
