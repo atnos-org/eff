@@ -16,6 +16,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  run is stack safe with Validate  $stacksafeRun
 
+test $test
 """
   type S = ValidateString |: NoEffect
 
@@ -60,6 +61,25 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val action = list.traverseU(i => ValidateEffect.wrong[S, String](i.toString))
 
     action.runNel.run ==== NonEmptyList.fromList(list.map(_.toString)).map(Xor.left).getOrElse(Xor.right(Nil))
+  }
+
+  def test = {
+    type E = String
+    type Comput = Validate[E, ?] |: Writer[E,?] |: NoEffect
+    type Check[A] = Eff[Comput, A]
+
+    def runCheck[A](c: Check[A]) = c.runNel.runWriter.run
+
+    val handle: E => Check[Unit] = { case e => tell[Comput, E](e).as(()) }
+
+    val comp1: Check[Int] = for {
+      _ <- wrong[Comput, E]("1").catchWrong(handle)
+      _ <- wrong[Comput, E]("2").catchWrong(handle)
+    } yield 0
+
+    val comp2: Check[Int] = comp1
+
+    comp2.runNel.runWriter.run ==== ((Right(0), List("1", "2")))
   }
 
 }

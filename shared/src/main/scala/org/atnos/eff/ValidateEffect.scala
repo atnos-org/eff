@@ -82,14 +82,18 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** catch and handle possible wrong values */
   def catchWrong[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] = {
-    val recurse = new Recurse[Validate[E,?], R, A] {
-      def apply[X](m: Validate[E,X]) = m match {
-        case Correct() => Xor.Left(())
-        case Wrong(e) => Xor.Right(handle(e))
-      }
+    val loop = new StatelessLoop[Validate[E,?], R, A, Eff[R, A]] {
+      def onPure(a: A): Eff[R, A] Xor Eff[R, A] =
+        Xor.Right(pure(a))
+
+      def onEffect[X](m: Validate[E, X], continuation: Arrs[R, X, A]): Eff[R, A] Xor Eff[R, A] =
+        m match {
+          case Correct() => Xor.Left(continuation(()))
+          case Wrong(e) => Xor.Left(handle(e))
+        }
     }
 
-    intercept1[R, (Validate[E,?]), A, A]((a: A) => a)(recurse)(r)
+    interceptStatelessLoop[R, Validate[E,?], A, A]((a: A) => pure(a), loop)(r)
   }
 }
 

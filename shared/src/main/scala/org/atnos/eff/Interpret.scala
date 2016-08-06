@@ -116,7 +116,7 @@ trait Interpret {
    * Generalisation of Recurse
    */
   trait StatelessLoop[M[_], R, A, B] {
-    def onPure(a: A): (Eff[R, A]) Xor B
+    def onPure(a: A): Eff[R, A] Xor B
     def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Xor B
   }
 
