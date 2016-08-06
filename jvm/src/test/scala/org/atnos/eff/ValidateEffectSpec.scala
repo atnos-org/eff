@@ -12,11 +12,11 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  run the validate effect                     $validateOk
  run the validate effect with nothing        $validateKo
- recover from wrong values                   $catchWrongValues
+ recover from wrong values                   $catchWrongValues1
+ recover from wrong values and tell errors   $catchWrongValues2
 
  run is stack safe with Validate  $stacksafeRun
 
-test $test
 """
   type S = Fx.fx1[ValidateString]
 
@@ -42,7 +42,7 @@ test $test
     validate.runNel.run ==== Left(NonEmptyList("error!"))
   }
 
-  def catchWrongValues = {
+  def catchWrongValues1 = {
     val validate: Eff[S, Int] =
       for {
         _ <- ValidateEffect.correct[S, String, Int](1)
@@ -53,18 +53,9 @@ test $test
     validate.catchWrong((s: String) => pure(4)).runNel.run ==== Xor.Right(4)
   }
 
-  type ValidateString[A] = Validate[String, A]
-
-  def stacksafeRun = {
-    val list = (1 to 5000).toList
-    val action = list.traverseU(i => ValidateEffect.wrong[S, String](i.toString))
-
-    action.runNel.run ==== NonEmptyList.fromList(list.map(_.toString)).map(Xor.left).getOrElse(Xor.right(Nil))
-  }
-
-  def test = {
+  def catchWrongValues2 = {
     type E = String
-    type Comput = Validate[E, ?] |: Writer[E,?] |: NoEffect
+    type Comput = Fx.fx2[Validate[E, ?], Writer[E,?]]
     type Check[A] = Eff[Comput, A]
 
     def runCheck[A](c: Check[A]) = c.runNel.runWriter.run
@@ -79,6 +70,15 @@ test $test
     val comp2: Check[Int] = comp1
 
     comp2.runNel.runWriter.run ==== ((Right(0), List("1", "2")))
+  }
+
+  type ValidateString[A] = Validate[String, A]
+
+  def stacksafeRun = {
+    val list = (1 to 5000).toList
+    val action = list.traverseU(i => ValidateEffect.wrong[S, String](i.toString))
+
+    action.runNel.run ==== NonEmptyList.fromList(list.map(_.toString)).map(Xor.left).getOrElse(Xor.right(Nil))
   }
 
 }
