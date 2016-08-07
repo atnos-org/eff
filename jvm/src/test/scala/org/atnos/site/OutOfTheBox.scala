@@ -1,7 +1,7 @@
 package org.atnos.site
 
 import cats.data._
-import org.specs2.execute.Snippets
+import org.specs2.execute._
 
 object OutOfTheBox extends UserGuidePage { def is = "Out of the box".title ^ s2"""
 
@@ -115,7 +115,7 @@ action.runXor.run ==== Xor.Right(7)
 }}
 
 *Note*: the type annotations on `left` and `right` can be avoided by adding an implicit declaration in scope. You can learn
-more about this in the ${"Implicits" ~/ Implicits} section.
+more about this in the ${"Implicits" ~/ MemberImplicits} section.
 
 ### Validate
 
@@ -211,9 +211,9 @@ import java.io.PrintWriter
 type S = Fx.fx1[Writer[String, ?]]
 
 val action: Eff[S, Int] = for {
- a <- EffMonad[S].pure(1)
+ a <- pure[S, Int](1)
  _ <- tell("first value "+a)
- b <- EffMonad[S].pure(2)
+ b <- pure[S, Int](2)
  _ <- tell("second value "+b)
 
 } yield a + b
@@ -300,8 +300,8 @@ mean(List(1, 2, 3)).runState((0, 0)).run
 ### List
 
 The `List` effect is used for computations which may return several values.
- A simple example using this effect would be:${ListSnippets.snippet1}
-
+ A simple example using this effect would be:
+${ListSnippets.snippet1}
 
 ### Choose
 
@@ -313,7 +313,8 @@ The `Choose` effect is used for non-deterministic computations. With the `Choose
 `Choose` is actually a generalization of `List` where instead of "exploring" all the branches we might "cut" some of them.
 That behaviour is controlled by the `Alternative[F]` instance you use when running `Choose`.
 
-For example if we take `List` to run a similar example as before, we get the list of all the accepted pairs:${ChooseSnippets.snippet1}
+For example if we take `List` to run a similar example as before, we get the list of all the accepted pairs:
+${ChooseSnippets.snippet1}
 
 ### Future
 
@@ -339,7 +340,7 @@ Now you can learn how to  ${"create your own effects" ~/ CreateEffects}.
 }
 
 object ListSnippets extends Snippets {
-  val snippet1 = snippet{
+  val snippet1 = snippet {
 import org.atnos.eff._, all._, syntax.all._
 
 type S = Fx.fx1[List]
@@ -359,7 +360,8 @@ pairsBiggerThan[S](List(1, 2, 3, 4), 5).runList.run
 }
 
 object ChooseSnippets extends Snippets {
-val snippet1 = snippet{
+
+  val snippet1 = snippet{
 import org.atnos.eff._, all._, syntax.all._
 
 type S = Fx.fx1[Choose]

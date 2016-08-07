@@ -3,14 +3,14 @@ package org.atnos.eff
 import cats.data.Xor
 import scala.annotation.implicitNotFound
 
-@implicitNotFound("No instance found for MemberIn[${T}, ${R}]. The ${T} effect is not part of the stack ${R}")
+@implicitNotFound("No instance found for MemberIn[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
 trait MemberIn[T[_], R] {
   def inject[V](tv: T[V]): Union[R, V]
 }
 
 object MemberIn extends MemberInLower1 {
 
-  @implicitNotFound("No instance found for MemberIn[${T}, ${R}]. The ${T} effect is not part of the stack ${R}")
+  @implicitNotFound("No instance found for MemberIn[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
   type |=[T[_], R] = MemberIn[T, R]
 }
 
@@ -74,7 +74,7 @@ trait MemberInLower5 {
   }
 }
 
-@implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
+@implicitNotFound("No instance found for Member[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}\n or it was not possible to determine the stack that would result from removing ${T} from ${R}")
 trait Member[T[_], R] extends MemberIn[T, R] {
   type Out
 
@@ -88,10 +88,10 @@ trait Member[T[_], R] extends MemberIn[T, R] {
 
 object Member extends MemberLower1 {
 
-  @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
+  @implicitNotFound("No instance found for Member[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}\n or it was not possible to determine the stack that would result from removing ${T} from ${R}")
   type <=[T[_], R] = Member[T, R]
 
-  @implicitNotFound("No instance found for Member[${T}, ${R}]. The ${T} effect is not part of the stack ${R} or it was not possible to determine the stack that would result from removing ${T} from ${R}")
+  @implicitNotFound("No instance found for Member[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}\n or it was not possible to determine the stack that would result from removing ${T} from ${R}")
   type Aux[T[_], R, U] = Member[T, R] { type Out = U }
 
   def apply[T[_], R](implicit m: Member[T, R]): Member[T, R] =
@@ -141,6 +141,9 @@ trait MemberLower2 extends MemberLower3 {
         case Union2R(e) => Xor.Left(Union1[R, V](e))
       }
   }
+}
+
+trait MemberLower3 extends MemberLower4 {
 
   implicit def Member3L[L[_], M[_], R[_]]: Member.Aux[L, Fx3[L, M, R], Fx2[M, R]] = new Member[L, Fx3[L, M, R]] { outer =>
     type Out = Fx2[M, R]
@@ -162,7 +165,11 @@ trait MemberLower2 extends MemberLower3 {
       }
   }
 
-  def Member4L[T[_], L[_], M[_], R[_]]: Member.Aux[T, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[L, M, R]] = new Member[T, FxAppend[Fx1[T], Fx3[L, M, R]]] { outer =>
+}
+
+trait MemberLower4 extends MemberLower5 {
+
+  implicit def Member4L[T[_], L[_], M[_], R[_]]: Member.Aux[T, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[L, M, R]] = new Member[T, FxAppend[Fx1[T], Fx3[L, M, R]]] { outer =>
     type Out = Fx3[L, M, R]
 
     def inject[V](tv: T[V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
@@ -177,6 +184,10 @@ trait MemberLower2 extends MemberLower3 {
         case UnionAppendR(u)         => Xor.left(u)
       }
   }
+
+}
+
+trait MemberLower5 extends MemberLower6 {
 
   implicit def MemberAppend2L[T1[_], T2[_], R]: Member.Aux[T1, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T2], R]] = new Member[T1, FxAppend[Fx2[T1, T2], R]] {
     type Out = FxAppend[Fx1[T2], R]
@@ -200,7 +211,7 @@ trait MemberLower2 extends MemberLower3 {
 
 }
 
-trait MemberLower3 extends MemberLower4 {
+trait MemberLower6 extends MemberLower7 {
   implicit def MemberAppend1L[T[_], R]: Member.Aux[T, FxAppend[Fx1[T], R], R] = new Member[T, FxAppend[Fx1[T], R]] {
     type Out = R
 
@@ -216,6 +227,9 @@ trait MemberLower3 extends MemberLower4 {
         case UnionAppendR(u)         => Xor.Left(u)
       }
   }
+}
+
+trait MemberLower7 extends MemberLower8 {
 
   implicit def Member2R[L[_], R[_]]: Member.Aux[R, Fx2[L, R], Fx1[L]] = new Member[R, Fx2[L, R]] { outer =>
     type Out = Fx1[L]
@@ -235,6 +249,9 @@ trait MemberLower3 extends MemberLower4 {
       }
 
   }
+}
+
+trait MemberLower8 extends MemberLower9 {
 
   implicit def MemberAppend2R[T1[_], T2[_], R]: Member.Aux[T2, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T1], R]] = new Member[T2, FxAppend[Fx2[T1, T2], R]] {
     type Out = FxAppend[Fx1[T1], R]
@@ -257,7 +274,8 @@ trait MemberLower3 extends MemberLower4 {
   }
 }
 
-trait MemberLower4 extends MemberLower5 {
+trait MemberLower9 extends MemberLower10 {
+
   implicit def MemberAppendL[T[_], L, R, U](implicit append: Member.Aux[T, L, U]): Member.Aux[T, FxAppend[L, R], FxAppend[U, R]] = new Member[T, FxAppend[L, R]] {
     type Out = FxAppend[U, R]
 
@@ -276,6 +294,9 @@ trait MemberLower4 extends MemberLower5 {
         case UnionAppendR(u) => Xor.Left(UnionAppendR(u))
       }
   }
+}
+
+trait MemberLower10 extends MemberLower11 {
 
   implicit def Member3M[L[_], M[_], R[_]]: Member.Aux[M, Fx3[L, M, R], Fx2[L, R]] = new Member[M, Fx3[L, M, R]] { outer =>
     type Out = Fx2[L, R]
@@ -299,7 +320,7 @@ trait MemberLower4 extends MemberLower5 {
 
 }
 
-trait MemberLower5 extends MemberLower6 {
+trait MemberLower11 extends MemberLower12 {
   implicit def MemberAppendR[T[_], L, R, U](implicit append: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[L, R], FxAppend[L, U]] = new Member[T, FxAppend[L, R]] {
     type Out = FxAppend[L, U]
 
@@ -319,6 +340,9 @@ trait MemberLower5 extends MemberLower6 {
       }
 
   }
+}
+
+trait MemberLower12 extends MemberLower13 {
 
   implicit def Member3R[L[_], M[_], R[_]]: Member.Aux[R, Fx3[L, M, R], Fx2[L, M]] = new Member[R, Fx3[L, M, R]] { outer =>
     type Out = Fx2[L, M]
@@ -341,7 +365,7 @@ trait MemberLower5 extends MemberLower6 {
     }
 }
 
-trait MemberLower6 {
+trait MemberLower13 {
 
   implicit def MemberAppendAnyL[T[_], R]: Member.Aux[T, FxAppend[Fx1[T], R], R] = new Member[T, FxAppend[Fx1[T], R]] { outer =>
     type Out = R

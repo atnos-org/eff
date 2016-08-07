@@ -2,9 +2,18 @@ package org.atnos.eff
 
 import cats.data.Xor
 import Eff._
+
 /**
- * Trait sending a set of effects R into another set of effects U
+ * Typeclass proving that it is possible to send a tree of effects R into another tree of effects U
  *
+ * for example
+ *
+ *  send[Option1, Fx.fx3[Option1, Option2, Option3], Int](Option1(1)).
+ *    into[Fx.fx5[Option1, Option2, Option3, Option4, Option5]]
+ *
+ *  should work because all the effects of the first stack are present in the second
+ *
+ * Note: some implicit definitions are probably missing in some cases
  */
 trait IntoPoly[R, U] {
   def apply[A](e: Eff[R, A]): Eff[U, A]
@@ -149,26 +158,6 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
             ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3M(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
         }
     }
-
-  //  implicit def intoAppendL[T[_], S, L, R](implicit recurse: IntoPoly[S, L]): IntoPoly[Append[S, R], Append[L, R]] =
-  //    new IntoPoly[Append[S, R], Append[L, R]] {
-  //      def apply[A](e: Eff[Append[S, R], A]): Eff[Append[L, R], A] =
-  //        e match {
-  //          case Pure(a) =>
-  //            EffMonad[Append[L, R]].pure(a)
-  //
-  //          case Impure(u @ UnionAppendR(u1), c) =>
-  //            Impure[Append[L, R], u.X, A](UnionAppendR(u1), Arrs.singleton(x => effInto(c(x))))
-  //
-  //          case Impure(u @ UnionAppendL(u1), c) =>
-  //            recurse(Impure[S, u.X, A](u1, Arrs.singleton(x => effInto[Append[S, R], Append[L, R] ,A](c(x)))))
-  //
-  ////          case ImpureAp(u, c) =>
-  ////            ImpureAp[Append[L, R], u.X, A](UnionAppendR(u), Apps(c.functions.map(f => effInto[R, Append[In1[T], R], Any => Any](f))))
-  //        }
-  //    }
-
-
 }
 
 trait IntoPolyLower3 extends IntoPolyLower4 {

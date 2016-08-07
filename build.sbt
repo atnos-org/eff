@@ -71,7 +71,7 @@ lazy val commonJsSettings = Seq(
 lazy val commonJvmSettings = Seq(
   libraryDependencies ++= catsJvm,
   libraryDependencies ++= specs2
-)
+) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
 
 lazy val effSettings =
   buildSettings ++ commonSettings ++ publishSettings ++ scoverageSettings

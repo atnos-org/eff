@@ -13,7 +13,7 @@ class Website extends Specification { def is = s2"""
   val pages = Seq(
     "ApplicativeEvaluation"
   , "CreateEffects"
-  , "Implicits"
+  , "MemberImplicits"
   , "Introduction"
   , "OutOfTheBox"
   , "Tutorial"

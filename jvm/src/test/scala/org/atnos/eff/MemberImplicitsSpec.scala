@@ -7,7 +7,7 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   tests for member implicits
 
 """
-/*
+/* UNCOMMENT TO TEST COMPILATION TIMES AND IMPLICIT SEARCH
   sealed trait OptionN[A] { def a: A }
   case class Option1[A](a: A)   extends OptionN[A]
   case class Option2[A](a: A)   extends OptionN[A]
@@ -105,11 +105,11 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   implicitly[Member[Option4, S5]]
   implicitly[Member[Option5, S5]]
 
-//  option1[S5].runN.runN.runN.runN.runN
-//  option2[S5].runN.runN.runN.runN.runN
-//  option3[S5].runN.runN.runN.runN.runN
-//  option4[S5].runN.runN.runN.runN.runN
-//  option5[S5].runN.runN.runN.runN.runN
+  option1[S5].runN.runN.runN.runN.runN
+  option2[S5].runN.runN.runN.runN.runN
+  option3[S5].runN.runN.runN.runN.runN
+  option4[S5].runN.runN.runN.runN.runN
+  option5[S5].runN.runN.runN.runN.runN
 
   type S20 =
   FxAppend[
@@ -153,26 +153,26 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   implicitly[Member[Option19, S20]]
   implicitly[Member[Option20, S20]]
 
-//  option1[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option2[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option3[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option4[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option5[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option6[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option7[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option6[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option9[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option10[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option11[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option12[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option13[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option14[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option15[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option16[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option17[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option18[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option19[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
-//  option20[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option1[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option2[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option3[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option4[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option5[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option6[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option7[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option6[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option9[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option10[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option11[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option12[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option13[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option14[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option15[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option16[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option17[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option18[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option19[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
+  option20[S20].runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN.runN
 
 
   trait R1

@@ -11,8 +11,8 @@ You can learn more in the following sections:
  - ${"your first effects" ~ Introduction}
  - ${"standard effects in eff-cats" ~ OutOfTheBox}: `Reader`, `Writer`, `Eval`, `State`,...
  - ${"create your own effects" ~/ CreateEffects}
- - ${"use Member implicits" ~/ Implicits }
- - ${"manipulate effect stacks" ~ TransformStack}
+ - ${"interpret and manipulate effect stacks" ~ TransformStack}
+ - ${"use Member implicits" ~/ MemberImplicits }
  - ${"use an applicative evaluation" ~ ApplicativeEvaluation}
 
 ### Contributing

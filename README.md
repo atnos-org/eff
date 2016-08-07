@@ -4,7 +4,7 @@
 [![Join the chat at https://gitter.im/atnos-org/eff](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/atnos-org/eff?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
-This library is based on the "free-er" monad and an "open union" of effects described in
+This library is based on the "free-er" monad and extensible effects described in
 Oleg Kiselyov in [Freer monads, more extensible effects](http://okmij.org/ftp/Haskell/extensible/more.pdf).
 
 You can learn more in the User Guide:
@@ -23,7 +23,7 @@ You can also check out [this presentation](http://bit.ly/eff_flatmap_2016) at fl
 
 You add `eff-cats` as an sbt dependency:
 ```scala
-libraryDependencies += "org.atnos" %% "eff-cats" % "1.7.5"
+libraryDependencies += "org.atnos" %% "eff-cats" % "2.0.0"
 
 // to write types like Reader[String, ?]
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")

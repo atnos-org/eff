@@ -10,7 +10,6 @@ sealed trait Interact[A]
 case class Ask(prompt: String) extends Interact[String]
 case class Tell(msg: String) extends Interact[Unit]
 
-type _Interact[R] = Interact <= R
 type _interact[R] = Interact |= R
 
 def askUser[R :_interact](prompt: String): Eff[R, String] =
@@ -21,7 +20,6 @@ def tellUser[R :_interact](message: String): Eff[R, Unit] =
 
 sealed trait DataOp[A]
 
-type _DataOp[R] = DataOp <= R
 type _dataOp[R] = DataOp |= R
 
 case class AddCat(a: String) extends DataOp[Unit]

@@ -7,7 +7,7 @@ import org.atnos.eff._, all._
 object Introduction extends UserGuidePage { def is = "Introduction".title ^ s2"""
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
-This library uses a "free-er" monad and an "open-union" of effects to create an "effect stack" as described in
+This library uses a "free-er" monad and extensible effects to create an "effect stack" as described in
 [Oleg Kiselyov's paper](http://okmij.org/ftp/Haskell/extensible/more.pdf).
 
 There are lots of advantages to this approach:
@@ -31,16 +31,19 @@ returned by the computation, possibly triggering some effects when evaluated.
 
 The effects `R` are modelled by a type-level list of "effect constructors", for example:${snippet{
 import cats._, data._
-import org.atnos.eff._, all._
+import org.atnos.eff._
 
-type Stack = Fx.fx3[Reader[Int, ?], Writer[String, ?], Eval]
+type ReaderInt[A] = Reader[Int, A]
+type WriterString[A] = Writer[String, A]
+
+type Stack = Fx.fx3[WriterString, ReaderInt, Eval]
 
 }}
 The stack `Stack` above declares 3 effects:
 
- - a `Reader[Int, ?]` effect to access some configuration number of type `Int`
+ - a `ReaderInt` effect to access some configuration number of type `Int`
 
- - a `Writer[String, ?]` effect to log string messages
+ - a `WriterString` effect to log string messages
 
  - an `Eval` effect to only compute values on demand (a bit like lazy values)
 
@@ -48,9 +51,12 @@ Now we can write a program with those 3 effects, using the primitive operations 
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-def program[R](implicit r: Reader[Int, ?] |= R,
-                        w: Writer[String, ?] |= R,
-                        e: Eval |= R): Eff[R, Int] = for {
+// useful type aliases showing that the ReaderInt and the WriterString effects are "members" of R
+// note that R could have more effects
+type _readerInt[R]    = ReaderInt |= R
+type _writerString[R] = WriterString |= R
+
+def program[R :_readerInt :_writerString :_eval]: Eff[R, Int] = for {
   // get the configuration
   n <- ask[R, Int]
 
@@ -71,10 +77,10 @@ program[Stack].runReader(6).runWriter.runEval.run
 
 As you can see, all the effects of the `Stack` type are being executed one by one:
 
- 1. the `Reader` effect, needing a value to inject
+ 1. the `Reader` effect, which provides a value, `6`, to each computation needing it
  2. the `Writer` effect, which logs messages
  3. the `Eval` effect to compute the "power of 2 computation"
- 4. finally the `NoEffect` effect (provided by the `Eff` object) to get the final value out of `Eff[Stack, Int]`
+ 4. `run` extracts the final result
 
 <br/>
 Maybe you noticed that the effects are not being executed in the same order as their order in the stack declaration.
@@ -83,14 +89,16 @@ running the `Writer` effect then `Xor` effect returns `String Xor (A, List[Strin
  then the `Writer` effect returns `(String Xor A, List[String])`.
 
 This all works thanks to some implicits definitions guiding Scala type inference towards the
-right return types. You can learn more on implicits and how to remove the type annotations in the example above
- in the ${"implicits" ~/ Implicits} section.
+right return types. You can learn more on implicits in the ${"implicits" ~/ MemberImplicits} section.
 
-You can now get a more detailled presentation of the use of the Eff monad by reading the ${"tutorial" ~/ Tutorial} or
+You can now get a more detailed presentation of the use of the Eff monad by reading the ${"tutorial" ~/ Tutorial} or
 you can learn about ${"other effects" ~/ OutOfTheBox} supported by this library.
 """
 
-  type Stack = Fx.fx3[Reader[Int, ?], Writer[String, ?], Eval]
+  type ReaderInt[A] = Reader[Int, A]
+  type WriterString[A] = Writer[String, A]
+
+  type Stack = Fx.fx3[WriterString, ReaderInt, Eval]
 
 
 }

@@ -10,12 +10,8 @@ import cats.implicits._
 
 // T |= R is an alias for MemberIn[T, R]
 // stating that effects of type T[_] can be injected in the effect stack R
+// It is also equivalent to MemberIn[KVStore, R]
 type _kvstore[R] = KVStore |= R
-
-// T <= R is an alias for Member[T, R]
-// stating that effects of type T[_] can be injected in the effect stack R or extracted from R
-type _KVStore[R] = KVStore <= R
-
 
 /** put returns nothing (i.e. Unit) */
 def put[T, R :_kvstore](key: String, value: T): Eff[R, Unit] =

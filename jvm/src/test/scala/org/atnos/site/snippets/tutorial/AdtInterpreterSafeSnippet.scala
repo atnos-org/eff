@@ -12,6 +12,9 @@ import org.atnos.eff._, all._, interpret._, syntax._
 import cats.implicits._
 import cats.data._
 
+type _writerString[R] = Writer[String, ?] |= R
+type _stateMap[R]     = State[Map[String, Any], ?] |= R
+
 /**
  * Safe interpreter for KVStore effects
  *
@@ -24,17 +27,27 @@ import cats.data._
  *  The resulting effect stack is U which is R without the KVStore effects
  *
  *  Note that we just require the Throwable, Writer and State effects to
- *  be able to be created in the stack U with |= (and not <=)
+ *  be able to be created in the stack U
+ *
+ * This interpreter uses the org.atnos.eff.interpreter.translate method
+ * translating one effect of the stack to other effects in the same stack
+ *
+ *
+ * NOTE: It is really important for type inference that the effects for U are listed after those for R!
+ *
+ * Implicit member definitions will NOT be found with the following definition:
+ *
+ * def runKVStore[R, U :_throwableXor :_writerString :_stateMap, A](effects: Eff[R, A]) (
+ *   implicit m: Member.Aux[KVStore, R, U]): Eff[U, A] = {
+ *
  */
 def runKVStore[R, U, A](effects: Eff[R, A])
-  (implicit
-   m: Member.Aux[KVStore, R, U],
-   x: Throwable Xor ? |= U,
-   w: Writer[String, ?] |= U,
-   s: State[Map[String, Any], ?] |= U
-  ): Eff[U, A] = {
+  (implicit m: Member.Aux[KVStore, R, U],
+            throwable:_throwableXor[U],
+            writer:_writerString[U],
+            state:_stateMap[U]): Eff[U, A] = {
 
-  val translation = new Translate[KVStore, U] {
+  translate(effects)(new Translate[KVStore, U] {
     def apply[X](kv: KVStore[X]): Eff[U, X] =
       kv match {
         case Put(key, value) =>
@@ -58,9 +71,7 @@ def runKVStore[R, U, A](effects: Eff[R, A])
             r <- fromXor(Xor.catchNonFatal(().asInstanceOf[X]))
           } yield r
       }
-  }
-
-  translate(effects)(translation)
+  })
 }
 
 // 8<---

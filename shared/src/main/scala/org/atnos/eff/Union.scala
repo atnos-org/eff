@@ -1,9 +1,17 @@
 package org.atnos.eff
 
-import cats.data._
-import cats.data._, Xor._
-
-
+/**
+ * Union represents one effect T[_] embedded in a tree of possible effects R
+ *
+ * Since the effect tree is represented with the following cases:
+ *   - Fx1[T]
+ *   - Fx2[T1, T2]
+ *   - Fx3[T1, T2, T3]
+ *   - FxAppend[L, R]
+ *
+ * We have the corresponding Union cases. For example
+ *   T2 is in the "middle" of Fx3[T1, T2, T3] so creating a Union object for that effect uses Union3M
+ */
 sealed trait Union[+R, A] {
   type X = A
 }

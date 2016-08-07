@@ -17,6 +17,10 @@ import scala.collection.mutable._
  *
  * the program will crash if a type is incorrectly specified.
  *
+ * The interpreter requires the KVStore effect to be a Member of R (with <=)
+ * Meaning that we can statically know the resulting type once we have removed
+ * KVStore from R, and this type is m.Out.
+ *
  * The interpreter uses the `interpretUnsafe` method from `org.atnos.eff.Interpreter` to implement a
  * stack-safe interpretation of effects as a side-effect.
  *
@@ -24,6 +28,7 @@ import scala.collection.mutable._
  * we get each `KVStore[X]` effect, run side-effects and return a value `X`.
  *
  * The resulting effect stack is m.Out which is R without the KVStore effects
+ *
  */
 def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore <= R): Eff[m.Out, A] = {
   // a very simple (and imprecise) key-value store

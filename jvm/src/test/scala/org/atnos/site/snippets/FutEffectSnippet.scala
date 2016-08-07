@@ -16,8 +16,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object FutEffect {
   type Fut[A] = Future[() => A]
+  type _fut[R] = Fut |= R
 
-  def fut[R, A](a: => A)(implicit m: Fut <= R): Eff[R, A] =
+  def fut[R :_fut, A](a: => A): Eff[R, A] =
     send[Fut, R, A](Future(() => a))
 
   def runFuture[R, U, A, B](atMost: Duration)(effects: Eff[R, A])(

@@ -13,6 +13,9 @@ trait writer {
     def runWriter[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, (A, List[O])] =
       WriterInterpretation.runWriter(e)(member.aux)
 
+    def runWriterNoLog[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =
+      runWriter[O](member).map(_._1)
+
     def runWriterLog[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, List[O]] =
       runWriter[O](member).map(_._2)
 

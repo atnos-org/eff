@@ -27,7 +27,7 @@ In the code above:
  - `runFuture` runs the `Future` by using the `Interpret.interpret1` method
 
 Writing interpreters can be a bit tricky, especially to keep them stack-safe. There is no method at the moment for writing
-generic stack-safe interpreters but the `Interpret` objects offers several support traits and functions to write some of
+generic stack-safe interpreters but the `org.atnos.eff.interpret` object offers several support traits and functions to write some of
 them. In this case, the interpretation doesn't need to pass state around so we can use the `Recurse` trait. This kind of
 implementation is shared by many different monads, like `Reader`, `Eval`, `Option` but not `Writer`, `State` or `List` for
 example.
