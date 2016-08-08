@@ -133,44 +133,44 @@ type S = Fx.fx3[Authenticated, Future, ThrowableXor]
 ```
 
 And you want to write an interpreter which will translate authentication actions into `Future` and `Xor`:${snippet{
-  import org.atnos.eff.eff._
-  import org.atnos.eff.syntax.eff._
-  import org.atnos.eff.future._
-  import org.atnos.eff.interpret._
-  import scala.concurrent.Future
+import org.atnos.eff.eff._
+import org.atnos.eff.syntax.eff._
+import org.atnos.eff.future._
+import org.atnos.eff.interpret._
+import scala.concurrent.Future
 
-  // list of access rights for a valid token
-  case class AccessRights(rights: List[String])
+// list of access rights for a valid token
+case class AccessRights(rights: List[String])
 
-  // authentication error
-  case class AuthError(message: String)
+// authentication error
+case class AuthError(message: String)
 
-  // DSL for authenticating users
-  sealed trait Authenticated[A]
-  case class Authenticate(token: String) extends Authenticated[AccessRights]
+// DSL for authenticating users
+sealed trait Authenticated[A]
+case class Authenticate(token: String) extends Authenticated[AccessRights]
 
-  type AuthErroXor[A] = AuthError Xor A
-  type _error[R] = AuthErroXor |= R
+type AuthErroXor[A] = AuthError Xor A
+type _error[R] = AuthErroXor |= R
 
-  /**
-   * The order of implicit parameters is really important for type inference!
-   * see below
-   */
-  def runAuth[R, U, A](e: Eff[R, A])(implicit
-    authenticated: Member.Aux[Authenticated, R, U],
-     future:       _future[U],
-     xor:          _error[U]): Eff[U, A] =
+/**
+ * The order of implicit parameters is really important for type inference!
+ * see below
+ */
+def runAuth[R, U, A](e: Eff[R, A])(implicit
+  authenticated: Member.Aux[Authenticated, R, U],
+   future:       _future[U],
+   xor:          _error[U]): Eff[U, A] =
 
-     translate(e)(new Translate[Authenticated, U] {
-       def apply[X](ax: Authenticated[X]): Eff[U, X] =
-         ax match {
-           case Authenticate(token) =>
-             // send the future effect in the stack U
-             send(authenticate(token)).
-             // send the Xor value in the stack U
-             collapse
-         }
-      })
+   translate(e)(new Translate[Authenticated, U] {
+     def apply[X](ax: Authenticated[X]): Eff[U, X] =
+       ax match {
+         case Authenticate(token) =>
+           // send the future effect in the stack U
+           send(authenticate(token)).
+           // send the Xor value in the stack U
+           collapse
+       }
+    })
 
 // call to a service to authenticate tokens
 def authenticate(token: String): Future[AuthError Xor AccessRights] = ???
@@ -191,7 +191,8 @@ is an effect of `U` as evidenced by `xor`.
 
 You might wonder why we don't use a more direct type signature like:
 ```
-def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(implicit authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A]
+def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(
+  implicit authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A]
 ```
 
 The reason is that scalac desugars this to:
@@ -200,7 +201,7 @@ def runAuth2[R, U, A](e: Eff[R, A])(
   implicit future:        _future[U],
            xor:           _error[U],
            authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A] =
-  ```
+```
 
 And then `authenticated` is last in the list of implicits parameters and can not be used to guide type inference.
 
