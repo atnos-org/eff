@@ -19,7 +19,7 @@ trait writer {
     def runWriterLog[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, List[O]] =
       runWriter[O](member).map(_._2)
 
-    def runWriterFold[O, B](fold: Fold[O, B])(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, (A, B)] =
+    def runWriterFold[O, B](fold: LeftFold[O, B])(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, (A, B)] =
       WriterInterpretation.runWriterFold(e)(fold)(member.aux)
 
     def runWriterUnsafe[O](f: O => Unit)(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =

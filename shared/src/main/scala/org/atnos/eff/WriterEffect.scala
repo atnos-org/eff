@@ -47,7 +47,7 @@ trait WriterInterpretation {
   /**
    * More general fold of runWriter where we can use a fold to accumulate values in a mutable buffer
    */
-  def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: Fold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
+  def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: LeftFold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
     val recurse: StateRecurse[Writer[O, ?], A, (A, B)] = new StateRecurse[Writer[O, ?], A, (A, B)] {
       type S = fold.S
       val init = fold.init
@@ -67,28 +67,28 @@ trait WriterInterpretation {
   def runWriterEval[R, U, O, A](w: Eff[R, A])(f: O => Eval[Unit])(implicit m: Member.Aux[Writer[O, ?], R, U], ev: Eval |= U): Eff[U, A] =
     runWriterFold(w)(EvalFold(f)).flatMap { case (a, e) => send[Eval, U, Unit](e).as(a) }
 
-  implicit def ListFold[A]: Fold[A, List[A]] = new Fold[A, List[A]] {
+  implicit def ListFold[A]: LeftFold[A, List[A]] = new LeftFold[A, List[A]] {
     type S = ListBuffer[A]
     val init = new ListBuffer[A]
     def fold(a: A, s: S) = { s.append(a); s }
     def finalize(s: S) = s.toList
   }
 
-  def MonoidFold[A : Monoid]: Fold[A, A] = new Fold[A, A] {
+  def MonoidFold[A : Monoid]: LeftFold[A, A] = new LeftFold[A, A] {
     type S = A
     val init = Monoid[A].empty
     def fold(a: A, s: S) = a |+| s
     def finalize(s: S) = s
   }
 
-  def UnsafeFold[A](f: A => Unit): Fold[A, Unit] = new Fold[A, Unit] {
+  def UnsafeFold[A](f: A => Unit): LeftFold[A, Unit] = new LeftFold[A, Unit] {
     type S = Unit
     val init = ()
     def fold(a: A, s: S) = f(a)
     def finalize(s: S) = s
   }
 
-  def EvalFold[A](f: A => Eval[Unit]): Fold[A, Eval[Unit]] = new Fold[A, Eval[Unit]] {
+  def EvalFold[A](f: A => Eval[Unit]): LeftFold[A, Eval[Unit]] = new LeftFold[A, Eval[Unit]] {
     type S = Eval[Unit]
     val init = Eval.now(())
     def fold(a: A, s: S) = s >> f(a)
@@ -98,7 +98,7 @@ trait WriterInterpretation {
 }
 
 /** support trait for folding values while possibly keeping some internal state */
-trait Fold[A, B] {
+trait LeftFold[A, B] {
   type S
   val init: S
   def fold(a: A, s: S): S

@@ -219,7 +219,7 @@ val action: Eff[S, Int] = for {
 } yield a + b
 
 // define a fold to output values
-def fileFold(path: String) = new Fold[String, Unit] {
+def fileFold(path: String) = new LeftFold[String, Unit] {
   type S = PrintWriter
   val init: S = new PrintWriter(path)
 
