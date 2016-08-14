@@ -16,6 +16,7 @@ package object eff {
   object validate   extends ValidateCreation   with ValidateInterpretation
   object choose     extends ChooseCreation     with ChooseInterpretation
   object future     extends FutureCreation     with FutureInterpretation
+  object safe       extends SafeCreation       with SafeInterpretation
 
   object create extends
     ReaderCreation with
@@ -28,7 +29,8 @@ package object eff {
     ValidateCreation with
     ChooseCreation with
     FutureCreation with
-    EffCreation
+    EffCreation with
+    SafeCreation
 
   object all extends
     ReaderEffect with
@@ -41,6 +43,7 @@ package object eff {
     ValidateEffect with
     ChooseEffect with
     FutureEffect with
+    SafeEffect with
     EffInterpretation with
     EffCreation with
     EffImplicits

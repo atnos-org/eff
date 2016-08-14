@@ -24,7 +24,27 @@ In the code above:
 
  - the `fut` method uses `Eff.send` to "send" values of a given effect into a larger sum of effects `Eff[R, A]`
 
- - `runFuture` runs the `Future` by using the `Interpret.interpret1` method
+ - `runFuture` runs the `Future` by using the `interpret.interpret1` method
+
+### Compiler limitation
+
+When you create an effect you can define a sealed trait and case classes to represent different possibilities for that effect.
+For example for interacting with a database you might create: ${snippet{
+trait DatabaseEffect {
+
+  case class Record(fields: List[String])
+
+  sealed trait Db[A]
+  case class Get[A](id: Int) extends Db[Record]
+  case class Update[A](id: Int, record: Record) extends Db[Record]
+}
+}}
+
+It is recommended to create the `Db` types **outside** of the `DatabaseEffect` trait. Indeed, during `Member` implicit resolution,
+depending on how you import the `Db` effect type (if it is inherited from an object or not) you could experience compiler
+crashes :-(.
+
+### Interpreter
 
 Writing interpreters can be a bit tricky, especially to keep them stack-safe. There is no method at the moment for writing
 generic stack-safe interpreters but the `org.atnos.eff.interpret` object offers several support traits and functions to write some of

@@ -17,23 +17,13 @@ object SafeEffect extends SafeEffect
 
 trait SafeTypes {
 
-  /**
-   * base type for this effect: either an error or a computation to evaluate
-   * a "by-name" value
-   */
-  sealed trait Safe[A]
-
-  case class EvaluateValue[A](a: Eval[A])  extends Safe[A]
-  case class FailedValue[A](t: Throwable)  extends Safe[A]
-  case class FailedFinalizer(t: Throwable) extends Safe[Unit]
-
   type _Safe[R] = Safe <= R
   type _safe[R] = Safe |= R
 }
 
 trait SafeCreation extends SafeTypes {
 
-  def ok[R :_safe, A](a: =>A): Eff[R, A] =
+  def protect[R :_safe, A](a: =>A): Eff[R, A] =
     send[Safe, R, A](EvaluateValue[A](Eval.later(a)))
 
   def eval[R :_safe , A](a: Eval[A]): Eff[R, A] =
@@ -49,9 +39,9 @@ trait SafeCreation extends SafeTypes {
 trait SafeInterpretation extends SafeCreation { outer =>
 
   /**
-   * Run an safe effect.
+   * Run a safe effect
    *
-   * Make sure all finalizers are run
+   * Collect finalizer exceptions if any
    */
   def runSafe[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, (ThrowableXor[A], List[Throwable])] = {
     type Out = (ThrowableXor[A], Vector[Throwable])
@@ -62,7 +52,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onPure(a: A, s: S): (Eff[R, A], S) Xor Eff[U, Out] =
         Xor.Right(pure((Xor.Right(a), s)))
 
-      def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[U, Out] = //???
+      def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[U, Out] =
         sx match {
           case EvaluateValue(v) =>
             Xor.catchNonFatal(v.value) match {
@@ -77,11 +67,49 @@ trait SafeInterpretation extends SafeCreation { outer =>
             Xor.Right(pure((Xor.Left(t), s)))
 
           case FailedFinalizer(t) =>
-           Xor.Left((continuation(()), s :+ t))
+            Xor.Left((continuation(()), s :+ t))
         }
     }
 
     interpretLoop1[R, U, Safe, A, Out]((a: A) => (Xor.Right(a), Vector.empty): Out)(loop)(r).map { case (a, vs) => (a, vs.toList) }
+  }
+
+  /** run a safe effect but drop the finalizer errors */
+  def execSafe[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, ThrowableXor[A]] =
+    runSafe(r).map(_._1)
+
+    /**
+   * Attempt to execute a safe action including finalizers
+   */
+  def attemptSafe[R, A](r: Eff[R, A])(implicit m: Safe <= R): Eff[R, (ThrowableXor[A], List[Throwable])] = {
+    type Out = (ThrowableXor[A], Vector[Throwable])
+    val loop = new Loop[Safe, R, A, Eff[R, Out]] {
+      type S = Vector[Throwable]
+      val init: S = Vector.empty[Throwable]
+
+      def onPure(a: A, s: S): (Eff[R, A], S) Xor Eff[R, Out] =
+        Xor.Right(pure((Xor.Right(a), s)))
+
+      def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[R, Out] =
+        sx match {
+          case EvaluateValue(v) =>
+            Xor.catchNonFatal(v.value) match {
+              case Xor.Left(e) =>
+                Xor.Right(pure((Xor.Left(e), s)))
+
+              case Xor.Right(x) =>
+                Xor.Left((continuation(x), s))
+            }
+
+          case FailedValue(t) =>
+            Xor.Right(pure((Xor.Left(t), s)))
+
+          case FailedFinalizer(t) =>
+            Xor.Left((continuation(()), s :+ t))
+        }
+    }
+
+    interceptLoop1[R, Safe, A, Out]((a: A) => (Xor.Right(a), Vector.empty): Out)(loop)(r).map { case (a, vs) => (a, vs.toList) }
   }
 
   /**
@@ -91,7 +119,10 @@ trait SafeInterpretation extends SafeCreation { outer =>
   def andFinally[R, A](action: Eff[R, A], last: Eff[R, Unit])(implicit m: Safe <= R): Eff[R, A] = {
     val loop = new StatelessLoop[Safe, R, A, Eff[R, A]] {
       def onPure(a: A): Eff[R, A] Xor Eff[R, A] =
-        Xor.Right(pure(a))
+        Xor.Right(attempt(last) flatMap {
+          case Xor.Left(t)   => outer.finalizerException[R](t) >> pure(a)
+          case Xor.Right(()) => pure(a)
+        })
 
       def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A]): Eff[R, A] Xor Eff[R, A] =
         sx match {
@@ -104,26 +135,35 @@ trait SafeInterpretation extends SafeCreation { outer =>
                 })
 
               case Xor.Right(x) =>
-                Xor.Left(continuation(x))
+                Xor.Left(attempt(last) flatMap {
+                  case Xor.Left(t)   => outer.finalizerException[R](t) >> continuation(x)
+                  case Xor.Right(()) => continuation(x)
+                })
             }
 
           case FailedValue(t) =>
-            Xor.Left(outer.exception(t))
+            Xor.Right(outer.exception(t))
 
           case FailedFinalizer(t) =>
-            Xor.Left(outer.finalizerException(t) >> continuation(()))
+            Xor.Right(outer.finalizerException(t) >> continuation(()))
         }
     }
 
     interceptStatelessLoop1[R, Safe, A, A]((a: A) => a)(loop)(action)
   }
 
+  def bracket[R, A, B, C](acquire: Eff[R, A])(step: A => Eff[R, B])(release: A => Eff[R, C])(implicit m: Safe <= R): Eff[R, B] =
+    for {
+      a <- acquire
+      b <- andFinally(step(a), release(a).void)
+    } yield b
+
   /**
    * evaluate 1 action possibly having error effects
    *
    * Execute a second action if the first one is not successful
    */
-  def orElse[R, A](action: Eff[R, A], onThrowable: Eff[R, A])(implicit m: Safe <= R): Eff[R, A] =
+  def otherwise[R, A](action: Eff[R, A], onThrowable: Eff[R, A])(implicit m: Safe <= R): Eff[R, A] =
     whenFailed(action, _ => onThrowable)
 
   /**
@@ -131,23 +171,11 @@ trait SafeInterpretation extends SafeCreation { outer =>
    *
    * Execute a second action if the first one is not successful, based on the error
    */
-  def catchThrowable[R, A, B](action: Eff[R, A], pure: A => B, onThrowable: Throwable => Eff[R, B])(implicit m: Safe <= R): Eff[R, B] = {
-    val recurse = new Recurse[Safe, R, B] {
-      def apply[X](current: Safe[X]): X Xor Eff[R, B] =
-        current match {
-          case EvaluateValue(v) =>
-            Xor.catchNonFatal(v.value).leftMap(onThrowable).swap
-
-          case FailedValue(t) =>
-            Xor.Right(outer.exception(t))
-
-          case FailedFinalizer(t) =>
-            Xor.Right(outer.exception(t))
-        }
+  def catchThrowable[R, A, B](action: Eff[R, A], pureValue: A => B, onThrowable: Throwable => Eff[R, B])(implicit m: Safe <= R): Eff[R, B] =
+    attemptSafe(action).flatMap {
+      case (Xor.Left(t), ls)  => onThrowable(t).flatMap(b => ls.traverse(f => finalizerException(f)).as(b))
+      case (Xor.Right(a), ls) => pure(pureValue(a)).flatMap(b => ls.traverse(f => finalizerException(f)).as(b))
     }
-    intercept1[R, Safe, A, B](pure)(recurse)(action)
-  }
-
 
   /**
    * evaluate 1 action possibly throwing exceptions
@@ -156,8 +184,8 @@ trait SafeInterpretation extends SafeCreation { outer =>
    *
    * The final value type is the same as the original type
    */
-  def whenFailed[R, A](action: Eff[R, A], onError: Throwable => Eff[R, A])(implicit m: Safe <= R): Eff[R, A] =
-    catchThrowable(action, identity[A], onError)
+  def whenFailed[R, A](action: Eff[R, A], onThrowable: Throwable => Eff[R, A])(implicit m: Safe <= R): Eff[R, A] =
+    catchThrowable(action, identity[A], onThrowable)
 
   /**
    * try to execute an action an report any issue
@@ -175,3 +203,15 @@ trait SafeInterpretation extends SafeCreation { outer =>
     })
 
 }
+
+object SafeInterpretation extends SafeInterpretation
+
+/**
+ * The Safe type is a mix of a ThrowableXor / Eval effect
+ *   and a writer effect to collect finalizer failures
+ */
+sealed trait Safe[A]
+
+case class EvaluateValue[A](a: Eval[A])  extends Safe[A]
+case class FailedValue[A](t: Throwable)  extends Safe[A]
+case class FailedFinalizer(t: Throwable) extends Safe[Unit]
