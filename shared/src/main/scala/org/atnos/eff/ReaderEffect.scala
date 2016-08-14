@@ -5,6 +5,7 @@ import data._
 import Xor._
 import Interpret._
 import Eff._
+import cats.arrow.NaturalTransformation
 
 /**
  * Effect for computations depending on an environment.
@@ -23,7 +24,6 @@ trait ReaderCreation {
   def ask[R, T](implicit member: Reader[T, ?] |= R): Eff[R, T] =
     local[R, T, T](identity)
 
-  /** get the environment */
   /** modify the environment */
   def local[R, T, U](f: T => U)(implicit member: Reader[T, ?] |= R): Eff[R, U] =
     send[Reader[T, ?], R, U](Reader(f))
@@ -54,6 +54,17 @@ trait ReaderInterpretation {
           send[Reader[B, ?], U, X](Reader((b: B) => r.run(getter(b))))
       }
     }
+
+  /**
+   * Modify the read value
+   */
+  def modifyReader[R1, R2, U, S, T, A](e: Eff[R1, A])(f: T => S)(
+    implicit readerS: Member.Aux[Reader[S, ?], R1, U],
+             readerT: Member.Aux[Reader[T, ?], R2, U]): Eff[R2, A] =
+    transform(e, new NaturalTransformation[Reader[S, ?], Reader[T, ?]] {
+      def apply[X](r: Reader[S, X]): Reader[T, X] =
+        Reader((t: T) => r.run(f(t)))
+    })
 }
 
 object ReaderInterpretation extends ReaderInterpretation
