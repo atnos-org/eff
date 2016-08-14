@@ -53,7 +53,7 @@ trait Interpret {
       def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity _)
     }
-    interpretLoop[R, U, M, A, B, Unit](pure, loop)(effects)
+    interpretLoop[R, U, M, A, B](pure, loop)(effects)
   }
 
   /**
@@ -125,7 +125,7 @@ trait Interpret {
    *
    * This method contains a loop which is stack-safe
    */
-  def interpretLoop[R, U, M[_], A, B, S](pure: A => Eff[U, B], loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
+  def interpretLoop[R, U, M[_], A, B](pure: A => Eff[U, B], loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
     def go(eff: Eff[R, A], s: loop.S): Eff[U, B] = {
       eff match {
         case Pure(a) =>
@@ -154,8 +154,8 @@ trait Interpret {
     go(effects, loop.init)
   }
 
-  def interpretLoop1[R, U, M[_], A, B, S](pure: A => B)(loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
-    interpretLoop[R, U, M, A, B, S]((a: A) => EffMonad[U].pure(pure(a)), loop)(effects)
+  def interpretLoop1[R, U, M[_], A, B](pure: A => B)(loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
+    interpretLoop[R, U, M, A, B]((a: A) => EffMonad[U].pure(pure(a)), loop)(effects)
 
   /**
    * generalization of interpret
@@ -163,14 +163,14 @@ trait Interpret {
    * This method contains a loop which is stack-safe
    */
   def interpretStatelessLoop[R, U, M[_], A, B](pure: A => Eff[U, B], loop: StatelessLoop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
-    interpretLoop[R, U, M, A, B, Unit](pure, new Loop[M, R, A, Eff[U, B]] {
+    interpretLoop[R, U, M, A, B](pure, new Loop[M, R, A, Eff[U, B]] {
       type S = Unit
       val init: S = ()
       def onPure(a: A, s: S) = loop.onPure(a).leftMap((_, init))
       def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, init))
     })(effects)(m)
 
-  def interpretStatelessLoop1[R, U, M[_], A, B, S](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
+  def interpretStatelessLoop1[R, U, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
     interpretStatelessLoop[R, U, M, A, B]((a: A) => EffMonad[U].pure(pure(a)), loop)(effects)
 
   /**
@@ -187,7 +187,7 @@ trait Interpret {
       def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Xor Eff[R, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity _)
     }
-    interceptLoop[R, M, A, B, Unit](pure, loop)(effects)
+    interceptLoop[R, M, A, B](pure, loop)(effects)
   }
 
   /**
@@ -200,7 +200,7 @@ trait Interpret {
    * intercept an effect and interpret it in the same stack.
    * This method is stack-safe
    */
-  def interceptLoop[R, M[_], A, B, S](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] = {
+  def interceptLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] = {
     def go(eff: Eff[R, A], s: loop.S): Eff[R, B] = {
       eff match {
         case Pure(a) =>
@@ -229,11 +229,11 @@ trait Interpret {
     go(effects, loop.init)
   }
 
-  def interceptLoop1[R, M[_], A, B, S](pure: A => B)(loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
-    interceptLoop[R, M, A, B, S]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
+  def interceptLoop1[R, M[_], A, B](pure: A => B)(loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
+    interceptLoop[R, M, A, B]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
 
   def interceptStatelessLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: StatelessLoop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
-    interceptLoop[R, M, A, B, Unit](pure, new Loop[M, R, A, Eff[R, B]] {
+    interceptLoop[R, M, A, B](pure, new Loop[M, R, A, Eff[R, B]] {
       type S = Unit
       val init: S = ()
       def onPure(a: A, s: S) = loop.onPure(a).leftMap((_, ()))
