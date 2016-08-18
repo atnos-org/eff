@@ -60,14 +60,20 @@ trait SafeInterpretation extends SafeCreation { outer =>
                 Xor.Right(pure((Xor.Left(e), s)))
 
               case Xor.Right(x) =>
-                Xor.Left((continuation(x), s))
+                Xor.catchNonFatal(continuation(x)) match {
+                  case Xor.Left(e) => Xor.Right(pure((Xor.Left(e), s)))
+                  case Xor.Right(c) =>  Xor.Left((c, s))
+                }
             }
 
           case FailedValue(t) =>
             Xor.Right(pure((Xor.Left(t), s)))
 
           case FailedFinalizer(t) =>
-            Xor.Left((continuation(()), s :+ t))
+            Xor.catchNonFatal(continuation(())) match {
+              case Xor.Left(e)  => Xor.Right(pure((Xor.Left(e), s :+ t)))
+              case Xor.Right(c) => Xor.Left((c, s :+ t))
+            }
         }
     }
 
@@ -98,14 +104,20 @@ trait SafeInterpretation extends SafeCreation { outer =>
                 Xor.Right(pure((Xor.Left(e), s)))
 
               case Xor.Right(x) =>
-                Xor.Left((continuation(x), s))
+                Xor.catchNonFatal(continuation(x)) match {
+                  case Xor.Left(e) => Xor.Right(pure((Xor.Left(e), s)))
+                  case Xor.Right(c) =>  Xor.Left((c, s))
+                }
             }
 
           case FailedValue(t) =>
             Xor.Right(pure((Xor.Left(t), s)))
 
           case FailedFinalizer(t) =>
-            Xor.Left((continuation(()), s :+ t))
+            Xor.catchNonFatal(continuation(())) match {
+              case Xor.Left(e) => Xor.Right(pure((Xor.Left(e), s :+ t)))
+              case Xor.Right(c) =>  Xor.Left((c, s :+ t))
+            }
         }
     }
 

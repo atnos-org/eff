@@ -23,6 +23,8 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
   It is possible to add a "finalizer" which will be executed wether an action is successful or not
   All the finalizers must be executed and their possible exceptions returned $finalize1
 
+  A finalizer must be executed after the full effect has been evaluated $finalize2
+
   Exceptions can be caught and recovered
     with no finalizer                 $catchThrowable1
     with a finalizer before the catch $catchThrowable2
@@ -96,6 +98,16 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
     }
 
   }.setGens(genInt, genInt, genInt, genInt).noShrink
+
+  def finalize2 = prop { xs: List[Int] =>
+    val messages: ListBuffer[String] = new ListBuffer
+
+    val program =
+      List(0, 2, 4).traverse(n => protect[S, Int](action(n))).void `finally` protect[S, Unit](messages.append("out"))
+
+    program.runSafe.runOption.run
+    messages.toList must haveSize(1)
+  }
 
   def catchThrowable1 = prop { n: Int =>
     val program = protect[S, Int](action(n)).catchThrowable(identity, _ => pure(1))
