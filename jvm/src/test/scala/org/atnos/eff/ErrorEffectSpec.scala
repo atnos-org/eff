@@ -131,7 +131,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
     def action2[E](implicit e: ErrorOrOk2 |= E): Eff[E, Unit] = {
       // add the error1 effect locally and run it right away into error2
       type R1 = Fx.prepend[ErrorOrOk1, E]
-      implicit val m: Member.Aux[ErrorOrOk1, R1, E] = Member.MemberAppendAnyL[ErrorOrOk1, E]
+
       ErrorEffect.runLocalError(action1[R1], Error2)
     }
 

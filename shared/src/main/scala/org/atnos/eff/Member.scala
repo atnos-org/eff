@@ -104,6 +104,22 @@ object Member extends MemberLower1 {
     m
 }
 
+// 1.  Member[T, Fx1[T]]
+// 2.  Member[L, Fx2[L, R]]
+// 3.  Member[L, Fx3[L, M, R]]
+// 4.  Member[T, FxAppend[Fx1[T], Fx3[L, M, R]]]
+// 5.  Member[L, FxAppend[Fx1[T], Fx3[L, M, R]]]
+// 6.  Member[M, FxAppend[Fx1[T], Fx3[L, M, R]]]
+// 7.  Member[R, FxAppend[Fx1[T], Fx3[L, M, R]]]
+// 8.  Member[T, FxAppend[Fx1[T], R]]
+// 9.  Member[R, Fx2[L, R]]
+// 10. Member[T, FxAppend[L, R]]
+// 11. Member[M, Fx3[L, M, R]]
+// 12. Member[T, FxAppend[L, R]]
+// 13. Member[R, Fx3[L, M, R]]
+
+
+
 trait MemberLower1 extends MemberLower2 {
 
   implicit def Member1[T[_]]: Member.Aux[T, Fx1[T], NoFx] = new Member[T, Fx1[T]] { outer =>
@@ -172,7 +188,7 @@ trait MemberLower4 extends MemberLower5 {
   implicit def Member4L[T[_], L[_], M[_], R[_]]: Member.Aux[T, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[L, M, R]] = new Member[T, FxAppend[Fx1[T], Fx3[L, M, R]]] { outer =>
     type Out = Fx3[L, M, R]
 
-    def inject[V](tv: T[V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
+    def inject[V](tv: T[V]): Union[FxAppend[Fx1[T], Out], V] =
       UnionAppendL[Fx1[T], Fx3[L, M, R], V](Union1(tv))
 
     def accept[V](union: Union[Out, V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
@@ -188,30 +204,84 @@ trait MemberLower4 extends MemberLower5 {
 }
 
 trait MemberLower5 extends MemberLower6 {
+  implicit def Member4RL[T[_], L[_], M[_], R[_]]: Member.Aux[L, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, M, R]] = new Member[L, FxAppend[Fx1[T], Fx3[L, M, R]]] { outer =>
+    type Out = Fx3[T, M, R]
 
-  implicit def MemberAppend2L[T1[_], T2[_], R]: Member.Aux[T1, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T2], R]] = new Member[T1, FxAppend[Fx2[T1, T2], R]] {
-    type Out = FxAppend[Fx1[T2], R]
+    def inject[V](l: L[V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
+      UnionAppendR[Fx1[T], Fx3[L, M, R], V](Union3L(l))
 
-    def inject[V](e: T1[V]): Union[FxAppend[Fx2[T1, T2], R], V] =
-      UnionAppendL(Union2L(e))
-
-    def accept[V](union: Union[Out, V]): Union[FxAppend[Fx2[T1, T2], R], V] =
+    def accept[V](union: Union[Fx3[T, M, R], V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
       union match {
-        case UnionAppendL(Union1(e)) => UnionAppendL(Union2R(e))
-        case UnionAppendR(u)         => UnionAppendR(u)
+        case Union3L(t) => UnionAppendL(Union1(t))
+        case Union3M(m) => UnionAppendR(Union3M(m))
+        case Union3R(r) => UnionAppendR(Union3R(r))
       }
 
-    def project[V](union: Union[FxAppend[Fx2[T1, T2], R], V]): Union[Out, V] Xor T1[V] =
+    def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Union[Fx3[T, M, R], V] Xor L[V] =
       union match {
-        case UnionAppendL(Union2L(e)) => Xor.Right(e)
-        case UnionAppendL(Union2R(e)) => Xor.Left(UnionAppendL(Union1(e)))
-        case UnionAppendR(u)          => Xor.Left(UnionAppendR(u))
+        case UnionAppendL(Union1(t))  => Xor.left(Union3L(t))
+        case UnionAppendR(Union3L(l)) => Xor.Right(l)
+        case UnionAppendR(Union3M(m)) => Xor.Left(Union3M(m))
+        case UnionAppendR(Union3R(r)) => Xor.Left(Union3R(r))
+        case UnionAppendR(_)          => sys.error("appeasing the compiler exhaustiveness checking for Member4RL")
+      }
+  }
+}
+
+trait MemberLower6 extends MemberLower7 {
+
+  implicit def Member4RM[T[_], L[_], M[_], R[_]]: Member.Aux[M, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, L, R]] = new Member[M, FxAppend[Fx1[T], Fx3[L, M, R]]] { outer =>
+    type Out = Fx3[T, L, R]
+
+    def inject[V](m: M[V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
+      UnionAppendR[Fx1[T], Fx3[L, M, R], V](Union3M(m))
+
+    def accept[V](union: Union[Fx3[T, L, R], V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
+      union match {
+        case Union3L(t) => UnionAppendL(Union1(t))
+        case Union3M(l) => UnionAppendR(Union3L(l))
+        case Union3R(r) => UnionAppendR(Union3R(r))
+      }
+
+    def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Union[Fx3[T, L, R], V] Xor M[V] =
+      union match {
+        case UnionAppendL(Union1(t))  => Xor.left(Union3L(t))
+        case UnionAppendR(Union3L(l)) => Xor.left(Union3M(l))
+        case UnionAppendR(Union3M(m)) => Xor.Right(m)
+        case UnionAppendR(Union3R(r)) => Xor.Left(Union3R(r))
+        case UnionAppendR(_)          => sys.error("appeasing the compiler exhaustiveness checking for Member4RM")
       }
   }
 
 }
 
-trait MemberLower6 extends MemberLower7 {
+trait MemberLower7 extends MemberLower8 {
+
+  implicit def Member4RR[T[_], L[_], M[_], R[_]]: Member.Aux[R, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, L, M]] = new Member[R, FxAppend[Fx1[T], Fx3[L, M, R]]] { outer =>
+    type Out = Fx3[T, L, M]
+
+    def inject[V](r: R[V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
+      UnionAppendR[Fx1[T], Fx3[L, M, R], V](Union3R(r))
+
+    def accept[V](union: Union[Fx3[T, L, M], V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
+      union match {
+        case Union3L(t) => UnionAppendL(Union1(t))
+        case Union3M(l) => UnionAppendR(Union3L(l))
+        case Union3R(m) => UnionAppendR(Union3M(m))
+      }
+
+    def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Union[Fx3[T, L, M], V] Xor R[V] =
+      union match {
+        case UnionAppendL(Union1(t))  => Xor.left(Union3L(t))
+        case UnionAppendR(Union3L(l)) => Xor.left(Union3M(l))
+        case UnionAppendR(Union3M(m)) => Xor.left(Union3R(m))
+        case UnionAppendR(Union3R(r)) => Xor.Right(r)
+        case UnionAppendR(_)          => sys.error("appeasing the compiler exhaustiveness checking for Member4RM")
+      }
+  }
+}
+
+trait MemberLower8 extends MemberLower9 {
   implicit def MemberAppend1L[T[_], R]: Member.Aux[T, FxAppend[Fx1[T], R], R] = new Member[T, FxAppend[Fx1[T], R]] {
     type Out = R
 
@@ -229,7 +299,7 @@ trait MemberLower6 extends MemberLower7 {
   }
 }
 
-trait MemberLower7 extends MemberLower8 {
+trait MemberLower9 extends MemberLower10 {
 
   implicit def Member2R[L[_], R[_]]: Member.Aux[R, Fx2[L, R], Fx1[L]] = new Member[R, Fx2[L, R]] { outer =>
     type Out = Fx1[L]
@@ -251,30 +321,8 @@ trait MemberLower7 extends MemberLower8 {
   }
 }
 
-trait MemberLower8 extends MemberLower9 {
 
-  implicit def MemberAppend2R[T1[_], T2[_], R]: Member.Aux[T2, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T1], R]] = new Member[T2, FxAppend[Fx2[T1, T2], R]] {
-    type Out = FxAppend[Fx1[T1], R]
-
-    def inject[V](e: T2[V]): Union[FxAppend[Fx2[T1, T2], R], V] =
-      UnionAppendL(Union2R(e))
-
-    def accept[V](union: Union[Out, V]): Union[FxAppend[Fx2[T1, T2], R], V] =
-      union match {
-        case UnionAppendL(Union1(e)) => UnionAppendL(Union2L(e))
-        case UnionAppendR(u)         => UnionAppendR(u)
-      }
-
-    def project[V](union: Union[FxAppend[Fx2[T1, T2], R], V]): Union[Out, V] Xor T2[V] =
-      union match {
-        case UnionAppendL(Union2R(e)) => Xor.Right(e)
-        case UnionAppendL(Union2L(e)) => Xor.Left(UnionAppendL(Union1(e)))
-        case UnionAppendR(u)          => Xor.Left(UnionAppendR(u))
-      }
-  }
-}
-
-trait MemberLower9 extends MemberLower10 {
+trait MemberLower10 extends MemberLower11 {
 
   implicit def MemberAppendL[T[_], L, R, U](implicit append: Member.Aux[T, L, U]): Member.Aux[T, FxAppend[L, R], FxAppend[U, R]] = new Member[T, FxAppend[L, R]] {
     type Out = FxAppend[U, R]
@@ -296,7 +344,7 @@ trait MemberLower9 extends MemberLower10 {
   }
 }
 
-trait MemberLower10 extends MemberLower11 {
+trait MemberLower11 extends MemberLower12 {
 
   implicit def Member3M[L[_], M[_], R[_]]: Member.Aux[M, Fx3[L, M, R], Fx2[L, R]] = new Member[M, Fx3[L, M, R]] { outer =>
     type Out = Fx2[L, R]
@@ -320,7 +368,7 @@ trait MemberLower10 extends MemberLower11 {
 
 }
 
-trait MemberLower11 extends MemberLower12 {
+trait MemberLower12 extends MemberLower13 {
   implicit def MemberAppendR[T[_], L, R, U](implicit append: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[L, R], FxAppend[L, U]] = new Member[T, FxAppend[L, R]] {
     type Out = FxAppend[L, U]
 
@@ -342,7 +390,7 @@ trait MemberLower11 extends MemberLower12 {
   }
 }
 
-trait MemberLower12 extends MemberLower13 {
+trait MemberLower13 {
 
   implicit def Member3R[L[_], M[_], R[_]]: Member.Aux[R, Fx3[L, M, R], Fx2[L, M]] = new Member[R, Fx3[L, M, R]] { outer =>
     type Out = Fx2[L, M]
@@ -363,23 +411,4 @@ trait MemberLower12 extends MemberLower13 {
         case Union3R(e) => Xor.Right(e)
       }
     }
-}
-
-trait MemberLower13 {
-
-  implicit def MemberAppendAnyL[T[_], R]: Member.Aux[T, FxAppend[Fx1[T], R], R] = new Member[T, FxAppend[Fx1[T], R]] { outer =>
-    type Out = R
-
-    def inject[V](tv: T[V]): Union[FxAppend[Fx1[T], R], V] =
-      UnionAppendL[Fx1[T], R, V](Union1(tv))
-
-    def accept[V](union: Union[Out, V]): Union[FxAppend[Fx1[T], R], V] =
-      UnionAppendR(union)
-
-    def project[V](union: Union[FxAppend[Fx1[T], R], V]): Union[Out, V] Xor T[V] =
-      union match {
-        case UnionAppendL(Union1(e)) => Xor.Right(e)
-        case UnionAppendR(u)         => Xor.left(u)
-      }
-  }
 }
