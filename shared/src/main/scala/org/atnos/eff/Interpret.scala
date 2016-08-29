@@ -3,7 +3,7 @@ package org.atnos.eff
 import cats.data._
 import Xor._
 import Eff._
-import cats.arrow.NaturalTransformation
+import cats.~>
 
 /**
  * Support methods to create an interpreter (or "effect handlers") for a given Eff[M |: R, A].
@@ -247,7 +247,7 @@ trait Interpret {
    * transform an effect into another one
    * using a natural transformation
    */
-  def transform[SR, BR, U, TS[_], TB[_], A](r: Eff[SR, A], nat: NaturalTransformation[TS, TB])
+  def transform[SR, BR, U, TS[_], TB[_], A](r: Eff[SR, A], nat: ~>[TS, TB])
                                                (implicit sr: Member.Aux[TS, SR, U], br: Member.Aux[TB, BR, U]): Eff[BR, A] = {
 
     def go(eff: Eff[SR, A]): Eff[BR, A] = {

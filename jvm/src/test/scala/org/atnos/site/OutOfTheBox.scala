@@ -470,7 +470,7 @@ def pairsBiggerThan[R :_choose](list: List[Int], n: Int): Eff[R, (Int, Int)] = f
            else           zero
 } yield found
 
-import cats.std.list._
+import cats.instances.list._
 
 pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose.run
 }.eval

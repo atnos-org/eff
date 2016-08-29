@@ -2,7 +2,7 @@ package org.atnos.eff
 
 import cats._, data._
 import cats.syntax.all._
-import cats.std.all._
+import cats.instances.all._
 import org.atnos.eff.all._
 import Interpret._
 
@@ -59,7 +59,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** run the validate effect, yielding a non-empty list of failures Xor A */
   def runNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, NonEmptyList[E] Xor A] =
-    runMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList(e))
+    runMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.of(e))
 
   /** run the validate effect, yielding a list of failures Xor A */
   def runMap[R, U, E, L : Semigroup, A](r: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Xor A] = {

@@ -3,7 +3,7 @@ package org.atnos.site.snippets.tutorial
 
 import AdtSnippet._
 import AdtCreationSnippet._
-import cats.arrow.NaturalTransformation
+import cats.~>
 
 trait AdtInterpreterSafeSnippet {
 // 8<---

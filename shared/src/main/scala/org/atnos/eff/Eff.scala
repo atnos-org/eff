@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats.arrow.NaturalTransformation
+import cats.~>
 
 import scala.annotation.tailrec
 import cats._
@@ -89,6 +89,9 @@ trait EffImplicits {
         case ap @ ImpureAp(_, _) =>
           ap.toMonadic.flatMap(f)
       }
+
+    def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
+      defaultTailRecM(a)(f)
   }
 
   def EffApplicative[R]: Applicative[Eff[R, ?]] = new Applicative[Eff[R, ?]] {
@@ -265,7 +268,7 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) {
   def contramap[C](f: C => A): Arrs[R, C, B] =
     Arrs(((c: Any) => Eff.EffMonad[R].pure(f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions)
 
-  def transform[U, M[_], N[_]](t: NaturalTransformation[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, R, U]): Arrs[R, A, B] =
+  def transform[U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, R, U]): Arrs[R, A, B] =
     Arrs(functions.map(f => (x: Any) => Interpret.transform(f(x), t)(m, n)))
 }
 

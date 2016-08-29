@@ -8,7 +8,7 @@ import org.atnos.eff._, all._, syntax.all._
 import cats.Eval
 import cats.data.Writer
 import cats.syntax.traverse._
-import cats.std.list._
+import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
 
 type WriterString[A] = Writer[String, A]
@@ -36,7 +36,7 @@ We can however run all those computations concurrently using the applicative exe
 import org.atnos.eff._, all._, syntax.all._
 import cats.Eval
 import cats.data.Writer
-import cats.std.list._
+import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
 
 type WriterString[A] = Writer[String, A]

@@ -6,9 +6,9 @@ import org.specs2.{ScalaCheck, Specification}
 import cats._
 import data._
 import cats.syntax.all._
-import cats.std.all._
+import cats.instances.all._
 import cats.Eq
-import cats.arrow.NaturalTransformation
+import cats.~>
 import org.atnos.eff.Interpret.Translate
 //import cats.laws.discipline.{arbitrary => _, _}
 //import CartesianTests._, Isomorphisms._
@@ -168,7 +168,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     def setString[R](implicit m: StateString |= R): Eff[R, Unit] =
       StateEffect.put("hello")
 
-    val readerToState = new NaturalTransformation[ReaderString, StateString] {
+    val readerToState = new ~>[ReaderString, StateString] {
       def apply[A](fa: Reader[String, A]): State[String, A] =
         State((s: String) => (s, fa.run(s)))
     }

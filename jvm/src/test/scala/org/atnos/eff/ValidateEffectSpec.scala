@@ -2,8 +2,7 @@ package org.atnos.eff
 
 import cats.data.Xor._
 import cats.data._
-import cats.std.all._
-import cats.syntax.all._
+import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2.{ScalaCheck, Specification}
@@ -39,7 +38,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
         a <- EffMonad[S].pure(3)
       } yield a
 
-    validate.runNel.run ==== Left(NonEmptyList("error!"))
+    validate.runNel.run ==== Left(NonEmptyList.of("error!"))
   }
 
   def catchWrongValues1 = {

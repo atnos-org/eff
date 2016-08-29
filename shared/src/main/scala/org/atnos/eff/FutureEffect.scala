@@ -10,7 +10,7 @@ import scala.concurrent._
 import duration._
 import XorCreation._
 import cats.syntax.applicativeError._
-import cats.std.future._
+import cats.instances.future._
 
 /**
  * Effect for Future computations

@@ -2,8 +2,8 @@ package org.atnos.eff
 
 import org.specs2.{ScalaCheck, Specification}
 import cats.syntax.all._
-import cats.std.int._
-import cats.std.list.listInstance
+import cats.instances.int._
+import cats.instances.list.catsStdInstancesForList
 import cats.data._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._

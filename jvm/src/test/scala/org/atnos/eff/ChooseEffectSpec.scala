@@ -22,7 +22,7 @@ class ChooseEffectSpec extends Specification { def is = s2"""
       k <- chooseFrom[R, Int](List(i, j))
     } yield k
 
-    import cats.std.list._
+    import cats.instances.list._
 
     action.runChoose.runOption.run ==== Some(List(1, 2))
   }
@@ -35,7 +35,7 @@ class ChooseEffectSpec extends Specification { def is = s2"""
       k <- chooseFrom[R, Int](List(j))
     } yield k
 
-    import cats.std.option._
+    import cats.instances.option._
 
     action.runChoose.runOption.run ==== Some(Some(2))
   }

@@ -91,6 +91,9 @@ trait ChooseImplicits {
     def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
       EffMonad[R].flatMap(fa)(f)
 
+    def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
+      defaultTailRecM(a)(f)
+
     def empty[A]: Eff[R, A] =
       ChooseEffect.zero[R, A]
 

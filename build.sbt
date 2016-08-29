@@ -216,8 +216,8 @@ def testTask(task: TaskKey[Tests.Output]) =
     testGrouping in Test in test, testExecution in Test in task,
     fullClasspath in Test in test, javaHome in test) flatMap Defaults.allTestGroupsTask
 
-lazy val catsVersion     = "0.6.0"
-lazy val monixVersion    = "2.0-RC2"
+lazy val catsVersion     = "0.7.0"
+lazy val monixVersion    = "2.0-RC13"
 lazy val specs2Version   = "3.8.4"
 
 lazy val catsJvm = Seq(

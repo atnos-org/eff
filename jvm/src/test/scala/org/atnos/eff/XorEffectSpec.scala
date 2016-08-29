@@ -5,7 +5,7 @@ import org.specs2.{ScalaCheck, Specification}
 
 import cats.data._, Xor._
 import cats.syntax.all._
-import cats.std.all._
+import cats.instances.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.scalacheck.Gen

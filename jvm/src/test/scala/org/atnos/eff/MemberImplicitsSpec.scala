@@ -247,7 +247,7 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
 
   val value : Check[Int] = Eff.pure(3)
 
-  import cats.std.list._
+  import cats.instances.list._
   import org.atnos.eff.syntax.all._
 //
   val c1 = value.runChoose.runReader("foo").runState("baz").runNel.run
