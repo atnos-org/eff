@@ -301,4 +301,6 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   def actionA4[S] = action[SAppend[S]].runState(1).runXor.runOption.runReader("foo")
   def actionA5[S] = action[SAppend[S]].runState(1).runReader("foo").runXor.runOption
   def actionA6[S] = action[SAppend[S]].runState(1).runReader("foo").runOption.runXor
+  def actionA7    = action[SAppend[NoFx]].runState(1).runReader("foo").runOption.runXor
+
 }

@@ -385,7 +385,7 @@ trait MemberLower17 extends MemberLower18 {
   }
 }
 
-trait MemberLower18 {
+trait MemberLower18 extends MemberLower19 {
   implicit def Member3R[L[_], M[_], R[_]]: Member.Aux[R, Fx3[L, M, R], Fx2[L, M]] = new Member[R, Fx3[L, M, R]] { outer =>
     type Out = Fx2[L, M]
 
@@ -405,4 +405,22 @@ trait MemberLower18 {
         case Union3R(e) => Xor.Right(e)
       }
     }
+}
+
+trait MemberLower19 {
+  implicit def MemberAppendNoFx[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[R, NoFx], U] = new Member[T, FxAppend[R, NoFx]] { outer =>
+    type Out = U
+
+    def inject[V](tv: T[V]): Union[FxAppend[R, NoFx], V] =
+      UnionAppendL(m.inject(tv))
+
+    def accept[V](union: Union[Out, V]): Union[FxAppend[R, NoFx], V] =
+      UnionAppendL(m.accept(union))
+
+    def project[V](union: Union[FxAppend[R, NoFx], V]): Union[Out, V] Xor T[V] =
+      union match {
+        case UnionAppendL(u) => m.project(u)
+        case UnionAppendR(u) => sys.error("impossible - there should be no effects on the right side of FxAppend[R, NoFx]")
+      }
+  }
 }
