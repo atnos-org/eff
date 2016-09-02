@@ -28,7 +28,7 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
 
   type S = Fx.fx2[Future, Eval]
 
-  val elements = List(1000, 500, 300, 100, 50)
+  val elements = List(1000, 300, 500, 50, 100)
 
   def asMonad = {
     val messages = new ListBuffer[String]
@@ -44,13 +44,13 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
 
     val messages = new ListBuffer[String]
 
-    val actionApplicative: Eff[S, List[Int]] =
-      elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))).sequenceA
+    val actionApplicative: Eff[Fx1[Future], List[Int]] =
+      elements.map(v => async(register(v, messages))).sequenceA
 
-    actionApplicative.runEval.awaitFuture(2.seconds).run ==== Xor.right(elements)
+    actionApplicative.awaitFuture(2.seconds).run ==== Xor.right(elements)
 
     "messages are received in the reverse order, starting with the fastest one" ==> {
-      messages.toList ==== elements.reverse.map("got "+_)
+      messages.toList ==== elements.sorted.map("got "+_)
     }
   }
 
@@ -71,10 +71,10 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
   def asApplicativeProp = prop { elements: List[Int] =>
 
     val messages = new ListBuffer[String]
-    val actionApplicative: Eff[S, List[Int]] =
-      elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))).sequenceA
+    val actionApplicative: Eff[Fx1[Future], List[Int]] =
+      elements.map(v => async(register(v, messages))).sequenceA
 
-    Eff.detach(actionApplicative.runEval) must be_==(elements).await
+    actionApplicative.awaitFuture(2.seconds).run.toOption.get ==== elements
 
     "messages are not received in the same order" ==> {
       messages.toList !=== elements.map("got "+_)

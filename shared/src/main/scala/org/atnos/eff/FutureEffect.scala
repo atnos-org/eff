@@ -6,9 +6,11 @@ import Xor._
 import Eff._
 import Interpret._
 import EvalTypes._
+
 import scala.concurrent._
 import duration._
 import XorCreation._
+import cats.Apply
 import cats.syntax.applicativeError._
 import cats.instances.future._
 
@@ -42,6 +44,14 @@ trait FutureCreation {
 
 trait FutureInterpretation {
 
+  def ApplyFuture(implicit ec: ExecutionContext): Apply[Future] = new Apply[Future] {
+    def map[A, B](fa: Future[A])(f: A => B): Future[B] =
+      ap(Future(f))(fa)
+
+    def ap[A, B](ff: Future[A => B])(fa: Future[A]): Future[B] =
+      fa.zip(ff).map { case (a, f) => f(a) }
+  }
+
   def awaitFuture[R, U, A](r: Eff[R, A])(atMost: Duration)
       (implicit m: Member.Aux[Future, R, U], ec: ExecutionContext): Eff[U, Throwable Xor A] = {
     val recurse = new Recurse[Future, U, Throwable Xor A] {
@@ -50,7 +60,7 @@ trait FutureInterpretation {
         catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
     }
 
-    interpret1((a: A) => Right(a): Throwable Xor A)(recurse)(r)
+    interpretApply1((a: A) => Right(a): Throwable Xor A)(recurse)(r)(m, ApplyFuture)
   }
 
 }

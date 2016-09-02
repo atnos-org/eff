@@ -42,6 +42,9 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  An effect of the stack can be translated into other effects on that stack $translateEffect
  An effect of the stack can be locally translated into other effects on that stack $translateEffectLocal
 
+ // THIS CLEARLY DOESNT WORK!!!
+ Applicative calls can be optimised by "batching" requests $pending // optimiseRequests
+
 """
 
   def laws =
@@ -231,6 +234,57 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     both[S2].runState("universe").runOption.run ==== Option((5, "hello"))
   }
 
+  def optimiseRequests = {
+
+    // An effect to get users from a database
+    // calls can be individual or batched
+    case class User(i: Int)
+    sealed trait UserDsl[+A]
+
+    case class GetUser(i: Int) extends UserDsl[User]
+    case class GetUsers(is: List[Int]) extends UserDsl[List[User]]
+    type _userDsl[R] = UserDsl |= R
+
+    implicit def SemigroupUserDsl: Semigroup[UserDsl[_]] = new Semigroup[UserDsl[_]] {
+      def combine(tx: UserDsl[_], ty: UserDsl[_]): UserDsl[_] =
+        (tx, ty) match {
+          case (GetUser(i),   GetUser(j))   => GetUsers(List(i, j))
+          case (GetUser(i),   GetUsers(is)) => GetUsers(i :: is)
+          case (GetUsers(is), GetUser(i))   => GetUsers(is :+ i)
+          case (GetUsers(is), GetUsers(js)) => GetUsers(is ++ js)
+        }
+    }
+
+    def getUser[R :_userDsl](i: Int): Eff[R, User] =
+      send[UserDsl, R, User](GetUser(i))
+
+    def getUsers[R :_userDsl](is: List[Int]): Eff[R, List[User]] =
+      send[UserDsl, R, List[User]](GetUsers(is))
+
+    def getWebUser(i: Int): User = User(i)
+    def getWebUsers(is: List[Int]): List[User] = is.map(i => User(i))
+
+    def runDsl[A](eff: Eff[Fx1[UserDsl], A]): A =
+      eff match {
+        case Pure(a) => a
+        case Impure(Union1(GetUser(i)), c) => runDsl(c(getWebUser(i)))
+        case Impure(Union1(GetUsers(is)), c) => runDsl(c(getWebUsers(is)))
+        case ImpureAp(Union1(GetUser(i)), c) => runDsl(c(getWebUser(i)))
+        case ImpureAp(Union1(GetUsers(is)), c) => runDsl(c(getWebUsers(is)))
+      }
+
+    def action1[R :_userDsl] =
+      Eff.traverseA(List(1, 2))(i => getUser(i))
+
+    val action = action1
+    val optimised = optimise(action1)
+
+    val result = runDsl(action)
+    val optimisedResult = runDsl(optimised)
+
+    result ==== optimisedResult
+  }
+
   /**
    * Helpers
    */
@@ -257,4 +311,33 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       runOption(x).run == runOption(y).run
   }
 
+  def optimise[R, T[_], A](eff: Eff[R, A])(implicit m: Member[T, R], semigroup: Semigroup[T[_]]): Eff[R, A] =
+    eff match {
+      case ImpureAp(u, c) =>
+        m.project(u) match {
+          case Xor.Left(u1)  => ImpureAp(u, Apps(c.functions.map(f => optimise(f))))
+          case Xor.Right(tx) =>
+            c.functions.toList match {
+              case Nil => eff
+              case tf :: rest =>
+                tf match {
+                  case Pure(f) =>
+                    ImpureAp(u, Apps(c.functions.map(f => optimise(f))))
+
+                  case Impure(fa, ca) =>
+                    ImpureAp(u, Apps(c.functions.map(f => optimise(f))))
+
+                  case ImpureAp(fa, ca) =>
+                    m.project(fa) match {
+                      case Xor.Left(fu) => eff
+                      case Xor.Right(fx) =>
+                        ImpureAp(m.inject(semigroup.combine(tx, fx)), Apps(rest.drop(1).toVector))
+                    }
+                }
+
+            }
+
+        }
+      case _ => eff
+    }
 }

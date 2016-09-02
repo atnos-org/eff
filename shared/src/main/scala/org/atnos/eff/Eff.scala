@@ -78,6 +78,18 @@ trait EffImplicits {
     def pure[A](a: A): Eff[R, A] =
       Pure(a)
 
+    override def map[A, B](fa: Eff[R, A])(f: A => B): Eff[R, B] =
+      fa match {
+        case Pure(a) =>
+          pure(f(a))
+
+        case Impure(union, continuation) =>
+          fa.flatMap(a => pure(f(a)))
+
+        case ImpureAp(u, c) =>
+          ImpureAp(u, c.append(pure(f)))
+      }
+
     def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
       fa match {
         case Pure(a) =>
@@ -101,15 +113,22 @@ trait EffImplicits {
     def ap[A, B](ff: Eff[R, A => B])(fa: Eff[R, A]): Eff[R, B] =
       fa match {
         case Pure(a) =>
-          ff.map(f => f(a))
+          ff match {
+            case Pure(f)        => Pure(f(a))
+            case Impure(u, c)   => Impure(u, c).map(_(a))
+            case ImpureAp(u, c) => ImpureAp(u, c append pure(f => f(a)))
+          }
 
         case Impure(union, continuation) =>
           fa.flatMap(a => ff.map(f => f(a)))
 
         case ImpureAp(union, continuation) =>
           ImpureAp(union, continuation.append(ff))
-
       }
+
+    override def product[A, B](fa: Eff[R, A], fb: Eff[R, B]): Eff[R, (A, B)] =
+      ap(map(fb)(b => (a: A) => (a, b)))(fa)
+
   }
 
 }
@@ -119,7 +138,7 @@ object EffImplicits extends EffImplicits
 trait EffCreation {
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
   def send[T[_], R, V](tv: T[V])(implicit member: T |= R): Eff[R, V] =
-    impure(member.inject(tv), Arrs.unit)
+    ImpureAp(member.inject(tv), Apps.unit)
 
   /** use the internal effect as one of the stack effects */
   def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: M |= R): Eff[R, A] =
@@ -308,7 +327,7 @@ case class Apps[R, A, B](functions: Vector[Eff[R, Any => Any]]) {
           ff.flatMap(f => v.map(f)).asInstanceOf[Eff[R, B]]
 
         case ff +: rest =>
-          go(rest, ff.flatMap(f => v.map(f)))
+          go(rest, EffApplicative.ap(ff)(v))
       }
     }
 
