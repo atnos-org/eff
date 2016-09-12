@@ -303,4 +303,11 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   def actionA6[S] = action[SAppend[S]].runState(1).runReader("foo").runOption.runXor
   def actionA7    = action[SAppend[NoFx]].runState(1).runReader("foo").runOption.runXor
 
+
+  import org.atnos.eff.option._
+
+  def withOptionEffect[S: _Option]: Eff[S, Unit] = ???
+  def withOptionEffect2[S: _Option]: Eff[S, Unit] =
+    withOptionEffect[Fx.prepend[Reader[String, ?], S]].runReader("hello")
+
 }

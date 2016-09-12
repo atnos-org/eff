@@ -361,9 +361,14 @@ trait MemberLower16 extends MemberLower17 {
         case Union3R(e) => Xor.Left(Union2R[L, R, V](e))
       }
   }
+
+  // Specifialized version of MemberAppendR with an existential type for the output stack
+  implicit def MemberAppendRNoAux[T[_], L, R](implicit append: Member[T, R]): Member.Aux[T, FxAppend[L, R], FxAppend[L, append.Out]] =
+    Member.MemberAppendR[T, L, R, append.Out](append)
 }
 
 trait MemberLower17 extends MemberLower18 {
+
   implicit def MemberAppendR[T[_], L, R, U](implicit append: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[L, R], FxAppend[L, U]] = new Member[T, FxAppend[L, R]] {
     type Out = FxAppend[L, U]
 
