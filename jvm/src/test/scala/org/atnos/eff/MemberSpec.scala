@@ -1,25 +1,26 @@
 package org.atnos.eff
 
-import cats.Eval
+import cats.{Eval, ~>}
 import cats.data._
 import cats.implicits._
-import org.specs2.{ScalaCheck, Specification}
-import org.atnos.eff.all._
-import interpret._
-import syntax.all._
+import org.specs2._
 import org.scalacheck._
-import org.specs2.concurrent.ExecutionEnv
+import option._
+import reader._
+import state._
+import syntax.all._
 
-import scala.concurrent.Future
-
-class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
+class MemberSpec extends Specification with ScalaCheck { def is = s2"""
 
  inject / project must work at the value level
    for reader $reader
    for writer $writer
    for eval   $eval
 
- project fold (accept, inject) === identity $law
+ extract . inject === Option.apply $lawMemberIn
+ project fold (accept, inject) === identity $lawMember
+
+ A MemberIn instance can be transformed with natural transformations $nat
 
 """
 
@@ -31,6 +32,40 @@ class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaChec
 
   def eval =
     evalMember.project(evalMember.inject(eval1)).toEither must beRight(eval1)
+
+  def lawMemberIn =
+    writerMember.extract(writerMember.inject(write1)) ==== Option(write1)
+
+  def lawMember = Prop.forAll(genUnion, genMember) { (union: Union[S, String], m: SMember) =>
+    m.member.project(union).fold(m.member.accept, m.member.inject) ==== union
+  }
+
+  def nat = {
+    type readStr[E] = Reader[String, ?] |= E
+    type stateStr[E] = State[String, ?] |= E
+
+    def methodWithReadEffect[E: readStr: _option]: Eff[E, Int] =
+      for {
+        s <- ask[E, String]
+        _ <- option.some(s)
+      } yield s.size
+
+    implicit def readerStateNat[S1] = new (Reader[S1, ?] ~> State[S1, ?]) {
+      def apply[X](r: Reader[S1, X]): State[S1, X] =
+        State((s: S1) => (s, r.run(s)))
+    }
+
+    implicit def stateReaderNat[S1] = new (State[S1, ?] ~> Reader[S1, ?]) {
+      def apply[X](state: State[S1, X]): Reader[S1, X] =
+        Reader((s: S1) => state.runA(s).value)
+    }
+
+    def methodWithStateEffect[E](implicit state: State[String, ?] |= E, option: Option |= E): Eff[E, Int] =
+      methodWithReadEffect[E](state.transform[Reader[String, ?]], option)
+
+    methodWithStateEffect[Fx2[State[String, ?], Option]].runOption.evalState("hello").run ==== Option(5)
+
+  }
 
   /**
    * HELPERS
@@ -57,10 +92,6 @@ class MemberSpec(implicit ee: ExecutionEnv) extends Specification with ScalaChec
     type T[_]
     val member: Member[T, S]
 
-  }
-
-  def law = Prop.forAll(genUnion, genMember) { (union: Union[S, String], m: SMember) =>
-    m.member.project(union).fold(m.member.accept, m.member.inject) ==== union
   }
 
   def genUnion: Gen[Union[S, String]] =

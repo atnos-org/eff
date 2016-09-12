@@ -308,9 +308,9 @@ trait Interpret {
 
   /**
    * transform an effect into another one
-   * using a natural transformation
+   * using a natural transformation, leaving the rest of the stack untouched
    */
-  def transform[SR, BR, U, TS[_], TB[_], A](r: Eff[SR, A], nat:  ~>[TS, TB])
+  def transform[SR, BR, U, TS[_], TB[_], A](r: Eff[SR, A], nat: TS ~> TB)
                                                (implicit sr: Member.Aux[TS, SR, U], br: Member.Aux[TB, BR, U]): Eff[BR, A] = {
 
     def go(eff: Eff[SR, A]): Eff[BR, A] = {
