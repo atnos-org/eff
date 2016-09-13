@@ -20,7 +20,8 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
  extract . inject === Option.apply $lawMemberIn
  project fold (accept, inject) === identity $lawMember
 
- A MemberIn instance can be transformed with natural transformations $nat
+ A MemberIn instance can be transformed with natural transformations    $natIn
+ A MemberInOut instance can be transformed with natural transformations $natInOut
 
 """
 
@@ -40,32 +41,11 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
     m.member.project(union).fold(m.member.accept, m.member.inject) ==== union
   }
 
-  def nat = {
-    type readStr[E] = Reader[String, ?] |= E
-    type stateStr[E] = State[String, ?] |= E
+  def natIn =
+    stateIn[Fx2[State[String, ?], Option]].runOption.evalState("hello").run ==== Option(5)
 
-    def methodWithReadEffect[E: readStr: _option]: Eff[E, Int] =
-      for {
-        s <- ask[E, String]
-        _ <- option.some(s)
-      } yield s.size
-
-    implicit def readerStateNat[S1] = new (Reader[S1, ?] ~> State[S1, ?]) {
-      def apply[X](r: Reader[S1, X]): State[S1, X] =
-        State((s: S1) => (s, r.run(s)))
-    }
-
-    implicit def stateReaderNat[S1] = new (State[S1, ?] ~> Reader[S1, ?]) {
-      def apply[X](state: State[S1, X]): Reader[S1, X] =
-        Reader((s: S1) => state.runA(s).value)
-    }
-
-    def methodWithStateEffect[E](implicit state: State[String, ?] |= E, option: Option |= E): Eff[E, Int] =
-      methodWithReadEffect[E](state.transform[Reader[String, ?]], option)
-
-    methodWithStateEffect[Fx2[State[String, ?], Option]].runOption.evalState("hello").run ==== Option(5)
-
-  }
+  def natInOut =
+    stateInOut[Fx2[State[String, ?], Option]].runOption.evalState("hello").run ==== Option(5)
 
   /**
    * HELPERS
@@ -106,4 +86,37 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
       new SMember { type T[A] = Eval[A];         val member = evalMember } ,
       new SMember { type T[A] = ReaderInt[A];    val member = readerMember })
 
+  type readStr[E] = Reader[String, ?] |= E
+  type stateStr[E] = State[String, ?] |= E
+
+  type ReadStr[E] = Reader[String, ?] /= E
+  type RtateStr[E] = State[String, ?] /= E
+
+  implicit def readerStateNat[S1] = new (Reader[S1, ?] ~> State[S1, ?]) {
+    def apply[X](r: Reader[S1, X]): State[S1, X] =
+      State((s: S1) => (s, r.run(s)))
+  }
+
+  implicit def stateReaderNat[S1] = new (State[S1, ?] ~> Reader[S1, ?]) {
+    def apply[X](state: State[S1, X]): Reader[S1, X] =
+      Reader((s: S1) => state.runA(s).value)
+  }
+
+  def readIn[E: readStr: _option]: Eff[E, Int] =
+    for {
+      s <- ask[E, String]
+      _ <- option.some(s)
+    } yield s.size
+
+  def stateIn[E](implicit state: State[String, ?] |= E, option: Option |= E): Eff[E, Int] =
+    readIn[E](state.transform[Reader[String, ?]], option)
+
+  def readInOut[E: ReadStr: _option]: Eff[E, Int] =
+    for {
+      s <- ask[E, String]
+      _ <- option.some(s)
+    } yield s.size
+
+  def stateInOut[E](implicit state: State[String, ?] /= E, option: Option |= E): Eff[E, Int] =
+    readIn[E](state.transform[Reader[String, ?]], option)
 }

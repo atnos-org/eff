@@ -8,14 +8,10 @@ import scala.annotation.implicitNotFound
 @implicitNotFound("No instance found for MemberIn[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
 trait MemberIn[T[_], R] { outer =>
   def inject[V](tv: T[V]): Union[R, V]
-  def extract[V](union: Union[R, V]): Option[T[V]]
 
-  def transform[O[_]](implicit to: T ~> O, from: O ~> T): MemberIn[O, R] = new MemberIn[O, R] {
+  def transform[O[_]](implicit from: O ~> T): MemberIn[O, R] = new MemberIn[O, R] {
     def inject[V](ov: O[V]): Union[R, V] =
       outer.inject(from(ov))
-
-    def extract[V](union: Union[R, V]): Option[O[V]] =
-      outer.extract(union).map(to.apply)
   }
 }
 
@@ -29,6 +25,85 @@ trait MemberInLower1 extends MemberInLower2 {
   implicit def MemberIn1[T[_]]: MemberIn[T, Fx1[T]] = new MemberIn[T, Fx1[T]] {
     def inject[V](effect: T[V]): Union[Fx1[T], V] =
       Union1(effect)
+  }
+}
+
+trait MemberInLower2 extends MemberInLower3 {
+  implicit def MemberIn2L[L[_], R[_]]: MemberIn[L, Fx2[L, R]] = new MemberIn[L, Fx2[L, R]] {
+    def inject[V](effect: L[V]): Union[Fx2[L, R], V] =
+      Union2L(effect)
+  }
+
+  implicit def MemberIn3L[L[_], M[_], R[_]]: MemberIn[L, Fx3[L, M, R]] = new MemberIn[L, Fx3[L, M, R]] {
+    def inject[V](effect: L[V]): Union[Fx3[L, M, R], V] =
+      Union3L(effect)
+  }
+
+  implicit def MemberInAppendL[T[_], L, R](implicit append: MemberIn[T, L]): MemberIn[T, FxAppend[L, R]] = new MemberIn[T, FxAppend[L, R]] {
+    def inject[V](effect: T[V]): Union[FxAppend[L, R], V] =
+      UnionAppendL(append.inject(effect))
+  }
+}
+
+trait MemberInLower3 extends MemberInLower4 {
+  implicit def MemberIn2R[L[_], R[_]]: MemberIn[R, Fx2[L, R]] = new MemberIn[R, Fx2[L, R]] {
+    def inject[V](effect: R[V]): Union[Fx2[L, R], V] =
+      Union2R(effect)
+  }
+
+  implicit def MemberIn3M[L[_], M[_], R[_]]: MemberIn[M, Fx3[L, M, R]] = new MemberIn[M, Fx3[L, M, R]] {
+    def inject[V](effect: M[V]): Union[Fx3[L, M, R], V] =
+      Union3M(effect)
+  }
+
+  implicit def MemberInAppendR[T[_], L, R](implicit append: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] = new MemberIn[T, FxAppend[L, R]] {
+    def inject[V](effect: T[V]): Union[FxAppend[L, R], V] =
+      UnionAppendR(append.inject(effect))
+  }
+}
+
+trait MemberInLower4 extends MemberInLower5 {
+  implicit def MemberIn3R[L[_], M[_], R[_]]: MemberIn[R, Fx3[L, M, R]] = new MemberIn[R, Fx3[L, M, R]] {
+    def inject[V](effect: R[V]): Union[Fx3[L, M, R], V] =
+      Union3R(effect)
+  }
+}
+
+trait MemberInLower5 {
+  implicit def MemberInAppendAnyL[T[_], R]: MemberIn[T, FxAppend[Fx1[T], R]] = new MemberIn[T, FxAppend[Fx1[T], R]] {
+    def inject[V](effect: T[V]): Union[FxAppend[Fx1[T], R], V] =
+      UnionAppendL(Union1(effect))
+  }
+
+  implicit def MemberInAppendAnyR[T[_], L, R](implicit m: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] = new MemberIn[T, FxAppend[L, R]] {
+    def inject[V](effect: T[V]): Union[FxAppend[L, R], V] =
+      UnionAppendR(m.inject(effect))
+  }
+}
+
+@implicitNotFound("No instance found for MemberInOut[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
+trait MemberInOut[T[_], R] extends MemberIn[T, R] { outer =>
+  def extract[V](union: Union[R, V]): Option[T[V]]
+
+  def transform[O[_]](implicit to: T ~> O, from: O ~> T): MemberIn[O, R] = new MemberIn[O, R] {
+    def inject[V](ov: O[V]): Union[R, V] =
+      outer.inject(from(ov))
+
+    def extract[V](union: Union[R, V]): Option[O[V]] =
+      outer.extract(union).map(to.apply)
+  }
+}
+
+object MemberInOut extends MemberInOutLower1 {
+
+  @implicitNotFound("No instance found for MemberInOut[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
+  type /=[T[_], R] = MemberIn[T, R]
+}
+
+trait MemberInOutLower1 extends MemberInOutLower2 {
+  implicit def MemberInOutOut1[T[_]]: MemberInOut[T, Fx1[T]] = new MemberInOut[T, Fx1[T]] {
+    def inject[V](effect: T[V]): Union[Fx1[T], V] =
+      Union1(effect)
 
     def extract[V](union: Union[Fx1[T], V]): Option[T[V]] =
       union match {
@@ -38,8 +113,8 @@ trait MemberInLower1 extends MemberInLower2 {
   }
 }
 
-trait MemberInLower2 extends MemberInLower3 {
-  implicit def MemberIn2L[L[_], R[_]]: MemberIn[L, Fx2[L, R]] = new MemberIn[L, Fx2[L, R]] {
+trait MemberInOutLower2 extends MemberInOutLower3 {
+  implicit def MemberInOut2L[L[_], R[_]]: MemberInOut[L, Fx2[L, R]] = new MemberInOut[L, Fx2[L, R]] {
     def inject[V](effect: L[V]): Union[Fx2[L, R], V] =
       Union2L(effect)
 
@@ -50,7 +125,7 @@ trait MemberInLower2 extends MemberInLower3 {
       }
   }
 
-  implicit def MemberIn3L[L[_], M[_], R[_]]: MemberIn[L, Fx3[L, M, R]] = new MemberIn[L, Fx3[L, M, R]] {
+  implicit def MemberInOut3L[L[_], M[_], R[_]]: MemberInOut[L, Fx3[L, M, R]] = new MemberInOut[L, Fx3[L, M, R]] {
     def inject[V](effect: L[V]): Union[Fx3[L, M, R], V] =
       Union3L(effect)
 
@@ -61,7 +136,7 @@ trait MemberInLower2 extends MemberInLower3 {
       }
   }
 
-  implicit def MemberInAppendL[T[_], L, R](implicit append: MemberIn[T, L]): MemberIn[T, FxAppend[L, R]] = new MemberIn[T, FxAppend[L, R]] {
+  implicit def MemberInOutAppendL[T[_], L, R](implicit append: MemberInOut[T, L]): MemberInOut[T, FxAppend[L, R]] = new MemberInOut[T, FxAppend[L, R]] {
     def inject[V](effect: T[V]): Union[FxAppend[L, R], V] =
       UnionAppendL(append.inject(effect))
 
@@ -73,8 +148,8 @@ trait MemberInLower2 extends MemberInLower3 {
   }
 }
 
-trait MemberInLower3 extends MemberInLower4 {
-  implicit def MemberIn2R[L[_], R[_]]: MemberIn[R, Fx2[L, R]] = new MemberIn[R, Fx2[L, R]] {
+trait MemberInOutLower3 extends MemberInOutLower4 {
+  implicit def MemberInOut2R[L[_], R[_]]: MemberInOut[R, Fx2[L, R]] = new MemberInOut[R, Fx2[L, R]] {
     def inject[V](effect: R[V]): Union[Fx2[L, R], V] =
       Union2R(effect)
 
@@ -85,7 +160,7 @@ trait MemberInLower3 extends MemberInLower4 {
       }
   }
 
-  implicit def MemberIn3M[L[_], M[_], R[_]]: MemberIn[M, Fx3[L, M, R]] = new MemberIn[M, Fx3[L, M, R]] {
+  implicit def MemberInOut3M[L[_], M[_], R[_]]: MemberInOut[M, Fx3[L, M, R]] = new MemberInOut[M, Fx3[L, M, R]] {
     def inject[V](effect: M[V]): Union[Fx3[L, M, R], V] =
       Union3M(effect)
 
@@ -96,7 +171,7 @@ trait MemberInLower3 extends MemberInLower4 {
       }
   }
 
-  implicit def MemberInAppendR[T[_], L, R](implicit append: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] = new MemberIn[T, FxAppend[L, R]] {
+  implicit def MemberInOutAppendR[T[_], L, R](implicit append: MemberInOut[T, R]): MemberInOut[T, FxAppend[L, R]] = new MemberInOut[T, FxAppend[L, R]] {
     def inject[V](effect: T[V]): Union[FxAppend[L, R], V] =
       UnionAppendR(append.inject(effect))
 
@@ -108,8 +183,8 @@ trait MemberInLower3 extends MemberInLower4 {
   }
 }
 
-trait MemberInLower4 extends MemberInLower5 {
-  implicit def MemberIn3R[L[_], M[_], R[_]]: MemberIn[R, Fx3[L, M, R]] = new MemberIn[R, Fx3[L, M, R]] {
+trait MemberInOutLower4 extends MemberInOutLower5 {
+  implicit def MemberInOut3R[L[_], M[_], R[_]]: MemberInOut[R, Fx3[L, M, R]] = new MemberInOut[R, Fx3[L, M, R]] {
     def inject[V](effect: R[V]): Union[Fx3[L, M, R], V] =
       Union3R(effect)
 
@@ -121,8 +196,8 @@ trait MemberInLower4 extends MemberInLower5 {
   }
 }
 
-trait MemberInLower5 {
-  implicit def MemberInAppendAnyL[T[_], R]: MemberIn[T, FxAppend[Fx1[T], R]] = new MemberIn[T, FxAppend[Fx1[T], R]] {
+trait MemberInOutLower5 {
+  implicit def MemberInOutAppendAnyL[T[_], R]: MemberInOut[T, FxAppend[Fx1[T], R]] = new MemberInOut[T, FxAppend[Fx1[T], R]] {
     def inject[V](effect: T[V]): Union[FxAppend[Fx1[T], R], V] =
       UnionAppendL(Union1(effect))
 
@@ -133,7 +208,7 @@ trait MemberInLower5 {
       }
   }
 
-  implicit def MemberInAppendAnyR[T[_], L, R](implicit m: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] = new MemberIn[T, FxAppend[L, R]] {
+  implicit def MemberInOutAppendAnyR[T[_], L, R](implicit m: MemberInOut[T, R]): MemberInOut[T, FxAppend[L, R]] = new MemberInOut[T, FxAppend[L, R]] {
     def inject[V](effect: T[V]): Union[FxAppend[L, R], V] =
       UnionAppendR(m.inject(effect))
 
@@ -144,6 +219,7 @@ trait MemberInLower5 {
       }
   }
 }
+
 
 @implicitNotFound("No instance found for Member[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}\n or it was not possible to determine the stack that would result from removing ${T} from ${R}")
 trait Member[T[_], R] extends MemberIn[T, R] {
