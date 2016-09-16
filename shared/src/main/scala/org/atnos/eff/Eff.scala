@@ -244,12 +244,16 @@ trait EffImplicits {
           }
 
         case Impure(u, c) =>
-          fa.flatMap(a => ff.map(f => f(a)))
-
+          ff match {
+            case Pure(f)         => Impure(u, Arrs.singleton((x: u.X) => c(x).map(f)))
+            case Impure(u1, c1)  => ImpureAp(Unions(u, List(u1)), ls => (ls.head, ls(1))).flatMap { case (x, fx) => ap(c1(fx))(c(x)) }
+            case ImpureAp(u1, m) => ImpureAp(Unions(u, u1.unions), ls => (ls.head, ls.drop(1))).flatMap { case (x, fx) => ap(pure(m(fx)))(c(x)) }
+          }
+          
         case ap @ ImpureAp(unions, map) =>
           ff match {
             case Pure(f)        => ImpureAp(unions, map andThen f)
-            case Impure(u, c)   => ap.toMonadic.ap(ff)
+            case Impure(u, c)   => ff.flatMap(f => ap.map(a => f(a)))
             case ImpureAp(u, m) => ImpureAp(u append unions, xs => m(xs.take(u.size))(map(xs.drop(u.size))))
           }
 

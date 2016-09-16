@@ -48,7 +48,7 @@ def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
     i1 <- delay(i)
     i2 <- async(i1)
-    _ <- tell(i2.toString)
+    _  <- tell(i2.toString)
   } yield i2
 // 8<--
 
