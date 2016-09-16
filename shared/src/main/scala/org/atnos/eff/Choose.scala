@@ -72,7 +72,7 @@ trait ChooseInterpretation {
             }
         }
 
-      case ap @ ImpureAp(_,_) =>
+      case ap @ ImpureAp(_, _) =>
         runChoose(ap.toMonadic)
     }
   }

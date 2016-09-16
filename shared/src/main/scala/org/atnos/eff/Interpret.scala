@@ -227,7 +227,7 @@ trait Interpret {
   /**
    * INTERPRET IN THE SAME STACK
    */
-  def intercept[R, M[_], A, B](pure: A => Eff[R, B], recurse: Recurse[M, R, B])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] = {
+  def intercept[R, M[_], A, B](pure: A => Eff[R, B], recurse: Recurse[M, R, B])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] = {
     val loop = new Loop[M, R, A, Eff[R, B]] {
       type S = Unit
       val init = ()
@@ -250,14 +250,14 @@ trait Interpret {
   /**
    * simpler version of intercept where the pure value is just mapped to another type
    */
-  def intercept1[R, M[_], A, B](pure: A => B)(recurse: Recurse[M, R, B])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
+  def intercept1[R, M[_], A, B](pure: A => B)(recurse: Recurse[M, R, B])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
     intercept[R, M, A, B]((a: A) => EffMonad[R].pure(pure(a)), recurse)(effects)
 
   /**
    * intercept an effect and interpret it in the same stack.
    * This method is stack-safe
    */
-  def interceptLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] = {
+  def interceptLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] = {
     def go(eff: Eff[R, A], s: loop.S): Eff[R, B] = {
       eff match {
         case Pure(a) =>
@@ -267,14 +267,14 @@ trait Interpret {
           }
 
         case Impure(union, continuation) =>
-          m.project(union) match {
-            case Right(v) =>
+          m.extract(union) match {
+            case Some(v) =>
               loop.onEffect(v, continuation, s) match {
                 case Left((x, s1)) => go(x, s1)
                 case Right(b)      => b
               }
 
-            case Left(u) =>
+            case None =>
               Impure[R, union.X, B](union, Arrs.singleton(x => go(continuation(x), s)))
           }
 
@@ -317,10 +317,10 @@ trait Interpret {
     go(effects, loop.init)
   }
 
-  def interceptLoop1[R, M[_], A, B](pure: A => B)(loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
+  def interceptLoop1[R, M[_], A, B](pure: A => B)(loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
     interceptLoop[R, M, A, B]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
 
-  def interceptStatelessLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: StatelessLoop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
+  def interceptStatelessLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: StatelessLoop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
     interceptLoop[R, M, A, B](pure, new Loop[M, R, A, Eff[R, B]] {
       type S = Unit
       val init: S = ()
@@ -329,7 +329,7 @@ trait Interpret {
       def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, ()))
     })(effects)(m)
 
-  def interceptStatelessLoop1[R, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: Member[M, R]): Eff[R, B] =
+  def interceptStatelessLoop1[R, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
     interceptStatelessLoop[R, M, A, B]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
 
   /**
