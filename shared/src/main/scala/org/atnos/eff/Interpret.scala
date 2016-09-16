@@ -1,45 +1,44 @@
 package org.atnos.eff
 
+import cats._
 import cats.data._
 import cats.implicits._
 import Xor._
 import Eff._
-import cats.{Applicative, ~>}
 
 /**
- * Support methods to create an interpreter (or "effect handlers") for a given Eff[M |: R, A].
- * The aim being to "consume" just that effect and produce a value of type B with possibly other effects: Eff[R, B]
+ * Support methods to create interpreters (or "effect handlers") for a given effect M and a value Eff[R, A]
+ * when M is a member of R.
  *
  * Those methods guarantee a stack-safe behaviour when running on a large list of effects
- * (in a list.traverseU(f) for example).
+ * (in list.traverse(f) for example).
  *
- * There are 3 different types of supported interpreters:
+ * There are different types of supported interpreters:
  *
- *  1. interpret + Recurse
+ *  1. "interpret" + Recurse
  *
  *  This interpreter is used to handle effects which either return a value X from M[X] or stops with Eff[R, B]
  *  See an example of such an interpreter in Eval where we just evaluate a computation X for each Eval[X].
  *
- *  2. interpretState + StateRecurse
+ *  2. "interpretState" + StateRecurse
  *
  *  This interpreter is used to handle effects which either return a value X from M[X] or stops with Eff[R, B]
  *
- *  3. interpretLoop + Loop
+ *  3. "interpretLoop" + Loop
  *
  *  The most generic kind of interpreter where we can even recurse in the case of Pure(a) (See ListEffect for such a use)
+ *
+ *  4. "intercept / interceptState / interceptLoop" methods are similar but they transform an effect to other effects in
+ *  the same stack without removing it from the stack
+ *
+ *  5. "transform" to swap an effect T of a stack to another effect, using a Natural Transformation
+ *
+ *  6. "translate" to interpret one effect of a stack into other effects of the same stack using a Natural Transformation
+ *     this is a specialized version of interpret + Recurse
+ *
+ *  7. "interpretUnsafe + SideEffect" when you have a side effecting function M[X] => X
  */
 trait Interpret {
-
-  /**
-   * Helper trait for computations
-   * which might produce several M[X] in a stack of effects.
-   *
-   * Either we can produce an X to pass to a continuation or we're done
-   */
-  trait Recurse[M[_], R, A] {
-    def apply[X](m: M[X]): X Xor Eff[R, A]
-    def applicative[X](ms: List[M[X]]): List[X] Xor M[List[X]]
-  }
 
   /**
    * interpret the effect M in the R stack
@@ -118,26 +117,6 @@ trait Interpret {
     interpretState((a: A) => EffMonad[U].pure(pure(a)), recurse)(effects)
 
   /**
-   * Generalisation of Recurse and StateRecurse
-   */
-  trait Loop[M[_], R, A, B] {
-    type S
-    val init: S
-    def onPure(a: A, s: S): (Eff[R, A], S) Xor B
-    def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor B
-    def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor B
-  }
-
-  /**
-   * Generalisation of Recurse
-   */
-  trait StatelessLoop[M[_], R, A, B] {
-    def onPure(a: A): Eff[R, A] Xor B
-    def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Xor B
-    def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor B
-  }
-
-  /**
    * generalization of interpret and interpretState
    *
    * This method contains a loop which is stack-safe
@@ -164,40 +143,15 @@ trait Interpret {
           }
 
         case ap @ ImpureAp(unions, map) =>
-          val (effectsAndIndices, othersAndIndices) =
-            unions.unions.zipWithIndex.foldLeft((Vector[(M[Any], Int)](), Vector[(Union[U, Any], Int)]())) {
-              case ((es, os), (u, i)) =>
-                m.project(u) match {
-                  case Xor.Right(mx)   => (es :+ ((mx, i)), os)
-                  case Xor.Left(other) => (es, os :+ ((other, i)))
-                }
-            }
+          val collected = unions.project
 
-
-          val (effects, indices) = effectsAndIndices.toList.unzip
-          val (otherEffects, otherIndices) = othersAndIndices.toList.unzip
-
-
-          if (effectsAndIndices.isEmpty) {
-            otherEffects match {
-              case Nil       => pure(map(Nil))
-              case o :: rest => ImpureAp[U, Any, A](Unions(o, rest), map).flatMap(pure)
-            }
-          }
-          else {
-            def reorder(ls: List[Any], xs: List[Any]): List[Any] =
-              (ls.zip(indices) ++ xs.zip(otherIndices)).sortBy(_._2).map(_._1)
-
-            val continuation = otherEffects match {
-              case Nil       => Arrs.singleton[R, List[Any], A](ls => Eff.pure[R, A](map(ls)))
-              case o :: rest => Arrs.singleton[R, List[Any], A](ls => ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), xs => map(reorder(ls, xs))))
-            }
-
-            loop.onApplicativeEffect(effects, continuation, s) match {
+          if (collected.effects.isEmpty)
+            collected.othersEff(map).flatMap(pure)
+          else
+            loop.onApplicativeEffect(collected.effects, collected.continuation(map, m), s) match {
               case Left((x, s1)) => go(x, s1)
               case Right(b)      => b
             }
-          }
       }
     }
 
@@ -279,38 +233,15 @@ trait Interpret {
           }
 
         case ImpureAp(unions, map) =>
-          val (effectsAndIndices, othersAndIndices) =
-            unions.unions.zipWithIndex.foldLeft((Vector[(M[Any], Int)](), Vector[(Union[R, Any], Int)]())) {
-              case ((es, os), (u, i)) =>
-                m.extract(u) match {
-                  case Some(mx) => (es :+ ((mx, i)), os)
-                  case None     => (es, os :+ ((u, i)))
-                }
-            }
+          val collect = unions.extract
 
-          val (effects, indices) = effectsAndIndices.toList.unzip
-          val (otherEffects, otherIndices) = othersAndIndices.toList.unzip
-
-          if (effectsAndIndices.isEmpty) {
-            otherEffects match {
-              case Nil       => pure(map(Nil))
-              case o :: rest => ImpureAp[R, Any, A](Unions(o, rest), map).flatMap(pure)
-            }
-          }
-          else {
-            def reorder(ls: List[Any], xs: List[Any]): List[Any] =
-              (ls.zip(indices) ++ xs.zip(otherIndices)).sortBy(_._2).map(_._1)
-
-            val continuation = otherEffects match {
-              case Nil       => Arrs.singleton[R, List[Any], A](ls => Eff.pure[R, A](map(ls)))
-              case o :: rest => Arrs.singleton[R, List[Any], A](ls => ImpureAp[R, Any, A](Unions(o, rest), xs => map(reorder(ls, xs))))
-            }
-
-            loop.onApplicativeEffect(effects, continuation, s) match {
+          if (collect.effects.isEmpty)
+            collect.othersEff(map).flatMap(pure)
+          else
+            loop.onApplicativeEffect(collect.effects, collect.continuation(map), s) match {
               case Left((x, s1)) => go(x, s1)
               case Right(b)      => b
             }
-          }
       }
     }
 
@@ -361,13 +292,6 @@ trait Interpret {
   }
 
   /**
-   * trait for translating one effect into other ones in the same stack
-   */
-  trait Translate[T[_], U] {
-    def apply[X](kv: T[X]): Eff[U, X]
-  }
-
-  /**
    * Translate one effect of the stack into some of the other effects in the stack
    */
   def translate[R, U, T[_], A](effects: Eff[R, A])
@@ -388,35 +312,13 @@ trait Interpret {
           }
 
         case ap @ ImpureAp(unions, map) =>
-          val (effectsAndIndices, othersAndIndices) =
-            unions.unions.zipWithIndex.foldLeft((Vector[(T[Any], Int)](), Vector[(Union[U, Any], Int)]())) {
-              case ((es, os), (u, i)) =>
-                m.project(u) match {
-                  case Xor.Right(mx) => (es :+ ((mx, i)), os)
-                  case Xor.Left(o)   => (es, os :+ ((o, i)))
-                }
-            }
+          val collected = unions.project
 
-          val (effects, indices) = effectsAndIndices.toList.unzip
-          val (otherEffects, otherIndices) = othersAndIndices.toList.unzip
-
-          if (effectsAndIndices.isEmpty) {
-            otherEffects match {
-              case Nil       => pure(map(Nil))
-              case o :: rest => ImpureAp[U, Any, A](Unions(o, rest), map)
-            }
-          }
+          if (collected.effects.isEmpty)
+            collected.othersEff(map)
           else {
-            def reorder(ls: List[Any], xs: List[Any]): List[Any] =
-              (ls.zip(indices) ++ xs.zip(otherIndices)).sortBy(_._2).map(_._1)
-
-            val continuation = otherEffects match {
-              case Nil       => Arrs.singleton[R, List[Any], A](ls => Eff.pure[R, A](map(ls)))
-              case o :: rest => Arrs.singleton[R, List[Any], A](ls => ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), xs => map(reorder(ls, xs))))
-            }
-
-            val translated: Eff[U, List[Any]] = EffApplicative.traverse(effects)(tr.apply)
-            translated.flatMap(ls => translate(continuation(ls))(tr))
+            val translated: Eff[U, List[Any]] = EffApplicative.traverse(collected.effects)(tr.apply)
+            translated.flatMap(ls => translate(collected.continuation(map, m).apply(ls))(tr))
           }
       }
     }
@@ -435,11 +337,6 @@ trait Interpret {
       def apply[X](tx: T[X]): Eff[U, X] = nat(tx)
     })
 
-  trait SideEffect[T[_]] {
-    def apply[X](tx: T[X]): X
-    def applicative[X](ms: List[T[X]]): List[X]
-  }
-
   /** interpret an effect by running side-effects */
   def interpretUnsafe[R, U, T[_], A](effects: Eff[R, A])
                                                           (sideEffect: SideEffect[T])
@@ -453,6 +350,50 @@ trait Interpret {
     }
     interpret1((a: A) => a)(recurse)(effects)(m)
   }
+
+  /**
+   * Helper trait for computations
+   * which might produce several M[X] in a stack of effects.
+   *
+   * Either we can produce an X to pass to a continuation or we're done
+   */
+  trait Recurse[M[_], R, A] {
+    def apply[X](m: M[X]): X Xor Eff[R, A]
+    def applicative[X](ms: List[M[X]]): List[X] Xor M[List[X]]
+  }
+
+  /**
+   * Generalisation of Recurse and StateRecurse
+   */
+  trait Loop[M[_], R, A, B] {
+    type S
+    val init: S
+    def onPure(a: A, s: S): (Eff[R, A], S) Xor B
+    def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor B
+    def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor B
+  }
+
+  /**
+   * Generalisation of Recurse
+   */
+  trait StatelessLoop[M[_], R, A, B] {
+    def onPure(a: A): Eff[R, A] Xor B
+    def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Xor B
+    def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor B
+  }
+
+  /**
+   * trait for translating one effect into other ones in the same stack
+   */
+  trait Translate[T[_], U] {
+    def apply[X](kv: T[X]): Eff[U, X]
+  }
+
+  trait SideEffect[T[_]] {
+    def apply[X](tx: T[X]): X
+    def applicative[X](ms: List[T[X]]): List[X]
+  }
+
 }
 
 object Interpret extends Interpret

@@ -54,15 +54,46 @@ sealed trait Eff[R, A] {
 case class Pure[R, A](value: A) extends Eff[R, A]
 
 /**
- * union is a disjoint union of effects returning a value of type X (not specified)
+ * Impure is an effect (encoded as one possibility among other effects, a Union)
+ * and a continuation providing the next Eff value.
+ *
+ * This essentially models a flatMap operation with the current effect
+ * and the monadic function to apply to a value once the effect is interpreted
  */
 case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]) extends Eff[R, A]
 
+/**
+ * ImpureAp is a list of independent effects and a pure function
+ * creating a value with all the resulting values once all effects have
+ * been interpreted.
+ *
+ * This essentially models a sequence + map operation but it is important to understand that the list of
+ * Union objects can represent different effects and be like: List[Option[Int], Future[String], Option[Int]].
+ *
+ * Interpreting such an Eff value for a given effect (say Option) consists in:
+ *
+ *  - grouping all the Option values,
+ *  - sequencing them
+ *  - pass them to a continuation which will apply the 'map' functions when the other effects (Future in the example
+ *  above) will have been interpreted
+ *
+ * VERY IMPORTANT:
+ *
+ *  - this object is highly unsafe
+ *  - the size of the list argument to 'map' must always be equal to the number of unions in the Unions object
+ *  - the types of the elements in the list argument to 'map' must be the exact types of each effect in unions.unions
+ *
+ */
 case class ImpureAp[R, X, A](unions: Unions[R, X], map: List[Any] => A) extends Eff[R, A] {
   def toMonadic: Eff[R, A] =
     Impure[R, unions.X, A](unions.first, unions.continueWith(map))
 }
 
+/**
+ * A non-empty list of Unions.
+ *
+ * It is only partially typed, we just keep track of the type of the first object
+ */
 case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
   type X = A
 
@@ -75,10 +106,14 @@ case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
   def append[B](others: Unions[R, B]): Unions[R, A] =
     Unions(first, rest ++ others.unions)
 
+  /**
+   * create a continuation which will apply the 'map' function
+   * if the first effect of this Unions object is interpreted
+   */
   def continueWith[B](map: List[Any] => B): Arrs[R, A, B] =
     Arrs.singleton { (x: X) =>
       rest match {
-        case Nil => pure[R, B](map(x :: Nil))
+        case Nil    => pure[R, B](map(x :: Nil))
         case h :: t => ImpureAp[R, h.X, B](Unions[R, h.X](h, t), (ys: List[Any]) => map(x :: ys))
       }
     }
@@ -86,7 +121,69 @@ case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
   def into[S](f: UnionInto[R, S]): Unions[S, A] =
     Unions[S, A](f(first), rest.map(f.apply))
 
+  /**
+   * collect all the M effects and create a continuation for other effects
+   * in a stack containing no more M effects
+   */
+  def project[M[_], U](implicit m: Member.Aux[M, R, U]): CollectedUnions[M, R, U] =
+    collect[M, U](m.project)
+
+  /**
+   * collect all the M effects and create a continuation for other effects
+   * in the same stack
+   */
+  def extract[M[_]](implicit m: M /= R): CollectedUnions[M, R, R] =
+    collect[M, R](u => m.extract(u) match {
+      case Some(mx) => Xor.Right(mx)
+      case None     => Xor.Left(u)
+    })
+
+  private def collect[M[_], U](collect: Union[R, Any] => Union[U, Any] Xor M[Any]): CollectedUnions[M, R, U] = {
+    val (effectsAndIndices, othersAndIndices) =
+      unions.zipWithIndex.foldLeft((Vector[(M[Any], Int)](), Vector[(Union[U, Any], Int)]())) {
+        case ((es, os), (u, i)) =>
+          collect(u) match {
+            case Xor.Right(mx) => (es :+ ((mx, i)), os)
+            case Xor.Left(o) => (es, os :+ ((o, i)))
+          }
+      }
+
+    val (effects, indices) = effectsAndIndices.toList.unzip
+    val (otherEffects, otherIndices) = othersAndIndices.toList.unzip
+
+    CollectedUnions[M, R, U](effects, otherEffects, indices, otherIndices)
+  }
+
 }
+
+/**
+ * Collection of effects of a given type from a Unions objects
+ *
+ */
+case class CollectedUnions[M[_], R, U](effects: List[M[Any]], otherEffects: List[Union[U, Any]], indices: List[Int], otherIndices: List[Int]) {
+  def continuation[A](map: List[Any] => A, m: Member.Aux[M, R, U]): Arrs[R, List[Any], A] =
+    otherEffects match {
+      case Nil       => Arrs.singleton[R, List[Any], A](ls => Eff.pure[R, A](map(ls)))
+      case o :: rest => Arrs.singleton[R, List[Any], A](ls => ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), xs => map(reorder(ls, xs))))
+    }
+
+  def continuation[A](map: List[Any] => A): Arrs[U, List[Any], A] =
+    otherEffects match {
+      case Nil       => Arrs.singleton[U, List[Any], A](ls => Eff.pure[U, A](map(ls)))
+      case o :: rest => Arrs.singleton[U, List[Any], A](ls => ImpureAp[U, Any, A](Unions(o, rest), xs => map(reorder(ls, xs))))
+    }
+
+  def othersEff[A](map: List[Any] => A): Eff[U, A] =
+    otherEffects match {
+      case Nil       => pure(map(Nil))
+      case o :: rest => ImpureAp[U, Any, A](Unions(o, rest), map)
+    }
+
+  private def reorder(ls: List[Any], xs: List[Any]): List[Any] =
+    (ls.zip(indices) ++ xs.zip(otherIndices)).sortBy(_._2).map(_._1)
+
+}
+
 
 trait UnionInto[R, S] {
   def apply[A](union: Union[R, A]): Union[S, A]
