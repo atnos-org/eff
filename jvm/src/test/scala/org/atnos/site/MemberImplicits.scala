@@ -13,7 +13,7 @@ tips to help you.
 Some effects use 2 type variables, like `Reader` or `Writer`. If you want to use those effects in an effect stack you need
 to add a compiler plugin to your build:
 ```
-addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.1.0")
+addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
 ```
 
 ### Use context bounds and type aliases
@@ -48,7 +48,15 @@ def putAndTell[R :_stateInt :_writerString](i: Int): Eff[R, Int] =
 
 }}
 
+### Know your `Member` typeclasses
 
+There are 3 different ways to declare that an effect is part of an effect stack with 3 typeclasses:
+
+ Typeclass             | Alias    | Meaning                                            | When to use it
+ -----------           | -----    | --------------------                               | --------------------------------
+ `MemberIn[M, R]`      | `M |= R` | "`M` is part of `R`"                               | to create `M` effects in `R`
+ `MemberInOut[M, R]`   | `M /= R` | "`M` is part of `R` and can be extracted from it"  | to intercept the effect `M` (see `Interpreter.scala`) and transform it while staying in the same stack. For example to `handleError` for an Error effect
+ `Member[M, R]`        | `M <= R` | "`M` is part of `R`, can be extracted from it, and the resulting stack is `m.Out`" | to interpret the effect in terms of special values or other effects and remove the effect from the stack
 """
 
 }
