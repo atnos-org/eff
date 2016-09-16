@@ -387,8 +387,37 @@ trait Interpret {
               Impure(u1, Arrs.singleton((x: union.X) => go(c(x))))
           }
 
-        case ap @ ImpureAp(_,_) =>
-          go(ap.toMonadic)
+        case ap @ ImpureAp(unions, map) =>
+          val (effectsAndIndices, othersAndIndices) =
+            unions.unions.zipWithIndex.foldLeft((Vector[(T[Any], Int)](), Vector[(Union[U, Any], Int)]())) {
+              case ((es, os), (u, i)) =>
+                m.project(u) match {
+                  case Xor.Right(mx) => (es :+ ((mx, i)), os)
+                  case Xor.Left(o)   => (es, os :+ ((o, i)))
+                }
+            }
+
+          val (effects, indices) = effectsAndIndices.toList.unzip
+          val (otherEffects, otherIndices) = othersAndIndices.toList.unzip
+
+          if (effectsAndIndices.isEmpty) {
+            otherEffects match {
+              case Nil       => pure(map(Nil))
+              case o :: rest => ImpureAp[U, Any, A](Unions(o, rest), map)
+            }
+          }
+          else {
+            def reorder(ls: List[Any], xs: List[Any]): List[Any] =
+              (ls.zip(indices) ++ xs.zip(otherIndices)).sortBy(_._2).map(_._1)
+
+            val continuation = otherEffects match {
+              case Nil       => Arrs.singleton[R, List[Any], A](ls => Eff.pure[R, A](map(ls)))
+              case o :: rest => Arrs.singleton[R, List[Any], A](ls => ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), xs => map(reorder(ls, xs))))
+            }
+
+            val translated: Eff[U, List[Any]] = EffApplicative.traverse(effects)(tr.apply)
+            translated.flatMap(ls => translate(continuation(ls))(tr))
+          }
       }
     }
 
