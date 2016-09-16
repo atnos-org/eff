@@ -45,7 +45,25 @@ trait SafeInterpretation extends SafeCreation { outer =>
    */
   def runSafe[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, (ThrowableXor[A], List[Throwable])] = {
     type Out = (ThrowableXor[A], Vector[Throwable])
-    val loop = new Loop[Safe, R, A, Eff[U, Out]] {
+    interpretLoop1[R, U, Safe, A, Out]((a: A) => (Xor.Right(a), Vector.empty): Out)(safeLoop[R, U, A])(r).map { case (a, vs) => (a, vs.toList) }
+  }
+
+  /** run a safe effect but drop the finalizer errors */
+  def execSafe[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, ThrowableXor[A]] =
+    runSafe(r).map(_._1)
+
+  /**
+   * Attempt to execute a safe action including finalizers
+   */
+  def attemptSafe[R, A](r: Eff[R, A])(implicit m: Safe <= R): Eff[R, (ThrowableXor[A], List[Throwable])] = {
+    type Out = (ThrowableXor[A], Vector[Throwable])
+    interceptLoop1[R, Safe, A, Out]((a: A) => (Xor.Right(a), Vector.empty): Out)(safeLoop[R, R, A])(r).map { case (a, vs) => (a, vs.toList) }
+  }
+
+  def safeLoop[R, U, A]: Loop[Safe, R, A, Eff[U, (Throwable Xor A, Vector[Throwable])]] = {
+    type Out = (ThrowableXor[A], Vector[Throwable])
+
+    new Loop[Safe, R, A, Eff[U, Out]] {
       type S = Vector[Throwable]
       val init: S = Vector.empty[Throwable]
 
@@ -71,78 +89,12 @@ trait SafeInterpretation extends SafeCreation { outer =>
 
           case FailedFinalizer(t) =>
             Xor.catchNonFatal(continuation(())) match {
-              case Xor.Left(e)  => Xor.Right(pure((Xor.Left(e), s :+ t)))
-              case Xor.Right(c) => Xor.Left((c, s :+ t))
-            }
-        }
-
-      def onApplicativeEffect[X](xs: List[Safe[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor Eff[U, Out] = {
-        val previousFailures = xs.collect { case FailedValue(t) => t; case FailedFinalizer(t) => t }
-        previousFailures match {
-          case t :: rest =>
-            Xor.Right(pure((Xor.Left(t), xs.collect { case FailedFinalizer(e) => e  }.toVector ++ s)))
-
-          case Nil =>
-            val executed = xs.collect { case EvaluateValue(a) => Xor.catchNonFatal(a.value).fold(t => Xor.Left[FailedValue[X]](FailedValue(t)), x => Xor.Right[X](x)) }
-
-            val (failures, successes) = executed.separate
-
-            failures match {
-              case Nil =>
-                Xor.Left((continuation(successes), s))
-
-              case FailedValue(throwable) :: rest =>
-                val issues = (previousFailures ++ rest).collect { case FailedFinalizer(t) => t }.toVector
-                Xor.Right(pure((Xor.Left(throwable), issues ++ s)))
-            }
-        }
-      }
-    }
-
-    interpretLoop1[R, U, Safe, A, Out]((a: A) => (Xor.Right(a), Vector.empty): Out)(loop)(r).map { case (a, vs) => (a, vs.toList) }
-  }
-
-  /** run a safe effect but drop the finalizer errors */
-  def execSafe[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, ThrowableXor[A]] =
-    runSafe(r).map(_._1)
-
-  /**
-   * Attempt to execute a safe action including finalizers
-   */
-  def attemptSafe[R, A](r: Eff[R, A])(implicit m: Safe <= R): Eff[R, (ThrowableXor[A], List[Throwable])] = {
-    type Out = (ThrowableXor[A], Vector[Throwable])
-    val loop = new Loop[Safe, R, A, Eff[R, Out]] {
-      type S = Vector[Throwable]
-      val init: S = Vector.empty[Throwable]
-
-      def onPure(a: A, s: S): (Eff[R, A], S) Xor Eff[R, Out] =
-        Xor.Right(pure((Xor.Right(a), s)))
-
-      def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[R, Out] =
-        sx match {
-          case EvaluateValue(v) =>
-            Xor.catchNonFatal(v.value) match {
-              case Xor.Left(e) =>
-                Xor.Right(pure((Xor.Left(e), s)))
-
-              case Xor.Right(x) =>
-                Xor.catchNonFatal(continuation(x)) match {
-                  case Xor.Left(e) => Xor.Right(pure((Xor.Left(e), s)))
-                  case Xor.Right(c) =>  Xor.Left((c, s))
-                }
-            }
-
-          case FailedValue(t) =>
-            Xor.Right(pure((Xor.Left(t), s)))
-
-          case FailedFinalizer(t) =>
-            Xor.catchNonFatal(continuation(())) match {
               case Xor.Left(e) => Xor.Right(pure((Xor.Left(e), s :+ t)))
               case Xor.Right(c) =>  Xor.Left((c, s :+ t))
             }
         }
 
-      def onApplicativeEffect[X](xs: List[Safe[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor Eff[R, Out] =  {
+      def onApplicativeEffect[X](xs: List[Safe[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor Eff[U, Out] =  {
         val previousFailures = xs.collect { case FailedValue(t) => t; case FailedFinalizer(t) => t }
         previousFailures match {
           case t :: rest =>
@@ -164,9 +116,8 @@ trait SafeInterpretation extends SafeCreation { outer =>
         }
       }
     }
-
-    interceptLoop1[R, Safe, A, Out]((a: A) => (Xor.Right(a), Vector.empty): Out)(loop)(r).map { case (a, vs) => (a, vs.toList) }
   }
+
 
   /**
    * evaluate 1 action possibly having error effects
@@ -205,16 +156,35 @@ trait SafeInterpretation extends SafeCreation { outer =>
         }
 
       def onApplicativeEffect[X](xs: List[Safe[X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor Eff[R, A] = {
-        val previousFailures = xs.collect { case FailedValue(t) => t; case FailedFinalizer(t) => t }
+        val previousFailures = xs.collect {
+          case FailedValue(t) => t
+          case FailedFinalizer(t) => t
+        }
+
         previousFailures match {
+          // try to run the final action if there already is failures
           case throwable :: rest =>
+            val finalizedExceptions = xs.collect { case FailedFinalizer(f) => f }
+
             Xor.Right(attempt(last).flatMap {
-              case Xor.Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, A](throwable)
-              case Xor.Right(()) => xs.collect { case FailedFinalizer(f) => f }.map(f => finalizerException(f)).sequence >> exception[R, A](throwable)
+              case Xor.Left(t)   =>
+                (finalizedExceptions :+ t).traverse(f => finalizerException[R](f)) >>
+                  outer.exception[R, A](throwable)
+
+              case Xor.Right(()) =>
+                finalizedExceptions.traverse(f => finalizerException[R](f)) >>
+                  exception[R, A](throwable)
             })
 
           case Nil =>
-            val executed = xs.collect { case EvaluateValue(a) => Xor.catchNonFatal(a.value).fold(t => Xor.Left[FailedValue[X]](FailedValue(t)), x => Xor.Right[X](x)) }
+            // all the values are executed because they are considered to be independent
+            // in the applicative case
+            val executed = xs.collect { case EvaluateValue(a) =>
+              Xor.catchNonFatal(a.value) match {
+                case Xor.Left(t)  => Xor.Left[FailedValue[X]](FailedValue(t))
+                case Xor.Right(x) => Xor.Right[X](x)
+              }
+            }
 
             val (failures, successes) = executed.separate
 
@@ -225,6 +195,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
               case FailedValue(throwable) :: rest =>
                 val issues = (previousFailures ++ rest).collect { case FailedFinalizer(t) => t }.toVector
 
+                // we just return the first failed value as an exception
                 Xor.Right(attempt(last) flatMap {
                   case Xor.Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, A](throwable)
                   case Xor.Right(()) => issues.map(f => finalizerException(f)).sequence >> exception[R, A](throwable)
