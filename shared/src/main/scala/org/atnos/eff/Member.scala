@@ -222,7 +222,7 @@ trait MemberInOutLower5 {
 
 
 @implicitNotFound("No instance found for Member[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}\n or it was not possible to determine the stack that would result from removing ${T} from ${R}")
-trait Member[T[_], R] extends MemberIn[T, R] {
+trait Member[T[_], R] extends MemberInOut[T, R] {
   type Out
 
   def accept[V](union: Union[Out, V]): Union[R, V]

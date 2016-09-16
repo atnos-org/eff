@@ -9,7 +9,7 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   tests for member implicits
 
 """
-  /*
+/*
 // UNCOMMENT TO TEST COMPILATION TIMES AND IMPLICIT SEARCH
   sealed trait OptionN[A] { def a: A }
   case class Option1[A](a: A)   extends OptionN[A]
@@ -38,7 +38,7 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
       e match {
         case Pure(a) => Eff.pure[U, A](a)
         case Impure(u, c) => Eff.pure[U, A](m.project(u).toOption.get.asInstanceOf[A])
-        case ImpureAp(u, c) => Eff.pure[U, A](m.project(u).toOption.get.asInstanceOf[A])
+        case ImpureAp(unions, map) => Eff.pure[U, A](map(unions.unions.map(u => m.project(u).toOption.get.a)))
       }
   }
 
@@ -235,7 +235,7 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   option1[SD3].runN.runN.runN
   option2[SD3].runN.runN.runN
   option3[SD3].runN.runN.runN
-
+*/
   // PERMUTATIONS OF 4 effects
   import cats.data._
 
@@ -280,7 +280,7 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   val n5 = value.runNel.runState("baz").runReader("foo").runChoose.run
   val n6 = value.runNel.runState("baz").runChoose.runReader("foo").run
 
-  */
+
 
   // APPEND to an arbitrary stack
 
