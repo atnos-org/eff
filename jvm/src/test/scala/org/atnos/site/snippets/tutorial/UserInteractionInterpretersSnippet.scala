@@ -22,6 +22,13 @@ def runInteract[R, A](effects: Eff[R, A])(implicit m: Interact <= R): Eff[m.Out,
           println(msg)
       }
     }
+
+    def applicative[X](ms: List[Interact[X]]): List[X] Xor Interact[List[X]] =
+      Xor.Left(ms.map {
+        case Ask(prompt) => println(prompt); readLine()
+        case Tell(msg)   => println(msg)
+      }.map(_.asInstanceOf[X]))
+
   }
   interpret1[R, m.Out, Interact, A, A](a => a)(recurse)(effects)(m)
 }
@@ -36,6 +43,13 @@ def runDataOp[R, A](effects: Eff[R, A])(implicit m: DataOp <= R): Eff[m.Out, A] 
         case GetAllCats() => memDataSet.toList
       }
     }
+
+    def applicative[X](ms: List[DataOp[X]]): List[X] Xor DataOp[List[X]] =
+      Xor.Left(ms.map {
+        case AddCat(a)    => memDataSet.append(a); ()
+        case GetAllCats() => memDataSet.toList
+      }.map(_.asInstanceOf[X]))
+
   }
   interpret1[R, m.Out, DataOp, A, A](a => a)(recurse)(effects)(m)
 }

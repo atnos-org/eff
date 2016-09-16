@@ -51,6 +51,9 @@ def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore <= R): Eff[m.
           kvs.remove(key)
           ().asInstanceOf[X]
       }
+
+    def applicative[X](ms: List[KVStore[X]]): List[X] =
+      ms.map(apply)
   }
   interpretUnsafe(effects)(sideEffect)(m)
 

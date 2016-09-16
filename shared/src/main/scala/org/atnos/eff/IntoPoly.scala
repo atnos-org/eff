@@ -26,7 +26,10 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
   implicit def intoNil[R]: IntoPoly[NoFx, R] =
     new IntoPoly[NoFx, R] {
       def apply[A](e: Eff[NoFx, A]) =
-        e match { case Pure(a) => pure[R, A](a); case _ => sys.error("impossible NoFx into R is only for pure values") }
+        e match {
+          case Pure(a) => pure[R, A](a)
+          case _ => sys.error("impossible NoFx into R is only for pure values")
+        }
     }
 
   implicit def intoSelf[R]: IntoPoly[R, R] =
@@ -49,11 +52,13 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           case Impure(u@UnionAppendL(Union1(tx)), c) =>
             Impure[FxAppend[Fx2[T1, T2], R], u.X, A](UnionAppendL(Union2R(tx)), Arrs.singleton(x => effInto(c(x))))
 
-          case ImpureAp(u@UnionAppendR(r), c) =>
-            ImpureAp[FxAppend[Fx2[T1, T2], R], u.X, A](UnionAppendR(r), Apps(c.functions.map(f => effInto[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R], Any => Any](f))))
-
-          case ImpureAp(u@UnionAppendL(Union1(tx)), c) =>
-            ImpureAp[FxAppend[Fx2[T1, T2], R], u.X, A](UnionAppendL(Union2R(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R], Any => Any](f))))
+          case ImpureAp(unions, map) =>
+            ImpureAp[FxAppend[Fx2[T1, T2], R], unions.X, A](
+              unions.into(new UnionInto[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] {
+                def apply[X](union: Union[FxAppend[Fx1[T2], R], X]) = union match {
+                  case UnionAppendR(r) => UnionAppendR(r)
+                  case UnionAppendL(Union1(tx)) => UnionAppendL(Union2R(tx))
+                }}), map)
         }
     }
 
@@ -70,11 +75,13 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           case Impure(u@UnionAppendL(Union1(tx)), c) =>
             Impure[FxAppend[Fx2[T1, T2], R], u.X, A](UnionAppendL(Union2L(tx)), Arrs.singleton(x => effInto(c(x))))
 
-          case ImpureAp(u@UnionAppendR(r), c) =>
-            ImpureAp[FxAppend[Fx2[T1, T2], R], u.X, A](UnionAppendR(r), Apps(c.functions.map(f => effInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R], Any => Any](f))))
-
-          case ImpureAp(u@UnionAppendL(Union1(tx)), c) =>
-            ImpureAp[FxAppend[Fx2[T1, T2], R], u.X, A](UnionAppendL(Union2L(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R], Any => Any](f))))
+          case ImpureAp(unions, map) =>
+            ImpureAp[FxAppend[Fx2[T1, T2], R], unions.X, A](
+              unions.into(new UnionInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] {
+                def apply[X](union: Union[FxAppend[Fx1[T1], R], X]) = union match {
+                  case UnionAppendR(r) => UnionAppendR(r)
+                  case UnionAppendL(Union1(tx)) => UnionAppendL(Union2L(tx))
+                }}), map)
         }
     }
 
@@ -94,14 +101,14 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           case Impure(u@UnionAppendL(Union2R(tx)), c) =>
             Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3R(tx)), Arrs.singleton(x => effInto(c(x))))
 
-          case ImpureAp(u@UnionAppendR(r), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendR(r), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
-
-          case ImpureAp(u@UnionAppendL(Union2L(tx)), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3M(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
-
-          case ImpureAp(u@UnionAppendL(Union2R(tx)), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3R(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
+          case ImpureAp(unions, map) =>
+            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], unions.X, A](
+              unions.into(new UnionInto[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
+                def apply[X](union: Union[FxAppend[Fx2[T2, T3], R], X]) = union match {
+                  case UnionAppendR(r) => UnionAppendR(r)
+                  case UnionAppendL(Union2L(tx)) => UnionAppendL(Union3M(tx))
+                  case UnionAppendL(Union2R(tx)) => UnionAppendL(Union3R(tx))
+                }}), map)
         }
     }
 
@@ -121,14 +128,14 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           case Impure(u@UnionAppendL(Union2R(tx)), c) =>
             Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3R(tx)), Arrs.singleton(x => effInto(c(x))))
 
-          case ImpureAp(u@UnionAppendR(r), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendR(r), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
-
-          case ImpureAp(u@UnionAppendL(Union2L(tx)), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3L(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
-
-          case ImpureAp(u@UnionAppendL(Union2R(tx)), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3R(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
+          case ImpureAp(unions, map) =>
+            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], unions.X, A](
+              unions.into(new UnionInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
+                def apply[X](union: Union[FxAppend[Fx2[T1, T3], R], X]) = union match {
+                  case UnionAppendR(r) => UnionAppendR(r)
+                  case UnionAppendL(Union2L(tx)) => UnionAppendL(Union3L(tx))
+                  case UnionAppendL(Union2R(tx)) => UnionAppendL(Union3R(tx))
+                }}), map)
         }
     }
 
@@ -148,14 +155,15 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           case Impure(u@UnionAppendL(Union2R(tx)), c) =>
             Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3M(tx)), Arrs.singleton(x => effInto(c(x))))
 
-          case ImpureAp(u@UnionAppendR(r), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendR(r), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
+          case ImpureAp(unions, map) =>
+            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], unions.X, A](
+              unions.into(new UnionInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] {
+                def apply[X](union: Union[FxAppend[Fx2[T1, T2], R], X]) = union match {
+                  case UnionAppendR(r) => UnionAppendR(r)
+                  case UnionAppendL(Union2L(tx)) => UnionAppendL(Union3L(tx))
+                  case UnionAppendL(Union2R(tx)) => UnionAppendL(Union3M(tx))
+                }}), map)
 
-          case ImpureAp(u@UnionAppendL(Union2L(tx)), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3L(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
-
-          case ImpureAp(u@UnionAppendL(Union2R(tx)), c) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(Union3M(tx)), Apps(c.functions.map(f => effInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R], Any => Any](f))))
         }
     }
 }
@@ -171,8 +179,12 @@ trait IntoPolyLower3 extends IntoPolyLower4 {
           case Impure(u, c) =>
             Impure[FxAppend[Fx1[T], R], u.X, A](UnionAppendR(u), Arrs.singleton(x => effInto(c(x))))
 
-          case ImpureAp(u, c) =>
-            ImpureAp[FxAppend[Fx1[T], R], u.X, A](UnionAppendR(u), Apps(c.functions.map(f => effInto[R, FxAppend[Fx1[T], R], Any => Any](f))))
+          case ImpureAp(unions, map) =>
+            ImpureAp[FxAppend[Fx1[T], R], unions.X, A](
+              unions.into(new UnionInto[R, FxAppend[Fx1[T], R]] {
+                def apply[X](union: Union[R, X]) = union match {
+                  case u => UnionAppendR(u)
+                }}), map)
         }
     }
 }
@@ -195,11 +207,14 @@ trait IntoPolyLower4 {
               case Xor.Left(s)   => recurse(Impure[S, s.X, A](s, c.asInstanceOf[Arrs[S, s.X, A]]))
             }
 
-          case ImpureAp(u, c) =>
-            t.project(u) match {
-              case Xor.Right(tx) => ImpureAp[U, u.X, A](m.inject(tx), Apps(c.functions.map(f => effInto[R, U, Any => Any](f))))
-              case Xor.Left(s)   => recurse(ImpureAp[S, u.X, A](s, c.asInstanceOf[Apps[S, s.X, A]]))
-            }
+          case ImpureAp(unions, map) =>
+            ImpureAp[U, unions.X, A](unions.into(new UnionInto[R, U] {
+              def apply[X](u: Union[R, X]): Union[U, X] =
+                t.project(u) match {
+                  case Xor.Right(t1)   => m.inject(t1)
+                  case Xor.Left(other) => recurse(Impure[S, X, X](other, Arrs.singleton((x: X) => pure[S, X](x)))).asInstanceOf[Impure[U, X, X]].union
+                }
+            }), map)
         }
     }
 }

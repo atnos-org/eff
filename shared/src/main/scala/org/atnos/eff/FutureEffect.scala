@@ -2,6 +2,8 @@ package org.atnos.eff
 
 import scala.util.control.NonFatal
 import cats.data._
+import cats.Applicative
+import cats.implicits._
 import Xor._
 import Eff._
 import Interpret._
@@ -10,9 +12,6 @@ import EvalTypes._
 import scala.concurrent._
 import duration._
 import XorCreation._
-import cats.Apply
-import cats.syntax.applicativeError._
-import cats.instances.future._
 
 /**
  * Effect for Future computations
@@ -44,9 +43,9 @@ trait FutureCreation {
 
 trait FutureInterpretation {
 
-  def ApplyFuture(implicit ec: ExecutionContext): Apply[Future] = new Apply[Future] {
-    def map[A, B](fa: Future[A])(f: A => B): Future[B] =
-      ap(Future(f))(fa)
+  def ApplicativeFuture(implicit ec: ExecutionContext): Applicative[Future] = new Applicative[Future] {
+    def pure[A](x: A): Future[A] =
+      Future.successful(x)
 
     def ap[A, B](ff: Future[A => B])(fa: Future[A]): Future[B] =
       fa.zip(ff).map { case (a, f) => f(a) }
@@ -58,9 +57,12 @@ trait FutureInterpretation {
       def apply[X](m: Future[X]) =
         try { Left(Await.result(m, atMost)) }
         catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
+
+      def applicative[X](ms: List[Future[X]]): List[X] Xor Future[List[X]] =
+        Xor.Right(ApplicativeFuture.sequence(ms))
     }
 
-    interpretApply1((a: A) => Right(a): Throwable Xor A)(recurse)(r)(m, ApplyFuture)
+    interpret1((a: A) => Right(a): Throwable Xor A)(recurse)(r)
   }
 
 }

@@ -36,8 +36,9 @@ import Eff._
  *
  */
 sealed trait Eff[R, A] {
+
   def map[B](f: A => B): Eff[R, B] =
-    EffMonad[R].map(this)(f)
+    EffApplicative[R].map(this)(f)
 
   def ap[B](f: Eff[R, A => B]): Eff[R, B] =
     EffApplicative[R].ap(f)(this)
@@ -57,12 +58,38 @@ case class Pure[R, A](value: A) extends Eff[R, A]
  */
 case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]) extends Eff[R, A]
 
-/**
- * union is a disjoint union of effects returning a value of type X (not specified)
- */
-case class ImpureAp[R, X, A](union: Union[R, X], continuation: Apps[R, X, A]) extends Eff[R, A] {
+case class ImpureAp[R, X, A](unions: Unions[R, X], map: List[Any] => A) extends Eff[R, A] {
   def toMonadic: Eff[R, A] =
-    Impure[R, union.X, A](union, Arrs.singleton((x: union.X) => continuation(x)))
+    Impure[R, unions.X, A](unions.first, unions.continueWith(map))
+}
+
+case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
+  type X = A
+
+  def size: Int =
+    rest.size + 1
+
+  def unions: List[Union[R, Any]]=
+    first.asInstanceOf[Union[R, Any]] +: rest
+
+  def append[B](others: Unions[R, B]): Unions[R, A] =
+    Unions(first, rest ++ others.unions)
+
+  def continueWith[B](map: List[Any] => B): Arrs[R, A, B] =
+    Arrs.singleton { (x: X) =>
+      rest match {
+        case Nil => pure[R, B](map(x :: Nil))
+        case h :: t => ImpureAp[R, h.X, B](Unions[R, h.X](h, t), (ys: List[Any]) => map(x :: ys))
+      }
+    }
+
+  def into[S](f: UnionInto[R, S]): Unions[S, A] =
+    Unions[S, A](f(first), rest.map(f.apply))
+
+}
+
+trait UnionInto[R, S] {
+  def apply[A](union: Union[R, A]): Union[S, A]
 }
 
 object Eff extends EffCreation with
@@ -87,7 +114,7 @@ trait EffImplicits {
           fa.flatMap(a => pure(f(a)))
 
         case ImpureAp(u, c) =>
-          ImpureAp(u, c.append(pure(f)))
+          ImpureAp(u, c andThen f)
       }
 
     def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
@@ -116,14 +143,19 @@ trait EffImplicits {
           ff match {
             case Pure(f)        => Pure(f(a))
             case Impure(u, c)   => Impure(u, c).map(_(a))
-            case ImpureAp(u, c) => ImpureAp(u, c append pure(f => f(a)))
+            case ImpureAp(u, c) => ImpureAp(u, xs => c(xs)(a))
           }
 
-        case Impure(union, continuation) =>
+        case Impure(u, c) =>
           fa.flatMap(a => ff.map(f => f(a)))
 
-        case ImpureAp(union, continuation) =>
-          ImpureAp(union, continuation.append(ff))
+        case ap @ ImpureAp(unions, map) =>
+          ff match {
+            case Pure(f)        => ImpureAp(unions, map andThen f)
+            case Impure(u, c)   => ap.toMonadic.ap(ff)
+            case ImpureAp(u, m) => ImpureAp(u append unions, xs => m(xs.take(u.size))(map(xs.drop(u.size))))
+          }
+
       }
 
     override def product[A, B](fa: Eff[R, A], fb: Eff[R, B]): Eff[R, (A, B)] =
@@ -138,7 +170,7 @@ object EffImplicits extends EffImplicits
 trait EffCreation {
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
   def send[T[_], R, V](tv: T[V])(implicit member: T |= R): Eff[R, V] =
-    ImpureAp(member.inject(tv), Apps.unit)
+    ImpureAp(Unions(member.inject(tv), Nil), xs => xs.head.asInstanceOf[V])
 
   /** use the internal effect as one of the stack effects */
   def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: M |= R): Eff[R, A] =
@@ -197,10 +229,8 @@ trait EffInterpretation {
             case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x)))
           }
 
-        case ImpureAp(u, continuation) =>
-          u match {
-            case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x)))
-          }
+        case ap @ ImpureAp(u, continuation) =>
+          detach(ap.toMonadic)
       }
     }
     go(eff)
@@ -274,9 +304,9 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) {
             case Impure(u, q) =>
               Impure[R, u.X, B](u, q.copy(functions = q.functions ++ rest))
 
-            case ap @ ImpureAp(u, continuation) =>
-              val monadicArrs = Arrs.singleton((x: u.X) => continuation(x))
-              Impure[R, u.X, B](u, monadicArrs.copy(functions = monadicArrs.functions ++ rest))
+            case ap @ ImpureAp(unions, map) =>
+              val continuation = unions.continueWith(map)
+              Impure[R, unions.X, B](unions.first, continuation.copy(continuation.functions ++ rest))
           }
       }
     }
@@ -306,7 +336,7 @@ object Arrs {
  * Sequence of applicative functions from A to B: Eff[R, A => B]
  *
  */
-case class Apps[R, A, B](functions: Vector[Eff[R, Any => Any]]) {
+case class Apps[R, A, B](functions: Vector[Eff[R, Any => Any]]) extends Function[A, Eff[R, B]] {
 
   def append[C](f: Eff[R, B => C]): Apps[R, A, C] =
     Apps(functions :+ f.asInstanceOf[Eff[R, Any => Any]])
@@ -345,3 +375,4 @@ object Apps {
   def unit[R, A]: Apps[R, A, A] =
     Apps(Vector())
 }
+

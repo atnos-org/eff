@@ -1,8 +1,7 @@
 package org.atnos.eff
 
 import cats._, data._
-import cats.syntax.all._
-import cats.instances.all._
+import cats.implicits._
 import org.atnos.eff.all._
 import Interpret._
 
@@ -73,6 +72,16 @@ trait ValidateInterpretation extends ValidateCreation {
           case Correct() => ((), s)
         }
 
+      def applicative[X](xs: List[Validate[E, X]], s: S): (List[X], S) Xor (Validate[E, List[X]], S) = {
+        val (state, elements) = xs.foldLeft((s, Vector.empty[X])) { case ((state, list), cur) =>
+          cur match {
+            case Correct() => (state, list :+ ().asInstanceOf[X])
+            case Wrong(e)  => (state.map(_ |+| map(e)) , list :+ ().asInstanceOf[X])
+          }
+        }
+        Xor.Left((elements.toList, state))
+      }
+
       def finalize(a: A, s: S): L Xor A =
         s.fold(Xor.right[L, A](a))(Xor.left[L, A])
     }
@@ -89,8 +98,11 @@ trait ValidateInterpretation extends ValidateCreation {
       def onEffect[X](m: Validate[E, X], continuation: Arrs[R, X, A]): Eff[R, A] Xor Eff[R, A] =
         m match {
           case Correct() => Xor.Left(continuation(()))
-          case Wrong(e) => Xor.Left(handle(e))
+          case Wrong(e)  => Xor.Left(handle(e))
         }
+
+      def onApplicativeEffect[X](xs: List[Validate[E, X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor Eff[R, A] =
+        sys.error("Validate effect - catchError: there is no applicative case on intercept")
     }
 
     interceptStatelessLoop[R, Validate[E,?], A, A]((a: A) => pure(a), loop)(r)

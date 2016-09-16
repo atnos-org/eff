@@ -37,6 +37,8 @@ trait ReaderInterpretation {
   def runReader[R, U, A, B](env: A)(r: Eff[R, B])(implicit m: Member.Aux[Reader[A, ?], R, U]): Eff[U, B] = {
     val recurse = new Recurse[Reader[A, ?], U, B] {
       def apply[X](m: Reader[A, X]) = left(m.run(env))
+      def applicative[X](ms: List[Reader[A, X]]): List[X] Xor Reader[A, List[X]] =
+        Xor.Left(ms.map(_.run(env)))
     }
 
     interpret1[R, U, Reader[A, ?], B, B]((b: B) => b)(recurse)(r)

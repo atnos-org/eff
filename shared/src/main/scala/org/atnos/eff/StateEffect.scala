@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats.syntax.flatMap._
+import cats.implicits._
 import Interpret._
 import Eff._
 import cats._
@@ -69,6 +69,9 @@ trait StateInterpretation {
 
       def apply[X](x: State[S, X], s: S) =
         x.run(s).value.swap
+
+      def applicative[X](xs: List[State[S, X]], s: S): (List[X], S) Xor (State[S, List[X]], S) =
+        Xor.Left(xs.sequence.run(s).value.swap)
 
       def finalize(a: A, s: S) = (a, s)
 

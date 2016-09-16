@@ -62,6 +62,27 @@ trait ListInterpretation {
           case (head :: tail, (unevaluated, result)) =>
             Left((continuation(head), (tail.map(a => continuation(a)) ++ unevaluated, result)))
         }
+
+      def onApplicativeEffect[X](xs: List[List[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor Eff[U, List[A]] = {
+        if (xs.exists(_.isEmpty))
+          s match {
+            case (Nil, as)       => Xor.Right(pure(as.toList))
+            case (e :: rest, as) => Xor.Left((e, (rest, as)))
+          }
+
+        else {
+          xs.transpose.map(ls => continuation(ls)) match {
+            case Nil =>
+              s match {
+                case (Nil, as)       => Xor.Right(pure(as.toList))
+                case (e :: rest, as) => Xor.Left((e, (rest, as)))
+              }
+             case x :: rest =>
+               Xor.Left((x, (rest ++ s._1, s._2)))
+          }
+        }
+      }
+
     }
 
     interpretLoop1((a: A) => List(a))(loop)(effects)

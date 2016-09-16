@@ -37,6 +37,7 @@ trait EvalInterpretation extends EvalTypes {
   def runEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] = {
     val recurse = new Recurse[Eval, U, A] {
       def apply[X](m: Eval[X]) = Left(m.value)
+      def applicative[X](ms: List[Eval[X]]): List[X] Xor Eval[List[X]] = Xor.Left(ms.map(_.value))
     }
 
     interpret1((a: A) => a)(recurse)(r)
@@ -47,6 +48,9 @@ trait EvalInterpretation extends EvalTypes {
       def apply[X](m: Eval[X]) =
         try { Left(m.value) }
         catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
+
+      def applicative[X](ms: List[Eval[X]]): List[X] Xor Eval[List[X]] =
+        Xor.Right(Eval.later(ms.map(_.value)))
     }
 
     interpret1((a: A) => Right(a): Throwable Xor A)(recurse)(r)

@@ -52,7 +52,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1"),
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.0"),
   addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
 ) ++ warnUnusedImport ++ prompt
 

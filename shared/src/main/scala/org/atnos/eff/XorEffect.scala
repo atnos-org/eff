@@ -1,6 +1,7 @@
 package org.atnos.eff
 
 import cats._, data._, Xor._
+import cats.implicits._
 import Eff._
 import Interpret._
 
@@ -49,6 +50,9 @@ trait XorInterpretation {
           case Left(e) => Right(EffMonad[U].pure(Left(e)))
           case Right(a) => Left(a)
         }
+
+      def applicative[X](ms: List[E Xor X]): List[X] Xor (E Xor List[X]) =
+        Xor.Right(ms.sequence)
     }
 
     interpret1[R, U, (E Xor ?), A, E Xor A]((a: A) => Right(a): E Xor A)(recurse)(r)
@@ -66,6 +70,9 @@ trait XorInterpretation {
           case Left(e) => Right(handle(e))
           case Right(a) => Left(a)
         }
+
+      def applicative[X](ms: List[E Xor X]): List[X] Xor (E Xor List[X]) =
+        Xor.Right(ms.sequence)
     }
 
     intercept1[R, (E Xor ?), A, A]((a: A) => a)(recurse)(r)

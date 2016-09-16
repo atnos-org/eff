@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import scala.util.control.NonFatal
-import cats.syntax.functor._
+import cats.implicits._
 import cats.Eval
 import cats.data._
 import Xor._
@@ -78,6 +78,12 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
             try Left(a.value)
             catch { case NonFatal(t) => Right(EffMonad[U].pure(Left(Left(t)))) }
         }
+
+      def applicative[X](ms: List[ErrorOrOk[X]]): List[X] Xor ErrorOrOk[List[X]] =
+        ms.map(_.run).sequence match {
+          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, List[X]](e))
+          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, List[X]](ls.map(_.value)))
+        }
     }
 
     interpret1[R, U, ErrorOrOk, A, Error Xor A]((a: A) => Right(a): Error Xor A)(recurse)(r)
@@ -96,6 +102,12 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
           case Right(x) =>
             try Left(x.value)
             catch { case NonFatal(t) => Right(last.flatMap(_ => outer.exception[R, A](t))) }
+        }
+
+      def applicative[X](ms: List[ErrorOrOk[X]]): List[X] Xor ErrorOrOk[List[X]] =
+        ms.map(_.run).sequence match {
+          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, List[X]](e))
+          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, List[X]](ls.map(_.value)))
         }
     }
     intercept[R, ErrorOrOk, A, A]((a: A) => last.as(a), recurse)(action)
@@ -122,6 +134,12 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
           case Right(x) =>
             try Left[X](x.value)
             catch { case NonFatal(t) => Right(onError(Left(t))) }
+        }
+
+      def applicative[X](ms: List[ErrorOrOk[X]]): List[X] Xor ErrorOrOk[List[X]] =
+        ms.map(_.run).sequence match {
+          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, List[X]](e))
+          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, List[X]](ls.map(_.value)))
         }
     }
     intercept1[R, ErrorOrOk, A, B](pure)(recurse)(action)

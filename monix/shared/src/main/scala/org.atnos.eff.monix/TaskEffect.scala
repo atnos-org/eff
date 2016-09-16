@@ -1,8 +1,9 @@
 package org.atnos.eff.monix
 
 import scala.util.control.NonFatal
+import cats._
 import cats.data._
-import Xor._
+import cats.implicits._
 import org.atnos.eff._
 import Eff._
 import Interpret._
@@ -10,10 +11,9 @@ import _root_.monix.eval._
 import _root_.monix.execution._
 
 import scala.concurrent._
-import scala.util._
 import duration._
 import TaskEffect._
-import cats.Apply
+
 /**
  * Effect for Task computations
  */
@@ -37,9 +37,9 @@ trait TaskCreation {
 
 trait TaskInterpretation {
 
-  def ApplyTask: Apply[Task] = new Apply[Task] {
-    def map[A, B](fa: Task[A])(f: A => B): Task[B] =
-      ap(Task(f))(fa)
+  def ApplicativeTask: Applicative[Task] = new Applicative[Task] {
+    def pure[A](a: A): Task[A] =
+      Task(a)
 
     def ap[A, B](ff: Task[A => B])(fa: Task[A]): Task[B] =
       fa.zip(ff).map { case (a, f) => f(a) }
@@ -51,9 +51,12 @@ trait TaskInterpretation {
       def apply[X](m: Task[X]) =
         try { Xor.left(Await.result(m.runAsync(s), atMost)) }
         catch { case NonFatal(t) => Xor.right(Eff.pure(Xor.left(t))) }
+
+      def applicative[X](ms: List[Task[X]]): List[X] Xor Task[List[X]] =
+        Xor.Right(ApplicativeTask.sequence(ms))
     }
 
-    interpretApply1((a: A) => Xor.right(a): Throwable Xor A)(recurse)(r)(m, ApplyTask)
+    interpret1((a: A) => Xor.right(a): Throwable Xor A)(recurse)(r)
   }
 
 }
