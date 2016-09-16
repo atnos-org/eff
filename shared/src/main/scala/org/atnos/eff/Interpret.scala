@@ -278,8 +278,39 @@ trait Interpret {
               Impure[R, union.X, B](union, Arrs.singleton(x => go(continuation(x), s)))
           }
 
-        case ap @ ImpureAp(_,_) =>
-          go(ap.toMonadic, s)
+        case ImpureAp(unions, map) =>
+          val (effectsAndIndices, othersAndIndices) =
+            unions.unions.zipWithIndex.foldLeft((Vector[(M[Any], Int)](), Vector[(Union[R, Any], Int)]())) {
+              case ((es, os), (u, i)) =>
+                m.extract(u) match {
+                  case Some(mx) => (es :+ ((mx, i)), os)
+                  case None     => (es, os :+ ((u, i)))
+                }
+            }
+
+          val (effects, indices) = effectsAndIndices.toList.unzip
+          val (otherEffects, otherIndices) = othersAndIndices.toList.unzip
+
+          if (effectsAndIndices.isEmpty) {
+            otherEffects match {
+              case Nil       => pure(map(Nil))
+              case o :: rest => ImpureAp[R, Any, A](Unions(o, rest), map).flatMap(pure)
+            }
+          }
+          else {
+            def reorder(ls: List[Any], xs: List[Any]): List[Any] =
+              (ls.zip(indices) ++ xs.zip(otherIndices)).sortBy(_._2).map(_._1)
+
+            val continuation = otherEffects match {
+              case Nil       => Arrs.singleton[R, List[Any], A](ls => Eff.pure[R, A](map(ls)))
+              case o :: rest => Arrs.singleton[R, List[Any], A](ls => ImpureAp[R, Any, A](Unions(o, rest), xs => map(reorder(ls, xs))))
+            }
+
+            loop.onApplicativeEffect(effects, continuation, s) match {
+              case Left((x, s1)) => go(x, s1)
+              case Right(b)      => b
+            }
+          }
       }
     }
 

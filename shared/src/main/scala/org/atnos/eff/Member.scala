@@ -97,7 +97,7 @@ trait MemberInOut[T[_], R] extends MemberIn[T, R] { outer =>
 object MemberInOut extends MemberInOutLower1 {
 
   @implicitNotFound("No instance found for MemberInOut[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
-  type /=[T[_], R] = MemberIn[T, R]
+  type /=[T[_], R] = MemberInOut[T, R]
 }
 
 trait MemberInOutLower1 extends MemberInOutLower2 {

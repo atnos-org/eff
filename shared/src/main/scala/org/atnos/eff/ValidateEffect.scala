@@ -101,8 +101,15 @@ trait ValidateInterpretation extends ValidateCreation {
           case Wrong(e)  => Xor.Left(handle(e))
         }
 
-      def onApplicativeEffect[X](xs: List[Validate[E, X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor Eff[R, A] =
-        sys.error("Validate effect - catchError: there is no applicative case on intercept")
+      def onApplicativeEffect[X](xs: List[Validate[E, X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor Eff[R, A] = {
+        val issues: List[E] = xs.collect { case Wrong(e) => e }.asInstanceOf[List[E]] // why is asInstanceOf necessary here?
+
+        issues match {
+          case Nil => Xor.Left(continuation(List.fill(xs.size)(().asInstanceOf[X])))
+          case is  => Xor.Left(EffApplicative.traverse(is)(handle).map(_.head))
+        }
+      }
+
     }
 
     interceptStatelessLoop[R, Validate[E,?], A, A]((a: A) => pure(a), loop)(r)

@@ -20,7 +20,7 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
 
   An "attempted" action will return an exception inside the same stack if it fails $attempt1
 
-  It is possible to add a "finalizer" which will be executed wether an action is successful or not
+  It is possible to add a "finalizer" which will be executed whether an action is successful or not
   All the finalizers must be executed and their possible exceptions returned $finalize1
 
   A finalizer must be executed after the full effect has been evaluated $finalize2
