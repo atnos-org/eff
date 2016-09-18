@@ -15,5 +15,6 @@ trait all extends
   state with
   future with
   safe with
+  optimise with
   eff
 

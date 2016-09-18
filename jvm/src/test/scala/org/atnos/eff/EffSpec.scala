@@ -13,7 +13,6 @@ import org.atnos.eff.Interpret.Translate
 //import cats.laws.discipline.{arbitrary => _, _}
 //import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
-import org.atnos.eff.interpret._
 import org.atnos.eff.syntax.all._
 
 class EffSpec extends Specification with ScalaCheck { def is = s2"""
@@ -276,7 +275,8 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       Eff.traverseA(List(1, 2))(i => getUser(i))
 
     val action = action1
-    val optimised = optimise(action1)
+
+    val optimised = optimiseBatching(action1)
 
     val result = runDsl(action)
     val optimisedResult = runDsl(optimised)
@@ -311,29 +311,4 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       runOption(x).run == runOption(y).run
   }
 
-  trait Optimisable[T[_], A, B] {
-    def widen[X](tx: T[X]): T[A]
-    def reduce(list: List[T[A]]): T[A]
-    def map(f: List[Any] => B): A => B
-  }
-
-  def optimise[R, T[_], A](eff: Eff[R, A])(implicit m: T /= R, semigroup: Semigroup[T[Any]]): Eff[R, A] =
-    eff match {
-      case ImpureAp(unions, map) =>
-        val collected = unions.extract
-        collected.effects match {
-          case Nil => eff
-
-          case e :: rest =>
-            val tx = rest.fold(e) { (res, cur) => semigroup.combine(res, cur) }
-            val map1 = (ls: List[Any]) => {
-              // only working for this specific example
-              println(ls)
-              map(ls(0).asInstanceOf[List[Any]])
-            }
-            ImpureAp(Unions(m.inject(tx), Nil), map1)
-        }
-
-      case _ => eff
-    }
 }

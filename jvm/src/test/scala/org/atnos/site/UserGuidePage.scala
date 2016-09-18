@@ -33,5 +33,26 @@ abstract class UserGuidePage extends
     val name = implicitly[ClassTag[T]].runtimeClass.getName
     load(FilePath.unsafe("jvm/src/test/scala/"+name.replace(".", "/")+".scala"))
   }
+
+
+  override implicit def defaultSnippetParameters[T] = Snippet.defaultParams[T].copy(
+    asCode = (s1: String, s2: String) => splitText(Snippet.markdownCode()(s1, s2)))
+
+  // extract //text comments as text paragraphs
+  def splitText(code: String): String =
+    code.split("\n").foldLeft((Vector[String](), true)) { case ((res, isCode), line) =>
+      if (line.trim startsWith "/*p")
+        (res :+ "\n```\n"+line.trim.drop(3), false)
+      else if (line.endsWith("*/") && !isCode)
+        (res :+ "```", true)
+      else
+        (res :+ line, isCode)
+    }._1.mkString("\n")
+
+
+  implicit class SnippetParams[T](snippet: Snippet[T]) {
+    def noPrompt: Snippet[T] =
+      snippet.copy(params = defaultSnippetParameters[T].copy(prompt = Snippet.emptyPrompt))
+  }
 }
 

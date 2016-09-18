@@ -79,7 +79,7 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     actionApplicative.awaitFuture(2.seconds).run.toOption.get ==== elements
 
     "messages are not received in the same order" ==> {
-      messages.toList !=== elements.map("got "+_)
+      messages.toList must not(be_==(elements.map("got "+_))).unless(elements.sorted == elements)
     }
   }.setGen(chooseInt(5, 10).flatMap(listOfN(_, chooseInt(10, 200)))).
     set(minTestsOk = 20)

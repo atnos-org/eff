@@ -18,6 +18,7 @@ package object eff {
   object choose     extends ChooseCreation     with ChooseInterpretation
   object future     extends FutureCreation     with FutureInterpretation
   object safe       extends SafeCreation       with SafeInterpretation
+  object optimise   extends Optimise
 
   object create extends
     ReaderCreation with
@@ -45,11 +46,13 @@ package object eff {
     ChooseEffect with
     FutureEffect with
     SafeEffect with
+    Optimise with
     EffInterpretation with
     EffCreation with
     EffImplicits
 
   object interpret extends
-    Interpret
+    Interpret with
+    Optimise
 
 }
