@@ -258,10 +258,10 @@ trait EffImplicits {
             case ImpureAp(u1, m) => ImpureAp(Unions(u, u1.unions), ls => (ls.head, ls.drop(1))).flatMap { case (x, fx) => ap(pure(m(fx)))(c(x)) }
           }
           
-        case ap @ ImpureAp(unions, map) =>
+        case ImpureAp(unions, map) =>
           ff match {
             case Pure(f)        => ImpureAp(unions, map andThen f)
-            case Impure(u, c)   => ff.flatMap(f => ap.map(a => f(a)))
+            case Impure(u, c)   => ImpureAp(Unions(unions.first, unions.rest :+ u), ls => (ls.dropRight(1), ls.last)).flatMap { case (x, fx) => ap(c(fx))(pure(map(x))) }
             case ImpureAp(u, m) => ImpureAp(u append unions, xs => m(xs.take(u.size))(map(xs.drop(u.size))))
           }
 
@@ -439,49 +439,5 @@ object Arrs {
   /** create an Arrs function with no effect, which is similar to using an identity a => EffMonad[R].pure(a) */
   def unit[R, A]: Arrs[R, A, A] =
     Arrs(Vector())
-}
-
-/**
- * Sequence of applicative functions from A to B: Eff[R, A => B]
- *
- */
-case class Apps[R, A, B](functions: Vector[Eff[R, Any => Any]]) extends Function[A, Eff[R, B]] {
-
-  def append[C](f: Eff[R, B => C]): Apps[R, A, C] =
-    Apps(functions :+ f.asInstanceOf[Eff[R, Any => Any]])
-
-  /**
-   * execute this data structure as function
-   *
-   * This method is stack-safe
-   */
-  def apply(a: A): Eff[R, B] = {
-    @tailrec
-    def go(fs: Vector[Eff[R, Any => Any]], v: Eff[R, Any]): Eff[R, B] = {
-      fs match {
-        case Vector() =>
-          v.asInstanceOf[Eff[R, B]]
-
-        case Vector(ff) =>
-          ff.flatMap(f => v.map(f)).asInstanceOf[Eff[R, B]]
-
-        case ff +: rest =>
-          go(rest, EffApplicative.ap(ff)(v))
-      }
-    }
-
-    go(functions, Eff.EffMonad[R].pure(a).asInstanceOf[Eff[R, Any]])
-  }
-}
-
-object Apps {
-
-  /** create an Apps function from a single applicative function */
-  def singleton[R, A, B](f: Eff[R, A => B]): Apps[R, A, B] =
-    Apps(Vector(f.asInstanceOf[Eff[R, Any => Any]]))
-
-  /** create an Apps function with no effect */
-  def unit[R, A]: Apps[R, A, A] =
-    Apps(Vector())
 }
 
