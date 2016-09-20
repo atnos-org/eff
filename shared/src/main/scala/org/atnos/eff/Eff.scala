@@ -19,6 +19,10 @@ import Eff._
  *     - a continuation of type X => Eff[R, A] indicating what to do if the current effect is of type M[X]
  *       this type is represented by the `Arrs` type
  *
+ *  - the "impure applicative" case is:
+ *     - list of disjoint unions of possible effects
+ *     - a function to apply to the values resulting from those effects
+ *
  * The monad implementation for this type is really simple:
  *
  *  - `point` is Pure
@@ -31,6 +35,10 @@ import Eff._
  *
  *  This means that various `.asInstanceOf` are present in the implementation and could lead
  *  to burns and severe harm. Use with caution!
+ *
+ *  Similarly the list of effects in the applicative case is untyped and interpreters for those effects
+ *  are supposed to create a list of values to feed the mapping function. If an interpreter doesn't
+ *  create a list of values of the right size and with the right types, there will be a runtime exception.
  *
  * @see http://okmij.org/ftp/Haskell/extensible/more.pdf
  *
