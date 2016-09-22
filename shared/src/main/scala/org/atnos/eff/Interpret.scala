@@ -54,7 +54,7 @@ trait Interpret {
       def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity)
 
-      def onApplicativeEffect[X](mx: List[M[X]], continuation: Arrs[R, List[X], A], s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
         recurse.applicative(mx) match {
           case Xor.Left(xs) => Xor.Left((continuation(xs), s))
           case Xor.Right(mlx) => onEffect(mlx, continuation, s)
@@ -83,7 +83,7 @@ trait Interpret {
     type S
     val init: S
     def apply[X](x: M[X], s: S): (X, S)
-    def applicative[X](xs: List[M[X]], s: S): (List[X], S) Xor (M[List[X]], S)
+    def applicative[X, T[_] : Traverse](xs: T[M[X]], s: S): (T[X], S) Xor (M[T[X]], S)
     def finalize(a: A, s: S): B
   }
 
@@ -101,7 +101,7 @@ trait Interpret {
       def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[U, B] =
         Left { recurse(mx, s) match { case (a, b) => (continuation(a), b)} }
 
-      def onApplicativeEffect[X](mx: List[M[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor Eff[U, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor Eff[U, B] =
         recurse.applicative(mx, s) match {
           case Xor.Left((ls, s1))   => Xor.Left((continuation(ls), s1))
           case Xor.Right((mlx, s1)) => onEffect(mlx, continuation, s1)
@@ -172,7 +172,7 @@ trait Interpret {
       val init: S = ()
       def onPure(a: A, s: S) = loop.onPure(a).leftMap((_, init))
       def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, init))
-      def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, init))
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, init))
     })(effects)(m)
 
   def interpretStatelessLoop1[R, U, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
@@ -192,7 +192,7 @@ trait Interpret {
       def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Xor Eff[R, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity)
 
-      def onApplicativeEffect[X](mx: List[M[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor Eff[R, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor Eff[R, B] =
         recurse.applicative(mx) match {
           case Xor.Left(ls)   => Xor.Left((continuation(ls), s))
           case Xor.Right(mlx) => onEffect(mlx, continuation, s)
@@ -257,7 +257,7 @@ trait Interpret {
       val init: S = ()
       def onPure(a: A, s: S) = loop.onPure(a).leftMap((_, ()))
       def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, ()))
-      def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, ()))
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, ()))
     })(effects)(m)
 
   def interceptStatelessLoop1[R, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
@@ -345,7 +345,7 @@ trait Interpret {
       def apply[X](tx: T[X]): X Xor Eff[m.Out, A] =
         Xor.left(sideEffect(tx))
 
-      def applicative[X](ms: List[T[X]]): List[X] Xor T[List[X]]=
+      def applicative[X, Tr[_]: Traverse](ms: Tr[T[X]]): Tr[X] Xor T[Tr[X]] =
         Xor.Left(ms.map(sideEffect.apply))
     }
     interpret1((a: A) => a)(recurse)(effects)(m)
@@ -359,7 +359,7 @@ trait Interpret {
    */
   trait Recurse[M[_], R, A] {
     def apply[X](m: M[X]): X Xor Eff[R, A]
-    def applicative[X](ms: List[M[X]]): List[X] Xor M[List[X]]
+    def applicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Xor M[T[X]]
   }
 
   /**
@@ -370,7 +370,7 @@ trait Interpret {
     val init: S
     def onPure(a: A, s: S): (Eff[R, A], S) Xor B
     def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor B
-    def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor B
+    def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor B
   }
 
   /**
@@ -379,7 +379,7 @@ trait Interpret {
   trait StatelessLoop[M[_], R, A, B] {
     def onPure(a: A): Eff[R, A] Xor B
     def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Xor B
-    def onApplicativeEffect[X](xs: List[M[X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor B
+    def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Xor B
   }
 
   /**
@@ -391,7 +391,7 @@ trait Interpret {
 
   trait SideEffect[T[_]] {
     def apply[X](tx: T[X]): X
-    def applicative[X](ms: List[T[X]]): List[X]
+    def applicative[X, Tr[_] : Traverse](ms: Tr[T[X]]): Tr[X]
   }
 
 }

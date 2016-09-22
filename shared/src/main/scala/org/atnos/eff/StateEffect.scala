@@ -70,7 +70,7 @@ trait StateInterpretation {
       def apply[X](x: State[S, X], s: S) =
         x.run(s).value.swap
 
-      def applicative[X](xs: List[State[S, X]], s: S): (List[X], S) Xor (State[S, List[X]], S) =
+      def applicative[X, T[_] : Traverse](xs: T[State[S, X]], s: S): (T[X], S) Xor (State[S, T[X]], S) =
         Xor.Left(xs.sequence.run(s).value.swap)
 
       def finalize(a: A, s: S) = (a, s)

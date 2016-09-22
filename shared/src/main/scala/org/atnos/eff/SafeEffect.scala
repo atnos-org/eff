@@ -94,26 +94,26 @@ trait SafeInterpretation extends SafeCreation { outer =>
             }
         }
 
-      def onApplicativeEffect[X](xs: List[Safe[X]], continuation: Arrs[R, List[X], A], s: S): (Eff[R, A], S) Xor Eff[U, Out] =  {
-        val previousFailures = xs.collect { case FailedValue(t) => t; case FailedFinalizer(t) => t }
-        previousFailures match {
-          case t :: rest =>
-            Xor.Right(pure((Xor.Left(t), xs.collect { case FailedFinalizer(e) => e  }.toVector ++ s)))
-
-          case Nil =>
-            val executed = xs.collect { case EvaluateValue(a) => Xor.catchNonFatal(a.value).fold(t => Xor.Left[FailedValue[X]](FailedValue(t)), x => Xor.Right[X](x)) }
-
-            val (failures, successes) = executed.separate
-
-            failures match {
-              case Nil =>
-                Xor.Left((continuation(successes), s))
-
-              case FailedValue(throwable) :: rest =>
-                val issues = (previousFailures ++ rest).collect { case FailedFinalizer(t) => t }.toVector
-                Xor.Right(pure((Xor.Left(throwable), issues ++ s)))
-            }
-        }
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor Eff[U, Out] =  { ???
+//        val previousFailures = xs.collect { case FailedValue(t) => t; case FailedFinalizer(t) => t }
+//        previousFailures match {
+//          case t :: rest =>
+//            Xor.Right(pure((Xor.Left(t), xs.collect { case FailedFinalizer(e) => e  }.toVector ++ s)))
+//
+//          case Nil =>
+//            val executed = xs.collect { case EvaluateValue(a) => Xor.catchNonFatal(a.value).fold(t => Xor.Left[FailedValue[X]](FailedValue(t)), x => Xor.Right[X](x)) }
+//
+//            val (failures, successes) = executed.separate
+//
+//            failures match {
+//              case Nil =>
+//                Xor.Left((continuation(successes), s))
+//
+//              case FailedValue(throwable) :: rest =>
+//                val issues = (previousFailures ++ rest).collect { case FailedFinalizer(t) => t }.toVector
+//                Xor.Right(pure((Xor.Left(throwable), issues ++ s)))
+//            }
+//        }
       }
     }
   }
@@ -155,53 +155,53 @@ trait SafeInterpretation extends SafeCreation { outer =>
             Xor.Right(outer.finalizerException(t) >> continuation(()))
         }
 
-      def onApplicativeEffect[X](xs: List[Safe[X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor Eff[R, A] = {
-        val previousFailures = xs.collect {
-          case FailedValue(t) => t
-          case FailedFinalizer(t) => t
-        }
-
-        previousFailures match {
-          // try to run the final action if there already is failures
-          case throwable :: rest =>
-            val finalizedExceptions = xs.collect { case FailedFinalizer(f) => f }
-
-            Xor.Right(attempt(last).flatMap {
-              case Xor.Left(t)   =>
-                (finalizedExceptions :+ t).traverse(f => finalizerException[R](f)) >>
-                  outer.exception[R, A](throwable)
-
-              case Xor.Right(()) =>
-                finalizedExceptions.traverse(f => finalizerException[R](f)) >>
-                  exception[R, A](throwable)
-            })
-
-          case Nil =>
-            // all the values are executed because they are considered to be independent
-            // in the applicative case
-            val executed = xs.collect { case EvaluateValue(a) =>
-              Xor.catchNonFatal(a.value) match {
-                case Xor.Left(t)  => Xor.Left[FailedValue[X]](FailedValue(t))
-                case Xor.Right(x) => Xor.Right[X](x)
-              }
-            }
-
-            val (failures, successes) = executed.separate
-
-            failures match {
-              case Nil =>
-                Xor.Left(continuation(successes))
-
-              case FailedValue(throwable) :: rest =>
-                val issues = (previousFailures ++ rest).collect { case FailedFinalizer(t) => t }.toVector
-
-                // we just return the first failed value as an exception
-                Xor.Right(attempt(last) flatMap {
-                  case Xor.Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, A](throwable)
-                  case Xor.Right(()) => issues.map(f => finalizerException(f)).sequence >> exception[R, A](throwable)
-                })
-            }
-        }
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Xor Eff[R, A] = { ???
+//        val previousFailures = xs.collect {
+//          case FailedValue(t) => t
+//          case FailedFinalizer(t) => t
+//        }
+//
+//        previousFailures match {
+//          // try to run the final action if there already is failures
+//          case throwable :: rest =>
+//            val finalizedExceptions = xs.collect { case FailedFinalizer(f) => f }
+//
+//            Xor.Right(attempt(last).flatMap {
+//              case Xor.Left(t)   =>
+//                (finalizedExceptions :+ t).traverse(f => finalizerException[R](f)) >>
+//                  outer.exception[R, A](throwable)
+//
+//              case Xor.Right(()) =>
+//                finalizedExceptions.traverse(f => finalizerException[R](f)) >>
+//                  exception[R, A](throwable)
+//            })
+//
+//          case Nil =>
+//            // all the values are executed because they are considered to be independent
+//            // in the applicative case
+//            val executed = xs.collect { case EvaluateValue(a) =>
+//              Xor.catchNonFatal(a.value) match {
+//                case Xor.Left(t)  => Xor.Left[FailedValue[X]](FailedValue(t))
+//                case Xor.Right(x) => Xor.Right[X](x)
+//              }
+//            }
+//
+//            val (failures, successes) = executed.separate
+//
+//            failures match {
+//              case Nil =>
+//                Xor.Left(continuation(successes))
+//
+//              case FailedValue(throwable) :: rest =>
+//                val issues = (previousFailures ++ rest).collect { case FailedFinalizer(t) => t }.toVector
+//
+//                // we just return the first failed value as an exception
+//                Xor.Right(attempt(last) flatMap {
+//                  case Xor.Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, A](throwable)
+//                  case Xor.Right(()) => issues.map(f => finalizerException(f)).sequence >> exception[R, A](throwable)
+//                })
+//            }
+//        }
 
       }
     }

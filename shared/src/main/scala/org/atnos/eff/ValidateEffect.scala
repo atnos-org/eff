@@ -72,15 +72,14 @@ trait ValidateInterpretation extends ValidateCreation {
           case Correct() => ((), s)
         }
 
-      def applicative[X](xs: List[Validate[E, X]], s: S): (List[X], S) Xor (Validate[E, List[X]], S) = {
-        val (state, elements) = xs.foldLeft((s, Vector.empty[X])) { case ((state, list), cur) =>
-          cur match {
-            case Correct() => (state, list :+ ().asInstanceOf[X])
-            case Wrong(e)  => (state.map(_ |+| map(e)) , list :+ ().asInstanceOf[X])
+      def applicative[X, T[_] : Traverse](xs: T[Validate[E, X]], s: S): (T[X], S) Xor (Validate[E, T[X]], S) =
+        Xor.Left {
+          val traversed: State[S, T[X]] = xs.traverse {
+            case Correct() => State[S, X](state => (state, ()))
+            case Wrong(e)  => State[S, X](state => (state.map(_ |+| map(e)), ()))
           }
+          traversed.run(s).value.swap
         }
-        Xor.Left((elements.toList, state))
-      }
 
       def finalize(a: A, s: S): L Xor A =
         s.fold(Xor.right[L, A](a))(Xor.left[L, A])
@@ -101,15 +100,18 @@ trait ValidateInterpretation extends ValidateCreation {
           case Wrong(e)  => Xor.Left(handle(e))
         }
 
-      def onApplicativeEffect[X](xs: List[Validate[E, X]], continuation: Arrs[R, List[X], A]): Eff[R, A] Xor Eff[R, A] = {
-        val issues: List[E] = xs.collect { case Wrong(e) => e }.asInstanceOf[List[E]] // why is asInstanceOf necessary here?
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Xor Eff[R, A] =
+        Xor.Left {
+          val traversed: State[Option[E], T[X]] = xs.traverse {
+            case Correct() => State[Option[E], X](state => (None, ()))
+            case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
+          }
 
-        issues match {
-          case Nil => Xor.Left(continuation(List.fill(xs.size)(().asInstanceOf[X])))
-          case is  => Xor.Left(EffApplicative.traverse(is)(handle).map(_.head))
+          traversed.run(None).value match {
+            case (None, tx)    => continuation(tx)
+            case (Some(e), tx) => handle(e)
+          }
         }
-      }
-
     }
 
     interceptStatelessLoop[R, Validate[E,?], A, A]((a: A) => pure(a), loop)(r)

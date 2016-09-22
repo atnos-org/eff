@@ -52,14 +52,16 @@ trait WriterInterpretation {
       type S = fold.S
       val init = fold.init
       def apply[X](x: Writer[O, X], s: S) = (x.run._2, fold.fold(x.run._1, s))
-      def applicative[X](ws: List[Writer[O, X]], s: S): (List[X], S) Xor (Writer[O, List[X]], S) = {
-        val (newState, xs) =
-          ws.foldLeft((s, Vector.empty[X])) { case ((state, list), cur) =>
-            val (o, x) = cur.run
-            (fold.fold(o, state), list :+ x)
+
+      def applicative[X, T[_] : Traverse](ws: T[Writer[O, X]], s: S): (T[X], S) Xor (Writer[O, T[X]], S) =
+        Xor.Left {
+          val traversed: State[S, T[X]] = ws.traverse { w: Writer[O, X] =>
+            val (o, x) = w.run
+            State[S, X](s1 => (fold.fold(o, s1), x))
           }
-        Xor.Left((xs.toList, newState))
-      }
+          traversed.run(s).value.swap
+        }
+
       def finalize(a: A, s: S) = (a, fold.finalize(s))
     }
 

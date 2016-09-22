@@ -2,7 +2,7 @@ package org.atnos.eff
 
 import scala.util.control.NonFatal
 import cats.data._
-import cats.Applicative
+import cats.{Applicative, Traverse}
 import cats.implicits._
 import Xor._
 import Eff._
@@ -58,7 +58,7 @@ trait FutureInterpretation {
         try { Left(Await.result(m, atMost)) }
         catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
 
-      def applicative[X](ms: List[Future[X]]): List[X] Xor Future[List[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[Future[X]]): T[X] Xor Future[T[X]] =
         Xor.Right(ApplicativeFuture.sequence(ms))
     }
 

@@ -51,7 +51,7 @@ trait XorInterpretation {
           case Right(a) => Left(a)
         }
 
-      def applicative[X](ms: List[E Xor X]): List[X] Xor (E Xor List[X]) =
+      def applicative[X, T[_] : Traverse](ms: T[E Xor X]): T[X] Xor (E Xor T[X]) =
         Xor.Right(ms.sequence)
     }
 
@@ -71,7 +71,7 @@ trait XorInterpretation {
           case Right(a) => Left(a)
         }
 
-      def applicative[X](ms: List[E Xor X]): List[X] Xor (E Xor List[X]) =
+      def applicative[X, T[_]: Traverse](ms: T[E Xor X]): T[X] Xor (E Xor T[X]) =
         Xor.Right(ms.sequence)
     }
 

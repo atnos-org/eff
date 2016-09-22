@@ -2,7 +2,7 @@
 package org.atnos.site.snippets
 
 import cats.data.Xor
-import cats.Applicative
+import cats.{Applicative, Eval, Traverse}
 import cats.implicits._
 import org.atnos.eff._
 import all._
@@ -38,7 +38,7 @@ object FutEffect {
       def apply[X](m: Fut[X]): X Xor Eff[U, A] =
         Xor.Left(Await.result(m.map(_ ()), atMost))
 
-      def applicative[X](ms: List[Fut[X]]): List[X] Xor Fut[List[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Xor Fut[T[X]] =
         Xor.Right(ApplicativeFut.sequence(ms))
 
     }

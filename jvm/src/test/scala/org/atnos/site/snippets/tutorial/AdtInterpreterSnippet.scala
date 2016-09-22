@@ -3,6 +3,7 @@ package org.atnos.site.snippets.tutorial
 
 import AdtSnippet._
 import AdtCreationSnippet._
+import cats.Traverse
 
 trait AdtInterpreterSnippet {
 // 8<---
@@ -52,7 +53,7 @@ def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore <= R): Eff[m.
           ().asInstanceOf[X]
       }
 
-    def applicative[X](ms: List[KVStore[X]]): List[X] =
+    def applicative[X, Tr[_] : Traverse](ms: Tr[KVStore[X]]): Tr[X] =
       ms.map(apply)
   }
   interpretUnsafe(effects)(sideEffect)(m)

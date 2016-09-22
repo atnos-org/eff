@@ -1,8 +1,10 @@
 package org.atnos.eff
 
 import scala.util.control.NonFatal
-import cats.data._, Xor._
-import cats.Eval
+import cats._
+import cats.data._
+import cats.implicits._
+import Xor._
 import Eff._
 import Interpret._
 
@@ -37,7 +39,7 @@ trait EvalInterpretation extends EvalTypes {
   def runEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] = {
     val recurse = new Recurse[Eval, U, A] {
       def apply[X](m: Eval[X]) = Left(m.value)
-      def applicative[X](ms: List[Eval[X]]): List[X] Xor Eval[List[X]] = Xor.Left(ms.map(_.value))
+      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Xor Eval[T[X]] = Xor.Left(ms.map(_.value))
     }
 
     interpret1((a: A) => a)(recurse)(r)
@@ -49,7 +51,7 @@ trait EvalInterpretation extends EvalTypes {
         try { Left(m.value) }
         catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
 
-      def applicative[X](ms: List[Eval[X]]): List[X] Xor Eval[List[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Xor Eval[T[X]] =
         Xor.Right(Eval.later(ms.map(_.value)))
     }
 

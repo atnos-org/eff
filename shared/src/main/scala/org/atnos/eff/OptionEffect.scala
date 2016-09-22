@@ -1,9 +1,11 @@
 package org.atnos.eff
 
-import cats.data._, Xor._
+import cats.data._
+import Xor._
 import cats.implicits._
 import Interpret._
 import Eff._
+import cats.{Eval, Traverse}
 
 /**
  * Effect for optional computations
@@ -47,7 +49,7 @@ trait OptionInterpretation {
           case Some(x) => Left(x)
         }
 
-      def applicative[X](ms: List[Option[X]]): List[X] Xor Option[List[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[Option[X]]): T[X] Xor Option[T[X]] =
         Xor.Right(ms.sequence)
     }
 

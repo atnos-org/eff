@@ -2,12 +2,12 @@ package org.atnos.eff
 
 import scala.util.control.NonFatal
 import cats.implicits._
-import cats.Eval
+import cats.{Eval, Traverse, ~>}
 import cats.data._
 import Xor._
-import cats.~>
 import Eff._
 import Interpret._
+
 import scala.reflect.ClassTag
 
 /**
@@ -79,10 +79,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
             catch { case NonFatal(t) => Right(EffMonad[U].pure(Left(Left(t)))) }
         }
 
-      def applicative[X](ms: List[ErrorOrOk[X]]): List[X] Xor ErrorOrOk[List[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Xor ErrorOrOk[T[X]] =
         ms.map(_.run).sequence match {
-          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, List[X]](e))
-          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, List[X]](ls.map(_.value)))
+          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, T[X]](e))
+          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
         }
     }
 
@@ -104,10 +104,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
             catch { case NonFatal(t) => Right(last.flatMap(_ => outer.exception[R, A](t))) }
         }
 
-      def applicative[X](ms: List[ErrorOrOk[X]]): List[X] Xor ErrorOrOk[List[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Xor ErrorOrOk[T[X]] =
         ms.map(_.run).sequence match {
-          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, List[X]](e))
-          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, List[X]](ls.map(_.value)))
+          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, T[X]](e))
+          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
         }
     }
     intercept[R, ErrorOrOk, A, A]((a: A) => last.as(a), recurse)(action)
@@ -136,10 +136,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
             catch { case NonFatal(t) => Right(onError(Left(t))) }
         }
 
-      def applicative[X](ms: List[ErrorOrOk[X]]): List[X] Xor ErrorOrOk[List[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Xor ErrorOrOk[T[X]] =
         ms.map(_.run).sequence match {
-          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, List[X]](e))
-          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, List[X]](ls.map(_.value)))
+          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, T[X]](e))
+          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
         }
     }
     intercept1[R, ErrorOrOk, A, B](pure)(recurse)(action)

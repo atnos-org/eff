@@ -52,7 +52,7 @@ trait TaskInterpretation {
         try { Xor.left(Await.result(m.runAsync(s), atMost)) }
         catch { case NonFatal(t) => Xor.right(Eff.pure(Xor.left(t))) }
 
-      def applicative[X](ms: List[Task[X]]): List[X] Xor Task[List[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[Task[X]]): T[X] Xor Task[T[X]] =
         Xor.Right(ApplicativeTask.sequence(ms))
     }
 

@@ -3,8 +3,9 @@ package org.atnos.example
 import org.atnos.eff._
 import Eff._
 import Interpret._
-import cats.syntax.all._
+import cats._
 import cats.data._
+import cats.implicits._
 
 object ConsoleEffect {
 
@@ -44,8 +45,9 @@ object ConsoleEffect {
             Xor.Left(x)
         }
 
-      def applicative[X](ms: List[Console[X]]): List[X] Xor Console[List[X]] =
-        Xor.Left(ms.map(_.run) collect { case (c, x) =>
+      def applicative[X, T[_]: Traverse](ws: T[Console[X]]): T[X] Xor Console[T[X]] =
+        Xor.Left(ws.map { w =>
+          val (c, x) = w.run
           printer(c.message)
           x
         })
