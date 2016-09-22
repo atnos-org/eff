@@ -164,6 +164,11 @@ case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
 
 }
 
+object Unions {
+  def send[M[_], R, X](mx: M[X])(implicit m: MemberIn[M, R]) =
+    Unions[R, X](m.inject(mx), Nil)
+}
+
 /**
  * Collection of effects of a given type from a Unions objects
  *
@@ -372,7 +377,7 @@ object EffInterpretation extends EffInterpretation
  *  A => Eff[R, X1]; X1 => Eff[R, X2]; X2 => Eff[R, X3]; ...; X3 => Eff[R, B]
  *
  */
-case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) {
+case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Eff[R, B]) {
 
   /**
    * append a new monadic function to this list of functions such that
