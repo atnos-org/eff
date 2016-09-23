@@ -51,6 +51,7 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
   }
 
   def finalize1 = prop { (n1: Int, n2: Int, n3: Int, n4: Int) =>
+
     val messages: ListBuffer[String] = new ListBuffer
 
     def program =
