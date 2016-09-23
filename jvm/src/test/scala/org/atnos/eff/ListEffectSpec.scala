@@ -9,7 +9,8 @@ import cats.instances.all._
 
 class ListEffectSpec extends Specification { def is = s2"""
 
- List effect example $listEffect
+ List effect example       $listEffect
+ Empty list effect example $emptyList
 
  The List effect is stack-safe $stackSafe
 
@@ -26,6 +27,13 @@ class ListEffectSpec extends Specification { def is = s2"""
     } yield b + d
 
     action[L].runList.run ==== List(2, 3, 4, 3, 4, 5)
+  }
+
+  def emptyList = {
+    def action[R :_list]: Eff[R, Int] =
+      (fromList((1 to 0).toList) |@| fromList((1 to 0).toList)).map(_ + _)
+
+    action[L].runList.run ==== List()
   }
 
   def stackSafe = {

@@ -67,35 +67,16 @@ trait ListInterpretation {
             Left((continuation(head), (tail.map(a => continuation(a)) ++ unevaluated, result)))
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor Eff[U, List[A]] = { ???
-//        val traversed: State[(S, Boolean), T[X]] = xs.traverse {
-//          case Nil =>
-//            State[(S, Boolean), T[X]] { state =>
-//              case ((Nil, as), b)       => Xor.Right(pure(as.toList))
-//              case ((e :: rest, as), b) => Xor.Left((e, (rest, as)))
-//            }
-//        }
-//
-//        val ((s1, nil), tx) = traversed.run((s, false)).run.value
-//        if (nil)
-//
-//        if (xs.exists(_.isEmpty))
-//          s match {
-//            case (Nil, as)       => Xor.Right(pure(as.toList))
-//            case (e :: rest, as) => Xor.Left((e, (rest, as)))
-//          }
-//
-//        else {
-//          xs.transpose.map(ls => continuation(ls)) match {
-//            case Nil =>
-//              s match {
-//                case (Nil, as)       => Xor.Right(pure(as.toList))
-//                case (e :: rest, as) => Xor.Left((e, (rest, as)))
-//              }
-//             case x :: rest =>
-//               Xor.Left((x, (rest ++ s._1, s._2)))
-//          }
-//        }
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor Eff[U, List[A]] = {
+        xs.sequence.map(ls => continuation(ls)) match {
+          case Nil =>
+            s match {
+              case (Nil, as)       => Xor.Right(pure(as.toList))
+              case (e :: rest, as) => Xor.Left((e, (rest, as)))
+            }
+          case x :: rest =>
+            Xor.Left((x, (rest ++ s._1, s._2)))
+        }
       }
 
     }
