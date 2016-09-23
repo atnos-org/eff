@@ -27,6 +27,11 @@ trait eff {
       Eff.run(e)
   }
 
+  implicit class EffPureOps[A](a: A) {
+    def pureEff[R]: Eff[R, A] =
+      Eff.pure(a)
+  }
+
   implicit class EffOneEffectOps[M[_] : Monad, A](e: Eff[Fx1[M], A]) {
     def detach: M[A] =
       Eff.detach(e)
