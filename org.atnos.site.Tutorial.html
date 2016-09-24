@@ -168,7 +168,7 @@ def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff
           ().asInstanceOf[X]
       }
 
-    def applicative[X](ms: List[KVStore[X]]): List[X] =
+    def applicative[X, Tr[_] : Traverse](ms: Tr[KVStore[X]]): Tr[X] =
       ms.map(apply)
   }
   interpretUnsafe(effects)(sideEffect)(m)
@@ -382,11 +382,11 @@ def runInteract[R, A](effects: Eff[R, A])(implicit m: Interact &lt;= R): Eff[m.O
       }
     }
 
-    def applicative[X](ms: List[Interact[X]]): List[X] Xor Interact[List[X]] =
+    def applicative[X, T[_] : Traverse](ms: T[Interact[X]]): T[X] Xor Interact[T[X]] =
       Xor.Left(ms.map {
         case Ask(prompt) =&gt; println(prompt); readLine()
         case Tell(msg)   =&gt; println(msg)
-      }.map(_.asInstanceOf[X]))
+      })
 
   }
   interpret1[R, m.Out, Interact, A, A](a =&gt; a)(recurse)(effects)(m)
@@ -403,11 +403,11 @@ def runDataOp[R, A](effects: Eff[R, A])(implicit m: DataOp &lt;= R): Eff[m.Out, 
       }
     }
 
-    def applicative[X](ms: List[DataOp[X]]): List[X] Xor DataOp[List[X]] =
+    def applicative[X, T[_]: Traverse](ms: T[DataOp[X]]): T[X] Xor DataOp[T[X]] =
       Xor.Left(ms.map {
         case AddCat(a)    =&gt; memDataSet.append(a); ()
         case GetAllCats() =&gt; memDataSet.toList
-      }.map(_.asInstanceOf[X]))
+      })
 
   }
   interpret1[R, m.Out, DataOp, A, A](a =&gt; a)(recurse)(effects)(m)

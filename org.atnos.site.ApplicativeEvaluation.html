@@ -70,7 +70,7 @@ action.runEval.awaitFuture(2.seconds).runWriterLog.run</code></pre>
   List(1000, 500, 50).traverseA(execute[S])
 
 action.runEval.awaitFuture(2.seconds).runWriterLog.run</code></pre>
-<p><code class="prettyprint">&gt; List(50, 500, 1000)</code></p>
+<p><code class="prettyprint">&gt; List(1000, 50, 500)</code></p>
 <p>This uses now <code class="prettyprint">traverseA</code> (instead of <code class="prettyprint">traverse</code>) to do an applicative traversal and execute futures concurrently and the fastest actions finish first.</p>
 <h3 id="batching">Batching</h3>
 <p>Another advantage of applicative effects is that we can intercept them individual requests and “batch” them into one single request. For example:</p>
@@ -113,15 +113,21 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
 }
 
 </code></pre>
-<p>We can also optimise a <code class="prettyprint">UserDsl</code> program by providing a <code class="prettyprint">Semigroup</code> instance describing how to “batch” 2 calls into 1:</p>
-<pre><code class="prettyprint">implicit def SemigroupUserDsl: Semigroup[UserDsl[_]] = new Semigroup[UserDsl[_]] {
-  def combine(tx: UserDsl[_], ty: UserDsl[_]): UserDsl[_] =
+<p>We can also optimise a <code class="prettyprint">UserDsl</code> program by providing a <code class="prettyprint">Batchable</code> instance describing how to “batch” 2 calls into 1:</p>
+<pre><code class="prettyprint">implicit def BatchableUserDsl: Batchable[UserDsl] = new Batchable[UserDsl] {
+  type Z = List[User]
+  type E = User
+
+  def distribute(z: List[User]) = z
+
+  def batch[X, Y](tx: UserDsl[X], ty: UserDsl[Y]): Option[UserDsl[Z]] = Option {
     (tx, ty) match {
       case (GetUser(i),   GetUser(j))   =&gt; GetUsers(List(i, j))
       case (GetUser(i),   GetUsers(is)) =&gt; GetUsers(i :: is)
       case (GetUsers(is), GetUser(i))   =&gt; GetUsers(is :+ i)
       case (GetUsers(is), GetUsers(js)) =&gt; GetUsers(is ++ js)
     }
+  }
 }
 
 </code></pre>
@@ -132,7 +138,7 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
 </code></pre>
 <p>And its optimised version:</p>
 <pre><code class="prettyprint">def optimised[R :_userDsl]: Eff[R, List[User]] =
-  optimiseBatching(program)
+  program.batch
 
 </code></pre>
 <p>Running the optimised and non-optimised version of the program must yield the same results:</p>
@@ -142,8 +148,6 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
 
 optimised: User(1), User(2), User(3)
   trace: getWebUsers</code></pre>
-<p><strong><em>NOTE</em></strong></p>
-<p>The <code class="prettyprint">optimiseBatching</code> combinator only works for <em>some</em> Semigroups, namely the ones where the aggregation of effects return an effect for a list of values. It is unsafe to use with other Semigroups! See the <code class="prettyprint">org.atnos.eff.Optimise</code> for more information.</p>
 </div>
 
 </div>
