@@ -244,14 +244,19 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     case class GetUsers(is: List[Int]) extends UserDsl[List[User]]
     type _userDsl[R] = UserDsl |= R
 
-    implicit def SemigroupUserDsl: Semigroup[UserDsl[_]] = new Semigroup[UserDsl[_]] {
-      def combine(tx: UserDsl[_], ty: UserDsl[_]): UserDsl[_] =
+    implicit def BatchableUserDsl: Batchable[UserDsl] = new Batchable[UserDsl] {
+      type Z = List[User]
+      type E = User
+      def distribute(z: Z): List[E] = z
+
+      def batch[X, Y](tx: UserDsl[X], ty: UserDsl[Y]): Option[UserDsl[Z]] = Option {
         (tx, ty) match {
           case (GetUser(i),   GetUser(j))   => GetUsers(List(i, j))
           case (GetUser(i),   GetUsers(is)) => GetUsers(i :: is)
           case (GetUsers(is), GetUser(i))   => GetUsers(is :+ i)
           case (GetUsers(is), GetUsers(js)) => GetUsers(is ++ js)
         }
+      }
     }
 
     def getUser[R :_userDsl](i: Int): Eff[R, User] =
@@ -276,7 +281,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     val action = action1
 
-    val optimised = optimiseBatching(action1)
+    val optimised = action1.batch
 
     val result = runDsl(action)
     val optimisedResult = runDsl(optimised)

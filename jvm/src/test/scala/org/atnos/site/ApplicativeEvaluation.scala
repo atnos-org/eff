@@ -109,17 +109,23 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
 }
 
 /*p
-We can also optimise a `UserDsl` program by providing a `Semigroup` instance describing how to "batch"
+We can also optimise a `UserDsl` program by providing a `Batchable` instance describing how to "batch"
 2 calls into 1:
 */
-implicit def SemigroupUserDsl: Semigroup[UserDsl[_]] = new Semigroup[UserDsl[_]] {
-  def combine(tx: UserDsl[_], ty: UserDsl[_]): UserDsl[_] =
+implicit def BatchableUserDsl: Batchable[UserDsl] = new Batchable[UserDsl] {
+  type Z = List[User]
+  type E = User
+
+  def distribute(z: List[User]) = z
+
+  def batch[X, Y](tx: UserDsl[X], ty: UserDsl[Y]): Option[UserDsl[Z]] = Option {
     (tx, ty) match {
       case (GetUser(i),   GetUser(j))   => GetUsers(List(i, j))
       case (GetUser(i),   GetUsers(is)) => GetUsers(i :: is)
       case (GetUsers(is), GetUser(i))   => GetUsers(is :+ i)
       case (GetUsers(is), GetUsers(js)) => GetUsers(is ++ js)
     }
+  }
 }
 
 /*p
@@ -133,7 +139,7 @@ def program[R :_userDsl]: Eff[R, List[User]] =
 And its optimised version:
 */
 def optimised[R :_userDsl]: Eff[R, List[User]] =
-  optimiseBatching(program)
+  program.batch
 
 /*p
 Running the optimised and non-optimised version of the program must yield the same results:
@@ -150,12 +156,6 @@ def show(l1: (List[User], Vector[String]), l2: (List[User], Vector[String])) =
 
 show(runDsl(program[Fx1[UserDsl]]), runDsl(optimised[Fx1[UserDsl]]))
 }.noPrompt.eval}
-
-***NOTE***
-
-The `optimiseBatching` combinator only works for *some* Semigroups, namely the ones where the aggregation of effects
-return an effect for a list of values. It is unsafe to use with other Semigroups! See the `org.atnos.eff.Optimise` for
-more information.
 
 """
 
