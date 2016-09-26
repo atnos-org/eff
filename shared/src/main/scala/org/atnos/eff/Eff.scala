@@ -162,6 +162,9 @@ case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
     CollectedUnions[M, R, U](effects, otherEffects, indices, otherIndices)
   }
 
+  def transform[M[_]](nat: M ~> M)(implicit m: M /= R): Unions[R, A] =
+    Unions(m.transformUnion(nat)(first), rest.map(m.transformUnion(nat)))
+
 }
 
 object Unions {

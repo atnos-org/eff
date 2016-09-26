@@ -41,6 +41,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  An effect of the stack can be transformed into another one        $transformEffect
  An effect of the stack can be translated into other effects on that stack $translateEffect
  An effect of the stack can be locally translated into other effects on that stack $translateEffectLocal
+ An effect can be intercepted and transformed to other values for the same effect $interceptEffectNat
 
  Applicative calls can be optimised by "batching" requests $optimiseRequests
 
@@ -232,6 +233,29 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     both[S2].runState("universe").runOption.run ==== Option((5, "hello"))
   }
+
+  def interceptEffectNat = prop { (n: Int, s: String) =>
+    type WS[X] = Writer[String, X]
+
+    val logs: Eff[Fx1[Writer[String, ?]], Unit] =
+      (1 to n).toList.traverse(i => tell(s)).void
+
+    val logsA: Eff[Fx1[Writer[String, ?]], Unit] =
+      (1 to n).toList.traverseA(i => tell(s)).void
+
+    def reverse(ls: Eff[Fx1[Writer[String, ?]], Unit]) =
+      interpret.interceptNat(logs)(new (WS ~> WS) {
+        def apply[X](w: WS[X]): WS[X] =
+          w.run match { case (l, v) => Writer.apply(l.reverse, v) }
+      })
+
+    val reversed  = reverse(logs).runWriterLog.run
+    val reversedA = reverse(logsA) .runWriterLog.run
+    val expected = (1 to n).map(_ => s.reverse).toList
+
+    (reversed ==== expected) and (reversedA ==== expected)
+
+  }.setGens(Gen.choose(100, 100), Gen.oneOf("abc", "dce", "xyz")).set(minTestsOk = 1)
 
   def optimiseRequests = {
 

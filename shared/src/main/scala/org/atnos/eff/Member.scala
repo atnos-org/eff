@@ -92,6 +92,10 @@ trait MemberInOut[T[_], R] extends MemberIn[T, R] { outer =>
     def extract[V](union: Union[R, V]): Option[O[V]] =
       outer.extract(union).map(to.apply)
   }
+
+  def transformUnion[A](nat: T ~> T)(union: Union[R, A]): Union[R, A] =
+    extract(union).map(tx => nat(tx)).fold(union)(tx => inject(tx))
+
 }
 
 object MemberInOut extends MemberInOutLower1 {

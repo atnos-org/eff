@@ -337,6 +337,25 @@ trait Interpret {
       def apply[X](tx: T[X]): Eff[U, X] = nat(tx)
     })
 
+  /**
+   * Intercept the values for one effect and transform them into
+   * other values for the same effect
+   */
+  def interceptNat[R, U, T[_], A](effects: Eff[R, A])
+                                 (nat: T ~> T)
+                                 (implicit m: MemberInOut[T, R]): Eff[R, A] =
+  effects match {
+    case Pure(a) => Pure(a)
+
+    case Impure(u, c) =>
+      m.extract(u) match {
+        case None => effects
+        case Some(tx) => Impure(m.inject(nat(tx)), Arrs.singleton((x: u.X) => interceptNat(c(x))(nat)))
+      }
+
+    case ImpureAp(unions, map) => ImpureAp(unions.transform(nat), map)
+  }
+
   /** interpret an effect by running side-effects */
   def interpretUnsafe[R, U, T[_], A](effects: Eff[R, A])
                                                           (sideEffect: SideEffect[T])
