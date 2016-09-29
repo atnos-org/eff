@@ -244,7 +244,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       (1 to n).toList.traverseA(i => tell(s)).void
 
     def reverse(ls: Eff[Fx1[Writer[String, ?]], Unit]) =
-      interpret.interceptNat(logs)(new (WS ~> WS) {
+      interpret.interceptNat(ls)(new (WS ~> WS) {
         def apply[X](w: WS[X]): WS[X] =
           w.run match { case (l, v) => Writer.apply(l.reverse, v) }
       })
