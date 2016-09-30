@@ -36,6 +36,13 @@ trait XorCreation {
   def right[R, E, A](a: A)(implicit member: (E Xor ?) |= R): Eff[R, A] =
     send[E Xor ?, R, A](Right(a))
 
+  /** create an Xor effect from a value possibly throwing an exception */
+  def fromCatchNonFatal[R, E, A](a: =>A)(onThrowable: Throwable => E)(implicit member: (E Xor ?) |= R): Eff[R, A] =
+    fromXor(Xor.catchNonFatal(a).leftMap(onThrowable))
+
+  /** create an Xor effect from a value possibly throwing a Throwable */
+  def catchNonFatalThrowable[R, A](a: =>A)(implicit member: (Throwable Xor ?) |= R): Eff[R, A] =
+    fromCatchNonFatal(a)(identity)
 }
 
 object XorCreation extends XorCreation

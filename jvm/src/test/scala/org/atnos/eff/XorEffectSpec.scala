@@ -9,6 +9,7 @@ import cats.instances.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.scalacheck.Gen
+import org.specs2.matcher.XorMatchers._
 
 class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -23,6 +24,10 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  the left type can be modified with local in a different stack $local
  the left type can be run with local in the same stack  $localRun
+
+ exceptions can also be caugh
+   non fatal exceptions with a handler $handleFromCatchNonFatal
+   non fatal exceptions                $catchNonFatal
 
 """
 
@@ -142,6 +147,20 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
       XorEffect.left(Error1("boom"))
 
     action1.runLocalXor(Error2).runXor.run ==== Xor.left(Error2(Error1("boom")))
+  }
+
+  def handleFromCatchNonFatal = {
+    val newException = new Exception("bam")
+    val caught = xor.fromCatchNonFatal { throw new Exception("boom"); 1 } ((t: Throwable) => newException)
+
+    caught.runXor.run must beXorLeft(newException)
+  }
+
+  def catchNonFatal = {
+    val exception = new Exception("boom")
+    val caught = xor.catchNonFatalThrowable { throw exception; 1 }
+
+    caught.runXor.run must beXorLeft(exception)
   }
 }
 
