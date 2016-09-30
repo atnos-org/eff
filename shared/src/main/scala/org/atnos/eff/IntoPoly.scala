@@ -191,10 +191,10 @@ trait IntoPolyLower3 extends IntoPolyLower4 {
 
 trait IntoPolyLower4 {
 
-  implicit def into[T[_], R, Q, U, S](implicit
-                                      t: Member.Aux[T, R, S],
-                                      m: T |= U,
-                                      recurse: IntoPoly[S, U]): IntoPoly[R, U] =
+  implicit def into[T[_], R, U, S](implicit
+                                   t: Member.Aux[T, R, S],
+                                   m: T |= U,
+                                   recurse: IntoPoly[S, U]): IntoPoly[R, U] =
     new IntoPoly[R, U] {
       def apply[A](e: Eff[R, A]): Eff[U, A] =
         e match {
@@ -203,8 +203,8 @@ trait IntoPolyLower4 {
 
           case Impure(u, c) =>
             t.project(u) match {
-              case Xor.Right(tx) => Impure[U, u.X, A](m.inject(tx), Arrs.singleton(x => effInto(c(x))))
-              case Xor.Left(s)   => recurse(Impure[S, s.X, A](s, c.asInstanceOf[Arrs[S, s.X, A]]))
+              case Xor.Right(tx) => Impure[U, u.X, A](m.inject(tx), Arrs.singleton(x => effInto[R, U, A](c(x))))
+              case Xor.Left(s)   => recurse(Impure[S, s.X, s.X](s, Arrs.singleton(x => pure(x)))).flatMap((x: s.X) => effInto[R, U, A](c(x)))
             }
 
           case ImpureAp(unions, map) =>
@@ -212,10 +212,13 @@ trait IntoPolyLower4 {
               def apply[X](u: Union[R, X]): Union[U, X] =
                 t.project(u) match {
                   case Xor.Right(t1)   => m.inject(t1)
-                  case Xor.Left(other) => recurse(Impure[S, X, X](other, Arrs.singleton((x: X) => pure[S, X](x)))).asInstanceOf[Impure[U, X, X]].union
+                  case Xor.Left(other) =>
+                    recurse(Impure[S, X, X](other, Arrs.singleton(x => pure(x)))) match {
+                      case Impure(u1, _) => u1.asInstanceOf[Union[U, X]]
+                      case _ => sys.error("impossible into case: Impure must be transformed to Impure")
+                    }
                 }
             }), map)
         }
     }
 }
-
