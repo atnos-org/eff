@@ -349,7 +349,7 @@ trait Interpret {
 
     case Impure(u, c) =>
       m.extract(u) match {
-        case None => effects
+        case None     => Impure(u, Arrs.singleton((x: u.X) => interceptNat(c(x))(nat)))
         case Some(tx) => Impure(m.inject(nat(tx)), Arrs.singleton((x: u.X) => interceptNat(c(x))(nat)))
       }
 

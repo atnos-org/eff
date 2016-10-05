@@ -236,22 +236,24 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
   def interceptEffectNat = prop { (n: Int, s: String) =>
     type WS[X] = Writer[String, X]
+    type RI[X] = Reader[Int, X]
+    type S = Fx2[WS, RI]
 
-    val logs: Eff[Fx1[Writer[String, ?]], Unit] =
-      (1 to n).toList.traverse(i => tell(s)).void
+    val logs: Eff[S, Unit] =
+      (1 to n).toList.traverse(_ => ask[S, Int] >>= (i => tell[S, String](s+i.toString))).void
 
-    val logsA: Eff[Fx1[Writer[String, ?]], Unit] =
-      (1 to n).toList.traverseA(i => tell(s)).void
+    val logsA: Eff[S, Unit] =
+      (1 to n).toList.traverseA(_ => ask[S, Int] >>= (i => tell[S, String](s+i.toString))).void
 
-    def reverse(ls: Eff[Fx1[Writer[String, ?]], Unit]) =
+    def reverse(ls: Eff[S, Unit]) =
       interpret.interceptNat(ls)(new (WS ~> WS) {
         def apply[X](w: WS[X]): WS[X] =
           w.run match { case (l, v) => Writer.apply(l.reverse, v) }
       })
 
-    val reversed  = reverse(logs).runWriterLog.run
-    val reversedA = reverse(logsA) .runWriterLog.run
-    val expected = (1 to n).map(_ => s.reverse).toList
+    val reversed  = reverse(logs).runWriterLog.runReader(0).run
+    val reversedA = reverse(logsA) .runWriterLog.runReader(0).run
+    val expected = (1 to n).map(_ => (s+"0").reverse).toList
 
     (reversed ==== expected) and (reversedA ==== expected)
 
