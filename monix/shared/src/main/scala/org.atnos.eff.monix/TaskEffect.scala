@@ -37,6 +37,17 @@ trait TaskCreation {
 
 trait TaskInterpretation {
 
+  implicit def ApplicativeMonad: Monad[Task] = new Monad[Task] {
+    def pure[A](a: A): Task[A] =
+      Task(a)
+
+    def flatMap[A, B](fa: Task[A])(f: A => Task[B]): Task[B] =
+      fa.flatMap(f)
+
+    def tailRecM[A, B](a: A)(f: A => Task[Either[A,B]]): Task[B] =
+      defaultTailRecM(a)(f)
+  }
+
   def ApplicativeTask: Applicative[Task] = new Applicative[Task] {
     def pure[A](a: A): Task[A] =
       Task(a)

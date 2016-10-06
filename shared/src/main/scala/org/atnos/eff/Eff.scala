@@ -5,6 +5,7 @@ import cats.~>
 import scala.annotation.tailrec
 import cats._
 import cats.data._, Xor._
+import cats.implicits._
 import Eff._
 
 /**
@@ -348,6 +349,26 @@ trait EffInterpretation {
 
         case ap @ ImpureAp(u, continuation) =>
           detach(ap.toMonadic)
+      }
+    }
+    go(eff)
+  }
+
+  /**
+   * peel-off the only present effect, using an Applicative instance where possible
+   */
+  def detachA[M[_], A](eff: Eff[Fx1[M], A])(implicit monad: Monad[M], applicative: Applicative[M]): M[A] = {
+    def go(e: Eff[Fx1[M], A]): M[A] = {
+      e match {
+        case Pure(a) => monad.pure(a)
+
+        case Impure(u, continuation) =>
+          u match {
+            case Union1(ta) => monad.flatMap(ta)(x => go(continuation(x)))
+          }
+
+        case ap @ ImpureAp(unions, continuation) =>
+          applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).map(continuation)
       }
     }
     go(eff)

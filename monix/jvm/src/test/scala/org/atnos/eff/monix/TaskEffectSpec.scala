@@ -28,6 +28,7 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  Tasks can be executed concurrently $e4
  Tasks can be executed sequentially $e5
+ Tasks can be executed concurrently, using detachA to sequence them $e6
 
 """
 
@@ -89,6 +90,22 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     "messages are  received in the same order" ==> {
       messages.toList === elements.map("got "+_)
+    }
+  }.setGen(chooseInt(5, 10).flatMap(listOfN(_, chooseInt(10, 50)))).
+    set(minTestsOk = 20)
+
+  def e6 = prop { elements: List[Int] =>
+    type S = Fx.fx1[Task]
+
+    val messages = new ListBuffer[String]
+    val actionApplicative: Eff[S, List[Int]] =
+      elements.map(i => async(register(i, messages))).sequenceA
+
+    val task = actionApplicative.detachA(ApplicativeTask)
+    Await.result(task.runAsync, 2.seconds) ==== elements
+
+    "messages are not received in the same order" ==> {
+      messages.toList !=== elements.map("got "+_)
     }
   }.setGen(chooseInt(5, 10).flatMap(listOfN(_, chooseInt(10, 50)))).
     set(minTestsOk = 20)

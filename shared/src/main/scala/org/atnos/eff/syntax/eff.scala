@@ -1,8 +1,7 @@
 package org.atnos.eff
 package syntax
 
-import cats.{Monad, Traverse}
-import cats.~>
+import cats._
 
 /**
  * Operations of Eff[R, A] values
@@ -35,6 +34,9 @@ trait eff {
   implicit class EffOneEffectOps[M[_] : Monad, A](e: Eff[Fx1[M], A]) {
     def detach: M[A] =
       Eff.detach(e)
+
+    def detachA(applicative: Applicative[M]): M[A] =
+      Eff.detachA(e)(implicitly[Monad[M]], applicative)
   }
 
   implicit class EffOnePureValueOps[R, A](e: Eff[R, A]) {
