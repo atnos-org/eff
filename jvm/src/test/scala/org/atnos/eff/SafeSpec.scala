@@ -148,7 +148,7 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
 
   def unitAction(n: Int): Unit =
     if (isEven(n)) ()
-    else throw boom
+    else throw finalBoom
 
   val boom: Throwable = new Exception("boom")
   val finalBoom: Throwable = new Exception("finalBoom")

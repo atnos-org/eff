@@ -257,7 +257,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     (reversed ==== expected) and (reversedA ==== expected)
 
-  }.setGens(Gen.choose(100, 100), Gen.oneOf("abc", "dce", "xyz")).set(minTestsOk = 1)
+  }.setGens(Gen.choose(3, 3), Gen.oneOf("abc", "dce", "xyz")).set(minTestsOk = 1)
 
   def optimiseRequests = {
 

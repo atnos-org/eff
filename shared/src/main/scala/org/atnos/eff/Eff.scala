@@ -93,9 +93,9 @@ case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]) exte
  *  - the types of the elements in the list argument to 'map' must be the exact types of each effect in unions.unions
  *
  */
-case class ImpureAp[R, X, A](unions: Unions[R, X], map: List[Any] => A) extends Eff[R, A] {
+case class ImpureAp[R, X, A](unions: Unions[R, X], continuation: Arrs[R, List[Any], A]) extends Eff[R, A] {
   def toMonadic: Eff[R, A] =
-    Impure[R, unions.X, A](unions.first, unions.continueWith(map))
+    Impure[R, unions.X, A](unions.first, unions.continueWith(continuation))
 }
 
 /**
@@ -119,11 +119,11 @@ case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
    * create a continuation which will apply the 'map' function
    * if the first effect of this Unions object is interpreted
    */
-  def continueWith[B](map: List[Any] => B): Arrs[R, A, B] =
+  def continueWith[B](continuation: Arrs[R, List[Any], B]): Arrs[R, A, B] =
     Arrs.singleton { (x: X) =>
       rest match {
-        case Nil    => pure[R, B](map(x :: Nil))
-        case h :: t => ImpureAp[R, h.X, B](Unions[R, h.X](h, t), (ys: List[Any]) => map(x :: ys))
+        case Nil    => continuation(x :: Nil)
+        case h :: t => ImpureAp[R, h.X, B](Unions[R, h.X](h, t), Arrs.singleton((ys: List[Any]) => continuation(x :: ys)))
       }
     }
 
@@ -178,22 +178,22 @@ object Unions {
  *
  */
 case class CollectedUnions[M[_], R, U](effects: List[M[Any]], otherEffects: List[Union[U, Any]], indices: List[Int], otherIndices: List[Int]) {
-  def continuation[A](map: List[Any] => A, m: Member.Aux[M, R, U]): Arrs[R, List[Any], A] =
+  def continuation[A](continueWith: List[Any] => Eff[R, A], m: Member.Aux[M, R, U]): Arrs[R, List[Any], A] =
     otherEffects match {
-      case Nil       => Arrs.singleton[R, List[Any], A](ls => Eff.pure[R, A](map(ls)))
-      case o :: rest => Arrs.singleton[R, List[Any], A](ls => ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), xs => map(reorder(ls, xs))))
+      case Nil       => Arrs.singleton[R, List[Any], A](ls => continueWith(ls))
+      case o :: rest => Arrs.singleton[R, List[Any], A](ls => ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), Arrs.singleton(xs => continueWith(reorder(ls, xs)))))
     }
 
-  def continuation[A](map: List[Any] => A): Arrs[U, List[Any], A] =
+  def continuation[A](continueWith: Arrs[U, List[Any], A]): Arrs[U, List[Any], A] =
     otherEffects match {
-      case Nil       => Arrs.singleton[U, List[Any], A](ls => Eff.pure[U, A](map(ls)))
-      case o :: rest => Arrs.singleton[U, List[Any], A](ls => ImpureAp[U, Any, A](Unions(o, rest), xs => map(reorder(ls, xs))))
+      case Nil       => Arrs.singleton[U, List[Any], A](ls => continueWith(ls))
+      case o :: rest => Arrs.singleton[U, List[Any], A](ls => ImpureAp[U, Any, A](Unions(o, rest), Arrs.singleton(xs => continueWith(reorder(ls, xs)))))
     }
 
-  def othersEff[A](map: List[Any] => A): Eff[U, A] =
+  def othersEff[A](continueWith: Arrs[U, List[Any], A]): Eff[U, A] =
     otherEffects match {
-      case Nil       => pure(map(Nil))
-      case o :: rest => ImpureAp[U, Any, A](Unions(o, rest), map)
+      case Nil       => continueWith(Nil)
+      case o :: rest => ImpureAp[U, Any, A](Unions(o, rest), Arrs.singleton(ls => continueWith(ls)))
     }
 
   private def reorder(ls: List[Any], xs: List[Any]): List[Any] =
@@ -228,7 +228,7 @@ trait EffImplicits {
           fa.flatMap(a => pure(f(a)))
 
         case ImpureAp(u, c) =>
-          ImpureAp(u, c andThen f)
+          ImpureAp(u, c map f)
       }
 
     def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
@@ -239,8 +239,8 @@ trait EffImplicits {
         case Impure(union, continuation) =>
           Impure(union, continuation.append(f))
 
-        case ap @ ImpureAp(_, _) =>
-          ap.toMonadic.flatMap(f)
+        case ImpureAp(unions, continuation) =>
+          ImpureAp(unions, continuation.append(f))
       }
 
     def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
@@ -257,21 +257,21 @@ trait EffImplicits {
           ff match {
             case Pure(f)        => Pure(f(a))
             case Impure(u, c)   => Impure(u, c).map(_(a))
-            case ImpureAp(u, c) => ImpureAp(u, xs => c(xs)(a))
+            case ImpureAp(u, c) => ImpureAp(u, Arrs.singleton(xs => c(xs).map(_(a))))
           }
 
         case Impure(u, c) =>
           ff match {
-            case Pure(f)         => Impure(u, Arrs.singleton((x: u.X) => c(x).map(f)))
-            case Impure(u1, c1)  => ImpureAp(Unions(u, List(u1)), ls => (ls.head, ls(1))).flatMap { case (x, fx) => ap(c1(fx))(c(x)) }
-            case ImpureAp(u1, m) => ImpureAp(Unions(u, u1.unions), ls => (ls.head, ls.drop(1))).flatMap { case (x, fx) => ap(pure(m(fx)))(c(x)) }
+            case Pure(f)          => Impure(u, Arrs.singleton((x: u.X) => c(x).map(f)))
+            case Impure(u1, c1)   => ImpureAp(Unions(u, List(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head))))
+            case ImpureAp(u1, c1) => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head))))
           }
           
-        case ImpureAp(unions, map) =>
+        case ImpureAp(unions, c) =>
           ff match {
-            case Pure(f)        => ImpureAp(unions, map andThen f)
-            case Impure(u, c)   => ImpureAp(Unions(unions.first, unions.rest :+ u), ls => (ls.dropRight(1), ls.last)).flatMap { case (x, fx) => ap(c(fx))(pure(map(x))) }
-            case ImpureAp(u, m) => ImpureAp(u append unions, xs => m(xs.take(u.size))(map(xs.drop(u.size))))
+            case Pure(f)         => ImpureAp(unions, c map f)
+            case Impure(u, c1)   => ImpureAp(Unions(unions.first, unions.rest :+ u), Arrs.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1)))))
+            case ImpureAp(u, c1) => ImpureAp(u append unions, Arrs.singleton(xs => ap(c1(xs.take(u.size)))(c(xs.drop(u.size)))))
           }
 
       }
@@ -288,7 +288,7 @@ object EffImplicits extends EffImplicits
 trait EffCreation {
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
   def send[T[_], R, V](tv: T[V])(implicit member: T |= R): Eff[R, V] =
-    ImpureAp(Unions(member.inject(tv), Nil), xs => xs.head.asInstanceOf[V])
+    ImpureAp(Unions(member.inject(tv), Nil), Arrs.singleton(xs => pure[R, V](xs.head.asInstanceOf[V])))
 
   /** use the internal effect as one of the stack effects */
   def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: M |= R): Eff[R, A] =
@@ -368,7 +368,7 @@ trait EffInterpretation {
           }
 
         case ap @ ImpureAp(unions, continuation) =>
-          applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).map(continuation)
+          applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).flatMap(x => go(continuation(x)))
       }
     }
     go(eff)
@@ -418,6 +418,10 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
       case Vector() => this
       case fs :+ last => Arrs(fs :+ ((x: Any) => f(last(x).asInstanceOf[Eff[R, B]]).asInstanceOf[Eff[R, Any]]))
     }
+
+  /** map the last value */
+  def map[C](f: B => C): Arrs[R, A, C] =
+    Arrs(functions :+ ((x: Any) => pure[R, Any](f(x.asInstanceOf[B]).asInstanceOf[Any])))
 
   /**
    * execute this monadic function

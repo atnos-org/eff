@@ -8,7 +8,7 @@ trait Batch {
 
   def batch[R, T[_], A](eff: Eff[R, A])(implicit batchable: Batchable[T], m: T /= R): Eff[R, A] =
     eff match {
-      case ImpureAp(unions, map) =>
+      case ImpureAp(unions, continuation) =>
         // extract only the effects of type M
         val collected = unions.extract
 
@@ -38,7 +38,7 @@ trait Batch {
               case e1 :: rest1 =>
                 ImpureAp(Unions(m.inject(e1), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
                   // the map operation has to reorder the results based on what could be batched or not
-                  ls => map(reorder(ls, result.hasBatched, result.keys.toList ++ collected.otherIndices)))
+                  Arrs.singleton(ls => continuation(reorder(ls, result.hasBatched, result.keys.toList ++ collected.otherIndices))))
             }
         }
 

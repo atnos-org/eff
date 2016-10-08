@@ -34,11 +34,12 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val validate: Eff[S, Int] =
       for {
         _ <- ValidateEffect.correct[S, String, Int](1)
-        _ <- ValidateEffect.wrong[S, String]("error!")
+        _ <- ValidateEffect.wrong[S, String]("error1")
+        _ <- ValidateEffect.wrong[S, String]("error2")
         a <- EffMonad[S].pure(3)
       } yield a
 
-    validate.runNel.run ==== Left(NonEmptyList.of("error!"))
+    validate.runNel.run ==== Left(NonEmptyList.of("error1", "error2"))
   }
 
   def catchWrongValues1 = {

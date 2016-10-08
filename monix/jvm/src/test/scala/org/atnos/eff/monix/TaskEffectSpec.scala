@@ -1,23 +1,24 @@
 package org.atnos.eff.monix
 
 import org.atnos.eff._
-import org.atnos.eff.eff._
-import org.atnos.eff.eval._
-import org.atnos.eff.option._
+import org.atnos.eff.all._
 import org.atnos.eff.monix._
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.syntax.monix._
 
-import scala.concurrent._, duration._
+import scala.concurrent._
+import duration._
 import cats.data.Xor
 import cats.Eval
 import cats.implicits._
 import _root_.monix.execution.Scheduler.Implicits.global
 import _root_.monix.eval._
 import org.specs2._
-import org.scalacheck.Gen.{choose => chooseInt, listOfN}
+import org.scalacheck.Gen.{listOfN, choose => chooseInt}
+
 import scala.collection.mutable.ListBuffer
 import TaskEffect._
+import org.scalacheck.Gen
 
 class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -28,7 +29,8 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  Tasks can be executed concurrently $e4
  Tasks can be executed sequentially $e5
- Tasks can be executed concurrently, using detachA to sequence them $e6
+ Tasks can be executed concurrently, using detachA to sequence them  $e6
+ Tasks can be executed concurrently, embedded in a for comprehension $e7
 
 """
 
@@ -88,11 +90,10 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     actionApplicative.awaitTask(2.seconds).run ==== Xor.right(elements)
 
-    "messages are  received in the same order" ==> {
+    "messages are received in the same order" ==> {
       messages.toList === elements.map("got "+_)
     }
-  }.setGen(chooseInt(5, 10).flatMap(listOfN(_, chooseInt(10, 50)))).
-    set(minTestsOk = 20)
+  }.setGen(listGen).set(minTestsOk = 20)
 
   def e6 = prop { elements: List[Int] =>
     type S = Fx.fx1[Task]
@@ -107,12 +108,35 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
     "messages are not received in the same order" ==> {
       messages.toList !=== elements.map("got "+_)
     }
-  }.setGen(chooseInt(5, 10).flatMap(listOfN(_, chooseInt(10, 50)))).
-    set(minTestsOk = 20)
+  }.setGen(listGen).set(minTestsOk = 20)
+
+  def e7 = prop { elements: List[Int] =>
+    type S = Fx.fx2[ThrowableXor, Task]
+
+    val messages = new ListBuffer[String]
+    val actionApplicative: Eff[S, List[Int]] =
+      elements.map(i => async[S, Int](register(i, messages))).sequenceA
+
+    val action = for {
+      i  <- xor.right[S, Throwable, Int](1)
+      is <- actionApplicative
+      j  <- xor.right[S, Throwable, Int](2)
+    } yield i +: is :+ j
+
+    val task = action.runXor.detachA(ApplicativeTask)
+    Await.result(task.runAsync, 2.seconds) ==== Xor.Right(1 +: elements :+ 2)
+
+    "messages are not received in the same order" ==> {
+      messages.toList !=== elements.map("got "+_)
+    }
+  }.setGen(listGen).set(minTestsOk = 20)
 
   /**
    * HELPERS
    */
+
+  def listGen: Gen[List[Int]] =
+    chooseInt(5, 10).flatMap(listOfN(_, chooseInt(10, 50)))
 
   def register(i: Int, messages: ListBuffer[String]) = {
     Thread.sleep(i.toLong)

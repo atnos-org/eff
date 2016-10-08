@@ -76,7 +76,7 @@ trait ValidateInterpretation extends ValidateCreation {
         Xor.Left {
           val traversed: State[S, T[X]] = xs.traverse {
             case Correct() => State[S, X](state => (state, ()))
-            case Wrong(e)  => State[S, X](state => (state.map(_ |+| map(e)), ()))
+            case Wrong(e)  => State[S, X](state => (state.fold(Option(map(e)))(l => Option(l |+| map(e))), ()))
           }
           traversed.run(s).value.swap
         }

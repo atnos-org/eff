@@ -115,7 +115,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
         val ((o, n), tx) = traversed.run((s, None)).value
         n match {
           case Some(t) => Xor.Right(pure((Xor.Left(t), o)))
-          case None    => Xor.Left((continuation(tx), s ++ o))
+          case None    => Xor.Left((continuation(tx), o))
         }
       }
     }

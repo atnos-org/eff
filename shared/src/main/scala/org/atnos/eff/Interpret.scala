@@ -142,13 +142,13 @@ trait Interpret {
               Impure[U, union.X, B](u, Arrs.singleton(x => go(continuation(x), s)))
           }
 
-        case ap @ ImpureAp(unions, map) =>
+        case ap @ ImpureAp(unions, continuation) =>
           val collected = unions.project
 
           if (collected.effects.isEmpty)
-            collected.othersEff(map).flatMap(pure)
+            collected.othersEff(Arrs.singleton(x => go(continuation(x), s)))
           else
-            loop.onApplicativeEffect(collected.effects, collected.continuation(map, m), s) match {
+            loop.onApplicativeEffect(collected.effects, collected.continuation(continuation, m), s) match {
               case Left((x, s1)) => go(x, s1)
               case Right(b)      => b
             }
@@ -232,13 +232,13 @@ trait Interpret {
               Impure[R, union.X, B](union, Arrs.singleton(x => go(continuation(x), s)))
           }
 
-        case ImpureAp(unions, map) =>
+        case ImpureAp(unions, continuation) =>
           val collect = unions.extract
 
           if (collect.effects.isEmpty)
-            collect.othersEff(map).flatMap(pure)
+            collect.othersEff(Arrs.singleton(x => go(continuation(x), s)))
           else
-            loop.onApplicativeEffect(collect.effects, collect.continuation(map), s) match {
+            loop.onApplicativeEffect(collect.effects, collect.continuation(continuation), s) match {
               case Left((x, s1)) => go(x, s1)
               case Right(b)      => b
             }
@@ -311,14 +311,14 @@ trait Interpret {
               Impure(u1, Arrs.singleton((x: union.X) => go(c(x))))
           }
 
-        case ap @ ImpureAp(unions, map) =>
+        case ap @ ImpureAp(unions, continuation) =>
           val collected = unions.project
 
           if (collected.effects.isEmpty)
-            collected.othersEff(map)
+            collected.othersEff(Arrs.singleton(x => go(continuation(x))))
           else {
             val translated: Eff[U, List[Any]] = EffApplicative.traverse(collected.effects)(tr.apply)
-            translated.flatMap(ls => translate(collected.continuation(map, m).apply(ls))(tr))
+            translated.flatMap(ls => translate(collected.continuation(continuation, m).apply(ls))(tr))
           }
       }
     }
@@ -353,7 +353,8 @@ trait Interpret {
         case Some(tx) => Impure(m.inject(nat(tx)), Arrs.singleton((x: u.X) => interceptNat(c(x))(nat)))
       }
 
-    case ImpureAp(unions, map) => ImpureAp(unions.transform(nat), map)
+    case ImpureAp(unions, continuation) =>
+      ImpureAp(unions.transform(nat), Arrs.singleton(x => interceptNat(continuation(x))(nat)))
   }
 
   /** interpret an effect by running side-effects */
