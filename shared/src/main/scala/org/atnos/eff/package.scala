@@ -9,7 +9,7 @@ package object eff {
   object eff        extends EffCreation        with EffInterpretation
   object reader     extends ReaderCreation     with ReaderInterpretation
   object writer     extends WriterCreation     with WriterInterpretation
-  object state      extends StateCreation      with StateInterpretation
+  object state      extends StateCreation      with StateInterpretation with StateImplicits
   object eval       extends EvalCreation       with EvalInterpretation
   object option     extends OptionCreation     with OptionInterpretation
   object list       extends ListCreation       with ListInterpretation

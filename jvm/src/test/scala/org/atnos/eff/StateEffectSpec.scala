@@ -1,10 +1,9 @@
 package org.atnos.eff
 
 import org.specs2.{ScalaCheck, Specification}
-import cats.syntax.all._
-import cats.instances.int._
-import cats.instances.list.catsStdInstancesForList
+import cats._, syntax.all._
 import cats.data._
+import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
@@ -13,8 +12,9 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
  The state monad can be used to put/get state $putGetState
  modify can be used to modify the current state $modifyState
 
- A State[T, ?] effect can be lifted into a State[S, ?] effect provided there is a
- "lens" (a getter and a setter) from T to S $stateLens
+ A State[T, ?] effect can be lifted into a State[S, ?] effect
+   provided there is a "lens" (a getter and a setter) from T to S $lensedState
+   with an implicit conversion                                    $stateImplicitLens
 
  The Eff monad is stack safe with State $stacksafeState
 
@@ -31,7 +31,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
       w <- EffMonad.pure("world")
     } yield h+" "+w
 
-    action[E].runState(5).run ==== (("hello world", 20))
+    action[SI].runState(5).run ==== (("hello world", 20))
   }
 
   def modifyState = {
@@ -42,18 +42,18 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
        _ <- modify((_:Int) + 10)
     } yield a.toString
 
-    action[E].execStateZero.run ==== 11
+    action[SI].execStateZero[Int].run ==== 11
   }
 
   def stacksafeState = {
 
     val list = (1 to 5000).toList
-    val action = list.traverseU(i => StateEffect.put[E, Int](i).as(i.toString))
+    val action = list.traverseU(i => StateEffect.put[SI, Int](i).as(i.toString))
 
     action.runState(0).run ==== ((list.map(_.toString), 5000))
   }
 
-  def stateLens = {
+  def lensedState = {
     type StateIntPair[A] = State[(Int, Int), A]
     type SS = Fx.fx2[StateIntPair, Option]
     type TS = Fx.fx2[StateInt, Option]
@@ -70,15 +70,41 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     val lensed = lensState(action, getter, setter)
 
-
     lensed.runOption.runState((20, 30)).run ==== ((Some("hello"), (20, 12)))
-
   }
 
+  def stateImplicitLens = {
+    import state._
+
+    case class Address(s: String)
+    case class Person(address: Address)
+
+    implicit val getAddress: Person => Address = (p: Person) => p.address
+    implicit val setAddress: Address => Person => Person = (a: Address) => (p: Person) => p.copy(address = a)
+
+    type PerS[E] = State[Person, ?] |= E
+    type PerR[E] = Reader[Person, ?] |= E
+    type Add[E] = State[Address, ?] |= E
+    type Err[E] = Xor[String, ?] |= E
+
+    def isBadPerson[E: PerR: Err]: Eff[E, Boolean] =
+      ask.map(_.hashCode % 13 == 0)
+
+    def updateAddress[E: Add: Err]: Eff[E, Unit] =
+      get.void
+
+    def updatePerson[E: PerS: Err]: Eff[E, Unit] =
+      for {
+        bad <- isBadPerson
+        _   <- updateAddress
+      } yield ()
+
+    updatePerson[Fx.fx2[String Xor ?, State[Person, ?]]].evalState(Person(Address("here"))).runXor.run ==== Xor.Right(())
+  }
 
   type StateInt[A] = State[Int, A]
 
-  type E = Fx.fx1[StateInt]
+  type SI = Fx.fx1[StateInt]
   type _stateInt[R] = StateInt |= R
 
 }

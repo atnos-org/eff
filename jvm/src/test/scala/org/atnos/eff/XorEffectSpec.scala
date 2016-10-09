@@ -23,9 +23,10 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
  a left value can be caught and transformed to a right value $leftToRight
 
  the left type can be modified with local in a different stack $local
- the left type can be run with local in the same stack  $localRun
+ the left type can be run with local in the same stack         $localRun
+ the left type can be modified implicitly                      $implicitRequireLeft
 
- exceptions can also be caugh
+ exceptions can also be caught
    non fatal exceptions with a handler $handleFromCatchNonFatal
    non fatal exceptions                $catchNonFatal
 
@@ -138,7 +139,6 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   def localRun = {
     case class Error1(m: String)
-
     case class Error2(e1: Error1)
 
     type R1 = Fx.fx2[Error1 Xor ?, Error2 Xor ?]
@@ -147,6 +147,20 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
       XorEffect.left(Error1("boom"))
 
     action1.runLocalXor(Error2).runXor.run ==== Xor.left(Error2(Error1("boom")))
+  }
+
+  def implicitRequireLeft = {
+    case class Error1(m: String)
+    case class Error2(e1: Error1)
+    implicit def e1Toe2: Error1 => Error2 = (e1: Error1) => Error2(e1)
+
+    def withE1[R](i: Int)(implicit m: (Error1 Xor ?) |= R): Eff[R, Int] =
+      xor.right[R, Error1, Int](i)
+
+    def withE2[R](implicit m: (Error2 Xor ?) |= R): Eff[R, String] =
+      withE1[R](10).map(_.toString)
+
+    withE2[Fx.fx1[Error2 Xor ?]].runXor.run ==== Xor.Right("10")
   }
 
   def handleFromCatchNonFatal = {
