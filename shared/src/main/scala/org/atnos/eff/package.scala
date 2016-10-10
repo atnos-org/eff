@@ -9,11 +9,11 @@ package object eff {
   object eff        extends EffCreation        with EffInterpretation
   object reader     extends ReaderCreation     with ReaderInterpretation
   object writer     extends WriterCreation     with WriterInterpretation
-  object state      extends StateCreation      with StateInterpretation with StateImplicits
+  object state      extends StateCreation      with StateInterpretation     with StateImplicits
   object eval       extends EvalCreation       with EvalInterpretation
   object option     extends OptionCreation     with OptionInterpretation
   object list       extends ListCreation       with ListInterpretation
-  object xor        extends XorCreation        with XorInterpretation
+  object xor        extends XorCreation        with XorInterpretation       with XorImplicits
   object validate   extends ValidateCreation   with ValidateInterpretation
   object choose     extends ChooseCreation     with ChooseInterpretation
   object future     extends FutureCreation     with FutureInterpretation

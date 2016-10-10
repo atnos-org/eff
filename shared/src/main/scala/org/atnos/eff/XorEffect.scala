@@ -112,6 +112,10 @@ trait XorInterpretation {
         }
     }}
 
+}
+
+trait XorImplicits {
+
   implicit def errorTranslate[R, E1, E2](implicit m: MemberIn[E1 Xor ?, R], map: E2 => E1): MemberIn[E2 Xor ?, R] =
     m.transform(errorTranslateNat(map))
 
@@ -120,5 +124,7 @@ trait XorInterpretation {
   }
 
 }
+
+object XorImplicits extends XorImplicits
 
 object XorInterpretation extends XorInterpretation
