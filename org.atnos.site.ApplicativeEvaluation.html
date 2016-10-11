@@ -1,0 +1,156 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Applicative</title>
+    <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
+    <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css"     rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css"     rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css"     rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10">
+<h1>Applicative</h1>
+<div id="tipue_search_content"></div>
+
+<h3 id="concurrent-evaluation">Concurrent evaluation</h3>
+<p>The default interpretation of <code class="prettyprint">Eff</code> values is “monadic” meaning that effectful values are being evaluated in order. This becomes clear when traversing a list of values with the <code class="prettyprint">FutureEffect</code>:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
+import cats.Eval
+import cats.data.Writer
+import cats.syntax.traverse._
+import cats.instances.list._
+import scala.concurrent._, duration._, ExecutionContext.Implicits.global
+
+type WriterString[A] = Writer[String, A]
+type _writerString[R] = WriterString |= R
+
+type S = Fx.fx3[Eval, Future, WriterString]
+
+def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
+  for {
+    i1 &lt;- delay(i)
+    i2 &lt;- async(i1)
+    _  &lt;- tell(i2.toString)
+  } yield i2
+
+val action: Eff[S, List[Int]] =
+  List(1000, 500, 50).traverse(execute[S])
+
+action.runEval.awaitFuture(2.seconds).runWriterLog.run</code></pre>
+<p><code class="prettyprint">&gt; List(1000, 500, 50)</code></p>
+<p>We can however run all those computations concurrently using the applicative execution for <code class="prettyprint">Eff</code>:</p>
+<pre><code class="prettyprint">val action: Eff[S, List[Int]] =
+  List(1000, 500, 50).traverseA(execute[S])
+
+action.runEval.awaitFuture(2.seconds).runWriterLog.run</code></pre>
+<p><code class="prettyprint">&gt; List(1000, 500, 50)</code></p>
+<p>This uses now <code class="prettyprint">traverseA</code> (instead of <code class="prettyprint">traverse</code>) to do an applicative traversal and execute futures concurrently and the fastest actions finish first.</p>
+<h3 id="batching">Batching</h3>
+<p>Another advantage of applicative effects is that we can intercept them individual requests and “batch” them into one single request. For example:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
+import cats._
+import cats.implicits._
+
+// An effect to get users from a database
+// calls can be individual or batched
+case class User(i: Int)
+sealed trait UserDsl[+A]
+
+case class GetUser(i: Int) extends UserDsl[User]
+case class GetUsers(is: List[Int]) extends UserDsl[List[User]]
+type _userDsl[R] = UserDsl /= R
+
+def getUser[R :_userDsl](i: Int): Eff[R, User] =
+  send[UserDsl, R, User](GetUser(i))
+
+def getUsers[R :_userDsl](is: List[Int]): Eff[R, List[User]] =
+  send[UserDsl, R, List[User]](GetUsers(is))
+
+</code></pre>
+<p>Let’s create an interpreter for this DSL:</p>
+<pre><code class="prettyprint">// the real method calls to a webservice
+def getWebUser(i: Int): User = User(i)
+def getWebUsers(is: List[Int]): List[User] = is.map(i =&gt; User(i))
+
+// the interpreter simply calls the webservice
+// and return a trace of the executed call
+def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
+  def go(e: Eff[Fx1[UserDsl], A], trace: Vector[String]): (A, Vector[String]) =
+    e match {
+      case Pure(a) =&gt; (a, trace)
+      case Impure(Union1(GetUser(i)), c)   =&gt; go(c(getWebUser(i)), trace :+ &quot;getWebUser&quot;)
+      case Impure(Union1(GetUsers(is)), c) =&gt; go(c(getWebUsers(is)), trace :+ &quot;getWebUsers&quot;)
+      case ap @ ImpureAp(u, m)             =&gt; go(ap.toMonadic, trace)
+  }
+  go(eff, Vector())
+}
+
+</code></pre>
+<p>We can also optimise a <code class="prettyprint">UserDsl</code> program by providing a <code class="prettyprint">Batchable</code> instance describing how to “batch” 2 calls into 1:</p>
+<pre><code class="prettyprint">implicit def BatchableUserDsl: Batchable[UserDsl] = new Batchable[UserDsl] {
+  type Z = List[User]
+  type E = User
+
+  def distribute(z: List[User]) = z
+
+  def batch[X, Y](tx: UserDsl[X], ty: UserDsl[Y]): Option[UserDsl[Z]] = Option {
+    (tx, ty) match {
+      case (GetUser(i),   GetUser(j))   =&gt; GetUsers(List(i, j))
+      case (GetUser(i),   GetUsers(is)) =&gt; GetUsers(i :: is)
+      case (GetUsers(is), GetUser(i))   =&gt; GetUsers(is :+ i)
+      case (GetUsers(is), GetUsers(js)) =&gt; GetUsers(is ++ js)
+    }
+  }
+}
+
+</code></pre>
+<p>Now let’s create a program using the <code class="prettyprint">User</code> DSL with applicative calls which can be optimised:</p>
+<pre><code class="prettyprint">def program[R :_userDsl]: Eff[R, List[User]] =
+  Eff.traverseA(List(1, 2, 3))(i =&gt; getUser(i))
+
+</code></pre>
+<p>And its optimised version:</p>
+<pre><code class="prettyprint">def optimised[R :_userDsl]: Eff[R, List[User]] =
+  program.batch
+
+</code></pre>
+<p>Running the optimised and non-optimised version of the program must yield the same results:</p>
+<pre><code class="prettyprint">show(runDsl(program[Fx1[UserDsl]]), runDsl(optimised[Fx1[UserDsl]]))</code></pre>
+<pre><code class="prettyprint">original:  User(1), User(2), User(3)
+  trace: getWebUser, getWebUser, getWebUser
+
+optimised: User(1), User(2), User(3)
+  trace: getWebUsers</code></pre>
+</div>
+
+</div>
+
+</body>
+</html>
