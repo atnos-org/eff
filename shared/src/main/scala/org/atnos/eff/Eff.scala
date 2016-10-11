@@ -256,13 +256,13 @@ trait EffImplicits {
         case Pure(a) =>
           ff match {
             case Pure(f)        => Pure(f(a))
-            case Impure(u, c)   => Impure(u, c).map(_(a))
+            case Impure(u, c)   => ImpureAp(Unions(u, Nil), Arrs.singleton(ls => c(ls.head).map(_(a))))
             case ImpureAp(u, c) => ImpureAp(u, Arrs.singleton(xs => c(xs).map(_(a))))
           }
 
         case Impure(u, c) =>
           ff match {
-            case Pure(f)          => Impure(u, Arrs.singleton((x: u.X) => c(x).map(f)))
+            case Pure(f)          => ImpureAp(Unions(u, Nil), Arrs.singleton(ls => c(ls.head).map(f)))
             case Impure(u1, c1)   => ImpureAp(Unions(u, List(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head))))
             case ImpureAp(u1, c1) => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head))))
           }
