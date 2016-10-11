@@ -153,6 +153,7 @@ class XorEffectSpec extends Specification with ScalaCheck { def is = s2"""
     case class Error1(m: String)
     case class Error2(e1: Error1)
     implicit def e1Toe2: Error1 => Error2 = (e1: Error1) => Error2(e1)
+    import xor._
 
     def withE1[R](i: Int)(implicit m: (Error1 Xor ?) |= R): Eff[R, Int] =
       xor.right[R, Error1, Int](i)
