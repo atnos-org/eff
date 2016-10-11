@@ -207,6 +207,7 @@ import UserInteractionSnippet._
 import UserInteractionInterpretersSnippet._
 import UserInteractionProgramSnippet._
 import org.atnos.eff._, syntax.all._
+// 8<--
 
 type Stack = Fx.fx2[Interact, DataOp]
 
