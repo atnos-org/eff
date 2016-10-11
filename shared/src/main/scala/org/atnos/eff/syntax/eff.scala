@@ -26,6 +26,10 @@ trait eff {
       Eff.run(e)
   }
 
+  implicit class EffSend[M[_], A](ma: M[A]) {
+    def send[R](implicit m: M |= R): Eff[R, A] = Eff.send(ma)
+  }
+
   implicit class EffPureOps[A](a: A) {
     def pureEff[R]: Eff[R, A] =
       Eff.pure(a)

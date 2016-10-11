@@ -129,7 +129,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     (delay(1).runPure === None)
 
   def runOneEffect =
-    delay(1).runEval.run === 1
+    Eval.later(1).send.runEval.run === 1
 
   def detachOneEffect =
     delay(1).detach.value === 1
