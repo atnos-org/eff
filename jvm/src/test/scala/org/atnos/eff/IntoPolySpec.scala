@@ -70,7 +70,7 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
     def action[EO, E](implicit r: Reader[Int, ?] |= EO, o: Member.Aux[Option, EO, E]): Eff[EO, String] =
       for {
         m <- reader.ask[EO, Int]
-        _ <- stopUnless[EO, E](isEven(m))
+        _ <- stopUnless[EO, E](isEven(m + 1))
       } yield m.toString
 
     type S = Fx.fx1[Reader[Int, ?]]
