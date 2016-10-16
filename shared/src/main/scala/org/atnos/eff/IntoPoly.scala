@@ -189,7 +189,7 @@ trait IntoPolyLower3 extends IntoPolyLower4 {
     }
 }
 
-trait IntoPolyLower4 {
+trait IntoPolyLower4 extends IntoPolyLower5 {
 
   implicit def into[T[_], R, U, S](implicit
                                    t: Member.Aux[T, R, S],
@@ -221,4 +221,20 @@ trait IntoPolyLower4 {
             }), Arrs.singleton(x => apply(continuation(x))))
         }
     }
+}
+
+trait IntoPolyLower5 {
+
+  implicit def intoMember[T[_], R, U](implicit m: Member.Aux[T, R, U]): IntoPoly[U, R] = new IntoPoly[U, R] {
+    def apply[A](e: Eff[U, A]): Eff[R, A] =
+      e match {
+        case Pure(a) => pure[R, A](a)
+        case Impure(u, c) =>
+          Impure(m.accept(u), Arrs.singleton((x: u.X) => intoMember.apply(c(x))))
+
+        case ImpureAp(unions, c) =>
+          ImpureAp(unions.into(new UnionInto[U, R] { def apply[X](u: Union[U, X]) = m.accept(u) }),
+            Arrs.singleton((xs: List[Any]) => intoMember.apply(c(xs))))
+      }
+  }
 }

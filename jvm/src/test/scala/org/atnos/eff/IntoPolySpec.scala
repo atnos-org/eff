@@ -1,9 +1,9 @@
 package org.atnos.eff
 
-import cats.data.Xor
+import cats.data.{Reader, Xor}
 import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
-import syntax.eff._
+import syntax.all._
 
 class IntoPolySpec extends Specification with ThrownExpectations { def is = s2"""
 
@@ -12,6 +12,8 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
    a stack can be injected into another containing one prepended effect $into2
 
    more examples $more
+
+ One stack can be injected into another if there is a Member implicit relating the 2 $memberInto
 
 """
 
@@ -52,8 +54,31 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
 
     // make sure that flatMap works
     Eff.send[Option1, Fx2[Option1, Option2], Int](Option1(1)).flatMap(i => Eff.send(Option2(i))).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
- }
+  }
 
+  def memberInto = {
+    def stopUnless[EO, E](cond: Eff[E, Boolean])(implicit m: Member.Aux[Option, EO, E]): Eff[EO, Unit] = {
+      cond.into[EO].flatMap { c =>
+        if (c) OptionEffect.some(())
+        else   OptionEffect.none
+      }
+    }
+
+    def isEven[E](n: Int): Eff[E, Boolean] =
+      Eff.pure[E, Boolean](n % 2 == 0)
+
+    def action[EO, E](implicit r: Reader[Int, ?] |= EO, o: Member.Aux[Option, EO, E]): Eff[EO, String] =
+      for {
+        m <- reader.ask[EO, Int]
+        _ <- stopUnless[EO, E](isEven(m))
+      } yield m.toString
+
+    action[Fx.fx2[Reader[Int, ?], Option], Fx.fx1[Reader[Int, ?]]].runOption.runReader(2).run must beNone
+  }
+
+  /**
+   * HELPERS
+   */
   implicit class RunOptionOps[T[_] <: OptionLike[_], R, U](e: Eff[R, Int])(implicit m: Member.Aux[T, R, U]) {
     def runOpt: Eff[U, Int] = runOption(e)
   }
