@@ -73,7 +73,8 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
         _ <- stopUnless[EO, E](isEven(m))
       } yield m.toString
 
-    action[Fx.fx2[Reader[Int, ?], Option], Fx.fx1[Reader[Int, ?]]].runOption.runReader(2).run must beNone
+    type S = Fx.fx1[Reader[Int, ?]]
+    action[Fx.prepend[Option, S], S].runOption.runReader(2).run must beNone
   }
 
   /**
