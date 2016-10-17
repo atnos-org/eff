@@ -21,6 +21,9 @@ trait safe {
     def `finally`(last: Eff[R, Unit])(implicit m: Safe <= R): Eff[R, A] =
       SafeEffect.andFinally(e, last)
 
+    def andFinally(last: Eff[R, Unit])(implicit m: Safe <= R): Eff[R, A] =
+      SafeEffect.andFinally(e, last)
+
     def catchThrowable[B](pure: A => B, onThrowable: Throwable => Eff[R, B])(implicit m: Safe <= R): Eff[R, B] =
       SafeEffect.catchThrowable(e, pure, onThrowable)
 
