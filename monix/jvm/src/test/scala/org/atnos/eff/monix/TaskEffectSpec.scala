@@ -8,7 +8,7 @@ import org.atnos.eff.syntax.monix._
 
 import scala.concurrent._
 import duration._
-import cats.data.Xor
+import cats.data.{Reader, Xor}
 import cats.Eval
 import cats.implicits._
 import _root_.monix.execution.Scheduler.Implicits.global
@@ -19,8 +19,10 @@ import org.scalacheck.Gen.{listOfN, choose => chooseInt}
 import scala.collection.mutable.ListBuffer
 import TaskEffect._
 import org.scalacheck.Gen
+import org.specs2.matcher.ThrownExpectations
+import org.specs2.matcher.XorMatchers._
 
-class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
+class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  A Task effect can be added to a stack of effects $e1
  A Task execution can be delayed $e2
@@ -31,6 +33,8 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
  Tasks can be executed sequentially $e5
  Tasks can be executed concurrently, using detachA to sequence them  $e6
  Tasks can be executed concurrently, embedded in a for comprehension $e7
+
+ The task effect can be attempted $e8
 
 """
 
@@ -130,6 +134,29 @@ class TaskEffectSpec extends Specification with ScalaCheck { def is = s2"""
       messages.toList !=== elements.map("got "+_)
     }
   }.setGen(listGen).set(minTestsOk = 20)
+
+  def e8 = prop { (elements: List[Int], string: String) =>
+    type S = Fx.fx2[Reader[String, ?], Task]
+
+    val actionOk: Eff[S, List[Int]] =
+      for {
+        s <- ask[S, String]
+        ts <- elements.traverseA[S, Int](i => async(i + s.size))
+      } yield ts
+
+    val taskOk = actionOk.attemptTask.runReader(string).detachA(ApplicativeTask)
+    Await.result(taskOk.runAsync, 2.seconds) must beXorRight(elements.map(_ + string.size))
+
+    val actionKo: Eff[S, List[Int]] =
+      for {
+        s <- ask[S, String]
+        ts <- elements.traverseA[S, Int](i => async(i + {throw new Exception("boom"); s.size}))
+      } yield ts
+
+    val taskKo = actionKo.attemptTask.runReader(string).detachA(ApplicativeTask)
+    Await.result(taskKo.runAsync, 2.seconds) must beXorLeft
+
+  }.setGen1(listGen).set(minTestsOk = 20)
 
   /**
    * HELPERS
