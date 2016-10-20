@@ -126,6 +126,8 @@ trait TaskInterpretation {
     }
   }
 
+  def withTimeout[R, A](e: Eff[R, A])(duration: FiniteDuration)(implicit task: Task /= R): Eff[R, A] =
+    interceptNat[R, Task, A](e)(new (Task ~> Task) { def apply[X](t: Task[X]) = t.timeout(duration) })
 
 }
 

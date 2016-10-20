@@ -341,9 +341,9 @@ trait Interpret {
    * Intercept the values for one effect and transform them into
    * other values for the same effect
    */
-  def interceptNat[R, U, T[_], A](effects: Eff[R, A])
-                                 (nat: T ~> T)
-                                 (implicit m: MemberInOut[T, R]): Eff[R, A] =
+  def interceptNat[R, T[_], A](effects: Eff[R, A])
+                              (nat: T ~> T)
+                              (implicit m: MemberInOut[T, R]): Eff[R, A] =
   effects match {
     case Pure(a) => Pure(a)
 

@@ -21,6 +21,7 @@ import TaskEffect._
 import org.scalacheck.Gen
 import org.specs2.matcher.ThrownExpectations
 import org.specs2.matcher.XorMatchers._
+import scala.concurrent.duration._
 
 class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
@@ -35,6 +36,7 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
  Tasks can be executed concurrently, embedded in a for comprehension $e7
 
  The task effect can be attempted $e8
+ A timeout can be set             $e9
 
 """
 
@@ -157,6 +159,17 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     Await.result(taskKo.runAsync, 2.seconds) must beXorLeft
 
   }.setGen1(listGen).set(minTestsOk = 20)
+
+  def e9 = prop { elements: List[Int] =>
+    type S = Fx.fx1[Task]
+
+    val messages = new ListBuffer[String]
+    val actionApplicative: Eff[S, List[Int]] =
+      elements.map(i => async { Thread.sleep(1000); register(i, messages) }).sequenceA
+
+    val task = actionApplicative.withTimeout(100 millis).attemptTask.detachA(ApplicativeTask)
+    Await.result(task.runAsync, 2.seconds) must beXorLeft[Throwable]((t: Throwable) => t must beAnInstanceOf[TimeoutException])
+  }.setGen(listGen).set(minTestsOk = 1)
 
   /**
    * HELPERS
