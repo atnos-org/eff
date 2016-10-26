@@ -11,9 +11,8 @@ You can learn more in the User Guide:
 
  - [your first effects](http://atnos-org.github.io/eff-cats/org.atnos.site.Introduction.html)
  - [included effects: `Reader`, `Writer`, `Eval`, `State`,...](http://atnos-org.github.io/eff-cats/org.atnos.site.OutOfTheBox.html)
- - [how to use implicits to get type-inference right](http://atnos-org.github.io/eff-cats/org.atnos.site.Implicits.html)
  - [create your own effects](http://atnos-org.github.io/eff-cats/org.atnos.site.CreateEffects.html)
- - [use Member implicits](http://atnos-org.github.io/eff-cats/org.atnos.site.Implicits.html)
+ - [use Member implicits](http://atnos-org.github.io/eff-cats/org.atnos.site.MemberImplicits.html)
  - [working with different effect stacks](http://atnos-org.github.io/eff-cats/org.atnos.site.TransformStack.html)
  - [a tutorial similar to the cats' tutorial for Free monads](http://atnos-org.github.io/eff-cats/org.atnos.site.Tutorial.html)
 
