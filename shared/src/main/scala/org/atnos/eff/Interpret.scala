@@ -3,7 +3,6 @@ package org.atnos.eff
 import cats._
 import cats.data._
 import cats.implicits._
-import Xor._
 import Eff._
 
 /**
@@ -48,16 +47,16 @@ trait Interpret {
       type S = Unit
       val init = ()
 
-      def onPure(a: A, s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
+      def onPure(a: A, s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
         Right(pure(a))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
+      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity)
 
-      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: Unit): (Eff[R, A], Unit) Xor Eff[U, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
         recurse.applicative(mx) match {
-          case Xor.Left(xs) => Xor.Left((continuation(xs), s))
-          case Xor.Right(mlx) => onEffect(mlx, continuation, s)
+          case Left(xs) => Left((continuation(xs), s))
+          case Right(mlx) => onEffect(mlx, continuation, s)
         }
     }
     interpretLoop[R, U, M, A, B](pure, loop)(effects)
@@ -83,7 +82,7 @@ trait Interpret {
     type S
     val init: S
     def apply[X](x: M[X], s: S): (X, S)
-    def applicative[X, T[_] : Traverse](xs: T[M[X]], s: S): (T[X], S) Xor (M[T[X]], S)
+    def applicative[X, T[_] : Traverse](xs: T[M[X]], s: S): (T[X], S) Either (M[T[X]], S)
     def finalize(a: A, s: S): B
   }
 
@@ -95,16 +94,16 @@ trait Interpret {
       type S = recurse.S
       val init: S = recurse.init
 
-      def onPure(a: A, s: S): (Eff[R, A], S) Xor Eff[U, B] =
+      def onPure(a: A, s: S): (Eff[R, A], S) Either Eff[U, B] =
         Right(EffMonad[U].pure(recurse.finalize(a, s)))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[U, B] =
+      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, B] =
         Left { recurse(mx, s) match { case (a, b) => (continuation(a), b)} }
 
-      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor Eff[U, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, B] =
         recurse.applicative(mx, s) match {
-          case Xor.Left((ls, s1))   => Xor.Left((continuation(ls), s1))
-          case Xor.Right((mlx, s1)) => onEffect(mlx, continuation, s1)
+          case Left((ls, s1))   => Left((continuation(ls), s1))
+          case Right((mlx, s1)) => onEffect(mlx, continuation, s1)
         }
     }
     interpretLoop(pure, loop)(effects)
@@ -186,16 +185,16 @@ trait Interpret {
       type S = Unit
       val init = ()
 
-      def onPure(a: A, s: Unit): (Eff[R, A], Unit) Xor Eff[R, B] =
+      def onPure(a: A, s: Unit): (Eff[R, A], Unit) Either Eff[R, B] =
         Right(pure(a))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Xor Eff[R, B] =
+      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Either Eff[R, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity)
 
-      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor Eff[R, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[R, B] =
         recurse.applicative(mx) match {
-          case Xor.Left(ls)   => Xor.Left((continuation(ls), s))
-          case Xor.Right(mlx) => onEffect(mlx, continuation, s)
+          case Left(ls)   => Left((continuation(ls), s))
+          case Right(mlx) => onEffect(mlx, continuation, s)
         }
     }
     interceptLoop[R, M, A, B](pure, loop)(effects)
@@ -276,10 +275,10 @@ trait Interpret {
 
         case Impure(u, c) =>
           sr.project(u) match {
-            case Xor.Right(small) =>
+            case Right(small) =>
               Impure(br.inject(nat(small)), Arrs.singleton((x: u.X) => go(c(x))))
 
-            case Xor.Left(u1) =>
+            case Left(u1) =>
               Impure(br.accept(u1), Arrs.singleton((x: u.X) => go(c(x))))
           }
 
@@ -303,11 +302,11 @@ trait Interpret {
 
         case Impure(union, c) =>
           m.project(union) match {
-            case Xor.Right(kv) =>
+            case Right(kv) =>
               val effectsU: Eff[U, union.X] = tr(kv)
               effectsU.flatMap(r => go(c(r)))
 
-            case Xor.Left(u1) =>
+            case Left(u1) =>
               Impure(u1, Arrs.singleton((x: union.X) => go(c(x))))
           }
 
@@ -362,11 +361,11 @@ trait Interpret {
                                                           (sideEffect: SideEffect[T])
                                                           (implicit m: Member.Aux[T, R, U]): Eff[U, A] = {
     val recurse = new Recurse[T, m.Out, A] {
-      def apply[X](tx: T[X]): X Xor Eff[m.Out, A] =
-        Xor.left(sideEffect(tx))
+      def apply[X](tx: T[X]): X Either Eff[m.Out, A] =
+        Left(sideEffect(tx))
 
-      def applicative[X, Tr[_]: Traverse](ms: Tr[T[X]]): Tr[X] Xor T[Tr[X]] =
-        Xor.Left(ms.map(sideEffect.apply))
+      def applicative[X, Tr[_]: Traverse](ms: Tr[T[X]]): Tr[X] Either T[Tr[X]] =
+        Left(ms.map(sideEffect.apply))
     }
     interpret1((a: A) => a)(recurse)(effects)(m)
   }
@@ -378,8 +377,8 @@ trait Interpret {
    * Either we can produce an X to pass to a continuation or we're done
    */
   trait Recurse[M[_], R, A] {
-    def apply[X](m: M[X]): X Xor Eff[R, A]
-    def applicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Xor M[T[X]]
+    def apply[X](m: M[X]): X Either Eff[R, A]
+    def applicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]]
   }
 
   /**
@@ -388,18 +387,18 @@ trait Interpret {
   trait Loop[M[_], R, A, B] {
     type S
     val init: S
-    def onPure(a: A, s: S): (Eff[R, A], S) Xor B
-    def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor B
-    def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor B
+    def onPure(a: A, s: S): (Eff[R, A], S) Either B
+    def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either B
+    def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either B
   }
 
   /**
    * Generalisation of Recurse
    */
   trait StatelessLoop[M[_], R, A, B] {
-    def onPure(a: A): Eff[R, A] Xor B
-    def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Xor B
-    def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Xor B
+    def onPure(a: A): Eff[R, A] Either B
+    def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Either B
+    def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either B
   }
 
   /**

@@ -5,7 +5,7 @@ import Eff._
 import scala.collection.mutable.ListBuffer
 import cats.data._
 import cats.implicits._
-import Xor._
+import Either._
 import Interpret._
 import cats.Traverse
 
@@ -49,13 +49,13 @@ trait ListInterpretation {
       type S = (List[Eff[R, A]], ListBuffer[A])
       val init = (List[Eff[R, A]](), new ListBuffer[A])
 
-      def onPure(a: A, s: S): (Eff[R, A], S) Xor Eff[U, List[A]] =
+      def onPure(a: A, s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
         s match {
           case (head :: tail, result) => Left((head, (tail, result :+ a)))
           case (List(), result)       => Right(EffMonad[U].pure((result :+ a).toList))
         }
 
-      def onEffect[X](l: List[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Xor Eff[U, List[A]] =
+      def onEffect[X](l: List[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
         (l, s) match {
           case (List(), (head :: tail, result)) =>
             Left((head, (tail, result)))
@@ -67,15 +67,15 @@ trait ListInterpretation {
             Left((continuation(head), (tail.map(a => continuation(a)) ++ unevaluated, result)))
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Xor Eff[U, List[A]] = {
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] = {
         xs.sequence.map(ls => continuation(ls)) match {
           case Nil =>
             s match {
-              case (Nil, as)       => Xor.Right(pure(as.toList))
-              case (e :: rest, as) => Xor.Left((e, (rest, as)))
+              case (Nil, as)       => Right(pure(as.toList))
+              case (e :: rest, as) => Left((e, (rest, as)))
             }
           case x :: rest =>
-            Xor.Left((x, (rest ++ s._1, s._2)))
+            Left((x, (rest ++ s._1, s._2)))
         }
       }
 

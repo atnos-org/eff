@@ -3,7 +3,6 @@ package org.atnos.eff
 import cats._
 import data._
 import cats.implicits._
-import Xor._
 import Interpret._
 import Eff._
 
@@ -36,9 +35,9 @@ trait ReaderInterpretation {
   /** interpret the Reader effect by providing an environment when required */
   def runReader[R, U, A, B](env: A)(r: Eff[R, B])(implicit m: Member.Aux[Reader[A, ?], R, U]): Eff[U, B] = {
     val recurse = new Recurse[Reader[A, ?], U, B] {
-      def apply[X](m: Reader[A, X]) = left(m.run(env))
-      def applicative[X, T[_]: Traverse](ms: T[Reader[A, X]]): T[X] Xor Reader[A, T[X]] =
-        Xor.Left(ms.map(_.run(env)))
+      def apply[X](m: Reader[A, X]) = Left(m.run(env))
+      def applicative[X, T[_]: Traverse](ms: T[Reader[A, X]]): T[X] Either Reader[A, T[X]] =
+        Left(ms.map(_.run(env)))
     }
 
     interpret1[R, U, Reader[A, ?], B, B]((b: B) => b)(recurse)(r)

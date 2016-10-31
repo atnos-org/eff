@@ -1,6 +1,5 @@
 package org.atnos.eff
 
-import cats.data.Xor._
 import cats.data._
 import cats.implicits._
 import org.atnos.eff.all._
@@ -50,7 +49,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
         a <- EffMonad[S].pure(3)
       } yield a
 
-    validate.catchWrong((s: String) => pure(4)).runNel.run ==== Xor.Right(4)
+    validate.catchWrong((s: String) => pure(4)).runNel.run ==== Right(4)
   }
 
   def catchWrongValues2 = {
@@ -78,7 +77,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val list = (1 to 5000).toList
     val action = list.traverseU(i => ValidateEffect.wrong[S, String](i.toString))
 
-    action.runNel.run ==== NonEmptyList.fromList(list.map(_.toString)).map(Xor.left).getOrElse(Xor.right(Nil))
+    action.runNel.run must not(throwAn[Exception])
   }
 
 }

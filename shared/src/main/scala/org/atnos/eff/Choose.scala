@@ -2,7 +2,6 @@ package org.atnos.eff
 
 import Eff._
 import cats.{Alternative, MonadCombine}
-import cats.data.Xor
 import cats.syntax.cartesian._
 
 sealed trait Choose[T]
@@ -60,10 +59,10 @@ trait ChooseInterpretation {
 
       case Impure(u, c) =>
         m.project(u) match {
-          case Xor.Left(u1) =>
+          case Left(u1) =>
             Impure(u1, Arrs.singleton((x: u1.X) => runChoose(c(x))))
 
-          case Xor.Right(choose) =>
+          case Right(choose) =>
             choose match {
               case ChooseZero() => EffMonad[U].pure(Alternative[F].empty)
               case _ =>
@@ -92,7 +91,10 @@ trait ChooseImplicits {
       EffMonad[R].flatMap(fa)(f)
 
     def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
-      defaultTailRecM(a)(f)
+      flatMap(f(a)) {
+        case Right(b)   => pure(b)
+        case Left(next) => tailRecM(next)(f)
+      }
 
     def empty[A]: Eff[R, A] =
       ChooseEffect.zero[R, A]

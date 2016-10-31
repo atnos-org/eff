@@ -22,7 +22,7 @@ type _stateMap[R]     = State[Map[String, Any], ?] |= R
  *
  *  - Writer to create log statements
  *  - State to update a key-value Map
- *  - Xor to raise errors if the type of an object in the map is not of the expected type
+ *  - Either to raise errors if the type of an object in the map is not of the expected type
  *
  *  The resulting effect stack is U which is R without the KVStore effects
  *
@@ -37,13 +37,13 @@ type _stateMap[R]     = State[Map[String, Any], ?] |= R
  *
  * Implicit member definitions will NOT be found with the following definition:
  *
- * def runKVStore[R, U :_throwableXor :_writerString :_stateMap, A](effects: Eff[R, A]) (
+ * def runKVStore[R, U :_throwableEither :_writerString :_stateMap, A](effects: Eff[R, A]) (
  *   implicit m: Member.Aux[KVStore, R, U]): Eff[U, A] = {
  *
  */
 def runKVStore[R, U, A](effects: Eff[R, A])
   (implicit m: Member.Aux[KVStore, R, U],
-            throwable:_throwableXor[U],
+            throwable:_throwableEither[U],
             writer:_writerString[U],
             state:_stateMap[U]): Eff[U, A] = {
 
@@ -54,21 +54,21 @@ def runKVStore[R, U, A](effects: Eff[R, A])
           for {
             _ <- tell(s"put($key, $value)")
             _ <- modify((map: Map[String, Any]) => map.updated(key, value))
-            r <- fromXor(Xor.catchNonFatal(().asInstanceOf[X]))
+            r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
           } yield r
 
         case Get(key) =>
           for {
             _ <- tell(s"get($key)")
             m <- get[U, Map[String, Any]]
-            r <- fromXor(Xor.catchNonFatal(m.get(key).asInstanceOf[X]))
+            r <- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
           } yield r
 
         case Delete(key) =>
           for {
             _ <- tell(s"delete($key)")
             u <- modify((map: Map[String, Any]) => map - key)
-            r <- fromXor(Xor.catchNonFatal(().asInstanceOf[X]))
+            r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
           } yield r
       }
   })

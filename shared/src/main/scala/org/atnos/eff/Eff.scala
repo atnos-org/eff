@@ -4,7 +4,7 @@ import cats.~>
 
 import scala.annotation.tailrec
 import cats._
-import cats.data._, Xor._
+import cats.data._
 import cats.implicits._
 import Eff._
 
@@ -143,17 +143,17 @@ case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
    */
   def extract[M[_]](implicit m: M /= R): CollectedUnions[M, R, R] =
     collect[M, R](u => m.extract(u) match {
-      case Some(mx) => Xor.Right(mx)
-      case None     => Xor.Left(u)
+      case Some(mx) => Right(mx)
+      case None     => Left(u)
     })
 
-  private def collect[M[_], U](collect: Union[R, Any] => Union[U, Any] Xor M[Any]): CollectedUnions[M, R, U] = {
+  private def collect[M[_], U](collect: Union[R, Any] => Union[U, Any] Either M[Any]): CollectedUnions[M, R, U] = {
     val (effectsAndIndices, othersAndIndices) =
       unions.zipWithIndex.foldLeft((Vector[(M[Any], Int)](), Vector[(Union[U, Any], Int)]())) {
         case ((es, os), (u, i)) =>
           collect(u) match {
-            case Xor.Right(mx) => (es :+ ((mx, i)), os)
-            case Xor.Left(o) => (es, os :+ ((o, i)))
+            case Right(mx) => (es :+ ((mx, i)), os)
+            case Left(o) => (es, os :+ ((o, i)))
           }
       }
 
@@ -244,7 +244,11 @@ trait EffImplicits {
       }
 
     def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
-      defaultTailRecM(a)(f)
+      flatMap(f(a)) {
+        case Right(b)   => pure(b)
+        case Left(next) => tailRecM(next)(f)
+      }
+
   }
 
   def EffApplicative[R]: Applicative[Eff[R, ?]] = new Applicative[Eff[R, ?]] {

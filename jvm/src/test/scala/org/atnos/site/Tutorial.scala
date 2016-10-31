@@ -82,7 +82,7 @@ We can also interpret `KVStore` effects differently and delegate the results to 
 
  - `State` for maintaining the map of values
  - `Writer` for logging
- - `E Xor ?` for type errors
+ - `E Either ?` for type errors
 <p/>
 ${definition[AdtInterpreterSafeSnippet]}
 
@@ -149,10 +149,10 @@ import org.atnos.eff._, syntax.all._
 import cats._, data._
 
 // run the program with the safe interpreter
-type Stack = Fx.fx4[KVStore, Throwable Xor ?, State[Map[String, Any], ?], Writer[String, ?]]
+type Stack = Fx.fx4[KVStore, Throwable Either ?, State[Map[String, Any], ?], Writer[String, ?]]
 
 val (result, logs) =
-  runKVStore(program[Stack]).runXor.evalState(Map.empty[String, Any]).runWriter.run
+  runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
 
 (result.toString +: logs).mkString("\n")
 }.eval}
@@ -170,20 +170,20 @@ import cats._, data._
 type _writerString[R] = Writer[String, ?] |= R
 type _stateMap[R]     = State[Map[String, Any], ?] |= R
 
-type Stack = Fx.fx4[KVStore, Throwable Xor ?, State[Map[String, Any], ?], Writer[String, ?]]
+type Stack = Fx.fx4[KVStore, Throwable Either ?, State[Map[String, Any], ?], Writer[String, ?]]
 
 // 8<---
 
 implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
   def runStore[U](implicit m: Member.Aux[KVStore, R, U],
-                  throwable:_throwableXor[U],
+                  throwable:_throwableEither[U],
                   writer:_writerString[U],
                   state:_stateMap[U]): Eff[U, A] =
     runKVStore(effects)
 }
 
 val (result, logs) =
-  program[Stack].runStore.runXor.evalState(Map.empty[String, Any]).runWriter.run
+  program[Stack].runStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
 
 (result.toString +: logs).mkString("\n")
 

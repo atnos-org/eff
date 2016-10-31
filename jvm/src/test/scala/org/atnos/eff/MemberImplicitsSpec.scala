@@ -287,21 +287,21 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   def action[R]: Eff[R, Int] =
     ???
 
-  def actionS1[S] = action[Fx.append[Fx3[Option, Throwable Xor ?, Reader[String, ?]], S]].runOption.runXor.runReader("foo")
-  def actionS2[S] = action[Fx.append[Fx3[Option, Throwable Xor ?, Reader[String, ?]], S]].runOption.runReader("foo").runXor
-  def actionS3[S] = action[Fx.append[Fx3[Option, Throwable Xor ?, Reader[String, ?]], S]].runXor.runReader("foo").runOption
-  def actionS4[S] = action[Fx.append[Fx3[Option, Throwable Xor ?, Reader[String, ?]], S]].runXor.runOption.runReader("foo")
-  def actionS5[S] = action[Fx.append[Fx3[Option, Throwable Xor ?, Reader[String, ?]], S]].runReader("foo").runXor.runOption
-  def actionS6[S] = action[Fx.append[Fx3[Option, Throwable Xor ?, Reader[String, ?]], S]].runReader("foo").runOption.runXor
+  def actionS1[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runOption.runEither.runReader("foo")
+  def actionS2[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runOption.runReader("foo").runEither
+  def actionS3[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runEither.runReader("foo").runOption
+  def actionS4[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runEither.runOption.runReader("foo")
+  def actionS5[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runReader("foo").runEither.runOption
+  def actionS6[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runReader("foo").runOption.runEither
 
-  type SAppend[S] = Fx.append[Fx.fx4[Option, Throwable Xor ?, Reader[String, ?], State[Int, ?]], S]
-  def actionA1[S] = action[SAppend[S]].runState(1).runOption.runXor.runReader("foo")
-  def actionA2[S] = action[SAppend[S]].runState(1).runOption.runReader("foo").runXor
-  def actionA3[S] = action[SAppend[S]].runState(1).runXor.runReader("foo").runOption
-  def actionA4[S] = action[SAppend[S]].runState(1).runXor.runOption.runReader("foo")
-  def actionA5[S] = action[SAppend[S]].runState(1).runReader("foo").runXor.runOption
-  def actionA6[S] = action[SAppend[S]].runState(1).runReader("foo").runOption.runXor
-  def actionA7    = action[SAppend[NoFx]].runState(1).runReader("foo").runOption.runXor
+  type SAppend[S] = Fx.append[Fx.fx4[Option, Throwable Either ?, Reader[String, ?], State[Int, ?]], S]
+  def actionA1[S] = action[SAppend[S]].runState(1).runOption.runEither.runReader("foo")
+  def actionA2[S] = action[SAppend[S]].runState(1).runOption.runReader("foo").runEither
+  def actionA3[S] = action[SAppend[S]].runState(1).runEither.runReader("foo").runOption
+  def actionA4[S] = action[SAppend[S]].runState(1).runEither.runOption.runReader("foo")
+  def actionA5[S] = action[SAppend[S]].runState(1).runReader("foo").runEither.runOption
+  def actionA6[S] = action[SAppend[S]].runState(1).runReader("foo").runOption.runEither
+  def actionA7    = action[SAppend[NoFx]].runState(1).runReader("foo").runOption.runEither
 
 
   import org.atnos.eff.option._

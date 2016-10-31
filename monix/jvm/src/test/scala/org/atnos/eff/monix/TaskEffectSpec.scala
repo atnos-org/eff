@@ -8,7 +8,7 @@ import org.atnos.eff.syntax.monix._
 
 import scala.concurrent._
 import duration._
-import cats.data.{Reader, Xor}
+import cats.data._
 import cats.Eval
 import cats.implicits._
 import _root_.monix.execution.Scheduler.Implicits.global
@@ -20,7 +20,6 @@ import scala.collection.mutable.ListBuffer
 import TaskEffect._
 import org.scalacheck.Gen
 import org.specs2.matcher.ThrownExpectations
-import org.specs2.matcher.XorMatchers._
 import scala.concurrent.duration._
 
 class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
@@ -48,7 +47,7 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
       b <- option.some(a)
     } yield a + b
 
-    action[S].runOption.awaitTask(1.second).run ==== Xor.right(Some(20))
+    action[S].runOption.awaitTask(1.second).run ==== Right(Some(20))
 
   }
 
@@ -58,7 +57,7 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     def action[R :_task :_eval]: Eff[R, Int] =
       delay(10).flatMap(v => async(v))
 
-    action[S].runEval.awaitTask(1.second).run ==== Xor.right(10)
+    action[S].runEval.awaitTask(1.second).run ==== Right(10)
 
   }
 
@@ -68,7 +67,7 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     def action[R :_task :_eval]: Eff[R, Int] =
       delay(Task(10)).flatMap(v => send(v))
 
-    action[S].runEval.awaitTask(1.second).run ==== Xor.right(10)
+    action[S].runEval.awaitTask(1.second).run ==== Right(10)
 
   }
 
@@ -79,7 +78,7 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     val actionApplicative: Eff[S, List[Int]] =
       elements.map(i => async(register(i, messages))).sequenceA
 
-    actionApplicative.awaitTask(2.seconds).run ==== Xor.right(elements)
+    actionApplicative.awaitTask(2.seconds).run ==== Right(elements)
 
     "messages are not received in the same order" ==> {
       messages.toList !=== elements.map("got "+_)
@@ -94,7 +93,7 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     val actionApplicative: Eff[S, List[Int]] =
       elements.map(i => async(register(i, messages))).sequence
 
-    actionApplicative.awaitTask(2.seconds).run ==== Xor.right(elements)
+    actionApplicative.awaitTask(2.seconds).run ==== Right(elements)
 
     "messages are received in the same order" ==> {
       messages.toList === elements.map("got "+_)
@@ -117,20 +116,20 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   }.setGen(listGen).set(minTestsOk = 20)
 
   def e7 = prop { elements: List[Int] =>
-    type S = Fx.fx2[ThrowableXor, Task]
+    type S = Fx.fx2[ThrowableEither, Task]
 
     val messages = new ListBuffer[String]
     val actionApplicative: Eff[S, List[Int]] =
       elements.map(i => async[S, Int](register(i, messages))).sequenceA
 
     val action = for {
-      i  <- xor.right[S, Throwable, Int](1)
+      i  <- either.right[S, Throwable, Int](1)
       is <- actionApplicative
-      j  <- xor.right[S, Throwable, Int](2)
+      j  <- either.right[S, Throwable, Int](2)
     } yield i +: is :+ j
 
-    val task = action.runXor.detachA(ApplicativeTask)
-    Await.result(task.runAsync, 2.seconds) ==== Xor.Right(1 +: elements :+ 2)
+    val task = action.runEither.detachA(ApplicativeTask)
+    Await.result(task.runAsync, 2.seconds) ==== Right(1 +: elements :+ 2)
 
     "messages are not received in the same order" ==> {
       messages.toList !=== elements.map("got "+_)
@@ -142,21 +141,21 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
 
     val actionOk: Eff[S, List[Int]] =
       for {
-        s <- ask[S, String]
+        s  <- ask[S, String]
         ts <- elements.traverseA[S, Int](i => async(i + s.size))
       } yield ts
 
     val taskOk = actionOk.attemptTask.runReader(string).detachA(ApplicativeTask)
-    Await.result(taskOk.runAsync, 2.seconds) must beXorRight(elements.map(_ + string.size))
+    Await.result(taskOk.runAsync, 2.seconds) must beRight(elements.map(_ + string.size))
 
     val actionKo: Eff[S, List[Int]] =
       for {
-        s <- ask[S, String]
+        s  <- ask[S, String]
         ts <- elements.traverseA[S, Int](i => async(i + {throw new Exception("boom"); s.size}))
       } yield ts
 
     val taskKo = actionKo.attemptTask.runReader(string).detachA(ApplicativeTask)
-    Await.result(taskKo.runAsync, 2.seconds) must beXorLeft
+    Await.result(taskKo.runAsync, 2.seconds) must beLeft
 
   }.setGen1(listGen).set(minTestsOk = 20)
 
@@ -168,7 +167,7 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
       elements.map(i => async { Thread.sleep(1000); register(i, messages) }).sequenceA
 
     val task = actionApplicative.withTimeout(100 millis).attemptTask.detachA(ApplicativeTask)
-    Await.result(task.runAsync, 2.seconds) must beXorLeft[Throwable]((t: Throwable) => t must beAnInstanceOf[TimeoutException])
+    Await.result(task.runAsync, 2.seconds) must beLeft[Throwable]((t: Throwable) => t must beAnInstanceOf[TimeoutException])
   }.setGen(listGen).set(minTestsOk = 1)
 
   /**

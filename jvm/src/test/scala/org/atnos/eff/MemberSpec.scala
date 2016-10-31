@@ -26,13 +26,13 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
 """
 
   def reader =
-    readerMember.project(readerMember.inject(read1)).toEither must beRight(read1)
+    readerMember.project(readerMember.inject(read1)) must beRight(read1)
 
   def writer =
-    writerMember.project(writerMember.inject(write1)).toEither must beRight(write1)
+    writerMember.project(writerMember.inject(write1)) must beRight(write1)
 
   def eval =
-    evalMember.project(evalMember.inject(eval1)).toEither must beRight(eval1)
+    evalMember.project(evalMember.inject(eval1)) must beRight(eval1)
 
   def lawMemberIn =
     writerMember.extract(writerMember.inject(write1)) ==== Option(write1)

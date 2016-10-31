@@ -7,7 +7,6 @@ import org.atnos.eff.all._
 import scala.concurrent._
 import duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import cats.data.Xor
 import cats.{Applicative, Eval}
 import cats.implicits._
 import org.specs2.matcher.ThrownExpectations
@@ -38,7 +37,7 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     val actionMonadic: Eff[S, List[Int]] =
       elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))).sequence
 
-    actionMonadic.runEval.awaitFuture(2.seconds).run ==== Xor.right(elements)
+    actionMonadic.runEval.awaitFuture(2.seconds).run ==== Right(elements)
     messages.toList ==== elements.map("got "+_)
   }
 
@@ -49,7 +48,7 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     val actionApplicative: Eff[Fx1[Future], List[Int]] =
       elements.map(v => async(register(v, messages))).sequenceA
 
-    actionApplicative.awaitFuture(2.seconds).run ==== Xor.right(elements)
+    actionApplicative.awaitFuture(2.seconds).run ==== Right(elements)
 
     "messages are received in the reverse order, starting with the fastest one" ==> {
       messages.toList ==== elements.sorted.map("got "+_)
@@ -62,7 +61,7 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     val actionMonadic: Eff[S, List[Int]] =
       elements.map(i => delay[S, Int](i).flatMap(v => async(register(v, messages)))).sequence
 
-    actionMonadic.runEval.awaitFuture(2.seconds).run ==== Xor.right(elements)
+    actionMonadic.runEval.awaitFuture(2.seconds).run ==== Right(elements)
 
     "messages are received in the same order" ==> {
       messages.toList ==== elements.map("got "+_)
@@ -88,14 +87,14 @@ class ApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     val list = (1 to 5000).toList
     val action = list.traverse(i => FutureEffect.async[S, String](i.toString))
 
-    action.awaitFuture(1.second).runEval.run ==== list.map(_.toString).right
+    action.awaitFuture(1.second).runEval.run ==== Right(list.map(_.toString))
   }
 
   def stacksafeEff = {
     val list = (1 to 5000).toList
     val action = list.traverseA(i => FutureEffect.async[S, String](i.toString))
 
-    action.awaitFuture(1.second).runEval.run ==== list.map(_.toString).right
+    action.awaitFuture(1.second).runEval.run ==== Right(list.map(_.toString))
   }
 
   /**

@@ -3,7 +3,6 @@ package syntax
 
 import Member.<=
 import ErrorEffect._
-import cats.data._, Xor._
 import scala.reflect.ClassTag
 
 object error extends error
@@ -12,7 +11,7 @@ trait error {
 
   implicit class ErrorEffectOps[R, A](action: Eff[R, A]) {
 
-    def runError(implicit m: Member[ErrorOrOk, R]): Eff[m.Out, Error Xor A] =
+    def runError(implicit m: Member[ErrorOrOk, R]): Eff[m.Out, Error Either A] =
       ErrorEffect.runError(action)(m.aux)
 
     def andFinally(last: Eff[R, Unit])(implicit m: ErrorOrOk <= R): Eff[R, A] =
@@ -25,7 +24,7 @@ trait error {
       ErrorEffect.ignoreException(action)
   }
 
-  implicit class ErrorOrOkOps[A](c: Error Xor A) {
+  implicit class ErrorOrOkOps[A](c: Error Either A) {
     def toErrorSimpleMessage: Option[String] =
       c match {
         case Left(e) => Some(e.simpleMessage)

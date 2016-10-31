@@ -1,19 +1,18 @@
 package org.atnos.eff
 
 import scala.util.control.NonFatal
+import cats._
 import cats.implicits._
-import cats.{Eval, Traverse, ~>}
-import cats.data._
-import Xor._
 import Eff._
 import Interpret._
+import Either._
 
 import scala.reflect.ClassTag
 
 /**
  * Effect for computation which can fail and return a Throwable, or just stop with a failure
  *
- * This effect is a mix of Eval and Xor in the sense that every computation passed to this effect (with the ok
+ * This effect is a mix of Eval and Either in the sense that every computation passed to this effect (with the ok
  * method) is considered "impure" or "faulty" by default.
  *
  * The type F is used to represent the failure type.
@@ -26,7 +25,7 @@ trait ErrorEffect[F] extends
 trait ErrorTypes[F] {
 
   /** type of errors: exceptions or failure messages */
-  type Error = Throwable Xor F
+  type Error = Throwable Either F
 
   /**
    * base type for this effect: either an error or a computation to evaluate
@@ -67,8 +66,8 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    *
    * Stop all computation if there is an exception or a failure.
    */
-  def runError[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Error Xor A] = {
-    val recurse = new Recurse[ErrorOrOk, U, Error Xor A] {
+  def runError[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Error Either A] = {
+    val recurse = new Recurse[ErrorOrOk, U, Error Either A] {
       def apply[X](m: ErrorOrOk[X]) =
         m.run match {
           case Left(e) =>
@@ -79,14 +78,14 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
             catch { case NonFatal(t) => Right(EffMonad[U].pure(Left(Left(t)))) }
         }
 
-      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Xor ErrorOrOk[T[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Either ErrorOrOk[T[X]] =
         ms.map(_.run).sequence match {
-          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, T[X]](e))
-          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
+          case Left(e)   => Right(Evaluate.error[F, T[X]](e))
+          case Right(ls) => Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
         }
     }
 
-    interpret1[R, U, ErrorOrOk, A, Error Xor A]((a: A) => Right(a): Error Xor A)(recurse)(r)
+    interpret1[R, U, ErrorOrOk, A, Error Either A]((a: A) => Right(a): Error Either A)(recurse)(r)
   }
 
   /**
@@ -96,7 +95,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    */
   def andFinally[R, A](action: Eff[R, A], last: Eff[R, Unit])(implicit m: ErrorOrOk <= R): Eff[R, A] = {
     val recurse = new Recurse[ErrorOrOk, R, A] {
-      def apply[X](current: ErrorOrOk[X]): X Xor Eff[R, A] =
+      def apply[X](current: ErrorOrOk[X]): X Either Eff[R, A] =
         current.run match {
           case Left(e) => Right(last.flatMap(_ => outer.error[R, A](e)))
           case Right(x) =>
@@ -104,10 +103,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
             catch { case NonFatal(t) => Right(last.flatMap(_ => outer.exception[R, A](t))) }
         }
 
-      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Xor ErrorOrOk[T[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Either ErrorOrOk[T[X]] =
         ms.map(_.run).sequence match {
-          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, T[X]](e))
-          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
+          case Left(e)   => Right(Evaluate.error[F, T[X]](e))
+          case Right(ls) => Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
         }
     }
     intercept[R, ErrorOrOk, A, A]((a: A) => last.as(a), recurse)(action)
@@ -128,18 +127,18 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    */
   def catchError[R, A, B](action: Eff[R, A], pure: A => B, onError: Error => Eff[R, B])(implicit m: ErrorOrOk <= R): Eff[R, B] = {
     val recurse = new Recurse[ErrorOrOk, R, B] {
-      def apply[X](current: ErrorOrOk[X]): X Xor Eff[R, B] =
+      def apply[X](current: ErrorOrOk[X]): X Either Eff[R, B] =
         current.run match {
           case Left(e) => Right(onError(e))
           case Right(x) =>
-            try Left[X](x.value)
+            try Left(x.value)
             catch { case NonFatal(t) => Right(onError(Left(t))) }
         }
 
-      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Xor ErrorOrOk[T[X]] =
+      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Either ErrorOrOk[T[X]] =
         ms.map(_.run).sequence match {
-          case Xor.Left(e)   => Xor.Right(Evaluate.error[F, T[X]](e))
-          case Xor.Right(ls) => Xor.Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
+          case Left(e)   => Right(Evaluate.error[F, T[X]](e))
+          case Right(ls) => Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
         }
     }
     intercept1[R, ErrorOrOk, A, B](pure)(recurse)(action)
@@ -161,7 +160,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
   def ignoreException[R, E <: Throwable : ClassTag, A](action: Eff[R, A])(implicit m: ErrorOrOk <= R): Eff[R, Unit] =
     catchError[R, A, Unit](action, (a: A) => (), { error: Error =>
       error match {
-        case Xor.Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
+        case Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
           EffMonad[R].pure(())
         case other => outer.error(other)
       }
@@ -177,7 +176,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
     transform[SR, BR, U, Evaluate[F1, ?], Evaluate[F2, ?], A](r,
       new ~>[Evaluate[F1, ?], Evaluate[F2, ?]] {
       def apply[X](r: Evaluate[F1, X]): Evaluate[F2, X] =
-        Evaluate(r.run.leftMap(_.map(getter)))
+        Evaluate(r.run.leftMap(e => catsSyntaxEither(e).map(getter)))
     })
 
   /**
@@ -189,9 +188,9 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
     translate[R, U, Evaluate[F1, ?], A](r) { new Translate[Evaluate[F1, ?], U] {
       def apply[X](ex: Evaluate[F1, X]): Eff[U, X] =
         ex.run match {
-          case Xor.Left(Xor.Left(t))   => send[Evaluate[F2, ?], U, X](Evaluate.exception[F2, X](t))
-          case Xor.Left(Xor.Right(e1)) => send[Evaluate[F2, ?], U, X](Evaluate.fail[F2, X](getter(e1)))
-          case Xor.Right(x)            => send[Evaluate[F2, ?], U, X](Evaluate.eval[F2, X](x))
+          case Left(Left(t))   => send[Evaluate[F2, ?], U, X](Evaluate.exception[F2, X](t))
+          case Left(Right(e1)) => send[Evaluate[F2, ?], U, X](Evaluate.fail[F2, X](getter(e1)))
+          case Right(x)            => send[Evaluate[F2, ?], U, X](Evaluate.eval[F2, X](x))
         }
     }}
 
@@ -226,13 +225,13 @@ object ErrorEffect extends ErrorEffect[String] {
     trace(t).lines.map(line => indent + line).mkString("\n")
 }
 
-case class Evaluate[F, A](run: (Throwable Xor F) Xor cats.Eval[A])
+case class Evaluate[F, A](run: (Throwable Either F) Either cats.Eval[A])
 
 object Evaluate {
-  def ok[F, A](a: =>A)                = Evaluate[F, A](Xor.Right(cats.Eval.later(a)))
-  def eval[F, A](a: Eval[A])          = Evaluate[F, A](Xor.Right(a))
-  def error[F, A](a: Throwable Xor F) = Evaluate[F, A](Xor.Left(a))
-  def fail[F, A](f: F)                = error[F, A](Xor.Right(f))
-  def exception[F, A](t: Throwable)   = error[F, A](Xor.Left(t))
+  def ok[F, A](a: =>A)                = Evaluate[F, A](Right(cats.Eval.later(a)))
+  def eval[F, A](a: Eval[A])          = Evaluate[F, A](Right(a))
+  def error[F, A](a: Throwable Either F) = Evaluate[F, A](Left(a))
+  def fail[F, A](f: F)                = error[F, A](Right(f))
+  def exception[F, A](t: Throwable)   = error[F, A](Left(t))
 }
 

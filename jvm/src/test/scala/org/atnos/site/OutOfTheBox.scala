@@ -1,6 +1,7 @@
 package org.atnos.site
 
 import cats.data._
+import cats.syntax.either._
 import org.specs2.execute._
 
 object OutOfTheBox extends UserGuidePage { def is = "Out of the box".title ^ s2"""
@@ -11,9 +12,9 @@ This library comes with the following effects:
  ---------           | --------------------------------------------
  `EvalEffect`        | an effect for delayed computations
  `OptionEffect`      | an effect for optional computations, stopping when there's no available value
- `XorEffect`         | an effect for computations with failures, stopping when there is a failure
+ `EitherEffect`         | an effect for computations with failures, stopping when there is a failure
  `ValidateEffect`    | an effect for computations with failures, allowing to continue computations and to collect failures
- `ErrorEffect`       | a mix of Eval and Xor, catching exceptions and returning them as failures
+ `ErrorEffect`       | a mix of Eval and Either, catching exceptions and returning them as failures
  `ReaderEffect`      | an effect for depending on a configuration or an environment
  `WriterEffect`      | an effect to log messages
  `StateEffect`       | an effect to pass state around
@@ -66,16 +67,15 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 (addKeys("key1", "key2").runOption.run, addKeys("key1", "missing").runOption.run)
 }.eval}
 
-### Xor
+### Either
 
-The `Xor` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
+The `Either` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet{
 import org.atnos.eff._, all._, syntax.all._
-import cats.data.Xor
 
 /**
  * Stack declaration
  */
-type S = Fx.fx1[String Xor ?]
+type S = Fx.fx1[String Either ?]
 
 // compute with this stack
 val map: Map[String, Int] =
@@ -83,11 +83,11 @@ val map: Map[String, Int] =
 
 // get 2 keys from the map and add the corresponding values
 def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a <- optionXor(map.get(key1), s"'$key1' not found")
-  b <- optionXor(map.get(key2), s"'$key2' not found")
+  a <- optionEither(map.get(key1), s"'$key1' not found")
+  b <- optionEither(map.get(key2), s"'$key2' not found")
 } yield a + b
 
-(addKeys("key1", "key2").runXor.run, addKeys("key1", "missing").runXor.run)
+(addKeys("key1", "key2").runEither.run, addKeys("key1", "missing").runEither.run)
 }.eval}
 
 *Note*: the `?` syntax comes from the [kind-projector](https://github.com/non/kind-projector) project and allows us to avoid
@@ -96,10 +96,9 @@ type lambdas.
 A `catchLeft` method can also be used to intercept an error and possibly recover from it:${snippet{
 // 8<--
 import org.atnos.eff._, all._, syntax.all._
-import cats.data.Xor
 // 8<--
 case class TooBig(value: Int)
-type E = Fx.fx1[TooBig Xor ?]
+type E = Fx.fx1[TooBig Either ?]
 
 val i = 7
 
@@ -112,7 +111,7 @@ val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =>
   else        left[E, TooBig, Int](TooBig(k))
 }
 
-action.runXor.run ==== Xor.Right(7)
+action.runEither.run ==== Right(7)
 }}
 
 *Note*: the type annotations on `left` and `right` can be avoided by adding an implicit declaration in scope. You can learn
@@ -120,7 +119,7 @@ more about this in the ${"Implicits" ~/ MemberImplicits} section.
 
 ### Validate
 
-The `Validate` effect is similar to the `Xor` effect but let you accumulate failures: ${snippet{
+The `Validate` effect is similar to the `Either` effect but let you accumulate failures: ${snippet{
 import org.atnos.eff._, all._, syntax.all._
 
 /**
@@ -143,7 +142,7 @@ checkPositiveInts(1, -3, -2).runNel.run
 
 ### Error
 
-The `Error` effect is both an `Eval` effect and a `Xor` one with `Throwable Xor F` on the "left" side.
+The `Error` effect is both an `Eval` effect and a `Either` one with `Throwable Either F` on the "left" side.
  The idea is to represent computations which can fail, either with an exception or a failure. You can:
 
  - create delayed computations with `ok`
@@ -160,7 +159,7 @@ Other useful combinators are available:
 
  - `whenFailed` does the same thing than `orElse` but uses the error for `action1` to decide which action to run next
 
-When you run an `Error` effect you get back an `Error Xor A` where `Error` is a type alias for `Throwable Xor Failure`.
+When you run an `Error` effect you get back an `Error Either A` where `Error` is a type alias for `Throwable Either Failure`.
 
 The `Error` object implements this effect with `String` as the `Failure` type but you are encouraged to create our own
 failure datatype and extend the `Error[MyFailureDatatype]` trait.
@@ -368,7 +367,7 @@ def useResource(ok: Boolean) = (r: Resource) =>
   protect[S, Int](if (ok) r.values.sum else throw new Exception("boo"))
 
 // this program uses the resource safely even if there is an exception
-def program(ok: Boolean): (Throwable Xor Int, List[Throwable]) =
+def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
   bracket(openResource)(useResource(ok))(closeResource).
     runSafe.run
 // 8<--
@@ -378,7 +377,7 @@ showResult1("With exception   ", program(ok = false), "resource is closed", reso
 
 }.eval}
 
-As you can see in the signature of `program` the return value of `runSafe` is `(Throwable Xor A, List[Throwable])`.
+As you can see in the signature of `program` the return value of `runSafe` is `(Throwable Either A, List[Throwable])`.
 The first part is the result of your program, which may end with an exception, and the second part is the list of
 possible exceptions thrown by the finalizers which can themselves fail.
 
@@ -397,7 +396,7 @@ def setDone(ok: Boolean): Eff[S, Unit] =
   protect[S, Unit](if (ok) sumDone = true else throw new Exception("failed!!"))
 
 // this program tries to set sumDone to true when the computation is done
-def program(ok: Boolean, finalizeOk: Boolean): (Throwable Xor Int, List[Throwable]) =
+def program(ok: Boolean, finalizeOk: Boolean): (Throwable Either Int, List[Throwable]) =
   (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception("boo")) `finally` setDone(finalizeOk)).
     runSafe.run
 
@@ -419,14 +418,14 @@ Now you can learn how to  ${"create your own effects" ~/ CreateEffects}!
 
 """
 
-  def showResult1(message: String, result: (Throwable Xor Int, List[Throwable]), resourceMessage: String, closed: Boolean) =
+  def showResult1(message: String, result: (Throwable Either Int, List[Throwable]), resourceMessage: String, closed: Boolean) =
     result match {
       case (r, ls) =>
         s"""|
             |$message: ${r.leftMap(_.getMessage)}, finalizers exceptions: ${if (ls.isEmpty) "no exceptions" else ls.map(_.getMessage).toString},\t$resourceMessage: $closed""".stripMargin
     }
 
-  def showResult2(message: String, result: (Throwable Xor Int, List[Throwable])) =
+  def showResult2(message: String, result: (Throwable Either Int, List[Throwable])) =
     result match {
       case (r, ls) =>
         s"""|

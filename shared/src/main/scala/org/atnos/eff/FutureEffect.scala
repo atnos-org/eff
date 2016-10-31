@@ -4,14 +4,14 @@ import scala.util.control.NonFatal
 import cats.data._
 import cats.{Applicative, Traverse}
 import cats.implicits._
-import Xor._
+import Either._
 import Eff._
 import Interpret._
 import EvalTypes._
 
 import scala.concurrent._
 import duration._
-import XorCreation._
+import EitherCreation._
 
 /**
  * Effect for Future computations
@@ -36,7 +36,7 @@ trait FutureCreation {
   def liftFuture[R :_future :_eval, A](f: =>Future[A]): Eff[R, A] =
     EvalEffect.delay(f).flatMap(v => Eff.send[Future, R, A](v))
 
-  def attemptFuture[R :_future :_eval :_throwableXor, A](f: =>Future[A])(implicit ec: ExecutionContext): Eff[R, A] =
+  def attemptFuture[R :_future :_eval :_throwableEither, A](f: =>Future[A])(implicit ec: ExecutionContext): Eff[R, A] =
     liftFuture(f.attempt).flatMap(send(_))
 
 }
@@ -52,17 +52,17 @@ trait FutureInterpretation {
   }
 
   def awaitFuture[R, U, A](r: Eff[R, A])(atMost: Duration)
-      (implicit m: Member.Aux[Future, R, U], ec: ExecutionContext): Eff[U, Throwable Xor A] = {
-    val recurse = new Recurse[Future, U, Throwable Xor A] {
+      (implicit m: Member.Aux[Future, R, U], ec: ExecutionContext): Eff[U, Throwable Either A] = {
+    val recurse = new Recurse[Future, U, Throwable Either A] {
       def apply[X](m: Future[X]) =
         try { Left(Await.result(m, atMost)) }
         catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
 
-      def applicative[X, T[_]: Traverse](ms: T[Future[X]]): T[X] Xor Future[T[X]] =
-        Xor.Right(ApplicativeFuture.sequence(ms))
+      def applicative[X, T[_]: Traverse](ms: T[Future[X]]): T[X] Either Future[T[X]] =
+        Right(ApplicativeFuture.sequence(ms))
     }
 
-    interpret1((a: A) => Right(a): Throwable Xor A)(recurse)(r)
+    interpret1((a: A) => Right(a): Throwable Either A)(recurse)(r)
   }
 
 }

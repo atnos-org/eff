@@ -4,7 +4,7 @@ import scala.util.control.NonFatal
 import cats._
 import cats.data._
 import cats.implicits._
-import Xor._
+import Either._
 import Eff._
 import Interpret._
 
@@ -39,23 +39,23 @@ trait EvalInterpretation extends EvalTypes {
   def runEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] = {
     val recurse = new Recurse[Eval, U, A] {
       def apply[X](m: Eval[X]) = Left(m.value)
-      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Xor Eval[T[X]] = Xor.Left(ms.map(_.value))
+      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] = Left(ms.map(_.value))
     }
 
     interpret1((a: A) => a)(recurse)(r)
   }
 
-  def attemptEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Throwable Xor A] = {
-    val recurse = new Recurse[Eval, U, Throwable Xor A] {
+  def attemptEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Throwable Either A] = {
+    val recurse = new Recurse[Eval, U, Throwable Either A] {
       def apply[X](m: Eval[X]) =
         try { Left(m.value) }
         catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
 
-      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Xor Eval[T[X]] =
-        Xor.Right(Eval.later(ms.map(_.value)))
+      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] =
+        Right(Eval.later(ms.map(_.value)))
     }
 
-    interpret1((a: A) => Right(a): Throwable Xor A)(recurse)(r)
+    interpret1((a: A) => Right(a): Throwable Either A)(recurse)(r)
   }
 }
 

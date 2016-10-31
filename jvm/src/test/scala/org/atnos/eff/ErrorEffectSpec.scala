@@ -4,7 +4,7 @@ import org.specs2.Specification
 import ErrorEffect.{ok => OK, ErrorOrOk}
 
 import scala.collection.mutable.ListBuffer
-import cats.data._, Xor._
+import cats.data._
 import cats.Eval
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
@@ -135,7 +135,7 @@ class ErrorEffectSpec extends Specification { def is = s2"""
       ErrorEffect.runLocalError(action1[R1], Error2)
     }
 
-    ErrorEffect2.runError(action2[Fx.fx1[ErrorOrOk2]]).run ==== Xor.left(Xor.right(Error2(Error1("boom"))))
+    ErrorEffect2.runError(action2[Fx.fx1[ErrorOrOk2]]).run ==== Left(Right(Error2(Error1("boom"))))
   }
 
 }

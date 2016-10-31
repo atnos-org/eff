@@ -11,7 +11,7 @@ import WarningsEffect._
 import ConsoleEffect._
 import ErrorEffect._
 import Member.{<=}
-import cats.data._, Xor._
+import cats.data._
 import cats.Eval
 import org.specs2._
 
@@ -28,10 +28,10 @@ class ActionSpec extends Specification with ScalaCheck { def is = s2"""
 """
 
   def computeValues =
-    runWith(2, 3)._1.toEither must beRight(5)
+    runWith(2, 3)._1 must beRight(5)
 
   def stop =
-    runWith(20, 30)._1.toEither ==== util.Left(Right("too big"))
+    runWith(20, 30)._1 ==== Left(Right("too big"))
 
   def logMessages = {
     val messages = new scala.collection.mutable.ListBuffer[String]
@@ -51,7 +51,7 @@ class ActionSpec extends Specification with ScalaCheck { def is = s2"""
        _ <- Action.warnAndFail[ActionStack, String]("hmm", "let's stop")
       } yield i
 
-    runAction(action)._1.toEither must beLeft
+    runAction(action)._1 must beLeft
   }
 
   def orElseWarn = {
@@ -59,18 +59,18 @@ class ActionSpec extends Specification with ScalaCheck { def is = s2"""
     val action =
       ErrorEffect.fail[ActionStack, Unit]("failed").orElse(warn[ActionStack]("that didn't work"))
 
-    runAction(action)._1.toEither must beRight
+    runAction(action)._1 must beRight
   }
 
   /**
    * HELPERS
    */
 
-  def runWith(i: Int, j: Int, printer: String => Unit = s => ()): (Error Xor Int, List[String]) =
+  def runWith(i: Int, j: Int, printer: String => Unit = s => ()): (Error Either Int, List[String]) =
     runAction(actions(i, j), printer)
 
   /** specifying the stack is enough to run it */
-  def runWithUnbound(i: Int, j: Int, printer: String => Unit = s => ()): (Error Xor Int, List[String]) = {
+  def runWithUnbound(i: Int, j: Int, printer: String => Unit = s => ()): (Error Either Int, List[String]) = {
     import ActionImplicits._
     runAction(unboundActions[ActionStack](i, j), printer)
   }

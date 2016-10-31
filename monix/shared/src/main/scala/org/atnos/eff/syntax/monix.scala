@@ -15,7 +15,7 @@ trait monix {
   implicit class TaskEffectOps[R, A](e: Eff[R, A]) {
 
     def awaitTask[U](atMost: Duration)
-                               (implicit member: Member.Aux[Task, R, U], ec: ExecutionContext, s: Scheduler): Eff[U, Throwable Xor A] =
+                               (implicit member: Member.Aux[Task, R, U], ec: ExecutionContext, s: Scheduler): Eff[U, Throwable Either A] =
       org.atnos.eff.monix.TaskEffect.awaitTask(e)(atMost)
 
   }

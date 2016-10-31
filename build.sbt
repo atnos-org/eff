@@ -216,9 +216,9 @@ def testTask(task: TaskKey[Tests.Output]) =
     testGrouping in Test in test, testExecution in Test in task,
     fullClasspath in Test in test, javaHome in test) flatMap Defaults.allTestGroupsTask
 
-lazy val catsVersion     = "0.7.0"
-lazy val monixVersion    = "2.0-RC13"
-lazy val specs2Version   = "3.8.4"
+lazy val catsVersion     = "0.8.0"
+lazy val monixVersion    = "2.0.5"
+lazy val specs2Version   = "3.8.5"
 
 lazy val catsJvm = Seq(
   "org.typelevel" %% "cats-core" % catsVersion)
@@ -237,7 +237,6 @@ lazy val specs2 = Seq(
   , "org.specs2" %% "specs2-matcher-extra"
   , "org.specs2" %% "specs2-scalacheck"
   , "org.specs2" %% "specs2-html"
-  , "org.specs2" %% "specs2-cats"
   , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
 
 lazy val scalameter = Seq(

@@ -5,7 +5,7 @@ import cats._
 import cats.data._
 import cats.implicits._
 import org.atnos.eff._
-import xor._
+import either._
 import org.atnos.eff.syntax.all._
 import Eff._
 import Interpret._
@@ -48,8 +48,11 @@ trait TaskInterpretation {
     def flatMap[A, B](fa: Task[A])(f: A => Task[B]): Task[B] =
       fa.flatMap(f)
 
-    def tailRecM[A, B](a: A)(f: A => Task[Either[A,B]]): Task[B] =
-      defaultTailRecM(a)(f)
+    def tailRecM[A, B](a: A)(f: A => Task[Either[A, B]]): Task[B] =
+      flatMap(f(a)) {
+        case Right(b)   => pure(b)
+        case Left(next) => tailRecM(next)(f)
+      }
   }
 
   def ApplicativeTask: Applicative[Task] = new Applicative[Task] {
@@ -61,34 +64,34 @@ trait TaskInterpretation {
   }
 
   def awaitTask[R, U, A](r: Eff[R, A])(atMost: Duration)
-      (implicit m: Member.Aux[Task, R, U], ec: ExecutionContext, s: Scheduler): Eff[U, Throwable Xor A] = {
-    val recurse = new Recurse[Task, U, Throwable Xor A] {
+      (implicit m: Member.Aux[Task, R, U], ec: ExecutionContext, s: Scheduler): Eff[U, Throwable Either A] = {
+    val recurse = new Recurse[Task, U, Throwable Either A] {
       def apply[X](m: Task[X]) =
-        try { Xor.left(Await.result(m.runAsync(s), atMost)) }
-        catch { case NonFatal(t) => Xor.right(Eff.pure(Xor.left(t))) }
+        try { Left(Await.result(m.runAsync(s), atMost)) }
+        catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
 
-      def applicative[X, T[_]: Traverse](ms: T[Task[X]]): T[X] Xor Task[T[X]] =
-        Xor.Right(ApplicativeTask.sequence(ms))
+      def applicative[X, T[_]: Traverse](ms: T[Task[X]]): T[X] Either Task[T[X]] =
+        Right(ApplicativeTask.sequence(ms))
     }
 
-    interpret1((a: A) => Xor.right(a): Throwable Xor A)(recurse)(r)
+    interpret1((a: A) => Right(a): Throwable Either A)(recurse)(r)
   }
 
-  def attempt[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, Throwable Xor A] = {
+  def attempt[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, Throwable Either A] = {
     e match {
-      case Pure(a) => pure[R, Throwable Xor A](Xor.right(a))
+      case Pure(a) => pure[R, Throwable Either A](Right(a))
 
       case Impure(u, c) =>
         task.extract(u) match {
           case Some(tx) =>
             val union = task.inject(tx.materialize.map {
-              case Success(x) => Xor.right[Throwable, u.X](x)
-              case Failure(t) => Xor.left[Throwable, u.X](t)
+              case Success(x) => Right[Throwable, u.X](x): Either[Throwable, u.X]
+              case Failure(t) => Left[Throwable, u.X](t): Either[Throwable, u.X]
             })
-            Impure(union, Arrs.singleton { ex: (Throwable Xor u.X) =>
+            Impure(union, Arrs.singleton { ex: (Throwable Either u.X) =>
               ex match {
-                case Xor.Right(x) => attempt(c(x))
-                case Xor.Left(t) => pure(Xor.Left(t))
+                case Right(x) => attempt(c(x))
+                case Left(t)  => pure(Left(t): Either[Throwable, A])
               }
             })
 
@@ -99,8 +102,8 @@ trait TaskInterpretation {
           def materialize(u: Union[R, Any]): Union[R, Any] =
             task.extract(u) match {
               case Some(tx) => task.inject(tx.materialize.map {
-                case Success(x) => Xor.right(x)
-                case Failure(t) => Xor.left(t)
+                case Success(x) => Right(x)
+                case Failure(t) => Left(t)
               })
               case None => u
             }
@@ -109,16 +112,16 @@ trait TaskInterpretation {
             Unions(materialize(unions.first), unions.rest.map(materialize))
 
           val collected = unions.extract(task)
-          val continuation = Arrs.singleton[R, List[Any], Throwable Xor A] { ls: List[Any] =>
-            val xors =
+          val continuation = Arrs.singleton[R, List[Any], Throwable Either A] { ls: List[Any] =>
+            val eithers =
               ls.zipWithIndex.collect { case (a, i) =>
-                if (collected.indices.contains(i)) a.asInstanceOf[Throwable Xor Any]
-                else Xor.Right(a)
+                if (collected.indices.contains(i)) a.asInstanceOf[Throwable Either Any]
+                else Right(a)
               }.sequence
 
-            xors match {
-              case Xor.Left(t) => pure(Xor.Left(t))
-              case Xor.Right(anys) => attempt(c(anys))
+            eithers match {
+              case Left(t) => pure(Left(t))
+              case Right(anys) => attempt(c(anys))
             }
           }
 

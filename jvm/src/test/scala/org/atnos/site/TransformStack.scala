@@ -5,7 +5,6 @@ import HadoopS3Snippet._
 import HadoopStack._
 import S3Stack.{WriterString => _, _}
 import cats.data.Writer
-import cats.data.Xor
 import cats.~>
 import org.atnos.eff._
 
@@ -125,14 +124,14 @@ There are also specialized versions of `transform` for `Reader` and `State`:
 
 ### Effects translation
 
-A common thing to do is to translate "high-level" effects (a webservice DSL for example) into low-level ones (`Future`, `Eval`, `Xor`, etc...).
+A common thing to do is to translate "high-level" effects (a webservice DSL for example) into low-level ones (`Future`, `Eval`, `Either`, etc...).
 
 For example you might have this stack:
   ```
-type S = Fx.fx3[Authenticated, Future, ThrowableXor]
+type S = Fx.fx3[Authenticated, Future, ThrowableEither]
 ```
 
-And you want to write an interpreter which will translate authentication actions into `Future` and `Xor`:${snippet{
+And you want to write an interpreter which will translate authentication actions into `Future` and `Either`:${snippet{
 import org.atnos.eff.eff._
 import org.atnos.eff.syntax.eff._
 import org.atnos.eff.future._
@@ -149,8 +148,8 @@ case class AuthError(message: String)
 sealed trait Authenticated[A]
 case class Authenticate(token: String) extends Authenticated[AccessRights]
 
-type AuthErroXor[A] = AuthError Xor A
-type _error[R] = AuthErroXor |= R
+type AuthErroEither[A] = AuthError Either A
+type _error[R] = AuthErroEither |= R
 
 /**
  * The order of implicit parameters is really important for type inference!
@@ -159,7 +158,7 @@ type _error[R] = AuthErroXor |= R
 def runAuth[R, U, A](e: Eff[R, A])(implicit
   authenticated: Member.Aux[Authenticated, R, U],
    future:       _future[U],
-   xor:          _error[U]): Eff[U, A] =
+   either:          _error[U]): Eff[U, A] =
 
    translate(e)(new Translate[Authenticated, U] {
      def apply[X](ax: Authenticated[X]): Eff[U, X] =
@@ -167,15 +166,15 @@ def runAuth[R, U, A](e: Eff[R, A])(implicit
          case Authenticate(token) =>
            // send the future effect in the stack U
            send(authenticate(token)).
-           // send the Xor value in the stack U
+           // send the Either value in the stack U
            collapse
        }
     })
 
 // call to a service to authenticate tokens
-def authenticate(token: String): Future[AuthError Xor AccessRights] = ???
+def authenticate(token: String): Future[AuthError Either AccessRights] = ???
 
-type S = Fx.fx3[Authenticated, AuthError Xor ?, Future]
+type S = Fx.fx3[Authenticated, AuthError Either ?, Future]
 def auth: Eff[S, Int] = ???
 
 runAuth(auth)
@@ -185,8 +184,8 @@ runAuth(auth)
 The call to `send` above needs to send a `Future` value in the stack `U`. This is possible because `Future` is an
 effect in `U` as evidenced by `future`.
 
-Furthermore, `authenticate` returns an `AuthError Xor ?` value. We can "collapse" it into `U` because `AuthError Xor ?`
-is an effect of `U` as evidenced by `xor`.
+Furthermore, `authenticate` returns an `AuthError Either ?` value. We can "collapse" it into `U` because `AuthError Either ?`
+is an effect of `U` as evidenced by `either`.
 
 
 You might wonder why we don't use a more direct type signature like:
@@ -199,7 +198,7 @@ The reason is that scalac desugars this to:
 ```
 def runAuth2[R, U, A](e: Eff[R, A])(
   implicit future:        _future[U],
-           xor:           _error[U],
+           either:           _error[U],
            authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A] =
 ```
 

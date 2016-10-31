@@ -13,7 +13,7 @@ package object eff {
   object eval       extends EvalCreation       with EvalInterpretation
   object option     extends OptionCreation     with OptionInterpretation
   object list       extends ListCreation       with ListInterpretation
-  object xor        extends XorCreation        with XorInterpretation       with XorImplicits
+  object either     extends EitherCreation     with EitherInterpretation    with EitherImplicits
   object validate   extends ValidateCreation   with ValidateInterpretation
   object choose     extends ChooseCreation     with ChooseInterpretation
   object future     extends FutureCreation     with FutureInterpretation
@@ -27,7 +27,7 @@ package object eff {
     EvalCreation with
     OptionCreation with
     ListCreation with
-    XorCreation with
+    EitherCreation with
     ValidateCreation with
     ChooseCreation with
     FutureCreation with
@@ -41,7 +41,7 @@ package object eff {
     EvalEffect with
     OptionEffect with
     ListEffect with
-    XorEffect with
+    EitherEffect with
     ValidateEffect with
     ChooseEffect with
     FutureEffect with

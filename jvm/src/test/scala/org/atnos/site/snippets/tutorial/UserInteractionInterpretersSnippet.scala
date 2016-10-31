@@ -14,7 +14,7 @@ import cats.data._
 
 def runInteract[R, A](effects: Eff[R, A])(implicit m: Interact <= R): Eff[m.Out, A] = {
   val recurse = new Recurse[Interact, m.Out, A] {
-    def apply[X](i: Interact[X]): X Xor Eff[m.Out, A] = Xor.left {
+    def apply[X](i: Interact[X]): X Either Eff[m.Out, A] = Left {
       i match {
         case Ask(prompt) =>
           println(prompt)
@@ -25,8 +25,8 @@ def runInteract[R, A](effects: Eff[R, A])(implicit m: Interact <= R): Eff[m.Out,
       }
     }
 
-    def applicative[X, T[_] : Traverse](ms: T[Interact[X]]): T[X] Xor Interact[T[X]] =
-      Xor.Left(ms.map {
+    def applicative[X, T[_] : Traverse](ms: T[Interact[X]]): T[X] Either Interact[T[X]] =
+      Left(ms.map {
         case Ask(prompt) => println(prompt); readLine()
         case Tell(msg)   => println(msg)
       })
@@ -39,15 +39,15 @@ def runDataOp[R, A](effects: Eff[R, A])(implicit m: DataOp <= R): Eff[m.Out, A] 
   val memDataSet = new scala.collection.mutable.ListBuffer[String]
 
   val recurse = new Recurse[DataOp, m.Out, A] {
-    def apply[X](i: DataOp[X]): X Xor Eff[m.Out, A] = Xor.left {
+    def apply[X](i: DataOp[X]): X Either Eff[m.Out, A] = Left {
       i match {
         case AddCat(a)    => memDataSet.append(a); ()
         case GetAllCats() => memDataSet.toList
       }
     }
 
-    def applicative[X, T[_]: Traverse](ms: T[DataOp[X]]): T[X] Xor DataOp[T[X]] =
-      Xor.Left(ms.map {
+    def applicative[X, T[_]: Traverse](ms: T[DataOp[X]]): T[X] Either DataOp[T[X]] =
+      Left(ms.map {
         case AddCat(a)    => memDataSet.append(a); ()
         case GetAllCats() => memDataSet.toList
       })

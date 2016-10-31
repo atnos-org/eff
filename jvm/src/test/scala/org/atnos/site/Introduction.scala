@@ -85,8 +85,8 @@ As you can see, all the effects of the `Stack` type are being executed one by on
 <br/>
 Maybe you noticed that the effects are not being executed in the same order as their order in the stack declaration.
 The effects can indeed be executed in any order. This doesn't mean though that the results will be the same. For example
-running the `Writer` effect then `Xor` effect returns `String Xor (A, List[String])` whereas running the `Xor` effect
- then the `Writer` effect returns `(String Xor A, List[String])`.
+running the `Writer` effect then `Either` effect returns `String Either (A, List[String])` whereas running the `Either` effect
+ then the `Writer` effect returns `(String Either A, List[String])`.
 
 This all works thanks to some implicits definitions guiding Scala type inference towards the
 right return types. You can learn more on implicits in the ${"implicits" ~/ MemberImplicits} section.

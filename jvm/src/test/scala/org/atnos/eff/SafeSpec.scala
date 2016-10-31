@@ -8,7 +8,6 @@ import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.matcher.{Matcher, ThrownExpectations}
 import org.scalacheck.Gen
-import org.specs2.matcher.XorMatchers._
 import scala.collection.mutable.ListBuffer
 
 class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
@@ -16,7 +15,7 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
   The Safe effect can be used to protect resources and computations
   in the presence of exceptions.
 
-  A protected action can be executed and will return a Throwable Xor A $safe1
+  A protected action can be executed and will return a Throwable Either A $safe1
 
   An "attempted" action will return an exception inside the same stack if it fails $attempt1
 
@@ -38,14 +37,14 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
 
   def safe1 = prop { n: Int =>
     protect[S, Int](action(n)).runSafe.runOption.run ====
-      (if (isEven(n)) Option((Xor.right(n), List()))
-       else           Option((Xor.left(boom), List())))
+      (if (isEven(n)) Option((Right(n), List()))
+       else           Option((Left(boom), List())))
   }
 
   def attempt1 = prop { n: Int =>
     protect[S, Int](action(n)).attempt.runSafe.runOption.run ====
       Option(
-        (Xor.right(if (isEven(n)) Xor.right(n) else Xor.left(boom)),
+        (Right(if (isEven(n)) Right(n) else Left(boom)),
          List())
       )
   }
@@ -63,7 +62,7 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
     val result = program.runSafe.runOption.run
 
     result match {
-      case Some((Xor.Right(r), ls)) =>
+      case Some((Right(r), ls)) =>
         n1 must beEven
         n2 must beEven
         r ==== (n1 + n2)
@@ -75,7 +74,7 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
 
         messages.toList ==== List("finalizer1", "finalizer2")
 
-      case Some((Xor.Left(t), ls)) =>
+      case Some((Left(t), ls)) =>
         (n1 must beOdd) or (n2 must beOdd)
 
         if (isEven(n1)) {
@@ -113,27 +112,27 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
   def catchThrowable1 = prop { n: Int =>
     val program = protect[S, Int](action(n)).catchThrowable(identity, _ => pure(1))
 
-    program.runSafe.runOption.run ==== Option((Xor.Right(if (isEven(n)) n else 1), List()))
+    program.runSafe.runOption.run ==== Option((Right(if (isEven(n)) n else 1), List()))
   }.setGen(genInt)
 
   def catchThrowable2 = prop { n: Int =>
     val program = (protect[S, Int](action(n)) `finally` protect[S, Unit](throw finalBoom)).catchThrowable(identity, _ => pure(1))
 
-    program.runSafe.runOption.run ==== Option((Xor.Right(if (isEven(n)) n else 1), List(finalBoom)))
+    program.runSafe.runOption.run ==== Option((Right(if (isEven(n)) n else 1), List(finalBoom)))
   }.setGen(genInt)
 
   def catchThrowable3 = prop { n: Int =>
     val program = protect[S, Int](action(n)).catchThrowable(identity, _ => pure(1)) `finally` protect[S, Unit](throw finalBoom)
 
-    program.runSafe.runOption.run ==== Option((Xor.Right(if (isEven(n)) n else 1), List(finalBoom)))
+    program.runSafe.runOption.run ==== Option((Right(if (isEven(n)) n else 1), List(finalBoom)))
   }.setGen(genInt)
 
   def ignoreException1 = prop { n: Int =>
-    def runWithException(t: Throwable): Option[Throwable Xor Unit] =
+    def runWithException(t: Throwable): Option[Throwable Either Unit] =
       protect[S, Int](throw t).ignoreException[IllegalArgumentException].execSafe.runOption.run
 
-    runWithException(boom) must beSome(beXorLeft[Throwable])
-    runWithException(new IllegalArgumentException("ok")) must beSome(beXorRight[Unit])
+    runWithException(boom) must beSome(beLeft[Throwable])
+    runWithException(new IllegalArgumentException("ok")) must beSome(beRight[Unit])
   }
 
   /**

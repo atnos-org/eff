@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats.data._
-import Xor._
+import Either._
 import cats.implicits._
 import Interpret._
 import Eff._
@@ -49,8 +49,8 @@ trait OptionInterpretation {
           case Some(x) => Left(x)
         }
 
-      def applicative[X, T[_]: Traverse](ms: T[Option[X]]): T[X] Xor Option[T[X]] =
-        Xor.Right(ms.sequence)
+      def applicative[X, T[_]: Traverse](ms: T[Option[X]]): T[X] Either Option[T[X]] =
+        Right(ms.sequence)
     }
 
     interpret1[R, U, Option, A, Option[A]]((a: A) => Option(a))(recurse)(r)

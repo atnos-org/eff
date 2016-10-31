@@ -27,9 +27,9 @@ trait ValidateCreation {
   def validateOption[R, E, A](option: Option[A], e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
     option.map(_ => correct(())).getOrElse(wrong(e))
 
-  /** create an Validate effect from a single Xor value */
-  def validateXor[R, E, A](xor: E Xor A)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
-    xor.fold(e => wrong(e), _ => correct(()))
+  /** create an Validate effect from a single Either value */
+  def validateEither[R, E, A](either: E Either A)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
+    either.fold(e => wrong(e), _ => correct(()))
 
   /** create a failed value */
   def wrong[R, E](e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
@@ -54,15 +54,15 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** run the validate effect, yielding a ValidatedNel */
   def runValidatedNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, ValidatedNel[E, A]] =
-    runNel(r).map(result => Validated.fromEither(result.toEither))
+    runNel(r).map(result => Validated.fromEither(result))
 
-  /** run the validate effect, yielding a non-empty list of failures Xor A */
-  def runNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, NonEmptyList[E] Xor A] =
+  /** run the validate effect, yielding a non-empty list of failures Either A */
+  def runNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, NonEmptyList[E] Either A] =
     runMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.of(e))
 
-  /** run the validate effect, yielding a list of failures Xor A */
-  def runMap[R, U, E, L : Semigroup, A](r: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Xor A] = {
-    val recurse: StateRecurse[Validate[E, ?], A, L Xor A] = new StateRecurse[Validate[E, ?], A, L Xor A] {
+  /** run the validate effect, yielding a list of failures Either A */
+  def runMap[R, U, E, L : Semigroup, A](r: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Either A] = {
+    val recurse: StateRecurse[Validate[E, ?], A, L Either A] = new StateRecurse[Validate[E, ?], A, L Either A] {
       type S = Option[L]
       val init: Option[L] = None
 
@@ -72,8 +72,8 @@ trait ValidateInterpretation extends ValidateCreation {
           case Correct() => ((), s)
         }
 
-      def applicative[X, T[_] : Traverse](xs: T[Validate[E, X]], s: S): (T[X], S) Xor (Validate[E, T[X]], S) =
-        Xor.Left {
+      def applicative[X, T[_] : Traverse](xs: T[Validate[E, X]], s: S): (T[X], S) Either (Validate[E, T[X]], S) =
+        Left {
           val traversed: State[S, T[X]] = xs.traverse {
             case Correct() => State[S, X](state => (state, ()))
             case Wrong(e)  => State[S, X](state => (state.fold(Option(map(e)))(l => Option(l |+| map(e))), ()))
@@ -81,27 +81,27 @@ trait ValidateInterpretation extends ValidateCreation {
           traversed.run(s).value.swap
         }
 
-      def finalize(a: A, s: S): L Xor A =
-        s.fold(Xor.right[L, A](a))(Xor.left[L, A])
+      def finalize(a: A, s: S): L Either A =
+        s.fold[Either[L, A]](Right[L, A](a))(Left[L, A])
     }
 
-    interpretState1[R, U, Validate[E, ?], A, L Xor A]((a: A) => Xor.right[L, A](a))(recurse)(r)
+    interpretState1[R, U, Validate[E, ?], A, L Either A]((a: A) => Right[L, A](a))(recurse)(r)
   }
 
   /** catch and handle possible wrong values */
   def catchWrong[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] = {
     val loop = new StatelessLoop[Validate[E,?], R, A, Eff[R, A]] {
-      def onPure(a: A): Eff[R, A] Xor Eff[R, A] =
-        Xor.Right(pure(a))
+      def onPure(a: A): Eff[R, A] Either Eff[R, A] =
+        Right(pure(a))
 
-      def onEffect[X](m: Validate[E, X], continuation: Arrs[R, X, A]): Eff[R, A] Xor Eff[R, A] =
+      def onEffect[X](m: Validate[E, X], continuation: Arrs[R, X, A]): Eff[R, A] Either Eff[R, A] =
         m match {
-          case Correct() => Xor.Left(continuation(()))
-          case Wrong(e)  => Xor.Left(handle(e))
+          case Correct() => Left(continuation(()))
+          case Wrong(e)  => Left(handle(e))
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Xor Eff[R, A] =
-        Xor.Left {
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either Eff[R, A] =
+        Left {
           val traversed: State[Option[E], T[X]] = xs.traverse {
             case Correct() => State[Option[E], X](state => (None, ()))
             case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))

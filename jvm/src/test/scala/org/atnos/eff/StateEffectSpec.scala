@@ -85,7 +85,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     type PerS[E] = State[Person, ?] |= E
     type PerR[E] = Reader[Person, ?] |= E
     type Add[E] = State[Address, ?] |= E
-    type Err[E] = Xor[String, ?] |= E
+    type Err[E] = Either[String, ?] |= E
 
     def isBadPerson[E: PerR: Err]: Eff[E, Boolean] =
       ask.map(_.hashCode % 13 == 0)
@@ -99,7 +99,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
         _   <- updateAddress
       } yield ()
 
-    updatePerson[Fx.fx2[String Xor ?, State[Person, ?]]].evalState(Person(Address("here"))).runXor.run ==== Xor.Right(())
+    updatePerson[Fx.fx2[String Either ?, State[Person, ?]]].evalState(Person(Address("here"))).runEither.run ==== Right(())
   }
 
   type StateInt[A] = State[Int, A]

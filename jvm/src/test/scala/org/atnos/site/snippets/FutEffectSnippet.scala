@@ -1,7 +1,6 @@
 // 8<---
 package org.atnos.site.snippets
 
-import cats.data.Xor
 import cats.{Applicative, Eval, Traverse}
 import cats.implicits._
 import org.atnos.eff._
@@ -35,11 +34,11 @@ object FutEffect {
      implicit m: Member.Aux[Fut, R, U]): Eff[U, A] = {
 
     val recurse = new Recurse[Fut, U, A] {
-      def apply[X](m: Fut[X]): X Xor Eff[U, A] =
-        Xor.Left(Await.result(m.map(_ ()), atMost))
+      def apply[X](m: Fut[X]): X Either Eff[U, A] =
+        Left(Await.result(m.map(_ ()), atMost))
 
-      def applicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Xor Fut[T[X]] =
-        Xor.Right(ApplicativeFut.sequence(ms))
+      def applicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Either Fut[T[X]] =
+        Right(ApplicativeFut.sequence(ms))
 
     }
     interpret1((a: A) => a)(recurse)(effects)

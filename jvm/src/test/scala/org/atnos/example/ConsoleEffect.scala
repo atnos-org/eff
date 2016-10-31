@@ -38,15 +38,15 @@ object ConsoleEffect {
    */
   def runConsoleToPrinter[R, U, A](printer: String => Unit)(w: Eff[R, A])(implicit m : Member.Aux[Console, R, U]) = {
     val recurse = new Recurse[Console, U, A] {
-      def apply[X](cx: Console[X]): X Xor Eff[U, A] =
+      def apply[X](cx: Console[X]): X Either Eff[U, A] =
         cx.run match {
           case (c, x) =>
             printer(c.message)
-            Xor.Left(x)
+            Left(x)
         }
 
-      def applicative[X, T[_]: Traverse](ws: T[Console[X]]): T[X] Xor Console[T[X]] =
-        Xor.Left(ws.map { w =>
+      def applicative[X, T[_]: Traverse](ws: T[Console[X]]): T[X] Either Console[T[X]] =
+        Left(ws.map { w =>
           val (c, x) = w.run
           printer(c.message)
           x

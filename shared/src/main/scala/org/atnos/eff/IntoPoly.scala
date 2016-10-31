@@ -1,6 +1,5 @@
 package org.atnos.eff
 
-import cats.data.Xor
 import Eff._
 
 /**
@@ -203,16 +202,16 @@ trait IntoPolyLower4 extends IntoPolyLower5 {
 
           case Impure(u, c) =>
             t.project(u) match {
-              case Xor.Right(tx) => Impure[U, u.X, A](m.inject(tx), Arrs.singleton(x => effInto[R, U, A](c(x))))
-              case Xor.Left(s)   => recurse(Impure[S, s.X, s.X](s, Arrs.singleton(x => pure(x)))).flatMap((x: s.X) => effInto[R, U, A](c(x)))
+              case Right(tx) => Impure[U, u.X, A](m.inject(tx), Arrs.singleton(x => effInto[R, U, A](c(x))))
+              case Left(s)   => recurse(Impure[S, s.X, s.X](s, Arrs.singleton(x => pure(x)))).flatMap((x: s.X) => effInto[R, U, A](c(x)))
             }
 
           case ImpureAp(unions, continuation) =>
             ImpureAp[U, unions.X, A](unions.into(new UnionInto[R, U] {
               def apply[X](u: Union[R, X]): Union[U, X] =
                 t.project(u) match {
-                  case Xor.Right(t1)   => m.inject(t1)
-                  case Xor.Left(other) =>
+                  case Right(t1)   => m.inject(t1)
+                  case Left(other) =>
                     recurse(Impure[S, X, X](other, Arrs.singleton(x => pure(x)))) match {
                       case Impure(u1, _) => u1.asInstanceOf[Union[U, X]]
                       case _ => sys.error("impossible into case: Impure must be transformed to Impure")
