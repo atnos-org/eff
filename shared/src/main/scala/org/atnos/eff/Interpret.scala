@@ -337,6 +337,34 @@ trait Interpret {
     })
 
   /**
+   * Translate one effect of the stack into other effects in a larger stack
+   */
+  def translateInto[R, T[_], U, A](eff: Eff[R, A])(translate: Translate[T, U])(implicit m: MemberInOut[T, R], into: IntoPoly[R, U]): Eff[U, A] =  {
+    eff match {
+      case Pure(a) => into(eff)
+      case Impure(u, c) =>
+        m.extract(u) match {
+          case Some(tx) => translate(tx).flatMap(x => translateInto(c(x))(translate))
+          case None     => into(eff)
+        }
+
+      case ImpureAp(unions, c) =>
+        val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx))
+        translated.flatMap(ts => translateInto(c(ts))(translate))
+    }
+  }
+
+  def write[R, T[_], O, A](eff: Eff[R, A])(w: Write[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[Writer[O, ?], R], A] =  {
+    type U = Fx.prepend[Writer[O, ?], R]
+    implicit val mw = MemberIn.MemberInAppendAnyL
+
+    translateInto(eff)(new Translate[T, U] {
+      def apply[X](tx: T[X]) = WriterEffect.tell[U, O](w(tx)) >> send(tx)
+    })
+  }
+
+
+  /**
    * Intercept the values for one effect and transform them into
    * other values for the same effect
    */
@@ -369,51 +397,54 @@ trait Interpret {
     }
     interpret1((a: A) => a)(recurse)(effects)(m)
   }
-
-  /**
-   * Helper trait for computations
-   * which might produce several M[X] in a stack of effects.
-   *
-   * Either we can produce an X to pass to a continuation or we're done
-   */
-  trait Recurse[M[_], R, A] {
-    def apply[X](m: M[X]): X Either Eff[R, A]
-    def applicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]]
-  }
-
-  /**
-   * Generalisation of Recurse and StateRecurse
-   */
-  trait Loop[M[_], R, A, B] {
-    type S
-    val init: S
-    def onPure(a: A, s: S): (Eff[R, A], S) Either B
-    def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either B
-    def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either B
-  }
-
-  /**
-   * Generalisation of Recurse
-   */
-  trait StatelessLoop[M[_], R, A, B] {
-    def onPure(a: A): Eff[R, A] Either B
-    def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Either B
-    def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either B
-  }
-
-  /**
-   * trait for translating one effect into other ones in the same stack
-   */
-  trait Translate[T[_], U] {
-    def apply[X](kv: T[X]): Eff[U, X]
-  }
-
-  trait SideEffect[T[_]] {
-    def apply[X](tx: T[X]): X
-    def applicative[X, Tr[_] : Traverse](ms: Tr[T[X]]): Tr[X]
-  }
-
 }
 
 object Interpret extends Interpret
+
+/**
+ * Helper trait for computations
+ * which might produce several M[X] in a stack of effects.
+ *
+ * Either we can produce an X to pass to a continuation or we're done
+ */
+trait Recurse[M[_], R, A] {
+  def apply[X](m: M[X]): X Either Eff[R, A]
+  def applicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]]
+}
+
+/**
+ * Generalisation of Recurse and StateRecurse
+ */
+trait Loop[M[_], R, A, B] {
+  type S
+  val init: S
+  def onPure(a: A, s: S): (Eff[R, A], S) Either B
+  def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either B
+  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either B
+}
+
+/**
+ * Generalisation of Recurse
+ */
+trait StatelessLoop[M[_], R, A, B] {
+  def onPure(a: A): Eff[R, A] Either B
+  def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Either B
+  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either B
+}
+
+/**
+ * trait for translating one effect into other ones in the same stack
+ */
+trait Translate[T[_], U] {
+  def apply[X](kv: T[X]): Eff[U, X]
+}
+
+trait SideEffect[T[_]] {
+  def apply[X](tx: T[X]): X
+  def applicative[X, Tr[_] : Traverse](ms: Tr[T[X]]): Tr[X]
+}
+
+trait Write[T[_], O] {
+  def apply[X](tx: T[X]): O
+}
 

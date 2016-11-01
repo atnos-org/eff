@@ -2,6 +2,7 @@ package org.atnos.eff
 package syntax
 
 import cats._
+import cats.data.Writer
 
 /**
  * Operations of Eff[R, A] values
@@ -17,8 +18,16 @@ trait eff {
     def transform[BR, U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, BR, U]): Eff[BR, A] =
       Interpret.transform(e, t)(m, n)
 
-    def translate[M[_], U](t: Interpret.Translate[M, U])(implicit m: Member.Aux[M, R, U]): Eff[U, A] =
+    def translate[M[_], U](t: Translate[M, U])(implicit m: Member.Aux[M, R, U]): Eff[U, A] =
       Interpret.translate(e)(t)(m)
+  }
+
+  implicit class EffTranslateIntoOps[R, A](e: Eff[R, A]) {
+    def translateInto[T[_], U](t: Translate[T, U])(implicit m: MemberInOut[T, R], into: IntoPoly[R, U]): Eff[U, A] =
+      interpret.translateInto(e)(t)(m, into)
+
+    def write[T[_], O](w: Write[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[Writer[O, ?], R], A] =
+      interpret.write(e)(w)
   }
 
   implicit class EffNoEffectOps[A](e: Eff[NoFx, A]) {

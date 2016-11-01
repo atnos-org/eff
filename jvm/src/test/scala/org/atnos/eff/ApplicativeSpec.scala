@@ -6,7 +6,6 @@ import org.atnos.eff.all._
 
 import scala.concurrent._
 import duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import cats.{Applicative, Eval}
 import cats.implicits._
 import org.specs2.matcher.ThrownExpectations

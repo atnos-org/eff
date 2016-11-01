@@ -9,7 +9,6 @@ import cats.syntax.all._
 import cats.instances.all._
 import cats.Eq
 import cats.~>
-import org.atnos.eff.Interpret.Translate
 //import cats.laws.discipline.{arbitrary => _, _}
 //import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
@@ -38,10 +37,11 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  A stack can be added a new effect when the effect is not in stack $notInStack
  A stack can be added a new effect when the effect is in stack     $inStack
 
- An effect of the stack can be transformed into another one        $transformEffect
- An effect of the stack can be translated into other effects on that stack $translateEffect
+ An effect of the stack can be transformed into another one                        $transformEffect
+ An effect of the stack can be translated into other effects on that stack         $translateEffect
  An effect of the stack can be locally translated into other effects on that stack $translateEffectLocal
- An effect can be intercepted and transformed to other values for the same effect $interceptEffectNat
+ An effect can be intercepted and transformed to other values for the same effect  $interceptEffectNat
+ An effect can be translated into other effects of the same stack                  $translateIntoEffect
 
  Applicative calls can be optimised by "batching" requests $optimiseRequests
 
@@ -197,7 +197,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     def readSize[R](implicit m: ReaderString |= R): Eff[R, Int] =
       ReaderEffect.ask.map(_.size)
 
-    def readerToStateTranslation[R](implicit m: StateString |= R) = new Interpret.Translate[ReaderString, R] {
+    def readerToStateTranslation[R](implicit m: StateString |= R) = new Translate[ReaderString, R] {
       def apply[A](fa: Reader[String, A]): Eff[R, A] =
         Eff.send(State((s: String) => (s, fa.run(s))))
     }
@@ -258,6 +258,40 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     (reversed ==== expected) and (reversedA ==== expected)
 
   }.setGens(Gen.choose(3, 3), Gen.oneOf("abc", "dce", "xyz")).set(minTestsOk = 1)
+
+  def translateIntoEffect = prop { n: Int =>
+    sealed trait Stored[A]
+    case class Get(k: String)            extends Stored[Unit]
+    case class Update(k: String, i: Int) extends Stored[Unit]
+    case class Remove(k: String)         extends Stored[Unit]
+
+    type WriterString[A] = Writer[String, A]
+
+    def runStored[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[Stored, R, U]): Eff[U, A] =
+      interpret.translate[R, U, Stored, A](e)(new Translate[Stored, U] {
+        def apply[X](tx: Stored[X]) = pure[U, X](().asInstanceOf[X])
+      })
+
+
+    val w =
+      new Write[Stored, String] {
+        def apply[X](tx: Stored[X]) = tx match {
+          case Get(k)       => k
+          case Update(k, _) => k
+          case Remove(k)    => k
+        }
+      }
+
+    type R1 = Fx.fx1[Stored]
+    type R2 = Fx.fx2[WriterString, Stored]
+
+    val action: Eff[R1, Unit] =
+      send[Stored, R1, Unit](Update("a", 1)) >>
+      send[Stored, R1, Unit](Get("b"))       >>
+      send[Stored, R1, Unit](Remove("c"))
+
+    runStored(action.write(w)).runWriterLog.run ==== List("a", "b", "c")
+  }
 
   def optimiseRequests = {
 

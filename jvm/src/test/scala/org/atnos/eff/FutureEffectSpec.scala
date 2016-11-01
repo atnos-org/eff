@@ -6,7 +6,6 @@ import all._
 
 import scala.concurrent._
 import duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import cats.Eval
 import org.specs2.concurrent.ExecutionEnv
 import cats.implicits._

@@ -448,7 +448,7 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
               go(rest, a1)
 
             case Impure(u, q) =>
-              Impure[R, u.X, B](u, q.copy(functions = q.functions ++ rest))
+              Impure[R, u.X, B](u, q.copy(q.functions ++ rest))
 
             case ap @ ImpureAp(unions, q) =>
               ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest))

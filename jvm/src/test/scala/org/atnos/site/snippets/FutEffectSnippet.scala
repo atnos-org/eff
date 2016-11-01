@@ -13,7 +13,6 @@ import scala.concurrent.duration.Duration
 trait FutEffectSnippet {
 
 // 8<---
-import scala.concurrent.ExecutionContext.Implicits.global
 
 object FutEffect {
   type Fut[A] = Future[() => A]
@@ -26,6 +25,8 @@ object FutEffect {
     def ap[A, B](ff: Fut[A => B])(fa: Fut[A]): Fut[B] =
       fa.zip(ff).map { case (a, f) => () => f()(a()) }
   }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   def fut[R :_fut, A](a: => A): Eff[R, A] =
     send[Fut, R, A](Future(() => a))
