@@ -90,7 +90,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** catch and handle possible wrong values */
   def catchWrong[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] = {
-    val loop = new StatelessLoop[Validate[E,?], R, A, Eff[R, A]] {
+    val loop = new StatelessLoop[Validate[E,?], R, A, Eff[R, A], Eff[R, Unit]] {
       def onPure(a: A): Eff[R, A] Either Eff[R, A] =
         Right(pure(a))
 
@@ -98,6 +98,12 @@ trait ValidateInterpretation extends ValidateCreation {
         m match {
           case Correct() => Left(continuation(()))
           case Wrong(e)  => Left(handle(e))
+        }
+
+      def onLastEffect[X](m: Validate[E, X], continuation: Arrs[R, X, Unit]): Eff[R, Unit] Either Eff[R, Unit] =
+        m match {
+          case Correct() => Left(continuation(()))
+          case Wrong(e)  => Left(handle(e).void)
         }
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either Eff[R, A] =
@@ -112,6 +118,20 @@ trait ValidateInterpretation extends ValidateCreation {
             case (Some(e), tx) => handle(e)
           }
         }
+
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], Unit]): Eff[R, Unit] Either Eff[R, Unit] =
+        Left {
+          val traversed: State[Option[E], T[X]] = xs.traverse {
+            case Correct() => State[Option[E], X](state => (None, ()))
+            case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
+          }
+
+          traversed.run(None).value match {
+            case (None, tx)    => continuation(tx)
+            case (Some(e), tx) => handle(e).void
+          }
+        }
+
     }
 
     interceptStatelessLoop[R, Validate[E,?], A, A]((a: A) => pure(a), loop)(r)

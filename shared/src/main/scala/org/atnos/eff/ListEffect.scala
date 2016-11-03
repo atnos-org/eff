@@ -45,7 +45,7 @@ object ListCreation extends ListCreation
 trait ListInterpretation {
   /** run an effect stack starting with a list effect */
   def runList[R, U, A](effects: Eff[R, A])(implicit m: Member.Aux[List, R, U]): Eff[U, List[A]] = {
-    val loop = new Loop[List, R, A, Eff[U, List[A]]] {
+    val loop = new Loop[List, R, A, Eff[U, List[A]], Eff[U, Unit]] {
       type S = (List[Eff[R, A]], ListBuffer[A])
       val init = (List[Eff[R, A]](), new ListBuffer[A])
 
@@ -67,7 +67,19 @@ trait ListInterpretation {
             Left((continuation(head), (tail.map(a => continuation(a)) ++ unevaluated, result)))
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] = {
+      def onLastEffect[X](l: List[X], continuation: Arrs[R, X, Unit], s: S) =
+        (l, s) match {
+          case (List(), (head :: tail, result)) =>
+            Left((head.void, (tail, result)))
+
+          case (List(), (List(), result)) =>
+            Right(EffMonad[U].pure(()))
+
+          case (head :: tail, (unevaluated, result)) =>
+            Left((continuation(head), (List.empty, result)))
+        }
+
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
         xs.sequence.map(ls => continuation(ls)) match {
           case Nil =>
             s match {
@@ -77,7 +89,18 @@ trait ListInterpretation {
           case x :: rest =>
             Left((x, (rest ++ s._1, s._2)))
         }
-      }
+
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
+        xs.sequence.map(ls => continuation(ls)) match {
+          case Nil =>
+            s match {
+              case (Nil, as)       => Right(pure(()))
+              case (e :: rest, as) => Left((e.void, (rest, as)))
+            }
+          case x :: rest =>
+            Left((x.void, (List.empty, s._2)))
+        }
+
 
     }
 

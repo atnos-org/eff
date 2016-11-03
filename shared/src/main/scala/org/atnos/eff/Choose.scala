@@ -3,6 +3,7 @@ package org.atnos.eff
 import Eff._
 import cats.{Alternative, MonadCombine}
 import cats.syntax.cartesian._
+import cats.syntax.functor._
 
 sealed trait Choose[T]
 case class ChooseZero[T]() extends Choose[T]
@@ -53,14 +54,16 @@ object ChooseCreation extends ChooseCreation
 
 trait ChooseInterpretation {
   def runChoose[R, U, A, F[_] : Alternative](r: Eff[R, A])(implicit m: Member.Aux[Choose, R, U]): Eff[U, F[A]] = {
-    r match {
-      case Pure(a) =>
-        EffMonad[U].pure(Alternative[F].pure(a))
+    def lastRun(l: Last[R]): Last[U] = Last.eff(runChoose[R, U, Unit, F](l.run).as(()))
 
-      case Impure(u, c) =>
+    r match {
+      case Pure(a, last) =>
+        EffMonad[U].pure(Alternative[F].pure(a)).addLast(lastRun(last))
+
+      case Impure(u, c, last) =>
         m.project(u) match {
           case Left(u1) =>
-            Impure(u1, Arrs.singleton((x: u1.X) => runChoose(c(x))))
+            Impure(u1, Arrs.singleton((x: u1.X) => runChoose(c(x)))).addLast(lastRun(last))
 
           case Right(choose) =>
             choose match {
@@ -71,7 +74,7 @@ trait ChooseInterpretation {
             }
         }
 
-      case ap @ ImpureAp(_, _) =>
+      case ap @ ImpureAp(_, _, _) =>
         runChoose(ap.toMonadic)
     }
   }

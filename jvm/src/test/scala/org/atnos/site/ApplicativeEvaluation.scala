@@ -103,10 +103,10 @@ def getWebUsers(is: List[Int]): List[User] = is.map(i => User(i))
 def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
   def go(e: Eff[Fx1[UserDsl], A], trace: Vector[String]): (A, Vector[String]) =
     e match {
-      case Pure(a) => (a, trace)
-      case Impure(Union1(GetUser(i)), c)   => go(c(getWebUser(i)), trace :+ "getWebUser")
-      case Impure(Union1(GetUsers(is)), c) => go(c(getWebUsers(is)), trace :+ "getWebUsers")
-      case ap @ ImpureAp(u, m)             => go(ap.toMonadic, trace)
+      case Pure(a,_) => (a, trace)
+      case Impure(Union1(GetUser(i)), c, _)   => go(c(getWebUser(i)), trace :+ "getWebUser")
+      case Impure(Union1(GetUsers(is)), c, _) => go(c(getWebUsers(is)), trace :+ "getWebUsers")
+      case ap @ ImpureAp(u, m, _)             => go(ap.toMonadic, trace)
   }
   go(eff, Vector())
 }

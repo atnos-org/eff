@@ -43,7 +43,7 @@ trait Interpret {
    * interpret the effect M in the R stack
    */
   def interpret[R, U, M[_], A, B](pure: A => Eff[U, B], recurse: Recurse[M, U, B])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
-    val loop = new Loop[M, R, A, Eff[U, B]] {
+    val loop = new Loop[M, R, A, Eff[U, B], Eff[U, Unit]] {
       type S = Unit
       val init = ()
 
@@ -53,11 +53,21 @@ trait Interpret {
       def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity)
 
+      def onLastEffect[X](mx: M[X], continuation: Arrs[R, X, Unit], s: Unit): (Eff[R, Unit], Unit) Either Eff[U, Unit] =
+        recurse(mx).map(_.void).bimap(x => (continuation(x), ()), identity)
+
       def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
         recurse.applicative(mx) match {
           case Left(xs) => Left((continuation(xs), s))
           case Right(mlx) => onEffect(mlx, continuation, s)
         }
+
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
+        recurse.applicative(xs) match {
+          case Left(xs1) => Left((continuation(xs1), s))
+          case Right(mlx) => onLastEffect(mlx, continuation, s)
+        }
+
     }
     interpretLoop[R, U, M, A, B](pure, loop)(effects)
   }
@@ -90,7 +100,7 @@ trait Interpret {
    * interpret the effect M in the M |: R stack, keeping track of some state
    */
   def interpretState[R, U, M[_], A, B](pure: A => Eff[U, B], recurse: StateRecurse[M, A, B])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
-    val loop = new Loop[M, R, A, Eff[U, B]] {
+    val loop = new Loop[M, R, A, Eff[U, B], Eff[U, Unit]] {
       type S = recurse.S
       val init: S = recurse.init
 
@@ -100,11 +110,21 @@ trait Interpret {
       def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, B] =
         Left { recurse(mx, s) match { case (a, b) => (continuation(a), b)} }
 
+      def onLastEffect[X](mx: M[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
+        Left { recurse(mx, s) match { case (a, b) => (continuation(a), b)} }
+
       def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, B] =
         recurse.applicative(mx, s) match {
           case Left((ls, s1))   => Left((continuation(ls), s1))
           case Right((mlx, s1)) => onEffect(mlx, continuation, s1)
         }
+
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
+        recurse.applicative(xs, s) match {
+          case Left((ls, s1))   => Left((continuation(ls), s1))
+          case Right((mlx, s1)) => onLastEffect(mlx, continuation, s1)
+        }
+
     }
     interpretLoop(pure, loop)(effects)
   }
@@ -120,36 +140,64 @@ trait Interpret {
    *
    * This method contains a loop which is stack-safe
    */
-  def interpretLoop[R, U, M[_], A, B](pure: A => Eff[U, B], loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
-    def go(eff: Eff[R, A], s: loop.S): Eff[U, B] = {
-      eff match {
-        case Pure(a) =>
-          loop.onPure(a, s) match {
-            case Left((a1, s1)) => go(a1, s1)
-            case Right(b) => b
-          }
+  def interpretLoop[R, U, M[_], A, B](pure: A => Eff[U, B], loop: Loop[M, R, A, Eff[U, B], Eff[U, Unit]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] = {
+    def goLast(ls: Eff[R, Unit], s: loop.S): Eff[U, Unit] =
+      ls match {
+        case Pure(u, Last(None)) => Eff.pure[U, Unit](u)
+        case Pure(u, Last(Some(v))) => goLast(v(), s)
 
-        case Impure(union, continuation) =>
+        case Impure(union, continuation, last) =>
           m.project(union) match {
-            case Right(v) =>
-              loop.onEffect(v, continuation, s) match {
-                case Left((x, s1)) => go(x, s1)
-                case Right(b)      => b
+            case Right(mx) =>
+              loop.onLastEffect(mx, continuation, s) match {
+                case Left((x, s1)) => goLast(x.addLast(last), s1)
+                case Right(b)      => goLast(last.run, s)
               }
-
             case Left(u) =>
-              Impure[U, union.X, B](u, Arrs.singleton(x => go(continuation(x), s)))
+              Impure[U, union.X, Unit](u, Arrs.singleton(x => goLast(continuation(x).addLast(last), s)))
           }
 
-        case ap @ ImpureAp(unions, continuation) =>
+        case ap @ ImpureAp(unions, continuation, last) =>
           val collected = unions.project
 
           if (collected.effects.isEmpty)
-            collected.othersEff(Arrs.singleton(x => go(continuation(x), s)))
+            collected.othersEff(Arrs.singleton(x => goLast(continuation(x).addLast(last), s)))
+          else
+            loop.onLastApplicativeEffect(collected.effects, collected.continuation(continuation, m), s) match {
+              case Left((x, s1)) => goLast(x.addLast(last), s1)
+              case Right(b)      => goLast(last.run, s)
+            }
+      }
+
+    def go(eff: Eff[R, A], s: loop.S): Eff[U, B] = {
+      eff match {
+        case Pure(a, last) =>
+          loop.onPure(a, s) match {
+            case Left((a1, s1)) => go(a1.addLast(last), s1)
+            case Right(b)       => b.plusLast(goLast(last.run, s))
+          }
+
+        case Impure(union, continuation, last) =>
+          m.project(union) match {
+            case Right(v) =>
+              loop.onEffect(v, continuation, s) match {
+                case Left((x, s1)) => go(x.addLast(last), s1)
+                case Right(b)      => b.plusLast(goLast(last.run, s))
+              }
+
+            case Left(u) =>
+              Impure[U, union.X, B](u, Arrs.singleton(x => go(continuation(x), s)), Last.eff(goLast(last.run, s)))
+          }
+
+        case ap @ ImpureAp(unions, continuation, last) =>
+          val collected = unions.project
+
+          if (collected.effects.isEmpty)
+            collected.othersEff(Arrs.singleton(x => go(continuation(x).addLast(last), s)))
           else
             loop.onApplicativeEffect(collected.effects, collected.continuation(continuation, m), s) match {
-              case Left((x, s1)) => go(x, s1)
-              case Right(b)      => b
+              case Left((x, s1)) => go(x.addLast(last), s1)
+              case Right(b)      => b.plusLast(goLast(last.run, s))
             }
       }
     }
@@ -157,7 +205,7 @@ trait Interpret {
     go(effects, loop.init)
   }
 
-  def interpretLoop1[R, U, M[_], A, B](pure: A => B)(loop: Loop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
+  def interpretLoop1[R, U, M[_], A, B](pure: A => B)(loop: Loop[M, R, A, Eff[U, B], Eff[U, Unit]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
     interpretLoop[R, U, M, A, B]((a: A) => EffMonad[U].pure(pure(a)), loop)(effects)
 
   /**
@@ -165,37 +213,49 @@ trait Interpret {
    *
    * This method contains a loop which is stack-safe
    */
-  def interpretStatelessLoop[R, U, M[_], A, B](pure: A => Eff[U, B], loop: StatelessLoop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
-    interpretLoop[R, U, M, A, B](pure, new Loop[M, R, A, Eff[U, B]] {
+  def interpretStatelessLoop[R, U, M[_], A, B](pure: A => Eff[U, B], loop: StatelessLoop[M, R, A, Eff[U, B], Eff[U, Unit]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
+    interpretLoop[R, U, M, A, B](pure, new Loop[M, R, A, Eff[U, B], Eff[U, Unit]] {
       type S = Unit
       val init: S = ()
       def onPure(a: A, s: S) = loop.onPure(a).leftMap((_, init))
       def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, init))
+      def onLastEffect[X](x: M[X], continuation: Arrs[R, X, Unit], s: S) = loop.onLastEffect(x, continuation).leftMap((_, init))
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, init))
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S) = loop.onLastApplicativeEffect(xs, continuation).leftMap((_, init))
     })(effects)(m)
 
-  def interpretStatelessLoop1[R, U, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[U, B]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
+  def interpretStatelessLoop1[R, U, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[U, B], Eff[U, Unit]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
     interpretStatelessLoop[R, U, M, A, B]((a: A) => EffMonad[U].pure(pure(a)), loop)(effects)
 
   /**
    * INTERPRET IN THE SAME STACK
    */
   def intercept[R, M[_], A, B](pure: A => Eff[R, B], recurse: Recurse[M, R, B])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] = {
-    val loop = new Loop[M, R, A, Eff[R, B]] {
+    val loop = new Loop[M, R, A, Eff[R, B], Eff[R, Unit]] {
       type S = Unit
       val init = ()
 
       def onPure(a: A, s: Unit): (Eff[R, A], Unit) Either Eff[R, B] =
         Right(pure(a))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Either Eff[R, B] =
+      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], Unit) Either Eff[R, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity)
 
-      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[R, B] =
-        recurse.applicative(mx) match {
+      def onLastEffect[X](mx: M[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[R, Unit] =
+        recurse(mx).map(_.void).bimap(x => (continuation(x), ()), identity)
+
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[R, B] =
+        recurse.applicative(xs) match {
           case Left(ls)   => Left((continuation(ls), s))
           case Right(mlx) => onEffect(mlx, continuation, s)
         }
+
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[R, Unit] =
+        recurse.applicative(xs) match {
+          case Left(ls)   => Left((continuation(ls), s))
+          case Right(mlx) => onLastEffect(mlx, continuation, s)
+        }
+
     }
     interceptLoop[R, M, A, B](pure, loop)(effects)
   }
@@ -210,36 +270,64 @@ trait Interpret {
    * intercept an effect and interpret it in the same stack.
    * This method is stack-safe
    */
-  def interceptLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] = {
-    def go(eff: Eff[R, A], s: loop.S): Eff[R, B] = {
-      eff match {
-        case Pure(a) =>
-          loop.onPure(a, s) match {
-            case Left((a1, s1)) => go(a1, s1)
-            case Right(b) => b
+  def interceptLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B], Eff[R, Unit]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] = {
+    def goLast(ls: Eff[R, Unit], s: loop.S): Eff[R, Unit] =
+      ls match {
+        case Pure(u, Last(None)) => Eff.pure[R, Unit](u)
+        case Pure(u, Last(Some(v))) => v()
+
+        case Impure(union, continuation, last) =>
+          m.extract(union) match {
+            case Some(mx) =>
+              loop.onLastEffect(mx, continuation, s) match {
+                case Left((x, s1)) => goLast(x.addLast(last), s1)
+                case Right(b)      => goLast(last.run, s)
+              }
+            case None =>
+              Impure[R, union.X, Unit](union, Arrs.singleton(x => goLast(continuation(x).addLast(last), s)))
           }
 
-        case Impure(union, continuation) =>
+        case ap @ ImpureAp(unions, continuation, last) =>
+          val collected = unions.extract
+
+          if (collected.effects.isEmpty)
+            collected.othersEff(Arrs.singleton(x => goLast(continuation(x).addLast(last), s)))
+          else
+            loop.onLastApplicativeEffect(collected.effects, collected.continuation(continuation), s) match {
+              case Left((x, s1)) => goLast(x.addLast(last), s1)
+              case Right(b)      => goLast(last.run, s)
+            }
+      }
+
+    def go(eff: Eff[R, A], s: loop.S): Eff[R, B] = {
+      eff match {
+        case Pure(a, last) =>
+          loop.onPure(a, s) match {
+            case Left((a1, s1)) => go(a1, s1).plusLast(goLast(last.run, s1))
+            case Right(b) => b.plusLast(goLast(last.run, s))
+          }
+
+        case Impure(union, continuation, last) =>
           m.extract(union) match {
             case Some(v) =>
               loop.onEffect(v, continuation, s) match {
-                case Left((x, s1)) => go(x, s1)
-                case Right(b)      => b
+                case Left((x, s1)) => go(x.addLast(last), s1)
+                case Right(b)      => b.plusLast(goLast(last.run, s))
               }
 
             case None =>
-              Impure[R, union.X, B](union, Arrs.singleton(x => go(continuation(x), s)))
+              Impure[R, union.X, B](union, Arrs.singleton(x => go(continuation(x).addLast(last), s)))
           }
 
-        case ImpureAp(unions, continuation) =>
+        case ImpureAp(unions, continuation, last) =>
           val collect = unions.extract
 
           if (collect.effects.isEmpty)
-            collect.othersEff(Arrs.singleton(x => go(continuation(x), s)))
+            collect.othersEff(Arrs.singleton(x => go(continuation(x).addLast(last), s)))
           else
             loop.onApplicativeEffect(collect.effects, collect.continuation(continuation), s) match {
-              case Left((x, s1)) => go(x, s1)
-              case Right(b)      => b
+              case Left((x, s1)) => go(x.addLast(last), s1)
+              case Right(b)      => b.plusLast(goLast(last.run, s))
             }
       }
     }
@@ -247,19 +335,21 @@ trait Interpret {
     go(effects, loop.init)
   }
 
-  def interceptLoop1[R, M[_], A, B](pure: A => B)(loop: Loop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
+  def interceptLoop1[R, M[_], A, B](pure: A => B)(loop: Loop[M, R, A, Eff[R, B], Eff[R, Unit]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
     interceptLoop[R, M, A, B]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
 
-  def interceptStatelessLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: StatelessLoop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
-    interceptLoop[R, M, A, B](pure, new Loop[M, R, A, Eff[R, B]] {
+  def interceptStatelessLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: StatelessLoop[M, R, A, Eff[R, B], Eff[R, Unit]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
+    interceptLoop[R, M, A, B](pure, new Loop[M, R, A, Eff[R, B], Eff[R, Unit]] {
       type S = Unit
       val init: S = ()
       def onPure(a: A, s: S) = loop.onPure(a).leftMap((_, ()))
       def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, ()))
+      def onLastEffect[X](x: M[X], continuation: Arrs[R, X, Unit], s: S) = loop.onLastEffect(x, continuation).leftMap((_, ()))
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, ()))
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S) = loop.onLastApplicativeEffect(xs, continuation).leftMap((_, ()))
     })(effects)(m)
 
-  def interceptStatelessLoop1[R, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[R, B]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
+  def interceptStatelessLoop1[R, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[R, B], Eff[R, Unit]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
     interceptStatelessLoop[R, M, A, B]((a: A) => EffMonad[R].pure(pure(a)), loop)(effects)
 
   /**
@@ -269,20 +359,39 @@ trait Interpret {
   def transform[SR, BR, U, TS[_], TB[_], A](r: Eff[SR, A], nat: TS ~> TB)
                                                (implicit sr: Member.Aux[TS, SR, U], br: Member.Aux[TB, BR, U]): Eff[BR, A] = {
 
-    def go(eff: Eff[SR, A]): Eff[BR, A] = {
-      eff match {
-        case Pure(a) => Pure(a)
+    def goLast(ls: Eff[SR, Unit]): Eff[BR, Unit] =
+      ls match {
+        case Pure(u, Last(None)) => Eff.pure[BR, Unit](u)
+        case Pure(u, Last(Some(v))) => goLast(v())
 
-        case Impure(u, c) =>
-          sr.project(u) match {
+        case Impure(union, continuation, last) =>
+          sr.project(union) match {
             case Right(small) =>
-              Impure(br.inject(nat(small)), Arrs.singleton((x: u.X) => go(c(x))))
+              Impure(br.inject(nat(small)), Arrs.singleton((x: union.X) => goLast(continuation(x).addLast(last))))
 
             case Left(u1) =>
-              Impure(br.accept(u1), Arrs.singleton((x: u.X) => go(c(x))))
+              Impure(br.accept(u1), Arrs.singleton((x: union.X) => goLast(continuation(x).addLast(last))))
+
           }
 
-        case ap @ ImpureAp(_,_) =>
+        case ap @ ImpureAp(unions, continuation, last) =>
+          goLast(ap.toMonadic)
+      }
+
+    def go(eff: Eff[SR, A]): Eff[BR, A] = {
+      eff match {
+        case Pure(a, last) => Pure[BR, A](a).plusLast(goLast(last.run))
+
+        case Impure(u, c, last) =>
+          sr.project(u) match {
+            case Right(small) =>
+              Impure(br.inject(nat(small)), Arrs.singleton((x: u.X) => go(c(x).addLast(last))))
+
+            case Left(u1) =>
+              Impure(br.accept(u1), Arrs.singleton((x: u.X) => go(c(x).addLast(last))))
+          }
+
+        case ap @ ImpureAp(_,_,_) =>
           go(ap.toMonadic)
       }
     }
@@ -294,30 +403,56 @@ trait Interpret {
    * Translate one effect of the stack into some of the other effects in the stack
    */
   def translate[R, U, T[_], A](effects: Eff[R, A])
-                                                    (tr: Translate[T, U])
-                                                    (implicit m: Member.Aux[T, R, U]): Eff[U, A] = {
-    def go(eff: Eff[R, A]): Eff[U, A] = {
-      eff match {
-        case Pure(a) => Pure(a)
+                              (tr: Translate[T, U])
+                              (implicit m: Member.Aux[T, R, U]): Eff[U, A] = {
+    def goLast(ls: Eff[R, Unit]): Eff[U, Unit] =
+      ls match {
+        case Pure(u, Last(None))    => Eff.pure[U, Unit](u)
+        case Pure(u, Last(Some(v))) => goLast(v())
 
-        case Impure(union, c) =>
+        case Impure(union, continuation, last) =>
           m.project(union) match {
             case Right(kv) =>
               val effectsU: Eff[U, union.X] = tr(kv)
-              effectsU.flatMap(r => go(c(r)))
+              effectsU.flatMap(r => goLast(continuation(r).addLast(last)))
 
             case Left(u1) =>
-              Impure(u1, Arrs.singleton((x: union.X) => go(c(x))))
+              Impure(u1, Arrs.singleton((x: union.X) => goLast(continuation(x).addLast(last))))
           }
 
-        case ap @ ImpureAp(unions, continuation) =>
+        case ap @ ImpureAp(unions, continuation, last) =>
           val collected = unions.project
 
           if (collected.effects.isEmpty)
-            collected.othersEff(Arrs.singleton(x => go(continuation(x))))
+            collected.othersEff(Arrs.singleton(x => goLast(continuation(x).addLast(last))))
           else {
             val translated: Eff[U, List[Any]] = EffApplicative.traverse(collected.effects)(tr.apply)
-            translated.flatMap(ls => translate(collected.continuation(continuation, m).apply(ls))(tr))
+            translated.flatMap(ls => goLast(collected.continuation(continuation, m).apply(ls).addLast(last)))
+          }
+      }
+
+    def go(eff: Eff[R, A]): Eff[U, A] = {
+      eff match {
+        case Pure(a, last) => Pure(a).plusLast(goLast(last.run))
+
+        case Impure(union, continuation, last) =>
+          m.project(union) match {
+            case Right(kv) =>
+              val effectsU: Eff[U, union.X] = tr(kv)
+              effectsU.flatMap(r => go(continuation(r).addLast(last)))
+
+            case Left(u1) =>
+              Impure(u1, Arrs.singleton((x: union.X) => go(continuation(x).addLast(last))))
+          }
+
+        case ap @ ImpureAp(unions, continuation, last) =>
+          val collected = unions.project
+
+          if (collected.effects.isEmpty)
+            collected.othersEff(Arrs.singleton(x => go(continuation(x).addLast(last))))
+          else {
+            val translated: Eff[U, List[Any]] = EffApplicative.traverse(collected.effects)(tr.apply)
+            translated.flatMap(ls => translate(collected.continuation(continuation, m).apply(ls).addLast(last))(tr))
           }
       }
     }
@@ -340,17 +475,34 @@ trait Interpret {
    * Translate one effect of the stack into other effects in a larger stack
    */
   def translateInto[R, T[_], U, A](eff: Eff[R, A])(translate: Translate[T, U])(implicit m: MemberInOut[T, R], into: IntoPoly[R, U]): Eff[U, A] =  {
+    def goLast(ls: Eff[R, Unit]): Eff[U, Unit] =
+      ls match {
+        case Pure(u, Last(None))    => Eff.pure[U, Unit](u)
+        case Pure(u, Last(Some(v))) => goLast(v())
+
+        case Impure(union, continuation, last) =>
+          m.extract(union) match {
+            case Some(tx) => translate(tx).flatMap(x => goLast(continuation(x).addLast(last)))
+            case None     => into(ls).plusLast(goLast(last.run))
+          }
+
+        case ap @ ImpureAp(unions, continuation, last) =>
+          val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).plusLast(goLast(last.run)))
+          translated.flatMap(ts => goLast(continuation(ts).addLast(last)))
+      }
+
     eff match {
-      case Pure(a) => into(eff)
-      case Impure(u, c) =>
+      case Pure(a, last) => into(eff).plusLast(goLast(last.run))
+
+      case Impure(u, c, last) =>
         m.extract(u) match {
-          case Some(tx) => translate(tx).flatMap(x => translateInto(c(x))(translate))
-          case None     => into(eff)
+          case Some(tx) => translate(tx).flatMap(x => translateInto(c(x).addLast(last))(translate))
+          case None     => into(eff).plusLast(goLast(last.run))
         }
 
-      case ImpureAp(unions, c) =>
-        val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx))
-        translated.flatMap(ts => translateInto(c(ts))(translate))
+      case ImpureAp(unions, c, last) =>
+        val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).plusLast(goLast(last.run)))
+        translated.flatMap(ts => translateInto(c(ts).addLast(last))(translate))
     }
   }
 
@@ -370,18 +522,35 @@ trait Interpret {
    */
   def interceptNat[R, T[_], A](effects: Eff[R, A])
                               (nat: T ~> T)
-                              (implicit m: MemberInOut[T, R]): Eff[R, A] =
-  effects match {
-    case Pure(a) => Pure(a)
+                              (implicit m: MemberInOut[T, R]): Eff[R, A] = {
 
-    case Impure(u, c) =>
-      m.extract(u) match {
-        case None     => Impure(u, Arrs.singleton((x: u.X) => interceptNat(c(x))(nat)))
-        case Some(tx) => Impure(m.inject(nat(tx)), Arrs.singleton((x: u.X) => interceptNat(c(x))(nat)))
+    def goLast(ls: Eff[R, Unit]): Eff[R, Unit] =
+      ls match {
+        case Pure(u, Last(None))    => Eff.pure[R, Unit](u)
+        case Pure(u, Last(Some(v))) => goLast(v())
+
+        case Impure(union, continuation, last) =>
+          m.extract(union) match {
+            case None     => Impure(union, Arrs.singleton((x: union.X) => goLast(continuation(x).addLast(last))))
+            case Some(tx) => Impure(m.inject(nat(tx)), Arrs.singleton((x: union.X) => goLast(continuation(x).addLast(last))))
+          }
+
+        case ap @ ImpureAp(unions, continuation, last) =>
+          ImpureAp(unions.transform(nat), Arrs.singleton(x => goLast(continuation(x).addLast(last))))
       }
 
-    case ImpureAp(unions, continuation) =>
-      ImpureAp(unions.transform(nat), Arrs.singleton(x => interceptNat(continuation(x))(nat)))
+    effects match {
+      case Pure(a, last) => Pure(a).plusLast(goLast(last.run))
+
+      case Impure(union, continuation, last) =>
+        m.extract(union) match {
+          case None     => Impure(union, Arrs.singleton((x: union.X) => interceptNat(continuation(x).addLast(last))(nat)))
+          case Some(tx) => Impure(m.inject(nat(tx)), Arrs.singleton((x: union.X) => interceptNat(continuation(x).addLast(last))(nat)))
+        }
+
+      case ImpureAp(unions, continuation, last) =>
+        ImpureAp(unions.transform(nat), Arrs.singleton(x => interceptNat(continuation(x).addLast(last))(nat)))
+    }
   }
 
   /** interpret an effect by running side-effects */
@@ -415,21 +584,29 @@ trait Recurse[M[_], R, A] {
 /**
  * Generalisation of Recurse and StateRecurse
  */
-trait Loop[M[_], R, A, B] {
+trait Loop[M[_], R, A, B, C] {
   type S
   val init: S
   def onPure(a: A, s: S): (Eff[R, A], S) Either B
+
   def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either B
+  def onLastEffect[X](x: M[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either C
+
   def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either B
+  def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either C
 }
 
 /**
  * Generalisation of Recurse
  */
-trait StatelessLoop[M[_], R, A, B] {
+trait StatelessLoop[M[_], R, A, B, C] {
   def onPure(a: A): Eff[R, A] Either B
+
   def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Either B
+  def onLastEffect[X](x: M[X], continuation: Arrs[R, X, Unit]): Eff[R, Unit] Either C
+
   def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either B
+  def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit]): Eff[R, Unit] Either C
 }
 
 /**

@@ -64,9 +64,46 @@ sealed trait Eff[R, A] {
   def flatten[B](implicit ev: A =:= Eff[R, B]): Eff[R, B] =
     flatMap(a => a)
 
+  def plusLast(l: =>Eff[R, Unit]): Eff[R, A] =
+    addLast(Last.eff(l))
+
+  def addLast(l: Last[R]): Eff[R, A]
+
 }
 
-case class Pure[R, A](value: A) extends Eff[R, A]
+case class Last[R](value: Option[() => Eff[R, Unit]]) {
+  def run: Eff[R, Unit] =
+    value.map(_()).getOrElse(pure[R, Unit](()))
+
+  def <*(last: Last[R]): Last[R] =
+    (value, last.value) match {
+      case (None, None)       => this
+      case (Some(r), None)    => this
+      case (None, Some(l))    => last
+      case (Some(r), Some(l)) => Last(Option(() => r() <* l()))
+    }
+
+  def *>(last: Last[R]): Last[R] =
+    (value, last.value) match {
+      case (None, None)       => this
+      case (Some(r), None)    => this
+      case (None, Some(l))    => last
+      case (Some(r), Some(l)) => Last(Option(() => r() *> l()))
+    }
+}
+
+object Last {
+  def none[R]: Last[R] =
+    Last(None)
+  
+  def eff[R](e: =>Eff[R, Unit]): Last[R] =
+    Last(Option(() => e))
+}
+
+case class Pure[R, A](value: A, last: Last[R] = Last.none[R]) extends Eff[R, A] {
+  def addLast(l: Last[R]): Eff[R, A] =
+    Pure(value, last <* l)
+}
 
 /**
  * Impure is an effect (encoded as one possibility among other effects, a Union)
@@ -74,8 +111,13 @@ case class Pure[R, A](value: A) extends Eff[R, A]
  *
  * This essentially models a flatMap operation with the current effect
  * and the monadic function to apply to a value once the effect is interpreted
+ *
+ * One effect can always be executed last, just for side-effects
  */
-case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]) extends Eff[R, A]
+case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A], last: Last[R] = Last.none[R]) extends Eff[R, A] {
+  def addLast(l: Last[R]): Eff[R, A] =
+    Impure[R, X, A](union, continuation, last <* l)
+}
 
 /**
  * ImpureAp is a list of independent effects and a pure function
@@ -99,9 +141,12 @@ case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]) exte
  *  - the types of the elements in the list argument to 'map' must be the exact types of each effect in unions.unions
  *
  */
-case class ImpureAp[R, X, A](unions: Unions[R, X], continuation: Arrs[R, List[Any], A]) extends Eff[R, A] {
+case class ImpureAp[R, X, A](unions: Unions[R, X], continuation: Arrs[R, List[Any], A], last: Last[R] = Last.none[R]) extends Eff[R, A] {
   def toMonadic: Eff[R, A] =
-    Impure[R, unions.X, A](unions.first, unions.continueWith(continuation))
+    Impure[R, unions.X, A](unions.first, unions.continueWith(continuation), last)
+
+  def addLast(l: Last[R]): Eff[R, A] =
+    ImpureAp[R, X, A](unions, continuation, last <* l)
 }
 
 /**
@@ -227,24 +272,26 @@ trait EffImplicits {
 
     override def map[A, B](fa: Eff[R, A])(f: A => B): Eff[R, B] =
       fa match {
-        case Pure(a) =>
-          pure(f(a))
-        case Impure(union, continuation) =>
+        case Pure(a, l) =>
+          pure(f(a)).addLast(l)
+
+        case Impure(union, continuation, last) =>
           fa.flatMap(a => pure(f(a)))
-        case ImpureAp(u, c) =>
-              ImpureAp(u, c map f)
+
+        case ImpureAp(u, c, last) =>
+          ImpureAp(u, c map f, last)
       }
 
     def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
       fa match {
-        case Pure(a) =>
-          f(a)
+        case Pure(a, l) =>
+          f(a).addLast(l)
 
-        case Impure(union, continuation) =>
-          Impure(union, continuation.append(f))
+        case Impure(union, continuation, last) =>
+          Impure(union, continuation.append(f), last)
 
-        case ImpureAp(unions, continuation) =>
-          ImpureAp(unions, continuation.append(f))
+        case ImpureAp(unions, continuation, last) =>
+          ImpureAp(unions, continuation.append(f), last)
       }
 
     def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
@@ -264,29 +311,28 @@ trait EffImplicits {
 
     def ap[A, B](ff: Eff[R, A => B])(fa: Eff[R, A]): Eff[R, B] =
       fa match {
-        case Pure(a) =>
+        case Pure(a, last) =>
           ff match {
-            case Pure(f)        => Pure(f(a))
-            case Impure(u, c)   => ImpureAp(Unions(u, Nil), Arrs.singleton(ls => c(ls.head).map(_(a))))
-            case ImpureAp(u, c) => ImpureAp(u, Arrs.singleton(xs => c(xs).map(_(a))))
+            case Pure(f, last1)        => Pure(f(a), last1).addLast(last)
+            case Impure(u, c, last1)   => ImpureAp(Unions(u, Nil), Arrs.singleton(ls => c(ls.head).map(_(a))), last1 *> last)
+            case ImpureAp(u, c, last1) => ImpureAp(u, Arrs.singleton(xs => c(xs).map(_(a))), last1 *> last)
           }
 
-        case Impure(u, c) =>
+        case Impure(u, c, last) =>
           ff match {
-            case Pure(f)          => ImpureAp(Unions(u, Nil), Arrs.singleton(ls => c(ls.head).map(f)))
-            case Impure(u1, c1)   => ImpureAp(Unions(u, List(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head))))
-            case ImpureAp(u1, c1) => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head))))
+            case Pure(f, last1)          => ImpureAp(Unions(u, Nil), Arrs.singleton(ls => c(ls.head).map(f)), last1 *> last)
+            case Impure(u1, c1, last1)   => ImpureAp(Unions(u, List(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head))), last1 *> last)
+            case ImpureAp(u1, c1, last1) => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head))), last1 *> last)
           }
           
-        case ImpureAp(unions, c) =>
+        case ImpureAp(unions, c, last) =>
           ff match {
-            case Pure(f)         => ImpureAp(unions, c map f)
-            case Impure(u, c1)   => ImpureAp(Unions(unions.first, unions.rest :+ u), Arrs.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1)))))
-            case ImpureAp(u, c1) => ImpureAp(u append unions, Arrs.singleton(xs => ap(c1(xs.take(u.size)))(c(xs.drop(u.size)))))
+            case Pure(f, last1)         => ImpureAp(unions, c map f, last1 *> last)
+            case Impure(u, c1, last1)   => ImpureAp(Unions(unions.first, unions.rest :+ u), Arrs.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1)))), last1 *> last)
+            case ImpureAp(u, c1, last1) => ImpureAp(u append unions, Arrs.singleton(xs => ap(c1(xs.take(u.size)))(c(xs.drop(u.size)))), last1 *> last)
           }
 
       }
-
   }
 
 }
@@ -338,8 +384,9 @@ trait EffInterpretation {
    */
   def run[A](eff: Eff[NoFx, A]): A =
     eff match {
-      case Pure(a) => a
-      case other   => sys.error("impossible: cannot run the effects in "+other)
+      case Pure(a, Last(Some(l))) => l(); a
+      case Pure(a, Last(None))    => a
+      case other                  => sys.error("impossible: cannot run the effects in "+other)
     }
 
   /**
@@ -348,14 +395,15 @@ trait EffInterpretation {
   def detach[M[_] : Monad, A](eff: Eff[Fx1[M], A]): M[A] = {
     def go(e: Eff[Fx1[M], A]): M[A] = {
       e match {
-        case Pure(a) => Monad[M].pure(a)
+        case Pure(a, Last(Some(l))) => Monad[M].pure(a) <* detach(l())
+        case Pure(a, Last(None))    => Monad[M].pure(a)
 
-        case Impure(u, continuation) =>
+        case Impure(u, continuation, last) =>
           u match {
-            case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x)))
+            case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x))) <* detach(last.run)
           }
 
-        case ap @ ImpureAp(u, continuation) =>
+        case ap @ ImpureAp(u, continuation, last) =>
           detach(ap.toMonadic)
       }
     }
@@ -368,15 +416,16 @@ trait EffInterpretation {
   def detachA[M[_], A](eff: Eff[Fx1[M], A])(implicit monad: Monad[M], applicative: Applicative[M]): M[A] = {
     def go(e: Eff[Fx1[M], A]): M[A] = {
       e match {
-        case Pure(a) => monad.pure(a)
+        case Pure(a, Last(Some(l))) => go(l().as(a))
+        case Pure(a, Last(None))    => monad.pure(a)
 
-        case Impure(u, continuation) =>
+        case Impure(u, continuation, last) =>
           u match {
-            case Union1(ta) => monad.flatMap(ta)(x => go(continuation(x)))
+            case Union1(ta) => monad.flatMap(ta)(x => go(continuation(x))) <* detachA(last.run)
           }
 
-        case ap @ ImpureAp(unions, continuation) =>
-          applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).flatMap(x => go(continuation(x)))
+        case ap @ ImpureAp(unions, continuation, last) =>
+          applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).flatMap(x => go(continuation(x))) <* detachA(last.run)
       }
     }
     go(eff)
@@ -387,8 +436,9 @@ trait EffInterpretation {
    */
   def runPure[R, A](eff: Eff[R, A]): Option[A] =
     eff match {
-      case Pure(a) => Option(a)
-      case _ => None
+      case Pure(a, Last(Some(l))) => l(); Option(a)
+      case Pure(a, _)             => Option(a)
+      case _                      => None
     }
 
   /**
@@ -438,24 +488,24 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
    */
   def apply(a: A): Eff[R, B] = {
     @tailrec
-    def go(fs: Vector[Any => Eff[R, Any]], v: Any): Eff[R, B] = {
+    def go(fs: Vector[Any => Eff[R, Any]], v: Any, last: Last[R] = Last.none[R]): Eff[R, B] = {
       fs match {
         case Vector() =>
-          Eff.EffMonad[R].pure(v).asInstanceOf[Eff[R, B]]
+          Pure[R, B](v.asInstanceOf[B], last)
 
         case Vector(f) =>
-          f(v).asInstanceOf[Eff[R, B]]
+          f(v).asInstanceOf[Eff[R, B]].addLast(last)
 
         case f +: rest =>
           f(v) match {
-            case Pure(a1) =>
-              go(rest, a1)
+            case Pure(a1, l1) =>
+              go(rest, a1, last *> l1)
 
-            case Impure(u, q) =>
-              Impure[R, u.X, B](u, q.copy(q.functions ++ rest))
+            case Impure(u, q, l) =>
+              Impure[R, u.X, B](u, q.copy(q.functions ++ rest), last *> l)
 
-            case ap @ ImpureAp(unions, q) =>
-              ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest))
+            case ap @ ImpureAp(unions, q, l) =>
+              ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest), last *> l)
           }
       }
     }

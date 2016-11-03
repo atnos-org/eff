@@ -9,6 +9,8 @@ import cats.syntax.all._
 import cats.instances.all._
 import cats.Eq
 import cats.~>
+
+import scala.collection.mutable.ListBuffer
 //import cats.laws.discipline.{arbitrary => _, _}
 //import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
@@ -44,6 +46,9 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  An effect can be translated into other effects of the same stack                  $translateIntoEffect
 
  Applicative calls can be optimised by "batching" requests $optimiseRequests
+
+ An action can run completely at the end, regardless of the number of flatmaps $runLast
+   now with one very last action which fails, there should be no exception     $runLastFail
 
 """
 
@@ -330,10 +335,10 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     def runDsl[A](eff: Eff[Fx1[UserDsl], A]): A =
       eff match {
-        case Pure(a) => a
-        case Impure(Union1(GetUser(i)), c)   => runDsl(c(getWebUser(i)))
-        case Impure(Union1(GetUsers(is)), c) => runDsl(c(getWebUsers(is)))
-        case ap @ ImpureAp(u, m)             => runDsl(ap.toMonadic)
+        case Pure(a,_) => a
+        case Impure(Union1(GetUser(i)), c, _)   => runDsl(c(getWebUser(i)))
+        case Impure(Union1(GetUsers(is)), c, _) => runDsl(c(getWebUsers(is)))
+        case ap @ ImpureAp(u, m, _)             => runDsl(ap.toMonadic)
       }
 
     def action1[R :_userDsl] =
@@ -348,6 +353,40 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     result ==== optimisedResult
   }
+
+  def runLast = prop { xs: List[String] =>
+    type R = Fx.fx2[Safe, Eval]
+    val messages = new ListBuffer[String]
+
+    import org.atnos.eff.all._
+    import org.atnos.eff.syntax.all._
+
+    val act = for {
+      _ <- protect[R, Unit](messages.append("a")).plusLast(protect[R, Unit](messages.append("end")))
+      _ <- protect[R, Unit](messages.append("b"))
+    } yield ()
+
+    act.runSafe.runEval.run
+
+    messages.toList ==== List("a", "b", "end")
+  }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
+
+  def runLastFail = prop { xs: List[String] =>
+    type R = Fx.fx2[Safe, Eval]
+    val messages = new ListBuffer[String]
+
+    import org.atnos.eff.all._
+    import org.atnos.eff.syntax.all._
+
+    val act = for {
+      _ <- protect[R, Unit](messages.append("a")).plusLast(protect[R, Unit]{ messages.append("boom"); throw new Exception("boom")})
+      _ <- protect[R, Unit](messages.append("b"))
+    } yield ()
+
+    act.runSafe.runEval.run
+
+    messages.toList ==== List("a", "b", "boom")
+  }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
 
   /**
    * Helpers

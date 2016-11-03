@@ -14,7 +14,7 @@ import _root_.monix.execution.Scheduler.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
+class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "monix task".title ^ s2"""
 
  Async effects can be implemented with an AsyncTask service $e1
  Async effects can be attempted                             $e2

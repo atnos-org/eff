@@ -93,14 +93,14 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    *
    * Execute a second action whether the first is successful or not
    */
-  def andFinally[R, A](action: Eff[R, A], last: Eff[R, Unit])(implicit m: ErrorOrOk <= R): Eff[R, A] = {
+  def andFinally[R, A](action: Eff[R, A], lastAction: Eff[R, Unit])(implicit m: ErrorOrOk <= R): Eff[R, A] = {
     val recurse = new Recurse[ErrorOrOk, R, A] {
       def apply[X](current: ErrorOrOk[X]): X Either Eff[R, A] =
         current.run match {
-          case Left(e) => Right(last.flatMap(_ => outer.error[R, A](e)))
+          case Left(e) => Right(lastAction.flatMap(_ => outer.error[R, A](e)))
           case Right(x) =>
             try Left(x.value)
-            catch { case NonFatal(t) => Right(last.flatMap(_ => outer.exception[R, A](t))) }
+            catch { case NonFatal(t) => Right(lastAction.flatMap(_ => outer.exception[R, A](t))) }
         }
 
       def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Either ErrorOrOk[T[X]] =
@@ -109,7 +109,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
           case Right(ls) => Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
         }
     }
-    intercept[R, ErrorOrOk, A, A]((a: A) => last.as(a), recurse)(action)
+    intercept[R, ErrorOrOk, A, A]((a: A) => lastAction.as(a), recurse)(action)
   }
 
   /**
