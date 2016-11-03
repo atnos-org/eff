@@ -65,6 +65,37 @@ trait EitherInterpretation {
     interpret1[R, U, (E Either ?), A, E Either A]((a: A) => Right(a): E Either A)(recurse)(r)
   }
 
+  def EitherApplicative[E](implicit s: Semigroup[E]): Applicative[E Either ?] = new Applicative[E Either ?] {
+    def pure[A](a: A) = Right(a)
+
+    def ap[A, B](ff: E Either (A => B))(fa: E Either A): E Either B =
+      fa match {
+        case Right(a) => ff.map(_(a))
+        case Left(e1) => ff match {
+          case Right(_) => Left(e1)
+          case Left(e2) => Left(s.combine(e1, e2))
+        }
+      }
+  }
+
+  /** run the Either effect, yielding E Either A and combine all Es */
+  def runEitherCombine[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Either ?), R, U], s: Semigroup[E]): Eff[U, E Either A] = {
+    val recurse = new Recurse[(E Either ?), U, E Either A] {
+      def apply[X](m: E Either X) =
+        m match {
+          case Left(e) => Right(EffMonad[U].pure(Left(e)))
+          case Right(a) => Left(a)
+        }
+
+      def applicative[X, T[_] : Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) = {
+        val ap = EitherApplicative[E]
+        Right(ms.sequence(implicitly[Either[E, X] <:< Either[E, X]], ap))
+      }
+    }
+
+    interpret1[R, U, (E Either ?), A, E Either A]((a: A) => Right(a): E Either A)(recurse)(r)
+  }
+
   /** catch and handle a possible left value */
   def catchLeft[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) <= R): Eff[R, A] = {
     val recurse = new Recurse[(E Either ?), R, A] {
@@ -76,6 +107,24 @@ trait EitherInterpretation {
 
       def applicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) =
         Right(ms.sequence)
+    }
+
+    intercept1[R, (E Either ?), A, A]((a: A) => a)(recurse)(r)
+  }
+
+  /** catch and handle a possible left value. The value is the combination of all failures in case of an applicative */
+  def catchLeftCombine[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) <= R, s: Semigroup[E]): Eff[R, A] = {
+    val recurse = new Recurse[(E Either ?), R, A] {
+      def apply[X](m: E Either X) =
+        m match {
+          case Left(e) => Right(handle(e))
+          case Right(a) => Left(a)
+        }
+
+      def applicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) = {
+        val ap = EitherApplicative[E]
+        Right(ms.sequence(implicitly[Either[E, X] <:< Either[E, X]], ap))
+      }
     }
 
     intercept1[R, (E Either ?), A, A]((a: A) => a)(recurse)(r)

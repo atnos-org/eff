@@ -52,6 +52,12 @@ sealed trait Eff[R, A] {
   def ap[B](f: Eff[R, A => B]): Eff[R, B] =
     EffApplicative[R].ap(f)(this)
 
+  def *>[B](fb: Eff[R, B]): Eff[R, B] =
+    EffApplicative.product(this, fb).map { case (a, b) => b }
+
+  def <*[B](fb: Eff[R, B]): Eff[R, A] =
+    EffApplicative.product(this, fb).map { case (a, b) => a }
+
   def flatMap[B](f: A => Eff[R, B]): Eff[R, B] =
     EffMonad[R].flatMap(this)(f)
 
@@ -223,12 +229,10 @@ trait EffImplicits {
       fa match {
         case Pure(a) =>
           pure(f(a))
-
         case Impure(union, continuation) =>
           fa.flatMap(a => pure(f(a)))
-
         case ImpureAp(u, c) =>
-          ImpureAp(u, c map f)
+              ImpureAp(u, c map f)
       }
 
     def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
@@ -255,6 +259,9 @@ trait EffImplicits {
     def pure[A](a: A): Eff[R, A] =
       Pure(a)
 
+    override def product[A, B](fa: Eff[R, A], fb: Eff[R, B]): Eff[R, (A, B)] =
+      ap(map(fb)(b => (a: A) => (a, b)))(fa)
+
     def ap[A, B](ff: Eff[R, A => B])(fa: Eff[R, A]): Eff[R, B] =
       fa match {
         case Pure(a) =>
@@ -279,9 +286,6 @@ trait EffImplicits {
           }
 
       }
-
-    override def product[A, B](fa: Eff[R, A], fb: Eff[R, B]): Eff[R, (A, B)] =
-      ap(map(fb)(b => (a: A) => (a, b)))(fa)
 
   }
 

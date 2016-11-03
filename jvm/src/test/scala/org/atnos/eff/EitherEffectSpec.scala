@@ -29,6 +29,9 @@ class EitherEffectSpec extends Specification with ScalaCheck { def is = s2"""
    non fatal exceptions with a handler $handleFromCatchNonFatal
    non fatal exceptions                $catchNonFatal
 
+ left values can be accumulated in the applicative case if they have a Semigroup instance
+   when running the effect $runEitherWithCombine
+
 """
 
   def EitherCreation = prop { stringOrInt: String Either Int =>
@@ -88,7 +91,7 @@ class EitherEffectSpec extends Specification with ScalaCheck { def is = s2"""
     type E = Fx.fx1[EitherString]
 
     val list = (1 to 5000).toList
-    val action = list.traverseU(i => EitherEffect.right[E, String, String](i.toString))
+    val action = list.traverse(i => EitherEffect.right[E, String, String](i.toString))
 
     action.runEither.run ==== Right(list.map(_.toString))
   }
@@ -175,6 +178,16 @@ class EitherEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val caught = EitherEffect.catchNonFatalThrowable { throw exception; 1 }
 
     caught.runEither.run must beLeft(exception)
+  }
+
+  def runEitherWithCombine = {
+    type R = Fx1[String Either ?]
+    val action =
+      EitherEffect.left[R, String, Int]("a") *>
+      EitherEffect.left[R, String, Int]("b") *>
+      EitherEffect.left[R, String, Int]("c")
+
+    action.runEitherCombine.run must beLeft("abc")
   }
 }
 
