@@ -36,6 +36,7 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
 
  The task effect can be attempted $e8
  A timeout can be set             $e9
+ A Task execution is stack-safe   $e10
 
 """
 
@@ -169,6 +170,17 @@ class TaskEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     val task = actionApplicative.withTimeout(100 millis).attemptTask.detachA(ApplicativeTask)
     Await.result(task.runAsync, 2.seconds) must beLeft[Throwable]((t: Throwable) => t must beAnInstanceOf[TimeoutException])
   }.setGen(listGen).set(minTestsOk = 1)
+
+  def e10 = {
+    def loop(i: Int): Task[Eff[Fx.fx1[Task], Int]] =
+      if (i == 0) {
+        Task.now(Eff.pure(1))
+      } else {
+        Task.now(monix.TaskEffect.suspend(loop(i - 1)).map(_ + 1))
+      }
+
+    Await.result(monix.TaskEffect.suspend(loop(100000)).detach.runAsync, 2.seconds) ==== 100001
+  }
 
   /**
    * HELPERS
