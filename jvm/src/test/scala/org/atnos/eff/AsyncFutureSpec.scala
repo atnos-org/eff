@@ -32,7 +32,7 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
       b <- asyncFork(20)
     } yield a + b
 
-    action[S].runOption.runAsyncFuture must beSome(30).await
+    action[S].runOption.runAsyncFuture must beSome(30).await(timeout = 5.seconds)
   }
 
   def e2 = {
@@ -41,7 +41,7 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
       b <- asyncFork { boom; 20 }
     } yield a + b
 
-    action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).await
+    action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).await(timeout = 5.seconds)
   }
 
   def e3 = prop { ls: List[Int] =>
@@ -55,7 +55,7 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
       }
 
     val run = Eff.traverseA(ls)(i => action[S](i))
-    Await.result(run.runOption.runAsyncFuture, 2 seconds)
+    Await.result(run.runOption.runAsyncFuture, 5 seconds)
 
     "the messages must not be received in the same order" ==> {
       (messages.toList.sorted !=== ls).unless(isSorted(ls))
