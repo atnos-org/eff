@@ -13,8 +13,8 @@ trait all extends
   choose   with
   list     with
   state    with
-  future   with
   safe     with
   batch    with
+  async    with
   eff
 

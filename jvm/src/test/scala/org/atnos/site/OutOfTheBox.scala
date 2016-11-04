@@ -1,5 +1,7 @@
 package org.atnos.site
 
+import java.util.concurrent.ExecutorService
+
 import cats.data._
 import cats.syntax.either._
 import org.specs2.execute._
@@ -12,7 +14,7 @@ This library comes with the following effects:
  ---------           | --------------------------------------------
  `EvalEffect`        | an effect for delayed computations
  `OptionEffect`      | an effect for optional computations, stopping when there's no available value
- `EitherEffect`         | an effect for computations with failures, stopping when there is a failure
+ `EitherEffect`      | an effect for computations with failures, stopping when there is a failure
  `ValidateEffect`    | an effect for computations with failures, allowing to continue computations and to collect failures
  `ErrorEffect`       | a mix of Eval and Either, catching exceptions and returning them as failures
  `ReaderEffect`      | an effect for depending on a configuration or an environment
@@ -20,7 +22,7 @@ This library comes with the following effects:
  `StateEffect`       | an effect to pass state around
  `ListEffect`        | an effect for computations returning several values
  `ChooseEffect`      | an effect for modeling non-determinism
- `FutureEffect`      | an effect using Scala's Future
+ `AsyncEffect`       | an effect for asynchronous computations
  `SafeEffect`        | an effect for guaranteeing resource safety
 
 <small>(from `org.atnos.eff._`)</small>
@@ -316,21 +318,66 @@ That behaviour is controlled by the `Alternative[F]` instance you use when runni
 For example if we take `List` to run a similar example as before, we get the list of all the accepted pairs:
 ${ChooseSnippets.snippet1}
 
-### Future
+### Async
 
-The `Future` effect uses Scala`s `Future` for asynchronous computations. You can create values with:
+The Async effect is an "abstract" effect. This means that you can create asynchronous expressions using the same API
+and have it implemented using either [Scala `Future`](http://docs.scala-lang.org/overviews/core/futures.html) or
+[Scalaz `Task`](http://timperrett.com/2014/07/20/scalaz-task-the-missing-documentation/) or [Monix `Task`](https://monix.io/docs/2x/eval/task.html).
 
- - `sync`: a "pure" value
- - `async`: a `Future` value
+For the following example we will assume an implementation using regular Scala futures.
 
-You can then run the `Eff` computation containing a `Future` effect by using either:
+In order to access the API you first need to create an `AsyncService`:${snippet{
 
- - `awaitFuture(atMost: FiniteDuration)` which might return a timeout exception
- - `detach` to get back a `Future[A]` if the future effect is the last one to be interpreted in the stack of effects
+import org.atnos.eff._
 
-Note that it is possible to delay the execution of `Future` values by having both `Eval` and `Future` in the stack:
+import scala.concurrent.ExecutionContext.Implicits.global
+val service: AsyncService = AsyncFutureService.create
 
- - `delay(10).flatMap(async)`
+/*p
+Then all the `AsyncService` operations are available
+ */
+
+type R = Fx.fx2[Async, Option]
+
+import service._
+
+val action: Eff[R, Int] =
+  for {
+    // create a value now
+    a <- asyncNow[R, Int](1)
+
+    // evaluate a value later
+    b <- asyncDelay[R, Int](1)
+
+    // evaluate a value asynchronously
+    c <- asyncFork[R, Int](a + b)
+  } yield c
+
+/*p
+Finally you can evaluate other effects in the stack (Option here) and run the async effect to get back
+ a `Future`
+*/
+
+import org.atnos.eff.syntax.all._
+import scala.concurrent._, duration._
+
+Await.result(action.runOption.runAsyncFuture, 1 second)
+}.eval}
+
+If you prefer to use monix or scalaz you need to add a dependency on `eff-cats-monix` or `eff-cats-scalaz` and create
+the corresponding `org.atnos.eff.monix.AsyncTaskService` or `org.atnos.eff.scalaz.AsyncTaskService`:
+```
+import org.atnos.eff._
+
+import java.util.concurrent._
+import _root_.scalaz.concurrent._
+
+implicit val es = Strategy.DefaultExecutorService
+val scalazService: AsyncService = org.atnos.eff.scalaz.AsyncTaskService.create
+
+// the monix service doesn't require any implicit context!
+val monixService: AsyncService = org.atnos.eff.monix.AsyncTaskService.create
+```
 
 ### Safe
 

@@ -16,8 +16,8 @@ package object eff {
   object either     extends EitherCreation     with EitherInterpretation    with EitherImplicits
   object validate   extends ValidateCreation   with ValidateInterpretation
   object choose     extends ChooseCreation     with ChooseInterpretation
-  object future     extends FutureCreation     with FutureInterpretation
   object safe       extends SafeCreation       with SafeInterpretation
+  object async      extends AsyncEffect        with AsyncInterpretation
   object batch      extends Batch
 
   object create extends
@@ -30,11 +30,11 @@ package object eff {
     EitherCreation with
     ValidateCreation with
     ChooseCreation with
-    FutureCreation with
     EffCreation with
     SafeCreation
 
   object all extends
+    AsyncEffect with
     ReaderEffect with
     WriterEffect with
     StateEffect with
@@ -44,7 +44,6 @@ package object eff {
     EitherEffect with
     ValidateEffect with
     ChooseEffect with
-    FutureEffect with
     SafeEffect with
     Batch with
     EffInterpretation with

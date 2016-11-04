@@ -124,17 +124,17 @@ There are also specialized versions of `transform` for `Reader` and `State`:
 
 ### Effects translation
 
-A common thing to do is to translate "high-level" effects (a webservice DSL for example) into low-level ones (`Future`, `Eval`, `Either`, etc...).
+A common thing to do is to translate "high-level" effects (a webservice DSL for example) into low-level ones (`Async`, `Eval`, `Either`, etc...).
 
 For example you might have this stack:
   ```
-type S = Fx.fx3[Authenticated, Future, ThrowableEither]
+type S = Fx.fx3[Authenticated, Async, ThrowableEither]
 ```
 
-And you want to write an interpreter which will translate authentication actions into `Future` and `Either`:${snippet{
+And you want to write an interpreter which will translate authentication actions into `Async` and `Either`:${snippet{
 import org.atnos.eff.eff._
 import org.atnos.eff.syntax.eff._
-import org.atnos.eff.future._
+import org.atnos.eff.async._
 import org.atnos.eff.interpret._
 import scala.concurrent.Future
 
@@ -157,14 +157,14 @@ type _error[R] = AuthErroEither |= R
  */
 def runAuth[R, U, A](e: Eff[R, A])(implicit
   authenticated: Member.Aux[Authenticated, R, U],
-   future:       _future[U],
-   either:          _error[U]): Eff[U, A] =
+  async:         _async[U],
+  either:        _error[U]): Eff[U, A] =
 
    translate(e)(new Translate[Authenticated, U] {
      def apply[X](ax: Authenticated[X]): Eff[U, X] =
        ax match {
          case Authenticate(token) =>
-           // send the future effect in the stack U
+           // send the async effect in the stack U
            send(authenticate(token)).
            // send the Either value in the stack U
            collapse
@@ -172,17 +172,17 @@ def runAuth[R, U, A](e: Eff[R, A])(implicit
     })
 
 // call to a service to authenticate tokens
-def authenticate(token: String): Future[AuthError Either AccessRights] = ???
+def authenticate(token: String): Async[AuthError Either AccessRights] = ???
 
-type S = Fx.fx3[Authenticated, AuthError Either ?, Future]
+type S = Fx.fx3[Authenticated, AuthError Either ?, Async]
 def auth: Eff[S, Int] = ???
 
 runAuth(auth)
 
 }}
 
-The call to `send` above needs to send a `Future` value in the stack `U`. This is possible because `Future` is an
-effect in `U` as evidenced by `future`.
+The call to `send` above needs to send an `Async` value in the stack `U`. This is possible because `Async` is an
+effect in `U` as evidenced by `async`.
 
 Furthermore, `authenticate` returns an `AuthError Either ?` value. We can "collapse" it into `U` because `AuthError Either ?`
 is an effect of `U` as evidenced by `either`.
@@ -190,15 +190,15 @@ is an effect of `U` as evidenced by `either`.
 
 You might wonder why we don't use a more direct type signature like:
 ```
-def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(
+def runAuth2[R, U :_async :_error, A](e: Eff[R, A])(
   implicit authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A]
 ```
 
 The reason is that scalac desugars this to:
 ```
 def runAuth2[R, U, A](e: Eff[R, A])(
-  implicit future:        _future[U],
-           either:           _error[U],
+  implicit async:         _async[U],
+           either:        _error[U],
            authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A] =
 ```
 

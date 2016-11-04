@@ -1,7 +1,5 @@
 package org.atnos.site
 
-import org.specs2.execute.Snippet
-
 object ApplicativeEvaluation extends UserGuidePage { def is = "Applicative".title ^ s2"""
 
 ### Concurrent evaluation
@@ -18,19 +16,22 @@ import scala.concurrent._, duration._, ExecutionContext.Implicits.global
 type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
-type S = Fx.fx3[Eval, Future, WriterString]
+type S = Fx.fx3[Eval, Async, WriterString]
 
-def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
+val futureService = AsyncFutureService.create
+import futureService._
+
+def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
   for {
     i1 <- delay(i)
-    i2 <- async(i1)
+    i2 <- asyncFork(i1)
     _  <- tell(i2.toString)
   } yield i2
 
 val action: Eff[S, List[Int]] =
   List(1000, 500, 50).traverse(execute[S])
 
-action.runEval.awaitFuture(2.seconds).runWriterLog.run
+Await.result(action.runEval.runWriterLog.runAsyncFuture, 2.seconds)
 
 }.eval}
 
@@ -46,12 +47,14 @@ import scala.concurrent._, duration._, ExecutionContext.Implicits.global
 type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
-type S = Fx.fx3[Eval, Future, WriterString]
+type S = Fx.fx3[Eval, Async, WriterString]
+val futureService = AsyncFutureService.create
+import futureService._
 
-def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
+def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
   for {
     i1 <- delay(i)
-    i2 <- async(i1)
+    i2 <- futureService.asyncFork(i1)
     _  <- tell(i2.toString)
   } yield i2
 // 8<--
@@ -59,7 +62,7 @@ def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
 val action: Eff[S, List[Int]] =
   List(1000, 500, 50).traverseA(execute[S])
 
-action.runEval.awaitFuture(2.seconds).runWriterLog.run
+Await.result(action.runEval.runWriterLog.runAsyncFuture, 2.seconds)
 }.eval}
 
 This uses now `traverseA` (instead of `traverse`) to do an applicative traversal and execute futures concurrently and

@@ -11,8 +11,8 @@ lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
   .settings(effSettings)
   .settings(noPublishSettings)
-  .aggregate(coreJVM, coreJS, monixJVM, monixJS)
-  .dependsOn(coreJVM, coreJS, monixJVM, monixJS)
+  .aggregate(coreJVM, coreJS, monixJVM, monixJS, scalaz)
+  .dependsOn(coreJVM, coreJS, monixJVM, monixJS, scalaz)
 
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff-cats")
@@ -30,10 +30,16 @@ lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
   .settings(libraryDependencies ++= monixEval)
   .settings(effSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
-  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= monixjs):_*)
+  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= monixJs):_*)
 
 lazy val monixJVM = monix.jvm
 lazy val monixJS =  monix.js
+
+lazy val scalaz = project.in(file("scalaz"))
+  .settings(moduleName := "eff-cats-scalaz")
+  .dependsOn(coreJVM)
+  .settings(libraryDependencies ++= scalazConcurrent)
+  .settings(effSettings ++ commonJvmSettings:_*)
 
 lazy val scoverageSettings = Seq(
   coverageMinimum := 60,
@@ -109,6 +115,7 @@ lazy val commonScalacOptions = Seq(
   "-unchecked",
   "-Xfatal-warnings",
   "-Xlint",
+  "-Xlint:-nullary-unit",
   "-Yinline-warnings",
   "-Yno-adapted-args",
   "-Ywarn-numeric-widen",
@@ -216,9 +223,10 @@ def testTask(task: TaskKey[Tests.Output]) =
     testGrouping in Test in test, testExecution in Test in task,
     fullClasspath in Test in test, javaHome in test) flatMap Defaults.allTestGroupsTask
 
-lazy val catsVersion     = "0.8.0"
-lazy val monixVersion    = "2.0.5"
-lazy val specs2Version   = "3.8.5"
+lazy val catsVersion   = "0.8.0"
+lazy val monixVersion  = "2.0.5"
+lazy val scalazVersion = "7.2.7"
+lazy val specs2Version = "3.8.5"
 
 lazy val catsJvm = Seq(
   "org.typelevel" %% "cats-core" % catsVersion)
@@ -229,8 +237,11 @@ lazy val catsJs = Seq(
 lazy val monixEval = Seq(
   "io.monix" %% "monix-eval" % monixVersion)
 
-lazy val monixjs = Seq(
+lazy val monixJs = Seq(
   "io.monix" %%%! "monix-eval" % monixVersion)
+
+lazy val scalazConcurrent = Seq(
+  "org.scalaz" %% "scalaz-concurrent" % scalazVersion)
 
 lazy val specs2 = Seq(
     "org.specs2" %% "specs2-core"
