@@ -12,7 +12,9 @@ import cats.Eval
 
 class EvalEffectSpec extends Specification { def is = s2"""
 
- run is stack safe with Eval   $stacksafeRun
+ run is stack safe with Eval               $stacksafeRun
+ attempt is stack safe with Eval           $stacksafeAttempt
+ recursion in Eval.defer is stack safe     $stacksafeRecursion
 
 """
 
@@ -28,6 +30,17 @@ class EvalEffectSpec extends Specification { def is = s2"""
   def stacksafeAttempt = {
     val action = list.traverseU(i => EvalEffect.delay(i))
     action.attemptEval.run ==== Right(list)
+  }
+
+  def stacksafeRecursion = {
+    def loop(i: Int): Eval[Eff[Fx.fx1[Eval], Int]] =
+      if (i == 0) {
+        Eval.now(Eff.pure(1))
+      } else {
+        Eval.now(eval.defer(loop(i - 1)).map(_  + 1))
+      }
+
+    loop(100000).value.detach.value ==== 100001
   }
 }
 

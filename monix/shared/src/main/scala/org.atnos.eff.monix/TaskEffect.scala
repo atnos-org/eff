@@ -37,6 +37,9 @@ trait TaskCreation {
   def async[R :_task, A](a: =>A): Eff[R, A] =
     send(Task.fork(Task.evalOnce(a)))
 
+  def suspend[R :_task, A](task: => Task[Eff[R, A]]): Eff[R, A] =
+    send[Task, R, Eff[R, A]](Task.suspend(task)).flatten
+
 }
 
 trait TaskInterpretation {
