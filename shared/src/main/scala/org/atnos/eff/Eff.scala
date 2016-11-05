@@ -41,6 +41,13 @@ import Eff._
  *  are supposed to create a list of values to feed the mapping function. If an interpreter doesn't
  *  create a list of values of the right size and with the right types, there will be a runtime exception.
  *
+ * The Pure, Impure and ImpureAp cases also incorporate a "last" action returning no value but just used
+ * for side-effects (shutting down an execution context for example). This action is meant to be executed at the end
+ * of all computations, regardless of the number of flatMaps added on the Eff value.
+ *
+ * Since this last action will be executed, its value never collected so if it throws an exception it is possible
+ * to print it by defining the eff.debuglast system property (-Deff.debuglast=true)
+ *
  * @see http://okmij.org/ftp/Haskell/extensible/more.pdf
  *
  */
@@ -64,40 +71,13 @@ sealed trait Eff[R, A] {
   def flatten[B](implicit ev: A =:= Eff[R, B]): Eff[R, B] =
     flatMap(a => a)
 
-  def plusLast(l: =>Eff[R, Unit]): Eff[R, A] =
+  /** add one last action to be executed after any computation chained to this Eff value */
+  def addLast(l: =>Eff[R, Unit]): Eff[R, A] =
     addLast(Last.eff(l))
 
+  /** add one last action to be executed after any computation chained to this Eff value */
   def addLast(l: Last[R]): Eff[R, A]
 
-}
-
-case class Last[R](value: Option[() => Eff[R, Unit]]) {
-  def runNat[U](n: Eff[R, Unit] => Eff[U, Unit]) =
-    Last[U](value.map(v => () => n(v())))
-
-  def <*(last: Last[R]): Last[R] =
-    (value, last.value) match {
-      case (None, None)       => this
-      case (Some(r), None)    => this
-      case (None, Some(l))    => last
-      case (Some(r), Some(l)) => Last(Option(() => r() <* l()))
-    }
-
-  def *>(last: Last[R]): Last[R] =
-    (value, last.value) match {
-      case (None, None)       => this
-      case (Some(r), None)    => this
-      case (None, Some(l))    => last
-      case (Some(r), Some(l)) => Last(Option(() => r() *> l()))
-    }
-}
-
-object Last {
-  def none[R]: Last[R] =
-    Last(None)
-  
-  def eff[R](e: =>Eff[R, Unit]): Last[R] =
-    Last(Option(() => e))
 }
 
 case class Pure[R, A](value: A, last: Last[R] = Last.none[R]) extends Eff[R, A] {
@@ -276,12 +256,15 @@ trait EffImplicits {
           pure(f(a)).addLast(l)
 
         case Impure(union, continuation, last) =>
-          fa.flatMap(a => pure(f(a)))
+          Impure(union, continuation map f, last)
 
-        case ImpureAp(u, c, last) =>
-          ImpureAp(u, c map f, last)
+        case ImpureAp(unions, continuations, last) =>
+          ImpureAp(unions, continuations map f, last)
       }
 
+    /**
+     * When flatMapping the last action must still be executed after the next action
+     */
     def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
       fa match {
         case Pure(a, l) =>

@@ -177,7 +177,7 @@ trait Interpret {
         case Pure(a, last) =>
           loop.onPure(a, s) match {
             case Left((a1, s1)) => go(a1.addLast(last), s1)
-            case Right(b)       => b.plusLast(goLast(last, s))
+            case Right(b)       => b.addLast(goLast(last, s))
           }
 
         case Impure(union, continuation, last) =>
@@ -185,7 +185,7 @@ trait Interpret {
             case Right(v) =>
               loop.onEffect(v, continuation, s) match {
                 case Left((x, s1)) => go(x.addLast(last), s1)
-                case Right(b)      => b.plusLast(goLast(last, s))
+                case Right(b)      => b.addLast(goLast(last, s))
               }
 
             case Left(u) =>
@@ -200,7 +200,7 @@ trait Interpret {
           else
             loop.onApplicativeEffect(collected.effects, collected.continuation(continuation, m), s) match {
               case Left((x, s1)) => go(x.addLast(last), s1)
-              case Right(b)      => b.plusLast(goLast(last, s))
+              case Right(b)      => b.addLast(goLast(last, s))
             }
       }
     }
@@ -309,8 +309,8 @@ trait Interpret {
       eff match {
         case Pure(a, last) =>
           loop.onPure(a, s) match {
-            case Left((a1, s1)) => go(a1, s1).plusLast(goLast(last, s1))
-            case Right(b) => b.plusLast(goLast(last, s))
+            case Left((a1, s1)) => go(a1, s1).addLast(goLast(last, s1))
+            case Right(b) => b.addLast(goLast(last, s))
           }
 
         case Impure(union, continuation, last) =>
@@ -318,7 +318,7 @@ trait Interpret {
             case Some(v) =>
               loop.onEffect(v, continuation, s) match {
                 case Left((x, s1)) => go(x.addLast(last), s1)
-                case Right(b)      => b.plusLast(goLast(last, s))
+                case Right(b)      => b.addLast(goLast(last, s))
               }
 
             case None =>
@@ -333,7 +333,7 @@ trait Interpret {
           else
             loop.onApplicativeEffect(collect.effects, collect.continuation(continuation), s) match {
               case Left((x, s1)) => go(x.addLast(last), s1)
-              case Right(b)      => b.plusLast(goLast(last, s))
+              case Right(b)      => b.addLast(goLast(last, s))
             }
       }
     }
@@ -389,7 +389,7 @@ trait Interpret {
 
     def go(eff: Eff[SR, A]): Eff[BR, A] = {
       eff match {
-        case Pure(a, last) => Pure[BR, A](a).plusLast(goLast(last))
+        case Pure(a, last) => Pure[BR, A](a).addLast(goLast(last))
 
         case Impure(u, c, last) =>
           sr.project(u) match {
@@ -445,7 +445,7 @@ trait Interpret {
 
     def go(eff: Eff[R, A]): Eff[U, A] = {
       eff match {
-        case Pure(a, last) => Pure(a).plusLast(goLast(last))
+        case Pure(a, last) => Pure(a).addLast(goLast(last))
 
         case Impure(union, continuation, last) =>
           m.project(union) match {
@@ -497,26 +497,26 @@ trait Interpret {
             case i @ Impure(union, continuation, last) =>
               m.extract(union) match {
                 case Some(tx) => translate(tx).flatMap(x => goLast(Last.eff(continuation(x).addLast(last))))
-                case None     => into(i).plusLast(goLast(last))
+                case None     => into(i).addLast(goLast(last))
               }
 
             case ap @ ImpureAp(unions, continuation, last) =>
-              val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).plusLast(goLast(last)))
+              val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).addLast(goLast(last)))
               translated.flatMap(ts => goLast(Last.eff(continuation(ts).addLast(last))))
           }
       }
 
     eff match {
-      case Pure(a, last) => into(eff).plusLast(goLast(last))
+      case Pure(a, last) => into(eff).addLast(goLast(last))
 
       case Impure(u, c, last) =>
         m.extract(u) match {
           case Some(tx) => translate(tx).flatMap(x => translateInto(c(x).addLast(last))(translate))
-          case None     => into(eff).plusLast(goLast(last))
+          case None     => into(eff).addLast(goLast(last))
         }
 
       case ImpureAp(unions, c, last) =>
-        val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).plusLast(goLast(last)))
+        val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).addLast(goLast(last)))
         translated.flatMap(ts => translateInto(c(ts).addLast(last))(translate))
     }
   }
@@ -558,7 +558,7 @@ trait Interpret {
       }
 
     effects match {
-      case Pure(a, last) => Pure(a).plusLast(goLast(last))
+      case Pure(a, last) => Pure(a).addLast(goLast(last))
 
       case Impure(union, continuation, last) =>
         m.extract(union) match {
@@ -593,6 +593,10 @@ object Interpret extends Interpret
  * which might produce several M[X] in a stack of effects.
  *
  * Either we can produce an X to pass to a continuation or we're done
+ *
+ * For the applicative case we expect to be able to traverse a list
+ * of effects and return an effect of a list of results OR
+ * completely consume the effect and return a pure list of values
  */
 trait Recurse[M[_], R, A] {
   def apply[X](m: M[X]): X Either Eff[R, A]
@@ -601,10 +605,35 @@ trait Recurse[M[_], R, A] {
 
 /**
  * Generalisation of Recurse and StateRecurse
+ *
+ * The loop defines some state with an initial value which is maintained at
+ * each step of the interpretation.
+ *
+ * A is the type of Eff values to interpret, and B is the result of the
+ * interpretation (generally an other Eff value)
+ *
+ * C is the type of result for "last" actions.
+ *
+ * - the interpretation of a Pure value either returns the final result or possibly
+ *   one more Eff value to interpret
+ *
+ * - onEffect interprets one effect and possibly uses the continuation to produce the next
+ *   value to interpret. If no X can be used to run the continuation we might just
+ *   output one final B value
+ *
+ *  - onLastEffect interprets the last effect of an Eff value. The only difference with onEffect
+ *    is the fact that last actions return Unit values (and not A values)
+ *
+ *  - onApplicativeEff interprets a list of effects and possibly uses the continuation to
+ *    get to the next value to interpret. If no interpretation can be done, a B value might be returned
+ *
+ *  - onLastApplicativeEffect does the same thing for last actions
+ *
  */
 trait Loop[M[_], R, A, B, C] {
   type S
   val init: S
+
   def onPure(a: A, s: S): (Eff[R, A], S) Either B
 
   def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either B

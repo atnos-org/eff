@@ -362,7 +362,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     import org.atnos.eff.syntax.all._
 
     val act = for {
-      _ <- protect[R, Unit](messages.append("a")).plusLast(protect[R, Unit](messages.append("end")))
+      _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit](messages.append("end")))
       _ <- protect[R, Unit](messages.append("b"))
     } yield ()
 
@@ -379,7 +379,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     import org.atnos.eff.syntax.all._
 
     val act = for {
-      _ <- protect[R, Unit](messages.append("a")).plusLast(protect[R, Unit]{ messages.append("boom"); throw new Exception("boom")})
+      _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit]{ messages.append("boom"); throw new Exception("boom")})
       _ <- protect[R, Unit](messages.append("b"))
     } yield ()
 
