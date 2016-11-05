@@ -32,7 +32,7 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
       b <- asyncFork(20)
     } yield a + b
 
-    action[S].runOption.runAsyncFuture must beSome(30).await(timeout = 5.seconds)
+    action[S].runOption.runAsyncFuture must beSome(30).awaitFor(5.seconds)
   }
 
   def e2 = {
@@ -41,7 +41,7 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
       b <- asyncFork { boom; 20 }
     } yield a + b
 
-    action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).await(timeout = 5.seconds)
+    action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).awaitFor(5.seconds)
   }
 
   def e3 = prop { ls: List[Int] =>
@@ -57,11 +57,11 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     val run = Eff.traverseA(ls)(i => action[S](i))
     Await.result(run.runOption.runAsyncFuture, 5 seconds)
 
-    "the messages must not be received in the same order" ==> {
-      (messages.toList.sorted !=== ls).unless(isSorted(ls))
+    "the messages are ordered" ==> {
+      messages.toList.sorted ==== ls.sorted
     }
 
-  }.setGen(Gen.listOfN(5, Gen.oneOf(10, 200, 300, 500))).set(minTestsOk = 10)
+  }.set(minTestsOk = 10).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
 
   def e4 = {
     val list = (1 to 5000).toList
@@ -74,8 +74,6 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
   def boom: Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
 
-  def isSorted[T : Numeric](ls: List[T]): Boolean =
-    ls.sorted == ls
 
 }
 

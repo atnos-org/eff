@@ -15,11 +15,12 @@ import scala.concurrent._
 import org.scalacheck._
 import org.specs2.matcher.TaskMatchers._
 
-class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
+class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "scalaz task".title ^ s2"""
 
  Async effects can be implemented with an AsyncTask service $e1
  Async effects can be attempted                             $e2
  Async effects can be executed concurrently                 $e3
+ Async effects are stacksafe                                $e4
 
 """
 
@@ -47,6 +48,7 @@ class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaC
   }
 
   def e3 = prop { ls: List[Int] =>
+
     val messages: ListBuffer[Int] = new ListBuffer[Int]
 
     def action[R :_async](i: Int): Eff[R, Int] =
@@ -59,17 +61,21 @@ class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaC
     val actions = Eff.traverseA(ls)(i => action[S](i))
     actions.runOption.runAsyncTask.unsafePerformSync
 
-    "the messages must not be received in the same order" ==> {
-      (messages.toList.sorted !=== ls).unless(isSorted(ls))
+    "the messages are ordered" ==> {
+       messages.toList ==== ls.sorted
     }
 
-  }.setGen(Gen.listOfN(5, Gen.oneOf(10, 200, 300, 500))).set(minTestsOk = 10)
+  }.set(minTestsOk = 5).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
 
-  def timeout: Unit = throw new TimeoutException
+  def e4 = {
+    val list = (1 to 5000).toList
+    val action = list.traverse(i => asyncFork[S, String](i.toString))
+
+    action.runOption.runAsyncTask must returnValue(beSome(list.map(_.toString)))
+  }
+
   def boom: Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
 
-  def isSorted[T : Numeric](ls: List[T]): Boolean =
-    ls.sorted == ls
 }
 

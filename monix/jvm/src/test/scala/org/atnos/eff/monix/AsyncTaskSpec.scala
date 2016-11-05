@@ -59,11 +59,11 @@ class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaC
     val run = Eff.traverseA(ls)(i => action[S](i))
     Await.result(run.runOption.runAsyncTask.runAsync, 3 seconds)
 
-    "the messages must not be received in the same order" ==> {
-      (messages.toList.sorted !=== ls).unless(isSorted(ls))
+    "the messages are ordered" ==> {
+      messages.toList ==== ls.sorted
     }
 
-  }.setGen(Gen.listOfN(5, Gen.oneOf(10, 200, 300, 500))).set(minTestsOk = 10)
+  }.set(minTestsOk = 10).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
 
   def e4 = {
     val list = (1 to 5000).toList

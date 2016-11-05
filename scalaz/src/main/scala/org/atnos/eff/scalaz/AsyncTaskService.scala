@@ -20,37 +20,35 @@ case class AsyncTaskService(esEval: Eval[ExecutorService]) extends AsyncService 
   implicit val es: ExecutorService = esEval.value
 
   def asyncNow[R :_async, A](a: A): Eff[R, A] =
-    send[Async, R, A](AsyncTaskNow[A](a))
+    send[Async, R, A](AsyncTask[A](Task.now(a)))
 
   def asyncFail[R :_async](t: Throwable): Eff[R, Unit] =
-    send[Async, R, Unit](AsyncTaskFailed(t))
+    send[Async, R, Unit](AsyncTask(Task.fail(t)))
 
   def asyncDelay[R :_async, A](a: =>A): Eff[R, A] =
-    send[Async, R, A](AsyncTaskDelayed(() => a))
+    send[Async, R, A](AsyncTask(Task.suspend(Task.delay(a))))
 
   def asyncFork[R :_async, A](a: =>A): Eff[R, A] =
-    fork(AsyncTaskDelayed(() => a))
+    fork(AsyncTask(Task.delay(a)))
 
   def fork[R :_async, A](a: =>Async[A]): Eff[R, A] =
     asyncDelay {
       a match {
-        case AsyncTask(es1, t) => create(Task.fork(t(es))(es1))
-        case _                => send(a)
+        case AsyncTask(t)          => create(Task.fork(t)(es))
+        case AsyncTaskFork(es1, t) => create(Task.fork(t(es))(es1))
       }
     }.flatten
 
   def create[R :_async, A](task: Task[A]): Eff[R, A] =
-    send[Async, R, A](AsyncTask(es, {_ => task}))
+    send[Async, R, A](AsyncTaskFork(es, { _ => task}))
 }
 
 trait AsyncTaskServiceInterpretation {
 
   def runAsyncTask[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     e.detachA(ApplicativeAsync) match {
-      case AsyncTaskNow(a)     => Task.now(a)
-      case AsyncTaskDelayed(a) => Either.catchNonFatal(a()).fold(Task.fail, Task.now)
-      case AsyncTaskFailed(t)  => Task.fail(t)
-      case AsyncTask(es, run)  => run(es)
+      case AsyncTask(t) => t
+      case AsyncTaskFork(es, run)  => run(es)
     }
 
   implicit class RunAsyncTaskOps[A](e: Eff[Fx.fx1[Async], A]) {
@@ -73,60 +71,42 @@ object AsyncTaskService extends AsyncTaskServiceInterpretation {
 
   def ApplicativeAsync: Applicative[Async] = new Applicative[Async] {
 
-    def pure[A](a: A) = AsyncTaskNow(a)
+    def pure[A](a: A) = AsyncTask(Task.now(a))
 
     def ap[A, B](ff: Async[A => B])(fa: Async[A]): Async[B] =
       fa match {
-        case AsyncTaskNow(a) =>
+        case AsyncTask(a) =>
           ff match {
-            case AsyncTaskNow(f)     => AsyncTaskNow(f(a))
-            case AsyncTaskFailed(t)  => AsyncTaskFailed(t)
-            case AsyncTaskDelayed(f) => AsyncTaskDelayed(() => f()(a))
-            case AsyncTask(esf, f)   => AsyncTask(esf, { implicit es => f(es).map(_(a))})
+            case AsyncTask(f)          => AsyncTask(TaskApplicative.ap(f)(a))
+            case AsyncTaskFork(esf, f) => AsyncTaskFork(esf, { es => TaskApplicative.ap(f(es))(a)})
           }
 
-        case AsyncTaskFailed(t) => AsyncTaskFailed(t)
-
-        case AsyncTaskDelayed(a) =>
+        case AsyncTaskFork(eca, a) =>
           ff match {
-            case AsyncTaskNow(f)     => AsyncTaskDelayed(() => f(a()))
-            case AsyncTaskFailed(t)  => AsyncTaskFailed(t)
-            case AsyncTaskDelayed(f) => AsyncTaskDelayed(() => f()(a()))
-            case AsyncTask(esf, f)   => AsyncTask(esf, { implicit es => f(es).map(_(a()))})
+            case AsyncTask(f)          => AsyncTaskFork(eca, { es => TaskApplicative.ap(f)(a(es))})
+            case AsyncTaskFork(esf, f) => AsyncTaskFork(esf, { es => TaskApplicative.ap(f(es))(a(es))})
           }
-
-        case AsyncTask(eca, a) =>
-          AsyncTask(eca, { implicit es =>
-            val app = TaskApplicative
-            ff match {
-              case AsyncTaskNow(f)     => a(es).map(f)
-              case AsyncTaskFailed(t)  => Task.fail(t)
-              case AsyncTaskDelayed(f) => a(es).map(x => f()(x))
-              case AsyncTask(esf, f)   => app.ap(f(esf))(a(es))
-            }
-          })
       }
 
     override def toString = "Applicative[AsyncTask]"
   }
 
   implicit def MonadAsync: Monad[Async] = new Monad[Async] {
-    def pure[A](a: A) = AsyncTaskNow(a)
+    def pure[A](a: A) = AsyncTask(Task.now(a))
 
     def flatMap[A, B](aa: Async[A])(af: A => Async[B]): Async[B] =
       aa match {
-        case AsyncTaskNow(a)     => af(a)
-        case AsyncTaskDelayed(a) => af(a())
-        case AsyncTaskFailed(t)  => AsyncTaskFailed(t)
+        case AsyncTask(t) => AsyncTask(t.flatMap(a => af(a) match {
+          case AsyncTask(s) => s
+          case AsyncTaskFork(es, s) => s(es)
+        }))
 
-        case AsyncTask(esa, fa) =>
-          AsyncTask(esa, { implicit es =>
+        case AsyncTaskFork(esa, fa) =>
+          AsyncTaskFork(esa, { implicit es =>
             fa(es).flatMap { a =>
               af(a) match {
-                case AsyncTaskNow(b)     => Task.now(b)
-                case AsyncTaskFailed(t)  => Task.fail(t)
-                case AsyncTaskDelayed(b) => try Task.now(b()) catch { case NonFatal(t) => Task.fail(t) }
-                case AsyncTask(esb, fb)  => fb(esb)
+                case AsyncTask(t)           => t
+                case AsyncTaskFork(esb, fb) => fb(esb)
               }
             }})
       }
@@ -150,23 +130,13 @@ object AsyncTaskService extends AsyncTaskServiceInterpretation {
 
 }
 
-case class AsyncTaskNow[A](a: A) extends Async[A] {
+case class AsyncTask[A](task: Task[A]) extends Async[A] {
   def attempt: Async[Throwable Either A] =
-    AsyncTaskNow(Right(a))
+    AsyncTask(task.attempt.map(_.fold(Either.left, Either.right)))
 }
 
-case class AsyncTaskFailed[A](t: Throwable) extends Async[A] {
+case class AsyncTaskFork[A](es: ExecutorService, run: ExecutorService => Task[A]) extends Async[A] {
   def attempt: Async[Throwable Either A] =
-    AsyncTaskNow(Left(t))
-}
-
-case class AsyncTaskDelayed[A](run: () => A) extends Async[A] {
-  def attempt: Async[Throwable Either A] =
-    AsyncTaskDelayed(() => Either.catchNonFatal(run()))
-}
-
-case class AsyncTask[A](es: ExecutorService, run: ExecutorService => Task[A]) extends Async[A] {
-  def attempt: Async[Throwable Either A] =
-    AsyncTask(es, { es => run(es).attempt.map(_.fold(Either.left, Either.right)) })
+    AsyncTaskFork(es, { es => run(es).attempt.map(_.fold(Either.left, Either.right)) })
 }
 
