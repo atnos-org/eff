@@ -54,7 +54,12 @@ object ChooseCreation extends ChooseCreation
 
 trait ChooseInterpretation {
   def runChoose[R, U, A, F[_] : Alternative](r: Eff[R, A])(implicit m: Member.Aux[Choose, R, U]): Eff[U, F[A]] = {
-    def lastRun(l: Last[R]): Last[U] = Last.eff(runChoose[R, U, Unit, F](l.run).as(()))
+    def lastRun(l: Last[R]): Last[U] =
+      l match {
+        case Last(None) => Last[U](None)
+        case Last(Some(last)) => Last.eff(runChoose[R, U, Unit, F](last()).as(()))
+      }
+
 
     r match {
       case Pure(a, last) =>

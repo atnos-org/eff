@@ -72,8 +72,8 @@ sealed trait Eff[R, A] {
 }
 
 case class Last[R](value: Option[() => Eff[R, Unit]]) {
-  def run: Eff[R, Unit] =
-    value.map(_()).getOrElse(pure[R, Unit](()))
+  def runNat[U](n: Eff[R, Unit] => Eff[U, Unit]) =
+    Last[U](value.map(v => () => n(v())))
 
   def <*(last: Last[R]): Last[R] =
     (value, last.value) match {
@@ -395,12 +395,16 @@ trait EffInterpretation {
   def detach[M[_] : Monad, A](eff: Eff[Fx1[M], A]): M[A] = {
     def go(e: Eff[Fx1[M], A]): M[A] = {
       e match {
-        case Pure(a, Last(Some(l))) => Monad[M].pure(a) <* detach(l())
+        case Pure(a, Last(Some(l))) => go(l().as(a))
         case Pure(a, Last(None))    => Monad[M].pure(a)
 
         case Impure(u, continuation, last) =>
           u match {
-            case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x))) <* detach(last.run)
+            case Union1(ta) =>
+              last match {
+                case Last(Some(l)) => Monad[M].flatMap(ta)(x => go(continuation(x).addLast(last)))
+                case Last(None)    => Monad[M].flatMap(ta)(x => go(continuation(x)))
+              }
           }
 
         case ap @ ImpureAp(u, continuation, last) =>
@@ -420,12 +424,21 @@ trait EffInterpretation {
         case Pure(a, Last(None))    => monad.pure(a)
 
         case Impure(u, continuation, last) =>
-          u match {
-            case Union1(ta) => monad.flatMap(ta)(x => go(continuation(x))) <* detachA(last.run)
+          last match {
+            case Last(Some(l)) =>
+              u match { case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x).addLast(last))) }
+            case Last(None) =>
+              u match { case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x))) }
           }
 
         case ap @ ImpureAp(unions, continuation, last) =>
-          applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).flatMap(x => go(continuation(x))) <* detachA(last.run)
+          last match {
+            case Last(Some(l)) =>
+              applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).flatMap(x => go(continuation(x).addLast(last)))
+
+            case Last(None) =>
+              applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).flatMap(x => go(continuation(x)))
+          }
       }
     }
     go(eff)
