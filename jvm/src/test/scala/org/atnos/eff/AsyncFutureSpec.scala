@@ -32,7 +32,7 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
       b <- asyncFork(20)
     } yield a + b
 
-    action[S].runOption.runAsyncFuture must beSome(30).awaitFor(5.seconds)
+    action[S].runOption.runAsyncFuture must beSome(30).await
   }
 
   def e2 = {
@@ -41,7 +41,7 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
       b <- asyncFork { boom; 20 }
     } yield a + b
 
-    action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).awaitFor(5.seconds)
+    action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).await
   }
 
   def e3 = prop { ls: List[Int] =>
