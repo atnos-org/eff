@@ -521,12 +521,21 @@ trait Interpret {
     }
   }
 
+  def augment[R, T[_], O[_], A](eff: Eff[R, A])(w: Augment[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[O, R], A] =  {
+    type U = Fx.prepend[O, R]
+    implicit val mw = MemberIn.MemberInAppendAnyL
+
+    translateInto(eff)(new Translate[T, U] {
+      def apply[X](tx: T[X]): Eff[U, X] = send[O, U, Unit](w(tx)) >> send[T, U, X](tx)
+    })
+  }
+
   def write[R, T[_], O, A](eff: Eff[R, A])(w: Write[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[Writer[O, ?], R], A] =  {
     type U = Fx.prepend[Writer[O, ?], R]
     implicit val mw = MemberIn.MemberInAppendAnyL
 
-    translateInto(eff)(new Translate[T, U] {
-      def apply[X](tx: T[X]) = WriterEffect.tell[U, O](w(tx)) >> send(tx)
+    augment[R, T, Writer[O, ?], A](eff)(new Augment[T, Writer[O, ?]]{
+      def apply[X](tx: T[X]) = Writer.tell[O](w(tx))
     })
   }
 
@@ -666,6 +675,10 @@ trait Translate[T[_], U] {
 trait SideEffect[T[_]] {
   def apply[X](tx: T[X]): X
   def applicative[X, Tr[_] : Traverse](ms: Tr[T[X]]): Tr[X]
+}
+
+trait Augment[T[_], O[_]] {
+  def apply[X](tx: T[X]): O[Unit]
 }
 
 trait Write[T[_], O] {

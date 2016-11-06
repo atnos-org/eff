@@ -28,6 +28,9 @@ trait eff {
 
     def write[T[_], O](w: Write[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[Writer[O, ?], R], A] =
       interpret.write(e)(w)
+
+    def augment[T[_], O[_]](w: Augment[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[O, R], A] =
+      interpret.augment(e)(w)
   }
 
   implicit class EffNoEffectOps[A](e: Eff[NoFx, A]) {
