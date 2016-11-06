@@ -5,78 +5,90 @@ import cats._
 import cats.data.Writer
 
 /**
- * Operations of Eff[R, A] values
- */
+  * Operations of Eff[R, A] values
+  */
 object eff extends eff
 
 trait eff {
+  implicit final def toEffOps[R, A](e: Eff[R, A]): EffOps[R, A] = new EffOps(e)
+  implicit final def toEffTranslateIntoOps[R, A](e: Eff[R, A]): EffTranslateIntoOps[R, A] = new EffTranslateIntoOps(e)
+  implicit final def toEffNoEffectOps[A](e: Eff[NoFx, A]): EffNoEffectOps[A] = new EffNoEffectOps(e)
+  implicit final def toEffSendOps[M[_], A](ma: M[A]): EffSendOps[M, A] = new EffSendOps(ma)
+  implicit final def toEffPureOps[A](a: A): EffPureOps[A] = new EffPureOps(a)
+  implicit final def toEffOneEffectOps[M[_], A](e: Eff[Fx1[M], A]): EffOneEffectOps[M, A] = new EffOneEffectOps(e)
+  implicit final def toEffOnePureValueOps[R, A](e: Eff[R, A]): EffOnePureValueOps[R, A] = new EffOnePureValueOps(e)
+  implicit final def toEffMonadicOps[R, M[_], A](e: Eff[R, M[A]]): EffMonadicOps[R, M, A] = new EffMonadicOps(e)
+  implicit final def toEffApplicativeOps[F[_], A](values: F[A]): EffApplicativeOps[F, A] = new EffApplicativeOps(values)
+  implicit final def toEffSequenceOps[F[_], R, A](values: F[Eff[R, A]]): EffSequenceOps[F, R, A] = new EffSequenceOps(values)
+  implicit final def toEffApplicativeSyntaxOps[R, A](a: Eff[R, A]): EffApplicativeSyntaxOps[R, A] = new EffApplicativeSyntaxOps(a)
+}
 
-  implicit class EffOps[R, A](e: Eff[R, A]) {
-    def into[U](implicit f: IntoPoly[R, U]): Eff[U, A] =
-      Eff.effInto(e)(f)
+final class EffOps[R, A](val e: Eff[R, A]) extends AnyVal {
+  def into[U](implicit f: IntoPoly[R, U]): Eff[U, A] =
+    Eff.effInto(e)(f)
 
-    def transform[BR, U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, BR, U]): Eff[BR, A] =
-      interpret.transform(e, t)(m, n)
+  def transform[BR, U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, BR, U]): Eff[BR, A] =
+    Interpret.transform(e, t)(m, n)
 
-    def translate[M[_], U](t: Translate[M, U])(implicit m: Member.Aux[M, R, U]): Eff[U, A] =
-      interpret.translate(e)(t)(m)
-  }
+  def translate[M[_], U](t: Translate[M, U])(implicit m: Member.Aux[M, R, U]): Eff[U, A] =
+    Interpret.translate(e)(t)(m)
+}
 
-  implicit class EffTranslateIntoOps[R, A](e: Eff[R, A]) {
-    def translateInto[T[_], U](t: Translate[T, U])(implicit m: MemberInOut[T, R], into: IntoPoly[R, U]): Eff[U, A] =
-      interpret.translateInto(e)(t)(m, into)
+final class EffTranslateIntoOps[R, A](val e: Eff[R, A]) extends AnyVal {
+  def translateInto[T[_], U](t: Translate[T, U])(implicit m: MemberInOut[T, R], into: IntoPoly[R, U]): Eff[U, A] =
+    interpret.translateInto(e)(t)(m, into)
 
-    def write[T[_], O](w: Write[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[Writer[O, ?], R], A] =
-      interpret.write(e)(w)
+  def write[T[_], O](w: Write[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[Writer[O, ?], R], A] =
+    interpret.write(e)(w)
 
-    def augment[T[_], O[_]](w: Augment[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[O, R], A] =
-      interpret.augment(e)(w)
-  }
+  def augment[T[_], O[_]](w: Augment[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[O, R], A] =
+    interpret.augment(e)(w)
+}
 
-  implicit class EffNoEffectOps[A](e: Eff[NoFx, A]) {
-    def run: A =
-      Eff.run(e)
-  }
+final class EffNoEffectOps[A](val e: Eff[NoFx, A]) extends AnyVal {
+  def run: A =
+    Eff.run(e)
+}
 
-  implicit class EffSend[M[_], A](ma: M[A]) {
-    def send[R](implicit m: M |= R): Eff[R, A] = Eff.send(ma)
-  }
+final class EffSendOps[M[_], A](val ma: M[A]) extends AnyVal {
+  def send[R](implicit m: M |= R): Eff[R, A] = Eff.send(ma)
+}
 
-  implicit class EffPureOps[A](a: A) {
-    def pureEff[R]: Eff[R, A] =
-      Eff.pure(a)
-  }
+final class EffPureOps[A](val a: A) extends AnyVal {
+  def pureEff[R]: Eff[R, A] =
+    Eff.pure(a)
+}
 
-  implicit class EffOneEffectOps[M[_] : Monad, A](e: Eff[Fx1[M], A]) {
-    def detach: M[A] =
-      Eff.detach(e)
+final class EffOneEffectOps[M[_], A](val e: Eff[Fx1[M], A]) extends AnyVal {
+  def detach(implicit M: Monad[M]): M[A] =
+    Eff.detach(e)
 
-    def detachA(applicative: Applicative[M]): M[A] =
-      Eff.detachA(e)(implicitly[Monad[M]], applicative)
-  }
+  def detachA(applicative: Applicative[M])(implicit monad: Monad[M]): M[A] =
+    Eff.detachA(e)(monad, applicative)
+}
 
-  implicit class EffOnePureValueOps[R, A](e: Eff[R, A]) {
-    def runPure: Option[A] =
-      Eff.runPure(e)
-  }
+final class EffOnePureValueOps[R, A](val e: Eff[R, A]) extends AnyVal {
+  def runPure: Option[A] =
+    Eff.runPure(e)
+}
 
-  implicit class EffMonadicOps[R, M[_], A](e: Eff[R, M[A]]) {
-    def collapse(implicit m: M |= R): Eff[R, A] =
-      Eff.collapse[R, M, A](e)
-  }
+final class EffMonadicOps[R, M[_], A](val e: Eff[R, M[A]]) extends AnyVal {
+  def collapse(implicit m: M |= R): Eff[R, A] =
+    Eff.collapse[R, M, A](e)
+}
 
-  implicit class EffApplicativeOps[F[_] : Traverse, A](values: F[A]) {
-    def traverseA[R, B](f: A => Eff[R, B]): Eff[R, F[B]] =
-      Eff.traverseA(values)(f)
-  }
+final class EffApplicativeOps[F[_], A](val values: F[A]) extends AnyVal {
+  def traverseA[R, B](f: A => Eff[R, B])(implicit F: Traverse[F]): Eff[R, F[B]] =
+    Eff.traverseA(values)(f)
+}
 
-  implicit class EffSequenceOps[F[_] : Traverse, R, A](values: F[Eff[R, A]]) {
-    def sequenceA: Eff[R, F[A]] =
-      Eff.sequenceA(values)
-  }
+final class EffSequenceOps[F[_], R, A](val values: F[Eff[R, A]]) extends AnyVal {
+  def sequenceA(implicit F: Traverse[F]): Eff[R, F[A]] =
+    Eff.sequenceA(values)
+}
 
-  implicit class EffApplicativeSyntaxOps[R, A](a: Eff[R, A]) {
-    def tuple2[B](b: Eff[R, B]): Eff[R, (A, B)] =
-      Eff.EffApplicative[R].tuple2(a, b)
-  }
+final class EffApplicativeSyntaxOps[R, A](val a: Eff[R, A]) extends AnyVal {
+  def tuple2[B](b: Eff[R, B]): Eff[R, (A, B)] =
+    Eff.EffApplicative[R].tuple2(a, b)
+
 }

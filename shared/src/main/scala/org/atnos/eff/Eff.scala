@@ -246,7 +246,7 @@ trait EffImplicits {
   /**
    * Monad implementation for the Eff[R, ?] type
    */
-  implicit def EffMonad[R]: Monad[Eff[R, ?]] = new Monad[Eff[R, ?]] {
+  implicit final def EffMonad[R]: Monad[Eff[R, ?]] = new Monad[Eff[R, ?]] {
     def pure[A](a: A): Eff[R, A] =
       Pure(a)
 

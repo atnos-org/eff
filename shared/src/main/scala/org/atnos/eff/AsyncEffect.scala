@@ -60,14 +60,17 @@ trait AsyncInterpretation {
     }
   }
 
-  implicit class AttemptOps[R, A](e: Eff[R, A])(implicit async: Async /= R){
-    def asyncAttempt: Eff[R, Throwable Either A] =
-      AsyncInterpretation.asyncAttempt(e)
-  }
+  implicit final def toAttemptOps[R, A](e: Eff[R, A]): AttemptOps[R, A] = new AttemptOps[R, A](e)
+
+}
+
+final class AttemptOps[R, A](val e: Eff[R, A]) extends AnyVal {
+  def asyncAttempt(implicit async: Async /= R): Eff[R, Throwable Either A] =
+    AsyncInterpretation.asyncAttempt(e)
 }
 
 object AsyncInterpretation extends AsyncInterpretation
 
-trait Async[+A] {
+trait Async[+A] extends Any {
   def attempt: Async[Throwable Either A]
 }

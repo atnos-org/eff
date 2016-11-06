@@ -161,7 +161,7 @@ trait EitherInterpretation {
 
 trait EitherImplicits {
 
-  implicit def errorTranslate[R, E1, E2](implicit m: MemberIn[E1 Either ?, R], map: E2 => E1): MemberIn[E2 Either ?, R] =
+  implicit final def errorTranslate[R, E1, E2](implicit m: MemberIn[E1 Either ?, R], map: E2 => E1): MemberIn[E2 Either ?, R] =
     m.transform(errorTranslateNat(map))
 
   def errorTranslateNat[E1, E2](map: E2 => E1): (E2 Either ?) ~> (E1 Either ?) = new ((E2 Either ?) ~> (E1 Either ?)) {

@@ -100,7 +100,7 @@ object AsyncTaskService extends AsyncTaskServiceInterpretation {
 
 }
 
-case class AsyncTask[A](task: Task[A]) extends Async[A] {
+case class AsyncTask[A](task: Task[A]) extends AnyVal with Async[A] {
   def attempt: Async[Throwable Either A] =
     AsyncTask(task.materialize.map { case Success(a) => Right(a); case Failure(t) => Left(t) })
 }

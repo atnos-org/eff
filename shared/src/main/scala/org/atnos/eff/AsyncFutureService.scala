@@ -95,14 +95,15 @@ trait AsyncFutureServiceInterpretation {
       case AsyncFuture(ec, run)  => run(ec)
     }
 
-  implicit class RunAsyncFutureOps[A](e: Eff[Fx.fx1[Async], A]) {
-    def runAsyncFuture: Future[A] =
-      AsyncFutureServiceInterpretation.runAsyncFuture(e)
+  implicit final def toRunAsyncFutureOps[A](e: Eff[Fx.fx1[Async], A]): RunAsyncFutureOps[A] =
+    new RunAsyncFutureOps[A](e)
+}
 
-    def runFuture: Future[A] =
-      AsyncFutureServiceInterpretation.runFuture(e)
-  }
-
+final class RunAsyncFutureOps[A](val e: Eff[Fx.fx1[Async], A]) extends AnyVal {
+  def runAsyncFuture: Future[A] =
+    AsyncFutureServiceInterpretation.runAsyncFuture(e)
+  def runFuture: Future[A] =
+    AsyncFutureServiceInterpretation.runFuture(e)
 }
 
 object AsyncFutureServiceInterpretation extends AsyncFutureServiceInterpretation
@@ -159,7 +160,7 @@ object AsyncFutureService {
     override def toString = "Applicative[AsyncFuture]"
   }
 
-  implicit def MonadAsync: Monad[Async] = new Monad[Async] {
+  implicit final def MonadAsync: Monad[Async] = new Monad[Async] {
     def pure[A](a: A) = AsyncFutureNow(a)
 
     def flatMap[A, B](aa: Async[A])(af: A => Async[B]): Async[B] =
@@ -200,17 +201,17 @@ object AsyncFutureService {
 
 }
 
-case class AsyncFutureNow[A](a: A) extends Async[A] {
+case class AsyncFutureNow[A](a: A) extends AnyVal with Async[A] {
   def attempt: Async[Throwable Either A] =
     AsyncFutureNow(Right(a))
 }
 
-case class AsyncFutureFailed[A](t: Throwable) extends Async[A] {
+case class AsyncFutureFailed[A](t: Throwable) extends AnyVal with Async[A] {
   def attempt: Async[Throwable Either A] =
     AsyncFutureNow(Left(t))
 }
 
-case class AsyncFutureDelayed[A](run: () => A) extends Async[A] {
+case class AsyncFutureDelayed[A](run: () => A) extends AnyVal with Async[A] {
   def attempt: Async[Throwable Either A] =
     AsyncFutureDelayed(() => Either.catchNonFatal(run()))
 }
