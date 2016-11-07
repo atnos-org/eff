@@ -66,6 +66,7 @@ class AsyncTaskServiceSpec(implicit ee: ExecutionEnv) extends Specification with
     val actions = Eff.traverseA(ls)(i => action[S](i))
 
     eventually(retries = 5, sleep = 1.second) {
+      messages.clear
       actions.runOption.runAsyncTask.unsafePerformSync
 
       "the messages are ordered" ==> {

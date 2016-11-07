@@ -61,6 +61,7 @@ class AsyncTaskServiceSpec(implicit ee: ExecutionEnv) extends Specification with
     val run = Eff.traverseA(ls)(i => action[S](i))
 
     eventually(retries = 5, sleep = 1.second) {
+      messages.clear
       Await.result(run.runOption.runAsyncTask.runAsync, 3.seconds)
 
       "the messages are ordered" ==> {
