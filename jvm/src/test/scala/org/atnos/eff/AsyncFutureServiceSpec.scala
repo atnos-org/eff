@@ -36,7 +36,7 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
       b <- asyncFork(20)
     } yield a + b
 
-    action[S].runOption.runAsyncFuture must beSome(30).await
+    action[S].runOption.runAsyncFuture must beSome(30).await(retries = 5, timeout = 5.seconds)
   }
 
   def e2 = {
@@ -45,7 +45,7 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
       b <- asyncFork { boom; 20 }
     } yield a + b
 
-    action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).await
+    action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
   }
 
   def e3 = prop { ls: List[Int] =>
@@ -59,12 +59,13 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
       }
 
     val run = Eff.traverseA(ls)(i => action[S](i))
-    Await.result(run.runOption.runAsyncFuture, 5 seconds)
+    eventually(retries = 5, sleep = 1.second) {
+      Await.result(run.runOption.runAsyncFuture, 5 seconds)
 
-    "the messages are ordered" ==> {
-      messages.toList.sorted ==== ls.sorted
+      "the messages are ordered" ==> {
+        messages.toList.sorted ==== ls.sorted
+      }
     }
-
   }.set(minTestsOk = 10).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
 
   def e4 = {
