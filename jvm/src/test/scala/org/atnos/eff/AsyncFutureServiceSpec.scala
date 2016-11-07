@@ -83,7 +83,9 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
       if (i == 0) Future.successful(Eff.pure(1))
       else        Future.successful(suspend(loop(i - 1)).map(_ + 1))
 
-    Await.result(suspend(loop(100000)).runAsyncFuture, 3.seconds) must not(throwAn[Exception])
+    eventually(retries = 5, sleep = 1.second) {
+      Await.result(suspend(loop(100000)).runAsyncFuture, 10.seconds) must not(throwAn[Exception])
+    }
   }
 
   /**
