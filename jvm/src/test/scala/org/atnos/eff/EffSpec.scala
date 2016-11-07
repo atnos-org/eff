@@ -287,6 +287,15 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
         }
       }
 
+    val wAugment =
+      new Augment[Stored, Writer[String, ?]] {
+        def apply[X](tx: Stored[X]) = tx match {
+          case Get(k) => Writer.tell(k)
+          case Update(k, _) => Writer.tell(k)
+          case Remove(k) => Writer.tell(k)
+        }
+      }
+
     type R1 = Fx.fx1[Stored]
     type R2 = Fx.fx2[WriterString, Stored]
 
@@ -295,7 +304,8 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       send[Stored, R1, Unit](Get("b"))       >>
       send[Stored, R1, Unit](Remove("c"))
 
-    runStored(action.write(w)).runWriterLog.run ==== List("a", "b", "c")
+    (runStored(action.write(w)).runWriterLog.run ==== List("a", "b", "c")) &&
+      (runStored(action.augment(wAugment)).runWriterLog.run ==== List("a", "b", "c"))
   }
 
   def optimiseRequests = {
