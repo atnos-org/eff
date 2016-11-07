@@ -3,11 +3,11 @@ package monix
 
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-
 import cats._
 import AsyncTaskService._
 import _root_.monix.eval.Task
-import _root_.monix.execution.Scheduler
+
+import scala.concurrent.duration.FiniteDuration
 import scala.util._
 
 case class AsyncTaskService() extends AsyncService {
@@ -18,17 +18,23 @@ case class AsyncTaskService() extends AsyncService {
   def asyncFail[R :_async](t: Throwable): Eff[R, Unit] =
     create[R, Unit](Task.raiseError(t))
 
-  def asyncDelay[R :_async, A](a: =>A): Eff[R, A] =
-    create[R, A](Task.delay(a))
+  def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    create[R, A](Task.delay(a), timeout)
 
-  def asyncFork[R :_async, A](a: =>A): Eff[R, A] =
-    fork[R, A](AsyncTask(Task.delay(a)))
+  def asyncFork[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    fork[R, A](AsyncTask(Task.delay(a)), timeout)
 
-  def fork[R :_async, A](a: =>Async[A]): Eff[R, A] =
-    asyncDelay { a match { case AsyncTask(t) => create(Task.fork(t)) } }.flatten
+  def fork[R :_async, A](a: =>Async[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    asyncDelay { a match { case AsyncTask(t) => create(Task.fork(t), timeout) } }.flatten
 
-  def create[R :_async, A](t: Task[A]): Eff[R, A] =
-    send[Async, R, A](AsyncTask(t))
+  def suspend[R :_async, A](task: =>Task[Eff[R, A]]): Eff[R, A] =
+    send[Async, R, Eff[R, A]](AsyncTask(Task.suspend(task))).flatten
+
+  def create[R :_async, A](t: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    timeout match {
+      case Some(to) => send[Async, R, A](AsyncTask(t.timeout(to)))
+      case None     => send[Async, R, A](AsyncTask(t))
+    }
 }
 
 trait AsyncTaskServiceInterpretation {
@@ -38,9 +44,17 @@ trait AsyncTaskServiceInterpretation {
       case AsyncTask(t) => t
     }
 
+  def runTask[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
+    e.detach match {
+      case AsyncTask(t) => t
+    }
+
   implicit class RunAsyncTaskOps[A](e: Eff[Fx.fx1[Async], A]) {
     def runAsyncTask: Task[A] =
       AsyncTaskService.runAsyncTask(e)
+
+    def runTask: Task[A] =
+      AsyncTaskService.runTask(e)
   }
 
 }

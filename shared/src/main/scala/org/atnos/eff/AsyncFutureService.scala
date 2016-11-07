@@ -1,17 +1,27 @@
 package org.atnos.eff
 
+import java.util.concurrent.{ExecutorService, ScheduledExecutorService, TimeUnit}
+
 import cats._
 import cats.implicits._
 import org.atnos.eff.AsyncFutureService._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 
-case class AsyncFutureService(ecEval: Eval[ExecutionContext]) extends AsyncService {
+case class AsyncFutureService(executors: ExecutorServices) extends AsyncService {
 
-  implicit val ec: ExecutionContext = ecEval.value
+  implicit lazy val executorService: ExecutorService =
+    executors.executorService
+
+  implicit lazy val scheduledExecutorService: ScheduledExecutorService =
+    executors.scheduledExecutorService
+
+  implicit lazy val executionContext: ExecutionContext =
+    executors.executionContext
 
   def asyncNow[R :_async, A](a: A): Eff[R, A] =
     send[Async, R, A](AsyncFutureNow[A](a))
@@ -19,14 +29,51 @@ case class AsyncFutureService(ecEval: Eval[ExecutionContext]) extends AsyncServi
   def asyncFail[R :_async](t: Throwable): Eff[R, Unit] =
     send[Async, R, Unit](AsyncFutureFailed(t))
 
-  def asyncDelay[R :_async, A](a: =>A): Eff[R, A] =
-    send[Async, R, A](AsyncFutureDelayed(() => a))
+  def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    send[Async, R, Eff[R, A]](AsyncFutureDelayed(() => {
+      timeout match {
+        case None =>
+          send[Async, R, A](AsyncFutureDelayed(() => a))
 
-  def asyncFork[R :_async, A](a: =>A): Eff[R, A] =
-    fork(AsyncFuture(ec, {ec1 => Future(a)(ec1)}))
+        case Some(to) =>
+          send[Async, R, A](AsyncFutureDelayed(() => Await.result(Future(a), to)))
+      }
+    })).flatten
 
-  def fork[R :_async, A](a: =>Async[A]): Eff[R, A] =
-    asyncDelay(send(a)).flatten
+  def suspend[R :_async, A](future: =>Future[Eff[R, A]]): Eff[R, A] =
+    send[Async, R, Eff[R, A]](AsyncFuture(executionContext, { _ => future })).flatten
+
+  def asyncFork[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    fork(AsyncFuture(executionContext, {ec1 => Future(a)(ec1)}), timeout)
+
+  def fork[R :_async, A](a: =>Async[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    timeout match {
+      case None => asyncDelay(send(a)).flatten
+      case Some(to) =>
+        a match {
+          case AsyncFutureNow(r)     => AsyncFutureNow(r)
+          case AsyncFutureFailed(t)  => AsyncFutureFailed(t)
+          case AsyncFutureDelayed(r) => AsyncFutureDelayed(r)
+          case AsyncFuture(ec, f)    => AsyncFuture(ec, { ec1 => withTimeout(f(ec1), to) })
+        }
+        asyncDelay(send(a)).flatten
+    }
+
+  def withTimeout[A](f: Future[A], timeout: FiniteDuration): Future[A] = {
+    if (timeout.isFinite && timeout.length < 1) {
+      try f catch { case NonFatal(t) => Future.failed(t) }
+    } else {
+      val p = Promise[A]()
+      val r = new Runnable {
+        def run: Unit = {
+          p completeWith { try f catch { case NonFatal(t) => Future.failed(t) } }
+          ()
+        }
+      }
+      scheduledExecutorService.schedule(r, timeout.toMillis, TimeUnit.MILLISECONDS)
+      p.future
+    }
+  }
 
 }
 
@@ -40,9 +87,20 @@ trait AsyncFutureServiceInterpretation {
       case AsyncFuture(ec, run)  => run(ec)
     }
 
+  def runFuture[A](e: Eff[Fx.fx1[Async], A]): Future[A] =
+    e.detach match {
+      case AsyncFutureNow(a)     => Future.successful(a)
+      case AsyncFutureDelayed(a) => Either.catchNonFatal(a()).fold(Future.failed, Future.successful)
+      case AsyncFutureFailed(t)  => Future.failed(t)
+      case AsyncFuture(ec, run)  => run(ec)
+    }
+
   implicit class RunAsyncFutureOps[A](e: Eff[Fx.fx1[Async], A]) {
     def runAsyncFuture: Future[A] =
       AsyncFutureServiceInterpretation.runAsyncFuture(e)
+
+    def runFuture: Future[A] =
+      AsyncFutureServiceInterpretation.runFuture(e)
   }
 
 }
@@ -56,7 +114,11 @@ object AsyncFutureService {
 
   /** create an AsyncFutureService but do not evaluate the execution context yet */
   def fromExecutionContext(ec: =>ExecutionContext): AsyncFutureService =
-    AsyncFutureService(Eval.later(ec))
+    fromExecutionEnv(ExecutorServices.fromExecutionContext(ec))
+
+  /** create an AsyncFutureService but do not evaluate the execution context yet */
+  def fromExecutionEnv(ee: ExecutorServices): AsyncFutureService =
+    AsyncFutureService(ee)
 
   def ApplicativeAsync: Applicative[Async] = new Applicative[Async] {
 

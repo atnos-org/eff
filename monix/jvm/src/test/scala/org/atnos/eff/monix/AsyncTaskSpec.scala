@@ -11,6 +11,7 @@ import org.specs2.concurrent.ExecutionEnv
 
 import scala.collection.mutable.ListBuffer
 import _root_.monix.execution.Scheduler.Implicits.global
+import _root_.monix.eval.Task
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -20,6 +21,7 @@ class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaC
  Async effects can be attempted                             $e2
  Async effects can be executed concurrently                 $e3
  Async effects are stacksafe                                $e4
+ Async effects can trampoline a Task                        $e5
 
 """
 
@@ -72,12 +74,21 @@ class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaC
     action.runOption.runAsyncTask.runAsync must beSome(list.map(_.toString)).await
   }
 
+  def e5 = {
+    type R = Fx.fx1[Async]
+
+    def loop(i: Int): Task[Eff[R, Int]] =
+      if (i == 0) Task.now(Eff.pure(1))
+      else Task.now(suspend(loop(i - 1)).map(_ + 1))
+
+    Await.result(suspend(loop(100000)).runAsyncTask.runAsync, 3 seconds) must not(throwAn[Exception])
+  }
+
+  /**
+   * HELPERS
+   */
   def boom: Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
-
-  def isSorted[T : Numeric](ls: List[T]): Boolean =
-    ls.sorted == ls
-
 
 }
 

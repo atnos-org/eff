@@ -34,7 +34,7 @@ trait EvalCreation extends EvalTypes {
   def delay[R :_eval, A](a: => A): Eff[R, A] =
     send(cats.Eval.later(a))
 
-  def defer[R :_eval, A](eff: => Eval[Eff[R, A]]): Eff[R, A] = {
+  def defer[R :_eval, A](eff: =>Eval[Eff[R, A]]): Eff[R, A] = {
     send(cats.Eval.defer(eff)).flatten
   }
 }

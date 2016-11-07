@@ -1,9 +1,8 @@
 package org.atnos.eff
 package scalaz
 
-import java.util.concurrent.ExecutorService
+import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
 
-import org.atnos.eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
@@ -12,12 +11,17 @@ import _root_.scalaz.Nondeterminism
 import cats._
 import cats.implicits._
 
-import scala.util.control.NonFatal
 import AsyncTaskService._
 
-case class AsyncTaskService(esEval: Eval[ExecutorService]) extends AsyncService {
+import scala.concurrent.duration.FiniteDuration
 
-  implicit val es: ExecutorService = esEval.value
+case class AsyncTaskService(executors: ExecutorServices) extends AsyncService {
+
+  implicit val executorService: ExecutorService =
+    executors.executorService
+
+  implicit val scheduledExecutorService: ScheduledExecutorService =
+    executors.scheduledExecutorService
 
   def asyncNow[R :_async, A](a: A): Eff[R, A] =
     send[Async, R, A](AsyncTask[A](Task.now(a)))
@@ -25,22 +29,37 @@ case class AsyncTaskService(esEval: Eval[ExecutorService]) extends AsyncService 
   def asyncFail[R :_async](t: Throwable): Eff[R, Unit] =
     send[Async, R, Unit](AsyncTask(Task.fail(t)))
 
-  def asyncDelay[R :_async, A](a: =>A): Eff[R, A] =
-    send[Async, R, A](AsyncTask(Task.suspend(Task.delay(a))))
+  def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    timeout match {
+      case Some(to) =>
+        send[Async, R, A](AsyncTask(Task.suspend(Task.delay(a)).timed(to)))
 
-  def asyncFork[R :_async, A](a: =>A): Eff[R, A] =
-    fork(AsyncTask(Task.delay(a)))
+      case None =>
+        send[Async, R, A](AsyncTask(Task.suspend(Task.delay(a))))
+    }
 
-  def fork[R :_async, A](a: =>Async[A]): Eff[R, A] =
+  def asyncFork[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    fork(AsyncTask(Task.delay(a)), timeout)
+
+  def fork[R :_async, A](a: =>Async[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     asyncDelay {
       a match {
-        case AsyncTask(t)          => create(Task.fork(t)(es))
-        case AsyncTaskFork(es1, t) => create(Task.fork(t(es))(es1))
+        case AsyncTask(t)          => create(Task.fork(t)(executorService), timeout)
+        case AsyncTaskFork(es1, t) => create(Task.fork(t(executorService))(es1), timeout)
       }
     }.flatten
 
-  def create[R :_async, A](task: Task[A]): Eff[R, A] =
-    send[Async, R, A](AsyncTaskFork(es, { _ => task}))
+  def suspend[R :_async, A](task: =>Task[Eff[R, A]]): Eff[R, A] =
+    send[Async, R, Eff[R, A]](AsyncTask(Task.suspend(task))).flatten
+
+  def create[R :_async, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    timeout match {
+      case Some(to) =>
+        send[Async, R, A](AsyncTaskFork(executorService, { _ => task.timed(to) }))
+
+      case None =>
+        send[Async, R, A](AsyncTaskFork(executorService, { _ => task }))
+    }
 }
 
 trait AsyncTaskServiceInterpretation {
@@ -51,9 +70,18 @@ trait AsyncTaskServiceInterpretation {
       case AsyncTaskFork(es, run)  => run(es)
     }
 
+  def runTask[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
+    e.detach match {
+      case AsyncTask(t) => t
+      case AsyncTaskFork(es, run)  => run(es)
+    }
+
   implicit class RunAsyncTaskOps[A](e: Eff[Fx.fx1[Async], A]) {
     def runAsyncTask: Task[A] =
       AsyncTaskService.runAsyncTask(e)
+
+    def runTask: Task[A] =
+      AsyncTaskService.runTask(e)
   }
 
 }
@@ -62,12 +90,12 @@ object AsyncTaskServiceInterpretation extends AsyncTaskServiceInterpretation
 
 object AsyncTaskService extends AsyncTaskServiceInterpretation {
 
-  def create(implicit es: ExecutorService): AsyncTaskService =
-    fromExecutorService(es)
+  def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTaskService =
+    fromExecutorServices(es, s)
 
   /** create an AsyncTaskervice but do not evaluate the executor service yet */
-  def fromExecutorService(es: =>ExecutorService): AsyncTaskService =
-    AsyncTaskService(Eval.later(es))
+  def fromExecutorServices(es: =>ExecutorService, s: =>ScheduledExecutorService): AsyncTaskService =
+    AsyncTaskService(ExecutorServices.fromExecutorServices(es, s))
 
   def ApplicativeAsync: Applicative[Async] = new Applicative[Async] {
 

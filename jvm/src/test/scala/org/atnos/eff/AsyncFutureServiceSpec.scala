@@ -12,18 +12,22 @@ import scala.concurrent._
 import duration._
 import org.scalacheck._
 
-class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
+class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
 
  Async effects can be implemented with an AsyncFuture service $e1
  Async effects can be attempted                               $e2
  Async effects can be executed concurrently                   $e3
  Async effects are stacksafe                                  $e4
+ Async effects can trampoline a Task                          $e5
 
 """
 
   type S = Fx.fx2[Async, Option]
-  
-  lazy val asyncService = AsyncFutureService(Eval.now(ee.executionContext))
+
+  lazy val executorServices: ExecutorServices =
+    ExecutorServices.fromExecutionContext(ee.executionContext)
+
+  lazy val asyncService = AsyncFutureService(executorServices)
   import asyncService._
 
   def e1 = {
@@ -70,6 +74,19 @@ class AsyncFutureSpec(implicit ee: ExecutionEnv) extends Specification with Scal
     action.runOption.runAsyncFuture must beSome(list.map(_.toString)).await
   }
 
+  def e5 = {
+    type R = Fx.fx1[Async]
+
+    def loop(i: Int): Future[Eff[R, Int]] =
+      if (i == 0) Future.successful(Eff.pure(1))
+      else        Future.successful(suspend(loop(i - 1)).map(_ + 1))
+
+    Await.result(suspend(loop(100000)).runAsyncFuture, 3.seconds) must not(throwAn[Exception])
+  }
+
+  /**
+   * HELPERS
+   */
 
   def boom: Unit = throw boomException
   val boomException: Throwable = new Exception("boom")

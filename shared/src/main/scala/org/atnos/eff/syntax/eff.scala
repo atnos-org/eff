@@ -16,10 +16,10 @@ trait eff {
       Eff.effInto(e)(f)
 
     def transform[BR, U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, BR, U]): Eff[BR, A] =
-      Interpret.transform(e, t)(m, n)
+      interpret.transform(e, t)(m, n)
 
     def translate[M[_], U](t: Translate[M, U])(implicit m: Member.Aux[M, R, U]): Eff[U, A] =
-      Interpret.translate(e)(t)(m)
+      interpret.translate(e)(t)(m)
   }
 
   implicit class EffTranslateIntoOps[R, A](e: Eff[R, A]) {

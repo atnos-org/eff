@@ -1,7 +1,6 @@
 package org.atnos.eff
 package scalaz
 
-import cats.Eval
 import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
@@ -11,7 +10,8 @@ import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent._
+import _root_.scalaz.concurrent._
+import scala.concurrent._, duration._
 import org.scalacheck._
 import org.specs2.matcher.TaskMatchers._
 
@@ -21,12 +21,13 @@ class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaC
  Async effects can be attempted                             $e2
  Async effects can be executed concurrently                 $e3
  Async effects are stacksafe                                $e4
+ Async effects can trampoline a Task                        $e5
 
 """
 
   type S = Fx.fx2[Async, Option]
 
-  lazy val asyncService = AsyncTaskService.create
+  lazy val asyncService = AsyncTaskService.create(ee.executorService, ee.scheduledExecutorService)
   import asyncService._
 
   def e1 = {
@@ -74,6 +75,19 @@ class AsyncTaskSpec(implicit ee: ExecutionEnv) extends Specification with ScalaC
     action.runOption.runAsyncTask must returnValue(beSome(list.map(_.toString)))
   }
 
+  def e5 = {
+    type R = Fx.fx1[Async]
+
+    def loop(i: Int): Task[Eff[R, Int]] =
+      if (i == 0) Task.now(Eff.pure(1))
+      else        Task.now(suspend(loop(i - 1)).map(_ + 1))
+
+    suspend(loop(100000)).runTask must returnBefore(3.seconds)
+  }
+
+  /**
+   * HELPERS
+   */
   def boom: Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
 
