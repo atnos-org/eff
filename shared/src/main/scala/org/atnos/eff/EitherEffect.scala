@@ -97,7 +97,7 @@ trait EitherInterpretation {
   }
 
   /** catch and handle a possible left value */
-  def catchLeft[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) <= R): Eff[R, A] = {
+  def catchLeft[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) /= R): Eff[R, A] = {
     val recurse = new Recurse[(E Either ?), R, A] {
       def apply[X](m: E Either X) =
         m match {
@@ -113,7 +113,7 @@ trait EitherInterpretation {
   }
 
   /** catch and handle a possible left value. The value is the combination of all failures in case of an applicative */
-  def catchLeftCombine[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) <= R, s: Semigroup[E]): Eff[R, A] = {
+  def catchLeftCombine[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) /= R, s: Semigroup[E]): Eff[R, A] = {
     val recurse = new Recurse[(E Either ?), R, A] {
       def apply[X](m: E Either X) =
         m match {

@@ -15,7 +15,7 @@ trait either {
     def runEitherCombine[E, U](implicit m: Member.Aux[(E Either ?), R, U], s: Semigroup[E]): Eff[U, E Either A] =
       EitherInterpretation.runEitherCombine(e)(m, s)
 
-    def catchLeft[E](handle: E => Eff[R, A])(implicit member: Member[(E Either ?), R]): Eff[R, A] =
+    def catchLeft[E](handle: E => Eff[R, A])(implicit member: (E Either ?) /= R): Eff[R, A] =
       EitherInterpretation.catchLeft(e)(handle)(member)
 
     def catchLeftCombine[E](handle: E => Eff[R, A])(implicit member: Member[(E Either ?), R], s: Semigroup[E]): Eff[R, A] =
