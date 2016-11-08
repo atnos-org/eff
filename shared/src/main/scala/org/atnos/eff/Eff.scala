@@ -375,57 +375,50 @@ trait EffInterpretation {
   /**
    * peel-off the only present effect
    */
-  def detach[M[_] : Monad, A](eff: Eff[Fx1[M], A]): M[A] = {
-    def go(e: Eff[Fx1[M], A]): M[A] = {
-      e match {
-        case Pure(a, Last(Some(l))) => go(l().as(a))
-        case Pure(a, Last(None))    => Monad[M].pure(a)
+  def detach[M[_] : Monad, A](eff: Eff[Fx1[M], A]): M[A] =
+    Monad[M].tailRecM[Eff[Fx1[M], A], A](eff) {
+      case Pure(a, Last(Some(l))) => Monad[M].pure(Left(l().as(a)))
+      case Pure(a, Last(None))    => Monad[M].pure(Right(a))
 
-        case Impure(u, continuation, last) =>
-          u match {
-            case Union1(ta) =>
-              last match {
-                case Last(Some(l)) => Monad[M].flatMap(ta)(x => go(continuation(x).addLast(last)))
-                case Last(None)    => Monad[M].flatMap(ta)(x => go(continuation(x)))
-              }
-          }
+      case Impure(u, continuation, last) =>
+        u match {
+          case Union1(ta) =>
+            last match {
+              case Last(Some(l)) => ta.map(x => Left(continuation(x).addLast(last)))
+              case Last(None)    => ta.map(x => Left(continuation(x)))
+            }
+        }
 
-        case ap @ ImpureAp(u, continuation, last) =>
-          detach(ap.toMonadic)
-      }
+      case ap @ ImpureAp(u, continuation, last) =>
+        Monad[M].pure(Left(ap.toMonadic))
     }
-    go(eff)
-  }
 
   /**
    * peel-off the only present effect, using an Applicative instance where possible
    */
-  def detachA[M[_], A](eff: Eff[Fx1[M], A])(implicit monad: Monad[M], applicative: Applicative[M]): M[A] = {
-    def go(e: Eff[Fx1[M], A]): M[A] = {
-      e match {
-        case Pure(a, Last(Some(l))) => go(l().as(a))
-        case Pure(a, Last(None))    => monad.pure(a)
+  def detachA[M[_], A](eff: Eff[Fx1[M], A])(implicit monad: Monad[M], applicative: Applicative[M]): M[A] =
+    Monad[M].tailRecM[Eff[Fx1[M], A], A](eff) {
+      case Pure(a, Last(Some(l))) => monad.pure(Left(l().as(a)))
+      case Pure(a, Last(None))    => monad.pure(Right(a))
 
-        case Impure(u, continuation, last) =>
-          last match {
-            case Last(Some(l)) =>
-              u match { case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x).addLast(last))) }
-            case Last(None) =>
-              u match { case Union1(ta) => Monad[M].flatMap(ta)(x => go(continuation(x))) }
-          }
+      case Impure(u, continuation, last) =>
+        u match {
+          case Union1(ta) =>
+            last match {
+              case Last(Some(l)) => ta.map(x => Left(continuation(x).addLast(last)))
+              case Last(None)    => ta.map(x => Left(continuation(x)))
+            }
+        }
 
-        case ap @ ImpureAp(unions, continuation, last) =>
-          last match {
-            case Last(Some(l)) =>
-              applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).flatMap(x => go(continuation(x).addLast(last)))
+      case ap @ ImpureAp(unions, continuation, last) =>
+        val effects = unions.unions.collect { case Union1(mx) => mx }
+        val sequenced = applicative.sequence(effects)
 
-            case Last(None) =>
-              applicative.sequence(unions.unions.collect { case Union1(mx) => mx }).flatMap(x => go(continuation(x)))
-          }
-      }
+        last match {
+          case Last(Some(l)) => sequenced.map(x => Left(continuation(x).addLast(last)))
+          case Last(None)    => sequenced.map(x => Left(continuation(x)))
+        }
     }
-    go(eff)
-  }
 
   /**
    * get the pure value if there is no effect
