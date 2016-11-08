@@ -75,7 +75,7 @@ class AsyncTaskServiceSpec(implicit ee: ExecutionEnv) extends Specification with
     val list = (1 to 5000).toList
     val action = list.traverse(i => asyncFork[S, String](i.toString))
 
-    action.runOption.runAsyncTask.runAsync must beSome(list.map(_.toString)).await
+    action.runOption.runAsyncTask.runAsync must beSome(list.map(_.toString)).await(retries = 5, timeout = 5.seconds)
   }
 
   def e5 = {

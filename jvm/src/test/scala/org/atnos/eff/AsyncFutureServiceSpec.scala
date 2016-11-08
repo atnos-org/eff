@@ -73,7 +73,7 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
     val list = (1 to 5000).toList
     val action = list.traverse(i => asyncFork[S, String](i.toString))
 
-    action.runOption.runAsyncFuture must beSome(list.map(_.toString)).await
+    action.runOption.runAsyncFuture must beSome(list.map(_.toString)).await(retries = 5, timeout = 5.seconds)
   }
 
   def e5 = {
