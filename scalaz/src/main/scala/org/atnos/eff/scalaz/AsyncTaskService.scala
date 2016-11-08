@@ -76,14 +76,16 @@ trait AsyncTaskServiceInterpretation {
       case AsyncTaskFork(es, run)  => run(es)
     }
 
-  implicit class RunAsyncTaskOps[A](e: Eff[Fx.fx1[Async], A]) {
-    def runAsyncTask: Task[A] =
-      AsyncTaskService.runAsyncTask(e)
+  implicit def toRunAsyncTaskOps[A](e: Eff[Fx.fx1[Async], A]): RunAsyncTaskOps[A] = new RunAsyncTaskOps[A](e)
 
-    def runTask: Task[A] =
-      AsyncTaskService.runTask(e)
-  }
+}
 
+final class RunAsyncTaskOps[A](val e: Eff[Fx.fx1[Async], A]) extends AnyVal {
+  def runAsyncTask: Task[A] =
+    AsyncTaskService.runAsyncTask(e)
+
+  def runTask: Task[A] =
+    AsyncTaskService.runTask(e)
 }
 
 object AsyncTaskServiceInterpretation extends AsyncTaskServiceInterpretation
@@ -119,7 +121,7 @@ object AsyncTaskService extends AsyncTaskServiceInterpretation {
     override def toString = "Applicative[AsyncTask]"
   }
 
-  implicit def MonadAsync: Monad[Async] = new Monad[Async] {
+  implicit final def MonadAsync: Monad[Async] = new Monad[Async] {
     def pure[A](a: A) = AsyncTask(Task.now(a))
 
     def flatMap[A, B](aa: Async[A])(af: A => Async[B]): Async[B] =
@@ -158,7 +160,7 @@ object AsyncTaskService extends AsyncTaskServiceInterpretation {
 
 }
 
-case class AsyncTask[A](task: Task[A]) extends Async[A] {
+case class AsyncTask[A](task: Task[A]) extends AnyVal with Async[A] {
   def attempt: Async[Throwable Either A] =
     AsyncTask(task.attempt.map(_.fold(Either.left, Either.right)))
 }
