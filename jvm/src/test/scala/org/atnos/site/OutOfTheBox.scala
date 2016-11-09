@@ -370,7 +370,7 @@ the corresponding `org.atnos.eff.monix.AsyncTaskService` or `org.atnos.eff.scala
 import org.atnos.eff._
 
 import java.util.concurrent._
-import _root_.scalaz.concurrent._
+import scalaz.concurrent._
 
 implicit val es = Strategy.DefaultExecutorService
 val scalazService: AsyncService = org.atnos.eff.scalaz.AsyncTaskService.create

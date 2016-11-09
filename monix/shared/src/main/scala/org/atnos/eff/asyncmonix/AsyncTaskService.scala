@@ -1,12 +1,12 @@
 package org.atnos.eff
-package monix
+package asyncmonix
 
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import cats._
 import AsyncTaskService._
-import _root_.monix.eval._
-import _root_.monix.execution._
+import monix.eval._
+import monix.execution._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util._

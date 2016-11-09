@@ -1,14 +1,14 @@
 package org.atnos.eff
-package scalaz
+package asyncscalaz
 
 import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
 
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-import _root_.scalaz.\/
-import _root_.scalaz.concurrent._
-import _root_.scalaz.Nondeterminism
+import scalaz.\/
+import scalaz.concurrent._
+import scalaz.Nondeterminism
 import cats._
 import cats.implicits._
 
