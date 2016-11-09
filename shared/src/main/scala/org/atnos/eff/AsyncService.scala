@@ -10,7 +10,7 @@ trait AsyncService {
   def asyncNow[R :_async, A](a: A): Eff[R, A]
 
   /** failed computation */
-  def asyncFail[R :_async](t: Throwable): Eff[R, Unit]
+  def asyncFail[R :_async, A](t: Throwable): Eff[R, A]
 
   /** computation which will be evaluated later */
   def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A]

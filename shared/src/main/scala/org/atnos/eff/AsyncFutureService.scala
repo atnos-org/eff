@@ -26,8 +26,8 @@ case class AsyncFutureService(executors: ExecutorServices) extends AsyncService 
   def asyncNow[R :_async, A](a: A): Eff[R, A] =
     send[Async, R, A](AsyncFutureNow[A](a))
 
-  def asyncFail[R :_async](t: Throwable): Eff[R, Unit] =
-    send[Async, R, Unit](AsyncFutureFailed(t))
+  def asyncFail[R :_async, A](t: Throwable): Eff[R, A] =
+    send[Async, R, A](AsyncFutureFailed(t))
 
   def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[Async, R, Eff[R, A]](AsyncFutureDelayed(() => {

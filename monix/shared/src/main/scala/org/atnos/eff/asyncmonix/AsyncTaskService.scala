@@ -16,8 +16,8 @@ case class AsyncTaskService() extends AsyncService {
   def asyncNow[R :_async, A](a: A): Eff[R, A] =
     create(Task.now(a))
 
-  def asyncFail[R :_async](t: Throwable): Eff[R, Unit] =
-    create[R, Unit](Task.raiseError(t))
+  def asyncFail[R :_async, A](t: Throwable): Eff[R, A] =
+    create[R, A](Task.raiseError(t))
 
   def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     create[R, A](Task.delay(a), timeout)
