@@ -59,6 +59,17 @@ case class AsyncFutureService(executors: ExecutorServices) extends AsyncService 
         asyncDelay(send(a)).flatten
     }
 
+  def async[R :_async, A](register: ((Throwable Either A) => Unit) => Unit, timeout: Option[FiniteDuration] = None): Eff[R, A] = {
+    val promise: Promise[A] = Promise[A]()
+    val callback = (ta: Throwable Either A) =>
+      ta match {
+        case Left(t)  => promise.failure(t); ()
+        case Right(a) => promise.success(a); ()
+      }
+    register(callback)
+    fork(AsyncFuture(executionContext, {_ => promise.future}), timeout)
+  }
+
   def withTimeout[A](f: Future[A], timeout: FiniteDuration): Future[A] = {
     if (timeout.isFinite && timeout.length < 1) {
       try f catch { case NonFatal(t) => Future.failed(t) }

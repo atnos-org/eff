@@ -6,6 +6,7 @@ import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
+import _root_.scalaz.\/
 import _root_.scalaz.concurrent._
 import _root_.scalaz.Nondeterminism
 import cats._
@@ -51,6 +52,9 @@ case class AsyncTaskService(executors: ExecutorServices) extends AsyncService {
 
   def suspend[R :_async, A](task: =>Task[Eff[R, A]]): Eff[R, A] =
     send[Async, R, Eff[R, A]](AsyncTask(Task.suspend(task))).flatten
+
+  def async[R :_async, A](callback: ((Throwable Either A) => Unit) => Unit, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    create(Task.async((f: Throwable \/ A => Unit) => callback(ta => f(\/.fromEither(ta)))), timeout)
 
   def create[R :_async, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     timeout match {

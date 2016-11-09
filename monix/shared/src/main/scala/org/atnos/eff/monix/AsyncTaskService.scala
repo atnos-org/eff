@@ -5,7 +5,8 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import cats._
 import AsyncTaskService._
-import _root_.monix.eval.Task
+import _root_.monix.eval._
+import _root_.monix.execution._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util._
@@ -29,6 +30,19 @@ case class AsyncTaskService() extends AsyncService {
 
   def suspend[R :_async, A](task: =>Task[Eff[R, A]]): Eff[R, A] =
     send[Async, R, Eff[R, A]](AsyncTask(Task.suspend(task))).flatten
+
+  def async[R :_async, A](register: ((Throwable Either A) => Unit) => Unit, timeout: Option[FiniteDuration] = None): Eff[R, A] = {
+    def callback(c: Callback[A]) = (ta: Throwable Either A) =>
+      ta match {
+        case Left(t)  => c.onError(t)
+        case Right(a) => c.onSuccess(a)
+      }
+
+    val registerTask = (s: Scheduler, c: Callback[A]) =>
+      Cancelable(() => register(callback(c)))
+
+    create(Task.async(registerTask), timeout)
+  }
 
   def create[R :_async, A](t: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     timeout match {
