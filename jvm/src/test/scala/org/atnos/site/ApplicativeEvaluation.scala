@@ -12,13 +12,14 @@ import cats.data.Writer
 import cats.syntax.traverse._
 import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
+import Async._
 
 type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, Async, WriterString]
 
-val futureService = AsyncFutureService.create
+val futureService = AsyncFutureInterpreter.create
 import futureService._
 
 def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
@@ -43,18 +44,19 @@ import cats.Eval
 import cats.data.Writer
 import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
+import Async._
 
 type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, Async, WriterString]
-val futureService = AsyncFutureService.create
+val futureService = AsyncFutureInterpreter.create
 import futureService._
 
 def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
   for {
     i1 <- delay(i)
-    i2 <- futureService.asyncFork(i1)
+    i2 <- asyncFork(i1)
     _  <- tell(i2.toString)
   } yield i2
 // 8<--

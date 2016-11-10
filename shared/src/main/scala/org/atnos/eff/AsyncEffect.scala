@@ -20,7 +20,7 @@ trait AsyncInterpretation {
       case Impure(u, c, last) =>
         async.extract(u) match {
           case Some(tx) =>
-            val union = async.inject(tx.attempt)
+            val union = async.inject(Async.attempt(tx))
 
             Impure(union, Arrs.singleton { ex: (Throwable Either u.X) =>
               ex match {
@@ -35,7 +35,7 @@ trait AsyncInterpretation {
       case ImpureAp(unions, continuation, last) =>
         def materialize(u: Union[R, Any]): Union[R, Any] =
           async.extract(u) match {
-            case Some(tx) => async.inject(tx.attempt)
+            case Some(tx) => async.inject(Async.attempt(tx))
             case None => u
           }
 
@@ -71,6 +71,4 @@ final class AttemptOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
 object AsyncInterpretation extends AsyncInterpretation
 
-trait Async[+A] extends Any {
-  def attempt: Async[Throwable Either A]
-}
+

@@ -331,7 +331,9 @@ In order to access the API you first need to create an `AsyncService`:${snippet{
 import org.atnos.eff._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-val service: AsyncService = AsyncFutureService.create
+import Async._
+
+val service = AsyncFutureInterpreter.create
 
 /*p
 Then all the `AsyncService` operations are available

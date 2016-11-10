@@ -11,6 +11,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent._
 import duration._
 import org.scalacheck._
+import Async._
 
 class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
 
@@ -27,7 +28,7 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
   lazy val executorServices: ExecutorServices =
     ExecutorServices.fromExecutionContext(ee.executionContext)
 
-  lazy val asyncService = AsyncFutureService(executorServices)
+  lazy val asyncService = AsyncFutureInterpreter(executorServices)
   import asyncService._
 
   def e1 = {
@@ -54,23 +55,25 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
     def action[R :_async](i: Int): Eff[R, Int] =
       asyncFork {
         Thread.sleep(i.toLong)
+        ("sleep for "+i).pp
         messages.append(i)
         i
       }
 
     val run = Eff.traverseA(ls)(i => action[S](i))
-    eventually(retries = 5, sleep = 1.second) {
+    eventually(retries = 1, sleep = 1.second) {
       messages.clear
       Await.result(run.runOption.runAsyncFuture, 5 seconds)
 
       "the messages are ordered" ==> {
-        messages.toList.sorted ==== ls.sorted
+        "try messages".pp
+        messages.toList ==== ls.sorted
       }
     }
-  }.set(minTestsOk = 10).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
+  }.set(minTestsOk = 5).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
 
   def e4 = {
-    val list = (1 to 5000).toList
+    val list = (1 to 5).toList
     val action = list.traverse(i => asyncFork[S, String](i.toString))
 
     action.runOption.runAsyncFuture must beSome(list.map(_.toString)).await(retries = 5, timeout = 5.seconds)
