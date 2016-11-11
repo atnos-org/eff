@@ -17,7 +17,7 @@ package object eff {
   object validate   extends ValidateCreation   with ValidateInterpretation
   object choose     extends ChooseCreation     with ChooseInterpretation
   object safe       extends SafeCreation       with SafeInterpretation
-  object async      extends AsyncEffect        with AsyncInterpretation
+  object async      extends AsyncCreation      with AsyncInterpretation
   object batch      extends Batch
 
   object create extends
@@ -30,6 +30,7 @@ package object eff {
     EitherCreation with
     ValidateCreation with
     ChooseCreation with
+    AsyncCreation with
     EffCreation with
     SafeCreation
 

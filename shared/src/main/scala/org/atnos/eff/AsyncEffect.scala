@@ -1,14 +1,51 @@
 package org.atnos.eff
 
+import cats._
 import cats.implicits._
 import org.atnos.eff.all._
+import scala.concurrent.duration.FiniteDuration
+import SubscribeEffect._
 
-trait AsyncEffect {
+trait AsyncEffect extends AsyncCreation
+
+object AsyncEffect extends AsyncEffect
+
+trait AsyncCreation {
 
   type _async[R] = Async |= R
   type _Async[R] = Async <= R
 
+  def subscribe[R :_async, A](c: Subscribe[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    send[Async, R, A](AsyncEff(send[Subscribe, FS, A](c), timeout))
+
+  def asyncNow[R :_async, A](a: A): Eff[R, A] =
+    send[Async, R, A](AsyncNow[A](a))
+
+  def asyncFail[R :_async, A](t: Throwable): Eff[R, A] =
+    send[Async, R, A](AsyncFailed[A](t))
+
+  def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    send[Async, R, A](AsyncDelayed[A](() => a, timeout))
+
+  def asyncFork[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    send[Async, R, A](AsyncEff(send[Subscribe, FS, A]((c: Callback[A]) => c(Either.catchNonFatal(a))), timeout))
+
+  def fork[R :_async, A](a: =>Async[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    asyncDelay[R, Eff[R, A]] {
+      a match {
+        case AsyncNow(a1)         => asyncFork(a1, timeout)
+        case AsyncDelayed(a1, to) => asyncFork(a1(), to)
+        case AsyncFailed(t)       => asyncFail(t)
+        case AsyncEff(e, to)      => send[Async, R, A](AsyncEff(e, to))
+      }
+    }.flatten
+
+  def async[R :_async, A](subscribe: Subscribe[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    send[Async, R, A](AsyncEff(send[Subscribe, FS, A](subscribe), timeout))
+
 }
+
+object AsyncCreation extends AsyncCreation
 
 trait AsyncInterpretation {
 
@@ -20,7 +57,7 @@ trait AsyncInterpretation {
       case Impure(u, c, last) =>
         async.extract(u) match {
           case Some(tx) =>
-            val union = async.inject(Async.attempt(tx))
+            val union = async.inject(attempt(tx))
 
             Impure(union, Arrs.singleton { ex: (Throwable Either u.X) =>
               ex match {
@@ -35,7 +72,7 @@ trait AsyncInterpretation {
       case ImpureAp(unions, continuation, last) =>
         def materialize(u: Union[R, Any]): Union[R, Any] =
           async.extract(u) match {
-            case Some(tx) => async.inject(Async.attempt(tx))
+            case Some(tx) => async.inject(attempt(tx).asInstanceOf[Async[Any]])
             case None => u
           }
 
@@ -60,6 +97,14 @@ trait AsyncInterpretation {
     }
   }
 
+  def attempt[A](a: Async[A]): Async[Throwable Either A] =
+    a match {
+      case AsyncNow(a1)         => AsyncNow[Throwable Either A](Right(a1))
+      case AsyncFailed(t)       => AsyncNow[Throwable Either A](Left(t))
+      case AsyncDelayed(a1, to) => AsyncDelayed(() => Either.catchNonFatal(a1()), to)
+      case AsyncEff(e, to)      => AsyncEff(subscribeAttempt(e), to)
+    }
+
   implicit final def toAttemptOps[R, A](e: Eff[R, A]): AttemptOps[R, A] = new AttemptOps[R, A](e)
 
 }
@@ -70,5 +115,94 @@ final class AttemptOps[R, A](val e: Eff[R, A]) extends AnyVal {
 }
 
 object AsyncInterpretation extends AsyncInterpretation
+
+sealed trait Async[A] extends Any
+
+case class AsyncNow[A](a: A) extends Async[A]
+case class AsyncFailed[A](t: Throwable) extends Async[A]
+case class AsyncDelayed[A](a: () => A, timeout: Option[FiniteDuration] = None) extends Async[A]
+case class AsyncEff[A](e: Eff[FS, A], timeout: Option[FiniteDuration] = None) extends Async[A]
+
+object Async {
+
+  def ApplicativeAsync: Applicative[Async] = new Applicative[Async] {
+
+    def pure[A](a: A) = AsyncNow(a)
+
+    def ap[A, B](ff: Async[A => B])(fa: Async[A]): Async[B] =
+      (ff, fa) match {
+        case (AsyncNow(f), AsyncNow(a)) =>
+          AsyncNow(f(a))
+
+        case (AsyncNow(f), AsyncDelayed(a, to)) =>
+          AsyncDelayed(() => f(a()), to)
+
+        case (AsyncNow(f), AsyncEff(a, to)) =>
+          AsyncEff(a.map(f), to)
+
+        case (AsyncDelayed(f, to), AsyncNow(a)) =>
+          AsyncDelayed(() => f()(a), to)
+
+        case (AsyncDelayed(f, tof), AsyncDelayed(a, toa)) =>
+          AsyncDelayed(() => f()(a()), (tof |@| toa).map(_ min _))
+
+        case (AsyncDelayed(f, tof), AsyncEff(a, toa)) =>
+          AsyncEff(a.map(f()), (tof |@| toa).map(_ min _))
+
+        case (AsyncEff(f, to), AsyncNow(a)) =>
+          AsyncEff(f.map(_(a)), to)
+
+        case (AsyncEff(f, tof), AsyncDelayed(a, toa)) =>
+          AsyncEff(f.map(_(a())), (tof |@| toa).map(_ min _))
+
+        case (_, AsyncFailed(t)) =>
+          AsyncFailed(t)
+
+        case (AsyncFailed(t), _) =>
+          AsyncFailed(t)
+
+        case (AsyncEff(f, tof), AsyncEff(a, toa)) =>
+          AsyncEff(EffApplicative[FS].ap(f)(a), (tof |@| toa).map(_ min _))
+      }
+
+    override def toString = "Applicative[Async]"
+  }
+
+
+  implicit final def MonadAsync: Monad[Async] = new Monad[Async] {
+    def pure[A](a: A) = AsyncEff(Eff.pure[FS, A](a))
+
+    def flatMap[A, B](aa: Async[A])(f: A => Async[B]): Async[B] =
+      aa match {
+        case AsyncNow(a) =>
+          f(a)
+
+        case AsyncFailed(t) =>
+          AsyncFailed(t)
+
+        case AsyncDelayed(a, to) =>
+          Either.catchNonFatal(f(a())) match {
+            case Left(t) => AsyncFailed(t)
+            case Right(ab) => ab
+          }
+
+        case AsyncEff(ea, toa) =>
+          AsyncEff[B](ea.flatMap(a => f(a) match {
+              case AsyncNow(b)          => Eff.pure[FS, B](b)
+              case AsyncFailed(t)       => send[Subscribe, FS, B](c => c(Left(t)))
+              case AsyncDelayed(b, tob) => send[Subscribe, FS, B](c => c(Either.catchNonFatal(b())))
+              case AsyncEff(eb, tob)    => eb
+            }), toa)
+      }
+
+    def tailRecM[A, B](a: A)(f: A => Async[Either[A, B]]): Async[B] =
+      f(a).flatMap {
+        case Left(a1) => tailRecM(a1)(f)
+        case Right(b) => pure(b)
+      }
+
+    override def toString = "Monad[AsyncFuture]"
+  }
+}
 
 

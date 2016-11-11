@@ -197,6 +197,8 @@ case class Unions[R, A](first: Union[R, A], rest: List[Union[R, Any]]) {
   def transform[M[_]](nat: M ~> M)(implicit m: M /= R): Unions[R, A] =
     Unions(m.transformUnion(nat)(first), rest.map(m.transformUnion(nat)))
 
+  def transformInto[M[_], N[_], U, S](nat: M ~> N)(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, S, U]): Unions[S, A] =
+    Unions[S, A](m.transformUnionInto(nat)(first), rest.map(u => m.transformUnionInto(nat)(u)))
 }
 
 object Unions {

@@ -1,7 +1,7 @@
 package org.atnos.eff
 package syntax
 
-import org.atnos.eff.asyncmonix.AsyncTaskServiceInterpretation
+import org.atnos.eff.asyncmonix._
 
-object asyncmonix extends AsyncTaskServiceInterpretation
+object asyncmonix extends AsyncTaskInterpreter
 

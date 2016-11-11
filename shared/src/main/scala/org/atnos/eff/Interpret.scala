@@ -400,8 +400,8 @@ trait Interpret {
               Impure(br.accept(u1), Arrs.singleton((x: u.X) => go(c(x).addLast(last))))
           }
 
-        case ap @ ImpureAp(_,_,_) =>
-          go(ap.toMonadic)
+        case ap @ ImpureAp(unions, continuation, last) =>
+          ImpureAp(unions.transformInto(nat), Arrs.singleton(x => transform(continuation(x).addLast(last), nat)))
       }
     }
 

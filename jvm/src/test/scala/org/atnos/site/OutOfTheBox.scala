@@ -329,19 +329,17 @@ For the following example we will assume an implementation using regular Scala f
 In order to access the API you first need to create an `AsyncService`:${snippet{
 
 import org.atnos.eff._
+import org.atnos.eff.async._
+import org.atnos.eff.syntax.all._
 
+import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import Async._
-
-val service = AsyncFutureInterpreter.create
 
 /*p
 Then all the `AsyncService` operations are available
  */
 
 type R = Fx.fx2[Async, Option]
-
-import service._
 
 val action: Eff[R, Int] =
   for {
@@ -360,8 +358,8 @@ Finally you can evaluate other effects in the stack (Option here) and run the as
  a `Future`
 */
 
-import org.atnos.eff.syntax.all._
-import scala.concurrent._, duration._
+val interpreter = AsyncFutureInterpreter.create
+import interpreter._
 
 Await.result(action.runOption.runAsyncFuture, 1 second)
 }.eval}

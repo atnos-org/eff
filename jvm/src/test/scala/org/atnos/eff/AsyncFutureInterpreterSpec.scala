@@ -13,7 +13,7 @@ import duration._
 import org.scalacheck._
 import Async._
 
-class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
+class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
 
  Async effects can be implemented with an AsyncFuture service $e1
  Async effects can be attempted                               $e2
@@ -55,7 +55,6 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
     def action[R :_async](i: Int): Eff[R, Int] =
       asyncFork {
         Thread.sleep(i.toLong)
-        ("sleep for "+i).pp
         messages.append(i)
         i
       }
@@ -66,7 +65,6 @@ class AsyncFutureServiceSpec(implicit ee: ExecutionEnv) extends Specification wi
       Await.result(run.runOption.runAsyncFuture, 5 seconds)
 
       "the messages are ordered" ==> {
-        "try messages".pp
         messages.toList ==== ls.sorted
       }
     }
