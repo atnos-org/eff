@@ -38,8 +38,7 @@ case class AsyncTaskService() extends AsyncService {
         case Right(a) => c.onSuccess(a)
       }
 
-    val registerTask = (s: Scheduler, c: Callback[A]) =>
-      Cancelable(() => register(callback(c)))
+    val registerTask = { (_: Scheduler, c: Callback[A]) => register(callback(c)); Cancelable.empty }
 
     create(Task.async(registerTask), timeout)
   }
