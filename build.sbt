@@ -219,21 +219,27 @@ def testTaskDefinition(task: TaskKey[Tests.Output], options: Seq[TestOption]) =
     (testOptions in (Test, task) ++= options)
 
 def testTask(task: TaskKey[Tests.Output]) =
-  // I still need to find a way to make this work without deprecation warning
-  task <<= (streams in Test, loadedTestFrameworks in Test, testLoader in Test,
-    testGrouping in Test in test, testExecution in Test in task,
-    fullClasspath in Test in test, javaHome in test) flatMap Defaults.allTestGroupsTask
-
-//  task := Def.task(Defaults.allTestGroupsTask(
+//  task := Def.task(Def.taskDyn(Defaults.allTestGroupsTask(
 //    (streams in Test).value,
 //    (loadedTestFrameworks in Test).value,
 //    (testLoader in Test).value,
 //    (testGrouping in Test in test).value,
-//    (testExecution in Test in task).value,
+//    (testExecution in Test in test).value,
 //    (fullClasspath in Test in test).value,
 //    (javaHome in test).value
-//  ).value)
-
+//  )).value).value
+  task := Def.taskDyn {
+    Def.task(
+      Defaults.allTestGroupsTask(
+        (streams in Test).value,
+        (loadedTestFrameworks in Test).value,
+        (testLoader in Test).value,
+        (testGrouping in Test in test).value,
+        (testExecution in Test in task).value,
+        (fullClasspath in Test in test).value,
+        (javaHome in test).value
+      )).flatMap(identity)
+  }.value
 
 lazy val catsVersion   = "0.8.0"
 lazy val monixVersion  = "2.0.5"
