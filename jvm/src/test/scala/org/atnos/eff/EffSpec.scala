@@ -142,8 +142,11 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
   def traverseEff = {
     val traversed: Eff[Fx.fx1[Option], List[Int]] =
       List(1, 2, 3).traverseA(i => OptionEffect.some(i))
+    val flatTraversed: Eff[Fx.fx1[Option], List[Int]] =
+      List(1, 2, 3).flatTraverseA(i => OptionEffect.some(List(i, i + 1)))
 
-    traversed.runOption.run === Option(List(1, 2, 3))
+    traversed.runOption.run === Option(List(1, 2, 3)) &&
+      flatTraversed.runOption.run === Option(List(1, 2, 2, 3, 3, 4))
   }
 
   def functionReader[R, U, A, B](f: A => Eff[R, B])(implicit into: IntoPoly[R, U],

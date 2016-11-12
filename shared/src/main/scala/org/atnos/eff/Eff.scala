@@ -351,9 +351,17 @@ trait EffCreation {
   def traverseA[R, F[_] : Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
     Traverse[F].traverse(fs)(f)(EffImplicits.EffApplicative[R])
 
-  /** use the applicative instance of Eff to sequenc a list of values */
+  /** use the applicative instance of Eff to sequence a list of values */
   def sequenceA[R, F[_] : Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
     Traverse[F].sequence(fs)(EffImplicits.EffApplicative[R])
+
+  /** use the applicative instance of Eff to traverse a list of values, then flatten it */
+  def flatTraverseA[R, F[_], A, B](fs: F[A])(f: A => Eff[R, F[B]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[B]] =
+    FT.flatTraverse[Eff[R, ?], A, B](fs)(f)(EffImplicits.EffApplicative[R], FM)
+
+  /** use the applicative instance of Eff to sequence a list of values, then flatten it */
+  def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[A]] =
+    FT.flatSequence[Eff[R, ?], A](fs)(EffImplicits.EffApplicative[R], FM)
 }
 
 object EffCreation extends EffCreation
