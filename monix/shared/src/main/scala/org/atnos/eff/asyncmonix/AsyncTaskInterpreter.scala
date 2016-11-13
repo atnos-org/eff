@@ -21,9 +21,12 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
     run(e.detach)
 
   def suspend[R :_async, A](task: =>Task[Eff[R, A]])(implicit s: Scheduler): Eff[R, A] =
-    subscribe[R, Eff[R, A]](callback =>
-      { task.map(a => callback(Right(a))).onErrorHandle(t => callback(Left(t))).runAsync; ()} ,
-      None).flatten
+    fromTask(task).flatten
+
+  def fromTask[R :_async, A](task: =>Task[A])(implicit s: Scheduler): Eff[R, A] =
+    subscribe[R, A](callback =>
+    { task.map(a => callback(Right(a))).onErrorHandle(t => callback(Left(t))).runAsync; () },
+      None)
 
   def run[A](r: Async[A]): Task[A] =
     r match {

@@ -32,11 +32,14 @@ case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInte
     run(e.detach)
 
   def suspend[R :_async, A](future: =>Future[Eff[R, A]]): Eff[R, A] =
-    subscribe[R, Eff[R, A]](callback => future.onComplete {
+    fromFuture(future).flatten
+
+  def fromFuture[R :_async, A](future: =>Future[A]): Eff[R, A] =
+    subscribe[R, A](callback => future.onComplete {
       case Success(a) => callback(Right(a))
       case Failure(t) => callback(Left(t))
 
-    }, None).flatten
+    }, None)
 
   def run[A](r: Async[A]): Future[A] =
     r match {

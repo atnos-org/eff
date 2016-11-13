@@ -31,9 +31,12 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
     run(e.detach)
 
   def suspend[R :_async, A](task: =>Task[Eff[R, A]]): Eff[R, A] =
-    subscribe[R, Eff[R, A]](callback =>
+    fromTask(task).flatten
+
+  def fromTask[R :_async, A](task: =>Task[A]): Eff[R, A] =
+    subscribe[R, A](callback =>
     { task.unsafePerformAsync(ta => ta.fold(t => callback(Left(t)), a => callback(Right(a)))) } ,
-      None).flatten
+      None)
 
   def run[A](r: Async[A]): Task[A] =
     r match {

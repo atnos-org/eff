@@ -51,14 +51,14 @@ lazy val scoverageSettings = Seq(
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.11.8")
+  crossScalaVersions := Seq("2.11.8", "2.12.0")
 )
 
 lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.0"),
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
   addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
 ) ++ warnUnusedImport ++ prompt
 
@@ -116,7 +116,6 @@ lazy val commonScalacOptions = Seq(
   "-Xfatal-warnings",
   "-Xlint",
   "-Xlint:-nullary-unit",
-  "-Yinline-warnings",
   "-Yno-adapted-args",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
@@ -219,15 +218,6 @@ def testTaskDefinition(task: TaskKey[Tests.Output], options: Seq[TestOption]) =
     (testOptions in (Test, task) ++= options)
 
 def testTask(task: TaskKey[Tests.Output]) =
-//  task := Def.task(Def.taskDyn(Defaults.allTestGroupsTask(
-//    (streams in Test).value,
-//    (loadedTestFrameworks in Test).value,
-//    (testLoader in Test).value,
-//    (testGrouping in Test in test).value,
-//    (testExecution in Test in test).value,
-//    (fullClasspath in Test in test).value,
-//    (javaHome in test).value
-//  )).value).value
   task := Def.taskDyn {
     Def.task(
       Defaults.allTestGroupsTask(
@@ -241,10 +231,10 @@ def testTask(task: TaskKey[Tests.Output]) =
       )).flatMap(identity)
   }.value
 
-lazy val catsVersion   = "0.8.0"
-lazy val monixVersion  = "2.0.5"
+lazy val catsVersion   = "0.8.1"
+lazy val monixVersion  = "2.1.0"
 lazy val scalazVersion = "7.2.7"
-lazy val specs2Version = "3.8.5"
+lazy val specs2Version = "3.8.6"
 
 lazy val catsJvm = Seq(
   "org.typelevel" %% "cats-core" % catsVersion)
@@ -269,7 +259,7 @@ lazy val specs2 = Seq(
   , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
 
 lazy val scalameter = Seq(
-  "com.storm-enroute" %% "scalameter" % "0.7" % "test")
+  "com.storm-enroute" %% "scalameter" % "0.8.2" % "test")
 
 lazy val commonResolvers = Seq(
   Resolver.sonatypeRepo("releases")
