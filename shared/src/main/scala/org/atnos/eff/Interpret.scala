@@ -145,7 +145,7 @@ trait Interpret {
       ls match {
         case Last(None) => Eff.pure[U, Unit](())
         case Last(Some(l)) =>
-          l() match {
+          l.value match {
             case Pure(u, last) => goLast(last, s)
 
             case Impure(union, continuation, last) =>
@@ -278,7 +278,7 @@ trait Interpret {
       ls match {
         case Last(None) => Eff.pure[R, Unit](())
         case Last(Some(l)) =>
-          l() match {
+          l.value match {
             case Pure(u, last) => goLast(last, s)
 
             case Impure(union, continuation, last) =>
@@ -369,7 +369,7 @@ trait Interpret {
       ls match {
         case Last(None) => Eff.pure[BR, Unit](())
         case Last(Some(l)) =>
-          l() match {
+          l.value match {
             case Pure(u, last) => goLast(last)
 
             case Impure(union, continuation, last) =>
@@ -418,7 +418,7 @@ trait Interpret {
       ls match {
         case Last(None) => Eff.pure[U, Unit](())
         case Last(Some(l)) =>
-          l() match {
+          l.value match {
             case Pure(u, last) => goLast(last)
 
             case Impure(union, continuation, last) =>
@@ -491,7 +491,7 @@ trait Interpret {
       ls match {
         case Last(None) => Eff.pure[U, Unit](())
         case Last(Some(l)) =>
-          l() match {
+          l.value match {
             case Pure(u, last) => goLast(last)
 
             case i @ Impure(union, continuation, last) =>
@@ -552,7 +552,7 @@ trait Interpret {
       ls match {
         case Last(None) => Eff.pure[R, Unit](())
         case Last(Some(l)) =>
-          l() match {
+          l.value match {
             case Pure(u, last) => goLast(last)
 
             case Impure(union, continuation, last) =>

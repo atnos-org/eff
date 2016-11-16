@@ -6,6 +6,7 @@ import cats.implicits._
 import org.atnos.eff.interpret._
 
 import scala.annotation.tailrec
+import scala.util.Random
 
 sealed trait Choose[T]
 case class ChooseZero[T]() extends Choose[T]
@@ -60,7 +61,7 @@ trait ChooseInterpretation {
     def lastRun(l: Last[R]): Last[U] =
       l match {
         case Last(None) => Last[U](None)
-        case Last(Some(last)) => Last.eff(runChoose[R, U, Unit, F](last()).as(()))
+        case Last(Some(last)) => Last.eff(runChoose[R, U, Unit, F](last.value).as(()))
       }
 
     val alternativeF = Alternative[F]
@@ -133,3 +134,39 @@ trait ChooseImplicits {
 }
 
 object ChooseImplicits extends ChooseImplicits
+
+
+/**
+ * This class can be used as a F in runChoose
+ * to generate random alternatives
+ */
+case class Rand[A](run: Random => Option[A])
+
+object Rand {
+  def none[A]: Rand[A] =
+    Rand(_ => None)
+
+  implicit def AlternativeRandom: Alternative[Rand] = new Alternative[Rand] {
+    def pure[A](x: A): Rand[A] = Rand(_ => Option(x))
+
+    def empty[A]: Rand[A] = Rand.none[A]
+
+    def combineK[A](x: Rand[A], y: Rand[A]): Rand[A] =
+      Rand { r =>
+        if (r.nextBoolean) {
+          x.run(r) match {
+            case Some(a) => Some(a)
+            case None    => y.run(r)
+          }
+        } else y.run(r) match {
+          case Some(a) => Some(a)
+          case None    => x.run(r)
+        }
+      }
+
+    def ap[A, B](ff: Rand[A => B])(fa: Rand[A]): Rand[B] =
+      Rand(r => ff.run(r).flatMap(f => fa.run(r).map(f)))
+
+  }
+
+}

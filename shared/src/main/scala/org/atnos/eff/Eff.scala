@@ -377,7 +377,7 @@ trait EffInterpretation {
    */
   def run[A](eff: Eff[NoFx, A]): A =
     eff match {
-      case Pure(a, Last(Some(l))) => l(); a
+      case Pure(a, Last(Some(l))) => l.value; a
       case Pure(a, Last(None))    => a
       case other                  => sys.error("impossible: cannot run the effects in "+other)
     }
@@ -387,7 +387,7 @@ trait EffInterpretation {
    */
   def detach[M[_] : Monad, A](eff: Eff[Fx1[M], A]): M[A] =
     Monad[M].tailRecM[Eff[Fx1[M], A], A](eff) {
-      case Pure(a, Last(Some(l))) => Monad[M].pure(Left(l().as(a)))
+      case Pure(a, Last(Some(l))) => Monad[M].pure(Left(l.value.as(a)))
       case Pure(a, Last(None))    => Monad[M].pure(Right(a))
 
       case Impure(u, continuation, last) =>
@@ -408,7 +408,7 @@ trait EffInterpretation {
    */
   def detachA[M[_], A](eff: Eff[Fx1[M], A])(implicit monad: Monad[M], applicative: Applicative[M]): M[A] =
     Monad[M].tailRecM[Eff[Fx1[M], A], A](eff) {
-      case Pure(a, Last(Some(l))) => monad.pure(Left(l().as(a)))
+      case Pure(a, Last(Some(l))) => monad.pure(Left(l.value.as(a)))
       case Pure(a, Last(None))    => monad.pure(Right(a))
 
       case Impure(u, continuation, last) =>
@@ -435,7 +435,7 @@ trait EffInterpretation {
    */
   def runPure[R, A](eff: Eff[R, A]): Option[A] =
     eff match {
-      case Pure(a, Last(Some(l))) => l(); Option(a)
+      case Pure(a, Last(Some(l))) => l.value; Option(a)
       case Pure(a, _)             => Option(a)
       case _                      => None
     }
