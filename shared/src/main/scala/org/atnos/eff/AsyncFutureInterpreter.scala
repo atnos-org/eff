@@ -45,7 +45,7 @@ case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInte
     r match {
       case AsyncNow(a)         => Future.successful(a)
       case AsyncFailed(t)      => Future.failed(t)
-      case AsyncDelayed(a, to) => withTimeout(Either.catchNonFatal(a()).fold(Future.failed, Future.successful), to)
+      case AsyncDelayed(a, to) => withTimeout(Either.catchNonFatal(a.value).fold(Future.failed, Future.successful), to)
       case AsyncEff(e, to)     => subscribeToFuture(e, to).detachA(FutureApplicative)
     }
 

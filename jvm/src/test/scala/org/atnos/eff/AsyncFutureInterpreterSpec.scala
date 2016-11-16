@@ -18,8 +18,9 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
  Async effects can be implemented with an AsyncFuture service $e1
  Async effects can be attempted                               $e2
  Async effects can be executed concurrently                   $e3
- Async effects are stacksafe                                  $e4
- Async effects can trampoline a Task                          $e5
+ Async effects are stacksafe with asyncFork                   $e4
+ Async effects are stacksafe with asyncDelay                  $e5
+ Async effects can trampoline a Task                          $e6
 
 """
 
@@ -71,13 +72,21 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
   }.set(minTestsOk = 5).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
 
   def e4 = {
-    val list = (1 to 5).toList
+    val list = (1 to 5000).toList
     val action = list.traverse(i => asyncFork[S, String](i.toString))
 
     action.runOption.runAsyncFuture must beSome(list.map(_.toString)).await(retries = 5, timeout = 5.seconds)
   }
 
   def e5 = {
+    val list = (1 to 5000).toList
+    type U = Fx.prepend[Choose, S]
+    val action = list.traverse(i => chooseFrom[U, Int](List(1)) >> asyncDelay[U, String](i.toString))
+
+    action.runChoose[List].runOption.map(_.map(_.flatten)).runAsyncFuture must beSome(list.map(_.toString)).await(retries = 5, timeout = 5.seconds)
+  }
+
+  def e6 = {
     type R = Fx.fx1[Async]
 
     def loop(i: Int): Future[Eff[R, Int]] =

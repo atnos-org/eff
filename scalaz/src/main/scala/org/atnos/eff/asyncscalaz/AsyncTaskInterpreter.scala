@@ -43,7 +43,7 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
       case AsyncNow(a) => Task.now(a)
       case AsyncFailed(t) => Task.fail(t)
       case AsyncDelayed(a, to) =>
-        val task = Either.catchNonFatal(a()).fold(Task.fail, Task.now)
+        val task = Either.catchNonFatal(a.value).fold(Task.fail, Task.now)
         to.fold(task)(timeout => task.timed(timeout))
 
       case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)

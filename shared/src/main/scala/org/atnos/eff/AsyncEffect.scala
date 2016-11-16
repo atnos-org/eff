@@ -25,7 +25,7 @@ trait AsyncCreation {
     send[Async, R, A](AsyncFailed[A](t))
 
   def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    send[Async, R, A](AsyncDelayed[A](() => a, timeout))
+    send[Async, R, A](AsyncDelayed[A](Eval.later(a), timeout))
 
   def asyncFork[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[Async, R, A](AsyncEff(send[Subscribe, FS, A]((c: Callback[A]) => c(Either.catchNonFatal(a))), timeout))
@@ -34,7 +34,7 @@ trait AsyncCreation {
     asyncDelay[R, Eff[R, A]] {
       a match {
         case AsyncNow(a1)         => asyncFork(a1, timeout)
-        case AsyncDelayed(a1, to) => asyncFork(a1(), to)
+        case AsyncDelayed(a1, to) => asyncFork(a1.value, to)
         case AsyncFailed(t)       => asyncFail(t)
         case AsyncEff(e, to)      => send[Async, R, A](AsyncEff(e, to))
       }
@@ -101,7 +101,7 @@ trait AsyncInterpretation {
     a match {
       case AsyncNow(a1)         => AsyncNow[Throwable Either A](Right(a1))
       case AsyncFailed(t)       => AsyncNow[Throwable Either A](Left(t))
-      case AsyncDelayed(a1, to) => AsyncDelayed(() => Either.catchNonFatal(a1()), to)
+      case AsyncDelayed(a1, to) => AsyncDelayed(Eval.later(Either.catchNonFatal(a1.value)), to)
       case AsyncEff(e, to)      => AsyncEff(subscribeAttempt(e), to)
     }
 
@@ -120,7 +120,7 @@ sealed trait Async[A] extends Any
 
 case class AsyncNow[A](a: A) extends Async[A]
 case class AsyncFailed[A](t: Throwable) extends Async[A]
-case class AsyncDelayed[A](a: () => A, timeout: Option[FiniteDuration] = None) extends Async[A]
+case class AsyncDelayed[A](a: Eval[A], timeout: Option[FiniteDuration] = None) extends Async[A]
 case class AsyncEff[A](e: Eff[FS, A], timeout: Option[FiniteDuration] = None) extends Async[A]
 
 object Async {
@@ -135,25 +135,25 @@ object Async {
           AsyncNow(f(a))
 
         case (AsyncNow(f), AsyncDelayed(a, to)) =>
-          AsyncDelayed(() => f(a()), to)
+          AsyncDelayed(a.map(f), to)
 
         case (AsyncNow(f), AsyncEff(a, to)) =>
           AsyncEff(a.map(f), to)
 
         case (AsyncDelayed(f, to), AsyncNow(a)) =>
-          AsyncDelayed(() => f()(a), to)
+          AsyncDelayed(Eval.later(f.value(a)), to)
 
         case (AsyncDelayed(f, tof), AsyncDelayed(a, toa)) =>
-          AsyncDelayed(() => f()(a()), (tof |@| toa).map(_ min _))
+          AsyncDelayed(Apply[Eval].ap(f)(a), (tof |@| toa).map(_ min _))
 
         case (AsyncDelayed(f, tof), AsyncEff(a, toa)) =>
-          AsyncEff(a.map(f()), (tof |@| toa).map(_ min _))
+          AsyncEff(a.map(f.value), (tof |@| toa).map(_ min _))
 
         case (AsyncEff(f, to), AsyncNow(a)) =>
           AsyncEff(f.map(_(a)), to)
 
         case (AsyncEff(f, tof), AsyncDelayed(a, toa)) =>
-          AsyncEff(f.map(_(a())), (tof |@| toa).map(_ min _))
+          AsyncEff(f.map(_(a.value)), (tof |@| toa).map(_ min _))
 
         case (_, AsyncFailed(t)) =>
           AsyncFailed(t)
@@ -181,24 +181,53 @@ object Async {
           AsyncFailed(t)
 
         case AsyncDelayed(a, to) =>
-          Either.catchNonFatal(f(a())) match {
-            case Left(t) => AsyncFailed(t)
+          Either.catchNonFatal(f(a.value)) match {
+            case Left(t)   => AsyncFailed(t)
             case Right(ab) => ab
           }
 
         case AsyncEff(ea, toa) =>
-          AsyncEff[B](ea.flatMap(a => f(a) match {
-              case AsyncNow(b)          => Eff.pure[FS, B](b)
-              case AsyncFailed(t)       => send[Subscribe, FS, B](c => c(Left(t)))
-              case AsyncDelayed(b, tob) => send[Subscribe, FS, B](c => c(Either.catchNonFatal(b())))
-              case AsyncEff(eb, tob)    => eb
-            }), toa)
+          AsyncEff[B](ea.flatMap(a => subscribeAsync(f(a))), toa)
       }
 
     def tailRecM[A, B](a: A)(f: A => Async[Either[A, B]]): Async[B] =
-      f(a).flatMap {
-        case Left(a1) => tailRecM(a1)(f)
-        case Right(b) => pure(b)
+      f(a) match {
+        case AsyncNow(Left(a1)) => tailRecM(a1)(f)
+        case AsyncNow(Right(b)) => AsyncNow[B](b)
+        case AsyncFailed(t)      => AsyncFailed[B](t)
+        case AsyncDelayed(ab, to) =>
+          Either.catchNonFatal(ab.value) match {
+            case Left(t) => AsyncFailed[B](t)
+            case Right(Right(b)) => AsyncNow[B](b)
+            case Right(Left(a1)) => tailRecM(a1)(f)
+          }
+        case AsyncEff(e, to) =>
+          e match {
+            case Pure(ab, last) => ab match {
+              case Left(a1) => tailRecM(a1)(f)
+              case Right(b) => AsyncNow[B](b)
+            }
+
+            case imp @ Impure(u, c, last) =>
+              AsyncEff(imp.flatMap {
+                case Left(a1) => subscribeAsync(tailRecM(a1)(f))
+                case Right(b) => Eff.pure(b)
+              }, to)
+
+            case imp @ ImpureAp(unions, continuation, last) =>
+              AsyncEff(imp.flatMap {
+                case Left(a1) => subscribeAsync(tailRecM(a1)(f))
+                case Right(b) => Eff.pure(b)
+              }, to)
+          }
+      }
+
+    def subscribeAsync[A](a: Async[A]): Eff[FS, A] =
+      a  match {
+        case AsyncNow(a1)         => Eff.pure[FS, A](a1)
+        case AsyncFailed(t)       => send[Subscribe, FS, A](c => c(Left(t)))
+        case AsyncDelayed(a1, to) => send[Subscribe, FS, A](c => c(Either.catchNonFatal(a1.value)))
+        case AsyncEff(a1, to)     => a1
       }
 
     override def toString = "Monad[AsyncFuture]"

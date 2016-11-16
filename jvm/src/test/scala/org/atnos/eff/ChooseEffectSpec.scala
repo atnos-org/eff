@@ -3,12 +3,15 @@ package org.atnos.eff
 import org.specs2.Specification
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
+import cats.implicits._
 
 class ChooseEffectSpec extends Specification { def is = s2"""
 
- An action can be use non-determinism
+ An action can use some non-deterministic choice
    for lists   $nondetList
    for options $nondetOption
+
+ The Choose effect must be stack-safe $stacksafeRun
 
 """
 
@@ -22,9 +25,7 @@ class ChooseEffectSpec extends Specification { def is = s2"""
       k <- chooseFrom[R, Int](List(i, j))
     } yield k
 
-    import cats.instances.list._
-
-    action.runChoose.runOption.run ==== Some(List(1, 2))
+    action.runChoose[List].runOption.run ==== Some(List(1, 2))
   }
 
   def nondetOption = {
@@ -35,9 +36,16 @@ class ChooseEffectSpec extends Specification { def is = s2"""
       k <- chooseFrom[R, Int](List(j))
     } yield k
 
-    import cats.instances.option._
+    action.runChoose[Option].runOption.run ==== Some(Some(2))
+  }
 
-    action.runChoose.runOption.run ==== Some(Some(2))
+  def stacksafeRun = {
+    type E = Fx.fx1[Choose]
+
+    val list = (1 to 5000).toList
+    val action = list.traverse(i => ChooseEffect.chooseFrom(List(i)))
+
+    action.runChoose[List].run must not(throwAn[Exception])
   }
 
 

@@ -33,7 +33,7 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
       case AsyncNow(a) => Task.now(a)
       case AsyncFailed(t) => Task.raiseError(t)
       case AsyncDelayed(a, to) =>
-        val task = Either.catchNonFatal(a()).fold(Task.raiseError, Task.now)
+        val task = Either.catchNonFatal(a.value).fold(Task.raiseError, Task.now)
         to.fold(task)(timeout => task.timeout(timeout))
 
       case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)(AsyncTaskInterpreter.TaskMonad)

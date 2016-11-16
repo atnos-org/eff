@@ -1,9 +1,11 @@
 package org.atnos.eff
 
 import Eff._
-import cats.{Alternative, MonadCombine}
-import cats.syntax.cartesian._
-import cats.syntax.functor._
+import cats._
+import cats.implicits._
+import org.atnos.eff.interpret._
+
+import scala.annotation.tailrec
 
 sealed trait Choose[T]
 case class ChooseZero[T]() extends Choose[T]
@@ -53,6 +55,7 @@ trait ChooseCreation {
 object ChooseCreation extends ChooseCreation
 
 trait ChooseInterpretation {
+
   def runChoose[R, U, A, F[_] : Alternative](r: Eff[R, A])(implicit m: Member.Aux[Choose, R, U]): Eff[U, F[A]] = {
     def lastRun(l: Last[R]): Last[U] =
       l match {
@@ -60,29 +63,45 @@ trait ChooseInterpretation {
         case Last(Some(last)) => Last.eff(runChoose[R, U, Unit, F](last()).as(()))
       }
 
+    val alternativeF = Alternative[F]
 
-    r match {
-      case Pure(a, last) =>
-        EffMonad[U].pure(Alternative[F].pure(a)).addLast(lastRun(last))
+    @tailrec
+    def go(stack: List[Eff[R, A]], result: Eff[U, F[A]] = EffMonad[U].pure(alternativeF.empty), resultLast: Option[Last[U]] = None): Eff[U, F[A]] =
+      stack match {
+        case Nil =>
+          resultLast match {
+            case Some(last) => result.addLast(last)
+            case None       => result
+          }
 
-      case Impure(u, c, last) =>
-        m.project(u) match {
-          case Left(u1) =>
-            Impure(u1, Arrs.singleton((x: u1.X) => runChoose(c(x)))).addLast(lastRun(last))
+        case e :: rest =>
+          e match {
+            case Pure(a, last) =>
+              go(rest, (EffMonad[U].pure(alternativeF.pure(a)) |@| result).map(alternativeF.combineK), resultLast.map(_ <* lastRun(last)))
 
-          case Right(choose) =>
-            choose match {
-              case ChooseZero() => EffMonad[U].pure(Alternative[F].empty)
-              case _ =>
-                val continuation = c.asInstanceOf[Arrs[R, Boolean, A]]
-                (runChoose(continuation(true)) |@| runChoose(continuation(false))).map(Alternative[F].combineK)
-            }
-        }
+            case Impure(u, c, last) =>
+              m.project(u) match {
+                case Left(u1) =>
+                  val r1 = Impure(u1, Arrs.singleton((x: u1.X) => runChoose[R, U, A, F](c(x)))).addLast(lastRun(last))
+                  go(rest, (r1 |@| result).map(alternativeF.combineK))
 
-      case ap @ ImpureAp(_, _, _) =>
-        runChoose(ap.toMonadic)
-    }
+                case Right(choose) =>
+                  choose match {
+                    case ChooseZero() => go(rest, result)
+                    case _ =>
+                      val continuation = c.asInstanceOf[Arrs[R, Boolean, A]]
+                      go(continuation(false) :: continuation(true) :: rest, result)
+                  }
+              }
+
+            case ap @ ImpureAp(_, _, _) =>
+              go(ap.toMonadic :: rest, result)
+          }
+      }
+
+    go(List(r))
   }
+
 }
 
 object ChooseInterpretation extends ChooseInterpretation
