@@ -219,7 +219,7 @@ case class CollectedUnions[M[_], R, U](effects: List[M[Any]], otherEffects: List
 
   def continuation[A](continueWith: Arrs[U, List[Any], A]): Arrs[U, List[Any], A] =
     otherEffects match {
-      case Nil       => Arrs.singleton[U, List[Any], A](ls => continueWith(ls))
+      case Nil       => continueWith
       case o :: rest => Arrs.singleton[U, List[Any], A](ls => ImpureAp[U, Any, A](Unions(o, rest), Arrs.singleton(xs => continueWith(reorder(ls, xs)))))
     }
 

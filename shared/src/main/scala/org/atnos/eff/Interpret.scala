@@ -274,6 +274,7 @@ trait Interpret {
    * This method is stack-safe
    */
   def interceptLoop[R, M[_], A, B](pure: A => Eff[R, B], loop: Loop[M, R, A, Eff[R, B], Eff[R, Unit]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] = {
+
     def goLast(ls: Last[R], s: loop.S): Eff[R, Unit] =
       ls match {
         case Last(None) => Eff.pure[R, Unit](())
