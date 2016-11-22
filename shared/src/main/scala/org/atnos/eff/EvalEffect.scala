@@ -43,7 +43,7 @@ trait EvalInterpretation extends EvalTypes {
   def runEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] = {
     val recurse = new Recurse[Eval, U, A] {
       def apply[X](m: Eval[X]): X Either Eff[U, A] = Either.left(m.value)
-      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] = Left(ms.map(_.value))
+      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] = Right(Eval.later(ms.map(_.value)))
     }
 
     interpret1((a: A) => a)(recurse)(r)
