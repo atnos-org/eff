@@ -2,5 +2,5 @@ Maintenance version
 
 Fixes:
    
- * removed the dependency of `eff-cats` (the JVM version) on `cats-sjs`   
+ * removed the dependency of `eff` (the JVM version) on `cats-sjs`
  

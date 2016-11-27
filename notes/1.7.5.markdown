@@ -6,7 +6,7 @@ Improvements:
  * added `T |= R` as type alias to `MemberIn[T, R]`
  * added various `X |= R` type aliases for common effects using a `_effect` convention for the name. For example `type _option = Option |= R`    
  * added a way to derive a `MemberIn[V, U]` instance from `Member.Aux[T, R, U]` when there is an implicit `V |= R` in scope.
-     This helps with translating "high-level" effects to "low-level" ones (see the page on [implicits](https://atnos-org.github.io/eff-cats/org.atnos.site.Implicits.html) for an example)
+     This helps with translating "high-level" effects to "low-level" ones (see the page on [implicits](https://atnos-org.github.io/eff/org.atnos.site.Implicits.html) for an example)
 
 Fixes:
    

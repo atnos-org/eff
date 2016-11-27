@@ -364,7 +364,7 @@ import interpreter._
 Await.result(action.runOption.runAsyncFuture, 1 second)
 }.eval}
 
-If you prefer to use monix or scalaz you need to add a dependency on `eff-cats-monix` or `eff-cats-scalaz` and create
+If you prefer to use monix or scalaz you need to add a dependency on `eff-monix` or `eff-scalaz` and create
 the corresponding `org.atnos.eff.monix.AsyncTaskService` or `org.atnos.eff.scalaz.AsyncTaskService`:
 ```
 import org.atnos.eff._

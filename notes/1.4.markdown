@@ -9,4 +9,4 @@ Improvements:
 
 Issues: 
 
- * doc: added the import of the implicit execution context for the Future effect [#4](https://github.com/atnos-org/eff-cats/issues/4)
+ * doc: added the import of the implicit execution context for the Future effect [#4](https://github.com/atnos-org/eff/issues/4)

@@ -5,6 +5,12 @@ import _root_.scalaz._, Scalaz._
 
 package object scalaz {
 
+  object all extends
+    either with
+    eval   with
+    safe   with
+    validate
+
   /**
    * Monad implementation for the Eff[R, ?] type
    */

@@ -15,17 +15,17 @@ lazy val eff = project.in(file("."))
   .dependsOn(coreJVM, coreJS, monixJVM, monixJS, scalaz)
 
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
-  .settings(moduleName := "eff-cats")
+  .settings(moduleName := "eff")
   .jsSettings(commonJsSettings:_*)
   .jvmSettings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter):_*)
-  .jvmSettings(promulgate.library("org.atnos.eff", "eff-cats"):_*)
+  .jvmSettings(promulgate.library("org.atnos.eff", "eff"):_*)
   .settings(effSettings:_*)
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
 
 lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
-  .settings(moduleName := "eff-cats-monix")
+  .settings(moduleName := "eff-monix")
   .dependsOn(core)
   .settings(libraryDependencies ++= monixEval)
   .settings(effSettings:_*)
@@ -36,7 +36,7 @@ lazy val monixJVM = monix.jvm
 lazy val monixJS =  monix.js
 
 lazy val scalaz = project.in(file("scalaz"))
-  .settings(moduleName := "eff-cats-scalaz")
+  .settings(moduleName := "eff-scalaz")
   .dependsOn(coreJVM)
   .settings(libraryDependencies ++= scalazConcurrent)
   .settings(effSettings ++ commonJvmSettings:_*)
@@ -84,11 +84,11 @@ lazy val effSettings =
 
 lazy val publishSettings =
   Seq(
-  homepage := Some(url("https://github.com/atnos-org/eff-cats")),
+  homepage := Some(url("https://github.com/atnos-org/eff")),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
-  scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/eff-cats"), "scm:git:git@github.com:atnos-org/eff-cats.git")),
+  scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/eff"), "scm:git:git@github.com:atnos-org/eff.git")),
   autoAPIMappings := true,
-  apiURL := Some(url("http://atnos.org/eff-cats/api/")),
+  apiURL := Some(url("http://atnos.org/eff/api/")),
   pomExtra := (
     <developers>
       <developer>
@@ -139,7 +139,7 @@ lazy val userGuideSettings =
     GhPagesKeys.ghpagesNoJekyll := false,
     SiteKeys.siteSourceDirectory in SiteKeys.makeSite := target.value / "specs2-reports" / "site",
     includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
-    git.remoteRepo := "git@github.com:atnos-org/eff-cats.git"
+    git.remoteRepo := "git@github.com:atnos-org/eff.git"
   )
 
 lazy val sharedReleaseProcess = Seq(

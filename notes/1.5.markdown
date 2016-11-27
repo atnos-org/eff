@@ -1,7 +1,7 @@
 
 Improvements:
 
- * core: use the `SI-2712` fix [#42](https://github.com/atnos-org/eff-cats/issues/2)
+ * core: use the `SI-2712` fix [#42](https://github.com/atnos-org/eff/issues/2)
  * core: renamed the `DisjunctionEffect` effect to `XorEffect`
  * core: removed the `swap` method and improved the doc for `transform`
  * core: added a `localReader` interpreter
@@ -14,5 +14,5 @@ Improvements:
 
 Issues: 
 
- * build: fixed the connection tag in the pom file [#5](https://github.com/atnos-org/eff-cats/issues/5)
+ * build: fixed the connection tag in the pom file [#5](https://github.com/atnos-org/eff/issues/5)
  
