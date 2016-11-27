@@ -1,16 +1,16 @@
-package org.atnos.eff
-package asyncscalaz
+package org.atnos.eff.addon.scalaz.concurrent
 
 import cats.implicits._
+import org.atnos.eff.{Async, Eff, Fx}
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 
 import scala.collection.mutable.ListBuffer
 import scalaz.concurrent._
-import scala.concurrent._, duration._
+import scala.concurrent._
+import duration._
 import org.scalacheck._
 import org.specs2.matcher.TaskMatchers._
 

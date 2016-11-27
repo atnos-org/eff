@@ -9,14 +9,19 @@ import cats.data.Writer
   */
 object eff extends eff
 
-trait eff {
+trait eff extends effOperations with effCats
+
+trait effOperations {
   implicit final def toEffOps[R, A](e: Eff[R, A]): EffOps[R, A] = new EffOps(e)
   implicit final def toEffTranslateIntoOps[R, A](e: Eff[R, A]): EffTranslateIntoOps[R, A] = new EffTranslateIntoOps(e)
   implicit final def toEffNoEffectOps[A](e: Eff[NoFx, A]): EffNoEffectOps[A] = new EffNoEffectOps(e)
   implicit final def toEffSendOps[M[_], A](ma: M[A]): EffSendOps[M, A] = new EffSendOps(ma)
   implicit final def toEffPureOps[A](a: A): EffPureOps[A] = new EffPureOps(a)
-  implicit final def toEffOneEffectOps[M[_], A](e: Eff[Fx1[M], A]): EffOneEffectOps[M, A] = new EffOneEffectOps(e)
   implicit final def toEffOnePureValueOps[R, A](e: Eff[R, A]): EffOnePureValueOps[R, A] = new EffOnePureValueOps(e)
+}
+
+trait effCats {
+  implicit final def toEffOneEffectOps[M[_], A](e: Eff[Fx1[M], A]): EffOneEffectOps[M, A] = new EffOneEffectOps(e)
   implicit final def toEffMonadicOps[R, M[_], A](e: Eff[R, M[A]]): EffMonadicOps[R, M, A] = new EffMonadicOps(e)
   implicit final def toEffApplicativeOps[F[_], A](values: F[A]): EffApplicativeOps[F, A] = new EffApplicativeOps(values)
   implicit final def toEffSequenceOps[F[_], R, A](values: F[Eff[R, A]]): EffSequenceOps[F, R, A] = new EffSequenceOps(values)
@@ -81,6 +86,7 @@ final class EffMonadicOps[R, M[_], A](val e: Eff[R, M[A]]) extends AnyVal {
 final class EffApplicativeOps[F[_], A](val values: F[A]) extends AnyVal {
   def traverseA[R, B](f: A => Eff[R, B])(implicit F: Traverse[F]): Eff[R, F[B]] =
     Eff.traverseA(values)(f)
+
   def flatTraverseA[R, B](f: A => Eff[R, F[B]])(implicit F1: Traverse[F], F2: FlatMap[F]): Eff[R, F[B]] =
     Eff.flatTraverseA(values)(f)
 }

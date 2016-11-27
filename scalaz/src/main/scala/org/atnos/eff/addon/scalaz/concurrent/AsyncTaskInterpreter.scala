@@ -1,5 +1,4 @@
-package org.atnos.eff
-package asyncscalaz
+package org.atnos.eff.addon.scalaz.concurrent
 
 import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
 
@@ -11,8 +10,8 @@ import scalaz.concurrent._
 import cats._
 import cats.implicits._
 import org.atnos.eff.SubscribeEffect._
-import Async._
 import AsyncTaskInterpreter._
+import org.atnos.eff._
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -25,7 +24,7 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
     executors.scheduledExecutorService
 
   def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
-    run(e.detachA(ApplicativeAsync))
+    run(e.detachA(Async.ApplicativeAsync))
 
   def runSequential[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     run(e.detach)
