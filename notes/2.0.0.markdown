@@ -1,0 +1,20 @@
+A big step for the Eff Monad!
+
+This release introduces several breaking changes and lots of improvements:
+
+ * the library is based on `cats >= 0.8.0` and does not use the `Xor` type anymore in favor of `Either`
+ * the project have moved to `http://github.com/atnos-org/eff`
+ * the `scalaz` version of this library is now just a `eff-scalaz` module in this project
+ * there is a `Safe` effect to deal with resources management (and register finalizers)
+ * it is also possible to register some `Eff` actions which will truly be executed "at the end" even if more
+  actions are being flatMapped on a given `Eff` value (with `Eff.addLast`)
+ * the `Member` typeclass has been refined into 3 typeclasses with more and more power: `MemberIn` to create effects,
+ `MemberInOut` to "intercept" effects (just to modify them), `Member` to interpret effects
+ * there is an `Async` effect for asynchronous computations. The default implementation uses Scala `Future` but there are
+ also Scalaz `Task` and Monix `Task` implementations
+
+Please refer to the [documentation](http://atnos-org.github.io/eff) for more detailed explanations on how to use the library. 
+The user guide is by no means complete and PRs to expand it are welcome! 
+
+Thanks some of the early adopters: @benhutchison, @reactormonk, @dispalt, @edmundnoble for their questions and comments, they
+really helped shape the library the way it is now.
