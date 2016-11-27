@@ -35,7 +35,7 @@
 
 
 
-<div class="col-md-10">
+<div class="col-md-10 col-sm-9 col-xs-9">
 <h1>Out of the box</h1>
 <div id="tipue_search_content"></div>
 
@@ -61,7 +61,7 @@
 <td align="left">an effect for optional computations, stopping when there’s no available value</td>
 </tr>
 <tr class="odd">
-<td align="left"><code class="prettyprint">XorEffect</code></td>
+<td align="left"><code class="prettyprint">EitherEffect</code></td>
 <td align="left">an effect for computations with failures, stopping when there is a failure</td>
 </tr>
 <tr class="even">
@@ -70,7 +70,7 @@
 </tr>
 <tr class="odd">
 <td align="left"><code class="prettyprint">ErrorEffect</code></td>
-<td align="left">a mix of Eval and Xor, catching exceptions and returning them as failures</td>
+<td align="left">a mix of Eval and Either, catching exceptions and returning them as failures</td>
 </tr>
 <tr class="even">
 <td align="left"><code class="prettyprint">ReaderEffect</code></td>
@@ -93,8 +93,8 @@
 <td align="left">an effect for modeling non-determinism</td>
 </tr>
 <tr class="odd">
-<td align="left"><code class="prettyprint">FutureEffect</code></td>
-<td align="left">an effect using Scala’s Future</td>
+<td align="left"><code class="prettyprint">AsyncEffect</code></td>
+<td align="left">an effect for asynchronous computations</td>
 </tr>
 <tr class="even">
 <td align="left"><code class="prettyprint">SafeEffect</code></td>
@@ -136,15 +136,14 @@ def addKeys(key1: String, key2: String): Eff[S, Int] = for {
 
 (addKeys(&quot;key1&quot;, &quot;key2&quot;).runOption.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runOption.run)</code></pre>
 <p><code class="prettyprint">&gt; (Some(30),None)</code></p>
-<h3 id="xor">Xor</h3>
-<p>The <code class="prettyprint">Xor</code> effect is similar to the <code class="prettyprint">Option</code> effect but adds the possibility to specify why a computation stopped:</p>
+<h3 id="either">Either</h3>
+<p>The <code class="prettyprint">Either</code> effect is similar to the <code class="prettyprint">Option</code> effect but adds the possibility to specify why a computation stopped:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-import cats.data.Xor
 
 /**
  * Stack declaration
  */
-type S = Fx.fx1[String Xor ?]
+type S = Fx.fx1[String Either ?]
 
 // compute with this stack
 val map: Map[String, Int] =
@@ -152,16 +151,16 @@ val map: Map[String, Int] =
 
 // get 2 keys from the map and add the corresponding values
 def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a &lt;- optionXor(map.get(key1), s&quot;&#39;$key1&#39; not found&quot;)
-  b &lt;- optionXor(map.get(key2), s&quot;&#39;$key2&#39; not found&quot;)
+  a &lt;- optionEither(map.get(key1), s&quot;&#39;$key1&#39; not found&quot;)
+  b &lt;- optionEither(map.get(key2), s&quot;&#39;$key2&#39; not found&quot;)
 } yield a + b
 
-(addKeys(&quot;key1&quot;, &quot;key2&quot;).runXor.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runXor.run)</code></pre>
+(addKeys(&quot;key1&quot;, &quot;key2&quot;).runEither.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runEither.run)</code></pre>
 <p><code class="prettyprint">&gt; (Right(30),Left('missing' not found))</code></p>
 <p><em>Note</em>: the <code class="prettyprint">?</code> syntax comes from the <a href="https://github.com/non/kind-projector">kind-projector</a> project and allows us to avoid type lambdas.</p>
 <p>A <code class="prettyprint">catchLeft</code> method can also be used to intercept an error and possibly recover from it:</p>
 <pre><code class="prettyprint">case class TooBig(value: Int)
-type E = Fx.fx1[TooBig Xor ?]
+type E = Fx.fx1[TooBig Either ?]
 
 val i = 7
 
@@ -174,10 +173,10 @@ val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =&gt
   else        left[E, TooBig, Int](TooBig(k))
 }
 
-action.runXor.run ==== Xor.Right(7)</code></pre>
+action.runEither.run ==== Right(7)</code></pre>
 <p><em>Note</em>: the type annotations on <code class="prettyprint">left</code> and <code class="prettyprint">right</code> can be avoided by adding an implicit declaration in scope. You can learn more about this in the <link class="ok"><a href="org.atnos.site.MemberImplicits.html" tooltip="" class="ok">Implicits</a></link> section.</p>
 <h3 id="validate">Validate</h3>
-<p>The <code class="prettyprint">Validate</code> effect is similar to the <code class="prettyprint">Xor</code> effect but let you accumulate failures:</p>
+<p>The <code class="prettyprint">Validate</code> effect is similar to the <code class="prettyprint">Either</code> effect but let you accumulate failures:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 
 /**
@@ -197,7 +196,7 @@ def checkPositiveInts(a: Int, b: Int, c: Int): Eff[S, (Int, Int, Int)] = for {
 checkPositiveInts(1, -3, -2).runNel.run</code></pre>
 <p><code class="prettyprint">&gt; Left(NonEmptyList(-3 is not positive, -2 is not positive))</code></p>
 <h3 id="error">Error</h3>
-<p>The <code class="prettyprint">Error</code> effect is both an <code class="prettyprint">Eval</code> effect and a <code class="prettyprint">Xor</code> one with <code class="prettyprint">Throwable Xor F</code> on the “left” side. The idea is to represent computations which can fail, either with an exception or a failure. You can:</p>
+<p>The <code class="prettyprint">Error</code> effect is both an <code class="prettyprint">Eval</code> effect and a <code class="prettyprint">Either</code> one with <code class="prettyprint">Throwable Either F</code> on the “left” side. The idea is to represent computations which can fail, either with an exception or a failure. You can:</p>
 <ul>
 <li><p>create delayed computations with <code class="prettyprint">ok</code></p></li>
 <li><p>fail with <code class="prettyprint">fail(f: F)</code> where <code class="prettyprint">F</code> is the failure type</p></li>
@@ -209,7 +208,7 @@ checkPositiveInts(1, -3, -2).runNel.run</code></pre>
 <li><p><code class="prettyprint">orElse</code> runs an action and then run another one if the first is not successful</p></li>
 <li><p><code class="prettyprint">whenFailed</code> does the same thing than <code class="prettyprint">orElse</code> but uses the error for <code class="prettyprint">action1</code> to decide which action to run next</p></li>
 </ul>
-<p>When you run an <code class="prettyprint">Error</code> effect you get back an <code class="prettyprint">Error Xor A</code> where <code class="prettyprint">Error</code> is a type alias for <code class="prettyprint">Throwable Xor Failure</code>.</p>
+<p>When you run an <code class="prettyprint">Error</code> effect you get back an <code class="prettyprint">Error Either A</code> where <code class="prettyprint">Error</code> is a type alias for <code class="prettyprint">Throwable Either Failure</code>.</p>
 <p>The <code class="prettyprint">Error</code> object implements this effect with <code class="prettyprint">String</code> as the <code class="prettyprint">Failure</code> type but you are encouraged to create our own failure datatype and extend the <code class="prettyprint">Error[MyFailureDatatype]</code> trait.</p>
 <h3 id="reader">Reader</h3>
 <p>The <code class="prettyprint">Reader</code> effect is used to request values from an “environment”. The main method is <code class="prettyprint">ask</code> to get the current environment (or “configuration” if you prefer to see it that way) and you can run an effect stack containing a <code class="prettyprint">Reader</code> effect by providing a value for the environment with the <code class="prettyprint">runReader</code> method.</p>
@@ -369,21 +368,53 @@ import cats.instances.list._
 
 pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose.run</code></pre>
 <p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
-<h3 id="future">Future</h3>
-<p>The <code class="prettyprint">Future</code> effect uses Scala<code class="prettyprint">s</code>Future` for asynchronous computations. You can create values with:</p>
-<ul>
-<li><code class="prettyprint">sync</code>: a “pure” value</li>
-<li><code class="prettyprint">async</code>: a <code class="prettyprint">Future</code> value</li>
-</ul>
-<p>You can then run the <code class="prettyprint">Eff</code> computation containing a <code class="prettyprint">Future</code> effect by using either:</p>
-<ul>
-<li><code class="prettyprint">awaitFuture(atMost: FiniteDuration)</code> which might return a timeout exception</li>
-<li><code class="prettyprint">detach</code> to get back a <code class="prettyprint">Future[A]</code> if the future effect is the last one to be interpreted in the stack of effects</li>
-</ul>
-<p>Note that it is possible to delay the execution of <code class="prettyprint">Future</code> values by having both <code class="prettyprint">Eval</code> and <code class="prettyprint">Future</code> in the stack:</p>
-<ul>
-<li><code class="prettyprint">delay(10).flatMap(async)</code></li>
-</ul>
+<h3 id="async">Async</h3>
+<p>The Async effect is an “abstract” effect. This means that you can create asynchronous expressions using the same API and have it implemented using either <a href="http://docs.scala-lang.org/overviews/core/futures.html">Scala <code class="prettyprint">Future</code></a> or <a href="http://timperrett.com/2014/07/20/scalaz-task-the-missing-documentation/">Scalaz <code class="prettyprint">Task</code></a> or <a href="https://monix.io/docs/2x/eval/task.html">Monix <code class="prettyprint">Task</code></a>.</p>
+<p>For the following example we will assume an implementation using regular Scala futures.</p>
+<p>In order to access the API you first need to create an <code class="prettyprint">AsyncService</code>:</p>
+<pre><code class="prettyprint">import org.atnos.eff._
+import org.atnos.eff.async._
+import org.atnos.eff.syntax.all._
+
+import scala.concurrent._, duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+
+</code></pre>
+<p>Then all the <code class="prettyprint">AsyncService</code> operations are available</p>
+<pre><code class="prettyprint">
+type R = Fx.fx2[Async, Option]
+
+val action: Eff[R, Int] =
+  for {
+    // create a value now
+    a &lt;- asyncNow[R, Int](1)
+
+    // evaluate a value later
+    b &lt;- asyncDelay[R, Int](1)
+
+    // evaluate a value asynchronously
+    c &lt;- asyncFork[R, Int](a + b)
+  } yield c
+
+</code></pre>
+<p>Finally you can evaluate other effects in the stack (Option here) and run the async effect to get back a <code class="prettyprint">Future</code></p>
+<pre><code class="prettyprint">
+val interpreter = AsyncFutureInterpreter.create
+import interpreter._
+
+Await.result(action.runOption.runAsyncFuture, 1 second)</code></pre>
+<p><code class="prettyprint">&gt; Some(2)</code></p>
+<p>If you prefer to use monix or scalaz you need to add a dependency on <code class="prettyprint">eff-monix</code> or <code class="prettyprint">eff-scalaz</code> and create the corresponding <code class="prettyprint">org.atnos.eff.monix.AsyncTaskService</code> or <code class="prettyprint">org.atnos.eff.scalaz.AsyncTaskService</code>:</p>
+<pre><code class="prettyprint">import org.atnos.eff._
+
+import java.util.concurrent._
+import scalaz.concurrent._
+
+implicit val es = Strategy.DefaultExecutorService
+val scalazService: AsyncService = org.atnos.eff.scalaz.AsyncTaskService.create
+
+// the monix service doesn&#39;t require any implicit context!
+val monixService: AsyncService = org.atnos.eff.monix.AsyncTaskService.create</code></pre>
 <h3 id="safe">Safe</h3>
 <p>The Safe effect is useful to handle resources which must be closed even in the presence of exceptions. The main operations are</p>
 <ul>
@@ -416,13 +447,13 @@ def useResource(ok: Boolean) = (r: Resource) =&gt;
   protect[S, Int](if (ok) r.values.sum else throw new Exception(&quot;boo&quot;))
 
 // this program uses the resource safely even if there is an exception
-def program(ok: Boolean): (Throwable Xor Int, List[Throwable]) =
+def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
   bracket(openResource)(useResource(ok))(closeResource).
     runSafe.run</code></pre>
 <pre><code class="prettyprint">&gt; Results
 Without exception: Right(55), finalizers exceptions: no exceptions, resource is closed: true
 With exception   : Left(boo), finalizers exceptions: no exceptions, resource is closed: true</code></pre>
-<p>As you can see in the signature of <code class="prettyprint">program</code> the return value of <code class="prettyprint">runSafe</code> is <code class="prettyprint">(Throwable Xor A, List[Throwable])</code>. The first part is the result of your program, which may end with an exception, and the second part is the list of possible exceptions thrown by the finalizers which can themselves fail.</p>
+<p>As you can see in the signature of <code class="prettyprint">program</code> the return value of <code class="prettyprint">runSafe</code> is <code class="prettyprint">(Throwable Either A, List[Throwable])</code>. The first part is the result of your program, which may end with an exception, and the second part is the list of possible exceptions thrown by the finalizers which can themselves fail.</p>
 <p>A simpler version of <code class="prettyprint">bracket</code> is <code class="prettyprint">finally</code>.</p>
 <p>This example show how to use <code class="prettyprint">finally</code> but also what happens if a finalizer fails:</p>
 <pre><code class="prettyprint">import org.atnos.eff.syntax.all._
@@ -437,7 +468,7 @@ def setDone(ok: Boolean): Eff[S, Unit] =
   protect[S, Unit](if (ok) sumDone = true else throw new Exception(&quot;failed!!&quot;))
 
 // this program tries to set sumDone to true when the computation is done
-def program(ok: Boolean, finalizeOk: Boolean): (Throwable Xor Int, List[Throwable]) =
+def program(ok: Boolean, finalizeOk: Boolean): (Throwable Either Int, List[Throwable]) =
   (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception(&quot;boo&quot;)) `finally` setDone(finalizeOk)).
     runSafe.run
 </code></pre>

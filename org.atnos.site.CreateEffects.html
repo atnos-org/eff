@@ -35,7 +35,7 @@
 
 
 
-<div class="col-md-10">
+<div class="col-md-10 col-sm-9 col-xs-9">
 <h1>Creating effects</h1>
 <div id="tipue_search_content"></div>
 
@@ -47,9 +47,7 @@
 <li><p>a method to send values of type <code class="prettyprint">A</code> into <code class="prettyprint">Eff[R, A]</code></p></li>
 <li><p>an interpreter</p></li>
 </ul>
-<pre><code class="prettyprint">import scala.concurrent.ExecutionContext.Implicits.global
-
-object FutEffect {
+<pre><code class="prettyprint">object FutEffect {
   type Fut[A] = Future[() =&gt; A]
   type _fut[R] = Fut |= R
 
@@ -61,6 +59,8 @@ object FutEffect {
       fa.zip(ff).map { case (a, f) =&gt; () =&gt; f()(a()) }
   }
 
+  import scala.concurrent.ExecutionContext.Implicits.global
+
   def fut[R :_fut, A](a: =&gt; A): Eff[R, A] =
     send[Fut, R, A](Future(() =&gt; a))
 
@@ -68,11 +68,11 @@ object FutEffect {
      implicit m: Member.Aux[Fut, R, U]): Eff[U, A] = {
 
     val recurse = new Recurse[Fut, U, A] {
-      def apply[X](m: Fut[X]): X Xor Eff[U, A] =
-        Xor.Left(Await.result(m.map(_ ()), atMost))
+      def apply[X](m: Fut[X]): X Either Eff[U, A] =
+        Left(Await.result(m.map(_ ()), atMost))
 
-      def applicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Xor Fut[T[X]] =
-        Xor.Right(ApplicativeFut.sequence(ms))
+      def applicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Either Fut[T[X]] =
+        Right(ApplicativeFut.sequence(ms))
 
     }
     interpret1((a: A) =&gt; a)(recurse)(effects)

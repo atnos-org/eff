@@ -35,7 +35,7 @@
 
 
 
-<div class="col-md-10">
+<div class="col-md-10 col-sm-9 col-xs-9">
 <h1>Transforming stacks</h1>
 <div id="tipue_search_content"></div>
 
@@ -124,12 +124,12 @@ action.runReader(Conf(&quot;www.me.com&quot;, 8080)).runOption.run</code></pre>
 <li><code class="prettyprint">StateEffect.lensState</code> takes a “getter” <code class="prettyprint">S =&gt; T</code> and a “setter” <code class="prettyprint">(S, T) =&gt; S</code> to to transform a stack with a <code class="prettyprint">State[T, ?]</code> into a stack with a <code class="prettyprint">State[S, ?]</code></li>
 </ul>
 <h3 id="effects-translation">Effects translation</h3>
-<p>A common thing to do is to translate “high-level” effects (a webservice DSL for example) into low-level ones (<code class="prettyprint">Future</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Xor</code>, etc…).</p>
-<p>For example you might have this stack: <code class="prettyprint">type S = Fx.fx3[Authenticated, Future, ThrowableXor]</code></p>
-<p>And you want to write an interpreter which will translate authentication actions into <code class="prettyprint">Future</code> and <code class="prettyprint">Xor</code>:</p>
+<p>A common thing to do is to translate “high-level” effects (a webservice DSL for example) into low-level ones (<code class="prettyprint">Async</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Either</code>, etc…).</p>
+<p>For example you might have this stack: <code class="prettyprint">type S = Fx.fx3[Authenticated, Async, ThrowableEither]</code></p>
+<p>And you want to write an interpreter which will translate authentication actions into <code class="prettyprint">Async</code> and <code class="prettyprint">Either</code>:</p>
 <pre><code class="prettyprint">import org.atnos.eff.eff._
 import org.atnos.eff.syntax.eff._
-import org.atnos.eff.future._
+import org.atnos.eff.async._
 import org.atnos.eff.interpret._
 import scala.concurrent.Future
 
@@ -143,8 +143,8 @@ case class AuthError(message: String)
 sealed trait Authenticated[A]
 case class Authenticate(token: String) extends Authenticated[AccessRights]
 
-type AuthErroXor[A] = AuthError Xor A
-type _error[R] = AuthErroXor |= R
+type AuthErroEither[A] = AuthError Either A
+type _error[R] = AuthErroEither |= R
 
 /**
  * The order of implicit parameters is really important for type inference!
@@ -152,36 +152,36 @@ type _error[R] = AuthErroXor |= R
  */
 def runAuth[R, U, A](e: Eff[R, A])(implicit
   authenticated: Member.Aux[Authenticated, R, U],
-   future:       _future[U],
-   xor:          _error[U]): Eff[U, A] =
+  async:         _async[U],
+  either:        _error[U]): Eff[U, A] =
 
    translate(e)(new Translate[Authenticated, U] {
      def apply[X](ax: Authenticated[X]): Eff[U, X] =
        ax match {
          case Authenticate(token) =&gt;
-           // send the future effect in the stack U
+           // send the async effect in the stack U
            send(authenticate(token)).
-           // send the Xor value in the stack U
+           // send the Either value in the stack U
            collapse
        }
     })
 
 // call to a service to authenticate tokens
-def authenticate(token: String): Future[AuthError Xor AccessRights] = ???
+def authenticate(token: String): Async[AuthError Either AccessRights] = ???
 
-type S = Fx.fx3[Authenticated, AuthError Xor ?, Future]
+type S = Fx.fx3[Authenticated, AuthError Either ?, Async]
 def auth: Eff[S, Int] = ???
 
 runAuth(auth)</code></pre>
-<p>The call to <code class="prettyprint">send</code> above needs to send a <code class="prettyprint">Future</code> value in the stack <code class="prettyprint">U</code>. This is possible because <code class="prettyprint">Future</code> is an effect in <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">future</code>.</p>
-<p>Furthermore, <code class="prettyprint">authenticate</code> returns an <code class="prettyprint">AuthError Xor ?</code> value. We can “collapse” it into <code class="prettyprint">U</code> because <code class="prettyprint">AuthError Xor ?</code> is an effect of <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">xor</code>.</p>
+<p>The call to <code class="prettyprint">send</code> above needs to send an <code class="prettyprint">Async</code> value in the stack <code class="prettyprint">U</code>. This is possible because <code class="prettyprint">Async</code> is an effect in <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">async</code>.</p>
+<p>Furthermore, <code class="prettyprint">authenticate</code> returns an <code class="prettyprint">AuthError Either ?</code> value. We can “collapse” it into <code class="prettyprint">U</code> because <code class="prettyprint">AuthError Either ?</code> is an effect of <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">either</code>.</p>
 <p>You might wonder why we don’t use a more direct type signature like:</p>
-<pre><code class="prettyprint">def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(
+<pre><code class="prettyprint">def runAuth2[R, U :_async :_error, A](e: Eff[R, A])(
   implicit authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A]</code></pre>
 <p>The reason is that scalac desugars this to:</p>
 <pre><code class="prettyprint">def runAuth2[R, U, A](e: Eff[R, A])(
-  implicit future:        _future[U],
-           xor:           _error[U],
+  implicit async:         _async[U],
+           either:        _error[U],
            authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A] =</code></pre>
 <p>And then <code class="prettyprint">authenticated</code> is last in the list of implicits parameters and can not be used to guide type inference.</p>
 <h3 id="interpret-an-effect-locally">Interpret an effect “locally”</h3>

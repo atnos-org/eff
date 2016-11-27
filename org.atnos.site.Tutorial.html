@@ -35,7 +35,7 @@
 
 
 
-<div class="col-md-10">
+<div class="col-md-10 col-sm-9 col-xs-9">
 <h1>Tutorial</h1>
 <div id="tipue_search_content"></div>
 
@@ -180,7 +180,7 @@ def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff
 <ul>
 <li><code class="prettyprint">State</code> for maintaining the map of values</li>
 <li><code class="prettyprint">Writer</code> for logging</li>
-<li><code class="prettyprint">E Xor ?</code> for type errors
+<li><code class="prettyprint">E Either ?</code> for type errors
 <p/></li>
 </ul>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, interpret._, syntax._
@@ -197,7 +197,7 @@ type _stateMap[R]     = State[Map[String, Any], ?] |= R
  *
  *  - Writer to create log statements
  *  - State to update a key-value Map
- *  - Xor to raise errors if the type of an object in the map is not of the expected type
+ *  - Either to raise errors if the type of an object in the map is not of the expected type
  *
  *  The resulting effect stack is U which is R without the KVStore effects
  *
@@ -212,13 +212,13 @@ type _stateMap[R]     = State[Map[String, Any], ?] |= R
  *
  * Implicit member definitions will NOT be found with the following definition:
  *
- * def runKVStore[R, U :_throwableXor :_writerString :_stateMap, A](effects: Eff[R, A]) (
+ * def runKVStore[R, U :_throwableEither :_writerString :_stateMap, A](effects: Eff[R, A]) (
  *   implicit m: Member.Aux[KVStore, R, U]): Eff[U, A] = {
  *
  */
 def runKVStore[R, U, A](effects: Eff[R, A])
   (implicit m: Member.Aux[KVStore, R, U],
-            throwable:_throwableXor[U],
+            throwable:_throwableEither[U],
             writer:_writerString[U],
             state:_stateMap[U]): Eff[U, A] = {
 
@@ -229,21 +229,21 @@ def runKVStore[R, U, A](effects: Eff[R, A])
           for {
             _ &lt;- tell(s&quot;put($key, $value)&quot;)
             _ &lt;- modify((map: Map[String, Any]) =&gt; map.updated(key, value))
-            r &lt;- fromXor(Xor.catchNonFatal(().asInstanceOf[X]))
+            r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
           } yield r
 
         case Get(key) =&gt;
           for {
             _ &lt;- tell(s&quot;get($key)&quot;)
             m &lt;- get[U, Map[String, Any]]
-            r &lt;- fromXor(Xor.catchNonFatal(m.get(key).asInstanceOf[X]))
+            r &lt;- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
           } yield r
 
         case Delete(key) =&gt;
           for {
             _ &lt;- tell(s&quot;delete($key)&quot;)
             u &lt;- modify((map: Map[String, Any]) =&gt; map - key)
-            r &lt;- fromXor(Xor.catchNonFatal(().asInstanceOf[X]))
+            r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
           } yield r
       }
   })
@@ -289,10 +289,10 @@ runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run</code></pre>
 import cats._, data._
 
 // run the program with the safe interpreter
-type Stack = Fx.fx4[KVStore, Throwable Xor ?, State[Map[String, Any], ?], Writer[String, ?]]
+type Stack = Fx.fx4[KVStore, Throwable Either ?, State[Map[String, Any], ?], Writer[String, ?]]
 
 val (result, logs) =
-  runKVStore(program[Stack]).runXor.evalState(Map.empty[String, Any]).runWriter.run
+  runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
 
 (result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
 <pre><code class="prettyprint">&gt; Right(Some(2))
@@ -305,14 +305,14 @@ delete(tame-cats)</code></pre>
 <p>It is nice to be able to “chain” <code class="prettyprint">run</code> methods with this additional piece of syntax:</p>
 <pre><code class="prettyprint">implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
   def runStore[U](implicit m: Member.Aux[KVStore, R, U],
-                  throwable:_throwableXor[U],
+                  throwable:_throwableEither[U],
                   writer:_writerString[U],
                   state:_stateMap[U]): Eff[U, A] =
     runKVStore(effects)
 }
 
 val (result, logs) =
-  program[Stack].runStore.runXor.evalState(Map.empty[String, Any]).runWriter.run
+  program[Stack].runStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
 
 (result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
 <pre><code class="prettyprint">&gt; Right(Some(2))
@@ -371,7 +371,7 @@ import cats.data._
 
 def runInteract[R, A](effects: Eff[R, A])(implicit m: Interact &lt;= R): Eff[m.Out, A] = {
   val recurse = new Recurse[Interact, m.Out, A] {
-    def apply[X](i: Interact[X]): X Xor Eff[m.Out, A] = Xor.left {
+    def apply[X](i: Interact[X]): X Either Eff[m.Out, A] = Left {
       i match {
         case Ask(prompt) =&gt;
           println(prompt)
@@ -382,8 +382,8 @@ def runInteract[R, A](effects: Eff[R, A])(implicit m: Interact &lt;= R): Eff[m.O
       }
     }
 
-    def applicative[X, T[_] : Traverse](ms: T[Interact[X]]): T[X] Xor Interact[T[X]] =
-      Xor.Left(ms.map {
+    def applicative[X, T[_] : Traverse](ms: T[Interact[X]]): T[X] Either Interact[T[X]] =
+      Left(ms.map {
         case Ask(prompt) =&gt; println(prompt); readLine()
         case Tell(msg)   =&gt; println(msg)
       })
@@ -396,15 +396,15 @@ def runDataOp[R, A](effects: Eff[R, A])(implicit m: DataOp &lt;= R): Eff[m.Out, 
   val memDataSet = new scala.collection.mutable.ListBuffer[String]
 
   val recurse = new Recurse[DataOp, m.Out, A] {
-    def apply[X](i: DataOp[X]): X Xor Eff[m.Out, A] = Xor.left {
+    def apply[X](i: DataOp[X]): X Either Eff[m.Out, A] = Left {
       i match {
         case AddCat(a)    =&gt; memDataSet.append(a); ()
         case GetAllCats() =&gt; memDataSet.toList
       }
     }
 
-    def applicative[X, T[_]: Traverse](ms: T[DataOp[X]]): T[X] Xor DataOp[T[X]] =
-      Xor.Left(ms.map {
+    def applicative[X, T[_]: Traverse](ms: T[DataOp[X]]): T[X] Either DataOp[T[X]] =
+      Left(ms.map {
         case AddCat(a)    =&gt; memDataSet.append(a); ()
         case GetAllCats() =&gt; memDataSet.toList
       })
