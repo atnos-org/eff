@@ -24,6 +24,9 @@ trait AsyncCreation {
   def asyncFail[R :_async, A](t: Throwable): Eff[R, A] =
     send[Async, R, A](AsyncFailed[A](t))
 
+  def asyncFromEither[R :_async, A](e: Throwable Either A): Eff[R, A] =
+    e.fold(t => asyncFail(t), a => asyncNow(a))
+
   def asyncDelay[R :_async, A](a: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[Async, R, A](AsyncDelayed[A](Eval.later(a), timeout))
 

@@ -21,6 +21,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
  Async effects are stacksafe with asyncFork                   $e4
  Async effects are stacksafe with asyncDelay                  $e5
  Async effects can trampoline a Task                          $e6
+ An Async effect can be created from Either                   $e7
 
 """
 
@@ -96,6 +97,10 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
     eventually(retries = 5, sleep = 1.second) {
       Await.result(suspend(loop(100000)).runAsyncFuture, 10.seconds) must not(throwAn[Exception])
     }
+  }
+
+  def e7 = {
+    asyncFromEither(Left[Throwable, Int](boomException)).asyncAttempt.runAsyncFuture must beLeft(boomException).awaitFor(1.second)
   }
 
   /**
