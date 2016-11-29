@@ -1,10 +1,11 @@
 package org.atnos.eff
 
-import java.util.concurrent.{ExecutorService, Executors, ScheduledExecutorService}
+import java.util.Collections
+import java.util.concurrent._
 
 import cats.Eval
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 case class ExecutorServices(executorServiceEval:   Eval[ExecutorService],
                             scheduledExecutorEval: Eval[ScheduledExecutorService],
@@ -51,11 +52,34 @@ object ExecutorServices {
     Executors.newScheduledThreadPool(scheduledThreadsNb)
 
 
-  /** create an ExecutionEnv from an execution context only */
+  /**
+   * create an ExecutionEnv from an execution context only
+   *
+   * WARNING!!! This method create a brand new scheduledExecutorService which will be used if
+   * you use the ExecutorServices to timeout an Async effect
+   */
   def fromExecutionContext(ec: =>ExecutionContext): ExecutorServices =
-    fromExecutorServices(
-      executor(threadsNb),
-      scheduledExecutor(threadsNb))
+     ExecutorServices(
+      Eval.later(executorFromExecutionContext(ec)),
+      Eval.later(scheduledExecutor(threadsNb)),
+      Eval.later(ec))
+
+  /** taken from https://gist.github.com/viktorklang/5245161 */
+  def executorFromExecutionContext(ec: =>ExecutionContext): ExecutorService =
+    ec match {
+      case null => throw null
+      case eces: ExecutionContextExecutorService => eces
+      case other => new AbstractExecutorService with ExecutionContextExecutorService {
+        override def prepare(): ExecutionContext = other
+        override def isShutdown = false
+        override def isTerminated = false
+        override def shutdown() = ()
+        override def shutdownNow() = Collections.emptyList[Runnable]
+        override def execute(runnable: Runnable): Unit = other execute runnable
+        override def reportFailure(t: Throwable): Unit = other reportFailure t
+        override def awaitTermination(length: Long, unit: TimeUnit): Boolean = false
+      }
+    }
 
   /** create an ExecutionEnv from Scala global execution context */
   def fromGlobalExecutionContext: ExecutorServices =
