@@ -1,12 +1,13 @@
-package org.atnos.eff
-package asyncmonix
+package org.atnos.eff.addon.monix
 
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-import cats._, implicits._
+import cats._
+import implicits._
 import monix.eval._
 import monix.execution._
 import org.atnos.eff.Async._
+import org.atnos.eff._
 import org.atnos.eff.SubscribeEffect.{Callback => _, _}
 
 import scala.concurrent.duration.FiniteDuration

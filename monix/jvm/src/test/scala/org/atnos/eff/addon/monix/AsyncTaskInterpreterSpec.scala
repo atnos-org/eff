@@ -1,10 +1,9 @@
-package org.atnos.eff
-package asyncmonix
+package org.atnos.eff.addon.monix
 
 import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-import org.atnos.eff.syntax.asyncmonix._
+import org.atnos.eff.syntax.addon.monix._
 import org.scalacheck._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
@@ -12,6 +11,8 @@ import org.specs2.concurrent.ExecutionEnv
 import scala.collection.mutable.ListBuffer
 import monix.execution.Scheduler.Implicits.global
 import monix.eval.Task
+import org.atnos.eff.{Async, Eff, Fx}
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 

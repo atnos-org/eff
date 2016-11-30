@@ -324,9 +324,8 @@ The Async effect is an "abstract" effect. This means that you can create asynchr
 and have it implemented using either [Scala `Future`](http://docs.scala-lang.org/overviews/core/futures.html) or
 [Scalaz `Task`](http://timperrett.com/2014/07/20/scalaz-task-the-missing-documentation/) or [Monix `Task`](https://monix.io/docs/2x/eval/task.html).
 
-For the following example we will assume an implementation using regular Scala futures.
-
-In order to access the API you first need to create an `AsyncService`:${snippet{
+For the following example we will assume an implementation using regular Scala futures. Let's create some
+`Async` effects:${snippet{
 
 import org.atnos.eff._
 import org.atnos.eff.async._
@@ -334,10 +333,6 @@ import org.atnos.eff.syntax.all._
 
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-
-/*p
-Then all the `AsyncService` operations are available
- */
 
 type R = Fx.fx2[Async, Option]
 
@@ -354,8 +349,9 @@ val action: Eff[R, Int] =
   } yield c
 
 /*p
-Finally you can evaluate other effects in the stack (Option here) and run the async effect to get back
- a `Future`
+Then we need an interpreter to interpret them as `Futures`. The `AsyncFutureInterpreter.create` method uses an implicit
+`ExecutionContext` to create the interpreter. If we import the interpreter methods we can finally invoke `runAsyncFuture`
+to get a `Future` back.
 */
 
 val interpreter = AsyncFutureInterpreter.create
@@ -365,7 +361,7 @@ Await.result(action.runOption.runAsyncFuture, 1 second)
 }.eval}
 
 If you prefer to use monix or scalaz you need to add a dependency on `eff-monix` or `eff-scalaz` and create
-the corresponding `org.atnos.eff.monix.AsyncTaskService` or `org.atnos.eff.scalaz.AsyncTaskService`:
+the corresponding `org.atnos.eff.monix.AsyncTaskInterpreter` or `org.atnos.eff.addon.scalaz.concurrent.AsyncTaskInterpreter`:
 ```
 import org.atnos.eff._
 
@@ -373,10 +369,12 @@ import java.util.concurrent._
 import scalaz.concurrent._
 
 implicit val es = Strategy.DefaultExecutorService
-val scalazService: AsyncService = org.atnos.eff.scalaz.AsyncTaskService.create
+val scalazService: AsyncTaskInterpreter =
+  org.atnos.eff.addon.scalaz.concurrent.AsyncTaskInterpreter.create
 
 // the monix service doesn't require any implicit context!
-val monixService: AsyncService = org.atnos.eff.monix.AsyncTaskService.create
+val monixService: AsyncTaskInterpreter =
+  org.atnos.eff.monix.addon.AsyncTaskInterpreter
 ```
 
 ### Safe
