@@ -1,0 +1,8 @@
+Minor (or not so minor) changes
+
+This release introduces several breaking changes and lots of improvements:
+
+ * updated the documentation on the `Async` effect
+ * added `Async.asyncFromEither`
+ * move the `AsyncTaskInterpreter` for monix to `org.atnos.eff.addon.monix` to mirror the Scalaz one
+ * fixed the creation of `ExecutorService`s from an `ExecutionContext`
