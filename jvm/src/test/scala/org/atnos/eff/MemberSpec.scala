@@ -118,5 +118,5 @@ class MemberSpec extends Specification with ScalaCheck { def is = s2"""
     } yield s.size
 
   def stateInOut[E](implicit state: State[String, ?] /= E, option: Option |= E): Eff[E, Int] =
-    readIn[E](state.transform[Reader[String, ?]], option)
+    readInOut[E](state.transform[Reader[String, ?]], option)
 }
