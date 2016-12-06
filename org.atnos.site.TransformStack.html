@@ -1,0 +1,288 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Transforming stacks</title>
+    <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
+    <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
+    <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
+    <link href="./css/font-awesome.min.css"                        type="text/css"     rel="stylesheet" />
+    <link href="./css/prettify.css"                                type="text/css"     rel="stylesheet" />
+    <link href="./css/tabber.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/tipuesearch.css"                             type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2.css"                                  type="text/css"     rel="stylesheet" />
+    <link href="./css/specs2-user.css"                             type="text/css"     rel="stylesheet" />
+
+    <script src="./javascript/jquery.js"                           type="text/javascript"></script>
+    <script src="./javascript/jquery.jstree.js"                    type="text/javascript"></script>
+    <script src="./javascript/tabber.js"                           type="text/javascript"></script>
+    <script src="./javascript/tabber_start.js"                     type="text/javascript"></script>
+    <script src="./javascript/prettify.js"                         type="text/javascript"></script>
+    <script src="./javascript/specs2.js"                           type="text/javascript"></script>
+    <script src="./javascript/specs2-user.js"                      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_set.js"      type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch_contents.js" type="text/javascript"></script>
+    <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
+
+</head>
+<body onload="prettyPrint()">
+
+<div class="container">
+
+<div class="col-md-1"></div>
+
+<div class="col-md-1"></div>
+
+
+
+
+<div class="col-md-10 col-sm-9 col-xs-9">
+<h1>Transforming stacks</h1>
+<div id="tipue_search_content"></div>
+
+<h3 id="what-is-an-effect-stack">What is an “effect stack”?</h3>
+<p>There is an abuse of language here. The name “stack” comes from “monad stack” used when talking about monad transformers. With <code class="prettyprint">Eff</code> though, effects are modelled differently, as a tree of effects.</p>
+<p>For example the type level representation of four effects <code class="prettyprint">T1, T2, T3, T4</code> is represented as:</p>
+<pre><code class="prettyprint">Fx.fx4[T1, T2, T3, T4]
+
+// or
+
+FxAppend[
+  Fx1[T1],
+  Fx3[T2, T3, T4]
+]</code></pre>
+<p>So every-time we manipulate effects at the type level we modify a tree of effects. For example, interpreting the effect <code class="prettyprint">T3</code> would leave us with the tree:</p>
+<pre><code class="prettyprint">FxAppend[
+  Fx1[T1],
+  Fx2[T2, T4]
+]</code></pre>
+<p>This code should prove it:</p>
+<pre><code class="prettyprint">// for now the following implicit summoning crashes the compiler
+  //val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]] =
+  //  implicitly[Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]]]</code></pre>
+<p>Unfortunately the compiler has some difficulties with it, so you can either get the member value by using the implicit definitions “manually” or you can just summon the member instance without the <code class="prettyprint">Aux</code> part:</p>
+<pre><code class="prettyprint">// so you need to explicitly define the implicit
+val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]] =
+  Member.MemberAppendR(Member.Member3M)
+
+// but this works
+val member: Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]] =
+  implicitly[Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]]]</code></pre>
+<p>More importantly the compiler is still able to track the right types resulting of the interpretation of a given effect so the following compiles ok:</p>
+<pre><code class="prettyprint">def runT3[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T3, R, U]): Eff[U, A] = ???
+def runT2[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T2, R, U]): Eff[U, A] = ???
+def runT1[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T1, R, U]): Eff[U, A] = ???
+def runT4[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T4, R, U]): Eff[U, A] = ???
+
+type S = FxAppend[Fx1[T1], Fx3[T2, T3, T4]]
+
+runT1(runT4(runT2(runT3(Eff.send[T3, S, Int](???)))))</code></pre>
+<h3 id="transform-an-effect-to-another">Transform an effect to another</h3>
+<h4 id="change-the-effect">Change the effect</h4>
+<p>A typical use case for this is to transform a stack having a <code class="prettyprint">Reader[S, ?]</code> effect to a stack having a <code class="prettyprint">Reader[B, ?]</code> effect where <code class="prettyprint">S</code> is “contained” in <code class="prettyprint">B</code> (meaning that there is a mapping from <code class="prettyprint">B</code>, “big”, to <code class="prettyprint">S</code>, “small”). Here is an example:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._
+import org.atnos.eff.syntax.all._
+import cats.data._
+
+case class Conf(host: String, port: Int)
+
+type ReaderPort[A] = Reader[Int, A]
+type ReaderHost[A] = Reader[String, A]
+type ReaderConf[A] = Reader[Conf, A]
+
+type S1 = Fx.fx2[ReaderHost, Option]
+type S2 = Fx.fx2[ReaderPort, Option]
+type SS = Fx.fx2[ReaderConf, Option]
+
+val readHost: Eff[S1, String] = for {
+  c &lt;- ask[S1, String]
+  h &lt;- OptionEffect.some[S1, String](&quot;hello&quot;)
+} yield h
+
+val readPort: Eff[S2, String] = for {
+  c &lt;- ask[S2, Int]
+  h &lt;- OptionEffect.some[S2, String](&quot;world&quot;)
+} yield h
+
+val fromHost = new (ReaderHost ~&gt; ReaderConf) {
+  def apply[X](r: ReaderHost[X]) = Reader((c: Conf) =&gt; r.run(c.host))
+}
+
+val fromPort = new (ReaderPort ~&gt; ReaderConf) {
+  def apply[X](r: ReaderPort[X]) = Reader((c: Conf) =&gt; r.run(c.port))
+}
+
+val action: Eff[SS, String] = for {
+  s1 &lt;- readHost.transform(fromHost)
+  s2 &lt;- readPort.transform(fromPort)
+} yield s1 + &quot; &quot; + s2
+
+action.runReader(Conf(&quot;www.me.com&quot;, 8080)).runOption.run</code></pre>
+<p><code class="prettyprint">&gt; Some(hello world)</code></p>
+<p>There are also specialized versions of <code class="prettyprint">transform</code> for <code class="prettyprint">Reader</code> and <code class="prettyprint">State</code>:</p>
+<ul>
+<li><code class="prettyprint">ReaderEffect.localReader</code> takes a “getter” <code class="prettyprint">B =&gt; A</code> to transform a stack with a <code class="prettyprint">Reader[A, ?]</code> into a stack with a <code class="prettyprint">Reader[B, ?]</code></li>
+<li><code class="prettyprint">StateEffect.lensState</code> takes a “getter” <code class="prettyprint">S =&gt; T</code> and a “setter” <code class="prettyprint">(S, T) =&gt; S</code> to to transform a stack with a <code class="prettyprint">State[T, ?]</code> into a stack with a <code class="prettyprint">State[S, ?]</code></li>
+</ul>
+<h3 id="effects-translation">Effects translation</h3>
+<p>A common thing to do is to translate “high-level” effects (a webservice DSL for example) into low-level ones (<code class="prettyprint">Async</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Either</code>, etc…).</p>
+<p>For example you might have this stack: <code class="prettyprint">type S = Fx.fx3[Authenticated, Async, ThrowableEither]</code></p>
+<p>And you want to write an interpreter which will translate authentication actions into <code class="prettyprint">Async</code> and <code class="prettyprint">Either</code>:</p>
+<pre><code class="prettyprint">import org.atnos.eff.eff._
+import org.atnos.eff.syntax.eff._
+import org.atnos.eff.async._
+import org.atnos.eff.interpret._
+import scala.concurrent.Future
+
+// list of access rights for a valid token
+case class AccessRights(rights: List[String])
+
+// authentication error
+case class AuthError(message: String)
+
+// DSL for authenticating users
+sealed trait Authenticated[A]
+case class Authenticate(token: String) extends Authenticated[AccessRights]
+
+type AuthErroEither[A] = AuthError Either A
+type _error[R] = AuthErroEither |= R
+
+/**
+ * The order of implicit parameters is really important for type inference!
+ * see below
+ */
+def runAuth[R, U, A](e: Eff[R, A])(implicit
+  authenticated: Member.Aux[Authenticated, R, U],
+  async:         _async[U],
+  either:        _error[U]): Eff[U, A] =
+
+   translate(e)(new Translate[Authenticated, U] {
+     def apply[X](ax: Authenticated[X]): Eff[U, X] =
+       ax match {
+         case Authenticate(token) =&gt;
+           // send the async effect in the stack U
+           send(authenticate(token)).
+           // send the Either value in the stack U
+           collapse
+       }
+    })
+
+// call to a service to authenticate tokens
+def authenticate(token: String): Async[AuthError Either AccessRights] = ???
+
+type S = Fx.fx3[Authenticated, AuthError Either ?, Async]
+def auth: Eff[S, Int] = ???
+
+runAuth(auth)</code></pre>
+<p>The call to <code class="prettyprint">send</code> above needs to send an <code class="prettyprint">Async</code> value in the stack <code class="prettyprint">U</code>. This is possible because <code class="prettyprint">Async</code> is an effect in <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">async</code>.</p>
+<p>Furthermore, <code class="prettyprint">authenticate</code> returns an <code class="prettyprint">AuthError Either ?</code> value. We can “collapse” it into <code class="prettyprint">U</code> because <code class="prettyprint">AuthError Either ?</code> is an effect of <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">either</code>.</p>
+<p>You might wonder why we don’t use a more direct type signature like:</p>
+<pre><code class="prettyprint">def runAuth2[R, U :_async :_error, A](e: Eff[R, A])(
+  implicit authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A]</code></pre>
+<p>The reason is that scalac desugars this to:</p>
+<pre><code class="prettyprint">def runAuth2[R, U, A](e: Eff[R, A])(
+  implicit async:         _async[U],
+           either:        _error[U],
+           authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A] =</code></pre>
+<p>And then <code class="prettyprint">authenticated</code> is last in the list of implicits parameters and can not be used to guide type inference.</p>
+<h3 id="interpret-an-effect-locally">Interpret an effect “locally”</h3>
+<p>Let’s say you have a method to run database queries</p>
+<pre><code class="prettyprint">import org.atnos.eff.all._
+
+trait Db[A]
+type _writerString[R] = Writer[String, ?] |= R
+
+def runDb[R, U, A](queries: Eff[R, A])(
+  implicit db:     Member.Aux[Db, R, U],
+           eval:   _eval[U],
+           writer: _writerString[U]): Eff[U, A] = ???</code></pre>
+<p>The database queries (the <code class="prettyprint">Db</code> effect) are being executed by the <code class="prettyprint">runDb</code> method inside the <code class="prettyprint">Eval</code> effect, and they use a <code class="prettyprint">WriterString</code> effect to log what is being executed.</p>
+<p>However you know that some clients of your component don’t care about the logs and they don’t want to have the <code class="prettyprint">WriterString</code> effect. that they consider an implementation detail.</p>
+<p>So you’d like to provide this additional method:</p>
+<pre><code class="prettyprint">def executeOnDb[R, U, A](queries: Eff[R, A])(
+  implicit db:   Member.Aux[Db, R, U],
+           eval: _eval[U]): Eff[U, A] = ???</code></pre>
+<p>How can you implement <code class="prettyprint">executeOnDb</code> with <code class="prettyprint">runDb</code>?</p>
+<pre><code class="prettyprint">import org.atnos.eff.all._, syntax.all._
+
+def executeOnDb[R, U, A](queries: Eff[R, A])(
+  implicit db:   Member.Aux[Db, R, U],
+           eval: _eval[U]): Eff[U, A] = {
+
+  type S = Fx.prepend[WriterString, R]
+  runDb(queries.into[S]).runWriterNoLog[String]
+
+}</code></pre>
+<p>You create a “local” stack containing the <code class="prettyprint">WriterString</code> effect using the <code class="prettyprint">prepend</code> method. You now run the <code class="prettyprint">Db</code> effect and discard the logs to finally return only <code class="prettyprint">Eff[U, A]</code>.</p>
+<h3 id="merge-stacks">Merge stacks</h3>
+<p>We can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._
+import cats.data._
+import cats.Eval
+
+object HadoopStack {
+
+  case class HadoopConf(mappers: Int)
+
+  type HadoopReader[A] = Reader[HadoopConf, A]
+  type WriterString[A] = Writer[String, A]
+  type Hadoop = Fx.fx3[HadoopReader, WriterString, Eval]
+
+  def readFile(path: String): Eff[Hadoop, String] =
+    for {
+      c &lt;- ask[Hadoop, HadoopConf]
+      _ &lt;- tell[Hadoop, String](&quot;Reading from &quot;+path)
+    } yield c.mappers.toString
+
+  def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(implicit r: Member.Aux[HadoopReader, R, U]): Eff[U, A] =
+    ReaderEffect.runReader(conf)(e)
+
+}
+
+object S3Stack {
+
+  case class S3Conf(bucket: String)
+
+  type S3Reader[A] = Reader[S3Conf, A]
+  type WriterString[A] = Writer[String, A]
+
+  type S3 = Fx.fx3[S3Reader, WriterString, Eval]
+
+  def writeFile(key: String, content: String): Eff[S3, Unit] =
+    for {
+      c &lt;- ask[S3, S3Conf]
+      _ &lt;- tell[S3, String](&quot;Writing to bucket &quot;+c.bucket+&quot;: &quot;+content)
+    } yield ()
+
+  def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(implicit r: Member.Aux[S3Reader, R, U]): Eff[U, A] =
+    ReaderEffect.runReader(conf)(e)
+}
+</code></pre>
+<p>So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share some common effects, so the resulting stack we want to work with is:</p>
+<pre><code class="prettyprint">import org.atnos.eff._
+  import cats.Eval
+  import HadoopStack._
+  import S3Stack.{WriterString=&gt;_,_}
+
+  type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]</code></pre>
+<p>Then we can use the <code class="prettyprint">into</code> method to inject effects from each stack into this common stack:</p>
+<pre><code class="prettyprint">// this imports the `into` and runXXX syntax
+  import org.atnos.eff.syntax.all._
+
+  val action = for {
+  // read a file from hadoop
+  s &lt;- readFile(&quot;/tmp/data&quot;).into[HadoopS3]
+
+  // write a file on S3
+  _ &lt;- writeFile(&quot;key&quot;, s)  .into[HadoopS3]
+} yield ()
+
+  // and we can run the composite action
+  action.runReader(S3Conf(&quot;bucket&quot;)).runReader(HadoopConf(10)).runWriter.runEval.run</code></pre>
+<p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket: 10))</code></p>
+<p>You can find a fully working example of this approach in <code class="prettyprint">src/test/org/atnos/example/StacksSpec</code>.</p>
+</div>
+
+</div>
+
+</body>
+</html>
