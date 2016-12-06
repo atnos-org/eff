@@ -26,7 +26,7 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
   /** map the last returned effect */
   def mapLast(f: Eff[R, B] => Eff[R, B]): Arrs[R, A, B] =
     functions match {
-      case Vector() => this
+      case v if v.isEmpty => Arrs[R, A, B](v :+ ((a: Any) => f(Eff.pure(a.asInstanceOf[B])).asInstanceOf[Eff[R, Any]]))
       case fs :+ last => Arrs(fs :+ ((x: Any) => f(last(x).asInstanceOf[Eff[R, B]]).asInstanceOf[Eff[R, Any]]))
     }
 
@@ -43,22 +43,24 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
     @tailrec
     def go(fs: Vector[Any => Eff[R, Any]], v: Any, last: Last[R] = Last.none[R]): Eff[R, B] = {
       fs match {
-        case Vector() =>
+        case vec if vec.isEmpty =>
           Pure[R, B](v.asInstanceOf[B], last)
 
-        case Vector(f) =>
-          f(v).asInstanceOf[Eff[R, B]].addLast(last)
-
         case f +: rest =>
-          f(v) match {
-            case Pure(a1, l1) =>
-              go(rest, a1, last *> l1)
+          val fv = f(v)
+          if (rest.isEmpty) {
+            fv.asInstanceOf[Eff[R, B]].addLast(last)
+          } else {
+            fv match {
+              case Pure(a1, l1) =>
+                go(rest, a1, last *> l1)
 
-            case Impure(u, q, l) =>
-              Impure[R, u.X, B](u, q.copy(q.functions ++ rest), last *> l)
+              case Impure(u, q, l) =>
+                Impure[R, u.X, B](u, q.copy(q.functions ++ rest), last *> l)
 
-            case ap @ ImpureAp(unions, q, l) =>
-              ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest), last *> l)
+              case ImpureAp(unions, q, l) =>
+                ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest), last *> l)
+            }
           }
       }
     }
@@ -67,7 +69,11 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
   }
 
   def contramap[C](f: C => A): Arrs[R, C, B] =
-    Arrs(((c: Any) => Eff.EffMonad[R].pure(f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions)
+    Arrs(((c: Any) => Eff.pure[R, Any](f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions)
+
+  def contraFlatMap[C](f: C => Eff[R, A]): Arrs[R, C, B] = {
+      Arrs(f.asInstanceOf[Any => Eff[R, Any]] +: functions)
+  }
 
   def transform[U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, R, U]): Arrs[R, A, B] =
     Arrs(functions.map(f => (x: Any) => Interpret.transform(f(x), t)(m, n)))
@@ -77,11 +83,11 @@ object Arrs {
 
   /** create an Arrs function from a single monadic function */
   def singleton[R, A, B](f: A => Eff[R, B]): Arrs[R, A, B] =
-    Arrs(Vector(f.asInstanceOf[Any => Eff[R, Any]]))
+    Arrs(Vector.empty :+ f.asInstanceOf[Any => Eff[R, Any]])
 
   /** create an Arrs function with no effect, which is similar to using an identity a => EffMonad[R].pure(a) */
   def unit[R, A]: Arrs[R, A, A] =
-    Arrs(Vector())
+    Arrs(Vector.empty)
 }
 
 
