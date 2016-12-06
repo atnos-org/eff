@@ -1,0 +1,4 @@
+Maintenance version
+
+ * fixed `Arrs.mapLast` for empty case, remove unapplySeq calls (thanks to @edmundnoble)
+ * fixed the `transform` method for `MemberInOut`
