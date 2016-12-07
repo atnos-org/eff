@@ -59,7 +59,8 @@ lazy val commonSettings = Seq(
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
-  si2712
+  si2712,
+  libraryDependencies ++= si2712Dependency(scalaVersion.value)
 ) ++ warnUnusedImport ++ prompt
 
 lazy val si2712 =
@@ -81,8 +82,7 @@ lazy val commonJsSettings = Seq(
 
 lazy val commonJvmSettings = Seq(
   libraryDependencies ++= catsJvm,
-  libraryDependencies ++= specs2,
-  libraryDependencies ++= si2712Dependency(scalaVersion.value)
+  libraryDependencies ++= specs2
 ) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
 
 lazy val effSettings =
