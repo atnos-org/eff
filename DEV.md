@@ -7,6 +7,6 @@ sbt> testOnly *index* -- html.outdir jvm/target/site html.nostats html console
 sbt> testOnly *site* -- html.outdir jvm/target/site html.nostats html console
 sbt> ghpagesPushSite
 sbt> cd eff
-sbt> publishSigned
+sbt> +publishSigned
 sbt> sonatypeReleaseAll
 ```

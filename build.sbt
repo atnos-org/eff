@@ -51,7 +51,7 @@ lazy val scoverageSettings = Seq(
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.11.8", "2.12.0")
+  crossScalaVersions := Seq("2.11.8", "2.12.1")
 )
 
 lazy val commonSettings = Seq(
@@ -59,8 +59,13 @@ lazy val commonSettings = Seq(
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
-  addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
+  si2712
 ) ++ warnUnusedImport ++ prompt
+
+lazy val si2712 =
+  scalacOptions ++=
+    (if (CrossVersion.partialVersion(scalaVersion.value).exists(_._2 >= 12)) Seq("-Ypartial-unification")
+    else Seq())
 
 lazy val tagName = Def.setting{
   s"v${if (releaseUseGlobalVersion.value) (version in ThisBuild).value else version.value}"
@@ -76,7 +81,8 @@ lazy val commonJsSettings = Seq(
 
 lazy val commonJvmSettings = Seq(
   libraryDependencies ++= catsJvm,
-  libraryDependencies ++= specs2
+  libraryDependencies ++= specs2,
+  libraryDependencies ++= si2712Dependency(scalaVersion.value)
 ) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
 
 lazy val effSettings =
@@ -260,6 +266,12 @@ lazy val specs2 = Seq(
 
 lazy val scalameter = Seq(
   "com.storm-enroute" %% "scalameter" % "0.8.2" % "test")
+
+def si2712Dependency(scalaVersion: String) =
+  if (CrossVersion.partialVersion(scalaVersion).exists(_._2 < 12))
+    Seq(compilerPlugin("com.milessabin" % ("si2712fix-plugin_"+scalaVersion) % "1.2.0"))
+  else
+    Seq()
 
 lazy val commonResolvers = Seq(
   Resolver.sonatypeRepo("releases")
