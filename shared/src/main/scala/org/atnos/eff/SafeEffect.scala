@@ -24,10 +24,10 @@ trait SafeTypes {
 trait SafeCreation extends SafeTypes {
 
   def protect[R :_safe, A](a: =>A): Eff[R, A] =
-    send[Safe, R, A](EvaluateValue[A](Eval.later(a)))
+    send[Safe, R, A](EvaluateValue[A](() => a))
 
   def eval[R :_safe , A](a: Eval[A]): Eff[R, A] =
-    send[Safe, R, A](EvaluateValue[A](a))
+    send[Safe, R, A](EvaluateValue[A](() => a.value))
 
   def exception[R :_safe, A](t: Throwable): Eff[R, A] =
     send[Safe, R, A](FailedValue(t))
@@ -73,7 +73,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, Out] =
         sx match {
           case EvaluateValue(v) =>
-            Either.catchNonFatal(v.value) match {
+            Either.catchNonFatal(v()) match {
               case Left(e) =>
                 Right(pure((Left(e), s)))
 
@@ -97,7 +97,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onLastEffect[X](sx: Safe[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
         sx match {
           case EvaluateValue(v) =>
-            Either.catchNonFatal(v.value) match {
+            Either.catchNonFatal(v()) match {
               case Left(e) =>
                 Right(pure(()))
 
@@ -119,52 +119,52 @@ trait SafeInterpretation extends SafeCreation { outer =>
         }
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, Out] = {
-        type F = (Vector[Throwable], Option[Throwable])
+        val failedFinalizers = new collection.mutable.ListBuffer[Throwable]
+        var error: Option[Throwable] = None
 
-        val traversed: State[F, T[X]] = xs.traverse {
-          case FailedFinalizer(t) => State { case (o, n) => ((o :+ t, n),       ().asInstanceOf[X]) }
-          case FailedValue(t)     => State { case (o, n) => ((o,      Some(t)), ().asInstanceOf[X]) }
-          case EvaluateValue(v)   => State { case (o, n) =>
-            n match {
+        val traversed: T[X] = xs.map {
+          case FailedFinalizer(t) => { failedFinalizers.append(t); ().asInstanceOf[X] }
+          case FailedValue(t)     => { error = Some(t); ().asInstanceOf[X] }
+          case EvaluateValue(v)   =>
+            error match {
               case None =>
-                Either.catchNonFatal(v.value) match {
-                  case Right(a) => ((o, None), a)
-                  case Left(t)  => ((o, Option(t)), ().asInstanceOf[X])
+                Either.catchNonFatal(v()) match {
+                  case Right(a) => a
+                  case Left(t)  => error = Some(t); ().asInstanceOf[X]
                 }
-              case Some(_) => ((o, n), ().asInstanceOf[X])
+              case Some(_) => ().asInstanceOf[X]
             }
-          }
         }
 
-        val ((o, n), tx) = traversed.run((s, None)).value
-        n match {
-          case Some(t) => Right(pure((Left(t), o)))
-          case None    => Left((continuation(tx), o))
+        error match {
+          case Some(t) => Right(pure((Left(t), s ++ failedFinalizers.toVector)))
+          case None    => Left((continuation(traversed), s ++ failedFinalizers.toVector))
         }
       }
 
       def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] = {
         type F = (Vector[Throwable], Option[Throwable])
 
-        val traversed: State[F, T[X]] = xs.traverse {
-          case FailedFinalizer(t) => State { case (o, n) => ((o :+ t, n),       ().asInstanceOf[X]) }
-          case FailedValue(t)     => State { case (o, n) => ((o,      Some(t)), ().asInstanceOf[X]) }
-          case EvaluateValue(v)   => State { case (o, n) =>
-            n match {
+        val failedFinalizers = new collection.mutable.ListBuffer[Throwable]
+        var error: Option[Throwable] = None
+
+        val traversed: T[X] = xs.map {
+          case FailedFinalizer(t) => { failedFinalizers.append(t); ().asInstanceOf[X] }
+          case FailedValue(t)     => { error = Some(t); ().asInstanceOf[X] }
+          case EvaluateValue(v)   =>
+            error match {
               case None =>
-                Either.catchNonFatal(v.value) match {
-                  case Right(a) => ((o, None), a)
-                  case Left(t)  => ((o, Option(t)), ().asInstanceOf[X])
+                Either.catchNonFatal(v()) match {
+                  case Right(a) => a
+                  case Left(t)  => error = Some(t); ().asInstanceOf[X]
                 }
-              case Some(_) => ((o, n), ().asInstanceOf[X])
+              case Some(_) => ().asInstanceOf[X]
             }
-          }
         }
 
-        val ((o, n), tx) = traversed.run((s, None)).value
-        n match {
+        error match {
           case Some(t) => Right(pure(()))
-          case None    => Left((continuation(tx), o))
+          case None    => Left((continuation(traversed), s ++ failedFinalizers.toVector))
         }
       }
 
@@ -187,7 +187,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A]): Eff[R, A] Either Eff[R, A] =
         sx match {
           case EvaluateValue(v) =>
-            Either.catchNonFatal(v.value) match {
+            Either.catchNonFatal(v()) match {
               case Left(e) =>
                 Right(attempt(last) flatMap {
                   case Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, A](e)
@@ -211,7 +211,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onLastEffect[X](sx: Safe[X], continuation: Arrs[R, X, Unit]): Eff[R, Unit] Either Eff[R, Unit] =
         sx match {
           case EvaluateValue(v) =>
-            Either.catchNonFatal(v.value) match {
+            Either.catchNonFatal(v()) match {
               case Left(e) =>
                 Right(attempt(last) flatMap {
                   case Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, Unit](e)
@@ -234,22 +234,21 @@ trait SafeInterpretation extends SafeCreation { outer =>
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either Eff[R, A] = {
         // all the values are executed because they are considered to be independent in the applicative case
-        type F = Vector[FailedValue[X]]
-        val executed: State[F, T[X]] = xs.traverse {
-          case EvaluateValue(a) =>
-            Either.catchNonFatal(a.value) match {
-              case Left(t)  => State { failed => (failed :+ FailedValue(t), ().asInstanceOf[X]) }
-              case Right(x) => State { failed => (failed, x) }
+        val failedValues = new collection.mutable.ListBuffer[FailedValue[X]]
+
+        val traversed: T[X] = xs.map {
+          case FailedFinalizer(t) => ().asInstanceOf[X]
+          case FailedValue(t)     => ().asInstanceOf[X]
+          case EvaluateValue(v)   =>
+            Either.catchNonFatal(v()) match {
+              case Right(a) => a
+              case Left(t)  => failedValues.append(FailedValue(t)); ().asInstanceOf[X]
             }
-          case FailedValue(t)     => State { failed => (failed :+ FailedValue(t), ().asInstanceOf[X]) }
-          case FailedFinalizer(t) => State { failed => (failed, ().asInstanceOf[X]) }
         }
 
-        val (failures, successes) = executed.run(Vector.empty[FailedValue[X]]).value
-
-        failures.toList match {
+        failedValues.toList match {
           case Nil =>
-            Left(continuation(successes))
+            Left(continuation(traversed))
 
           case FailedValue(throwable) :: rest =>
             // we just return the first failed value as an exception
@@ -262,22 +261,21 @@ trait SafeInterpretation extends SafeCreation { outer =>
 
       def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], Unit]): Eff[R, Unit] Either Eff[R, Unit] = {
         // all the values are executed because they are considered to be independent in the applicative case
-        type F = Vector[FailedValue[X]]
-        val executed: State[F, T[X]] = xs.traverse {
-          case EvaluateValue(a) =>
-            Either.catchNonFatal(a.value) match {
-              case Left(t)  => State { failed => (failed :+ FailedValue(t), ().asInstanceOf[X]) }
-              case Right(x) => State { failed => (failed, x) }
+        val failedValues = new collection.mutable.ListBuffer[FailedValue[X]]
+
+        val traversed: T[X] = xs.map {
+          case FailedFinalizer(t) => ().asInstanceOf[X]
+          case FailedValue(t)     => ().asInstanceOf[X]
+          case EvaluateValue(v)   =>
+            Either.catchNonFatal(v()) match {
+              case Right(a) => a
+              case Left(t)  => failedValues.append(FailedValue(t)); ().asInstanceOf[X]
             }
-          case FailedValue(t)     => State { failed => (failed :+ FailedValue(t), ().asInstanceOf[X]) }
-          case FailedFinalizer(t) => State { failed => (failed, ().asInstanceOf[X]) }
         }
 
-        val (failures, successes) = executed.run(Vector.empty[FailedValue[X]]).value
-
-        failures.toList match {
+        failedValues.toList match {
           case Nil =>
-            Left(continuation(successes))
+            Left(continuation(traversed))
 
           case FailedValue(throwable) :: rest =>
             // we just return the first failed value as an exception
@@ -353,6 +351,6 @@ object SafeInterpretation extends SafeInterpretation
  */
 sealed trait Safe[A]
 
-case class EvaluateValue[A](a: Eval[A])  extends Safe[A]
+case class EvaluateValue[A](a: () => A)  extends Safe[A]
 case class FailedValue[A](t: Throwable)  extends Safe[A]
 case class FailedFinalizer(t: Throwable) extends Safe[Unit]
