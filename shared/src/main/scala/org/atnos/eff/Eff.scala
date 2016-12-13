@@ -73,10 +73,11 @@ sealed trait Eff[R, A] {
 
   /** add one last action to be executed after any computation chained to this Eff value */
   def addLast(l: =>Eff[R, Unit]): Eff[R, A] =
-    addLast(Last.eff(l))
+    // force this computation to finish before adding last
+    flatMap(a => pure(a).addLast(Last.eff(l)))
 
   /** add one last action to be executed after any computation chained to this Eff value */
-  def addLast(l: Last[R]): Eff[R, A]
+  private[eff] def addLast(l: Last[R]): Eff[R, A]
 
 }
 
