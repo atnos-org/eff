@@ -35,50 +35,63 @@ case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInte
     fromFuture(future).flatten
 
   def fromFuture[R :_async, A](future: =>Future[A]): Eff[R, A] =
-    subscribe[R, A](callback => future.onComplete {
+    subscribe[R, A](SimpleSubscribe(callback => future.onComplete {
       case Success(a) => callback(Right(a))
       case Failure(t) => callback(Left(t))
 
-    }, None)
+    }), None)
 
   def run[A](r: Async[A]): Future[A] =
     r match {
-      case AsyncNow(a)         => Future.successful(a)
-      case AsyncFailed(t)      => Future.failed(t)
-      case AsyncDelayed(a, to) => withTimeout(Either.catchNonFatal(a.value).fold(Future.failed, Future.successful), to)
-      case AsyncEff(e, to)     => subscribeToFuture(e, to).detachA(FutureApplicative)
+      case AsyncNow(a)     => Future.successful(a)
+      case AsyncFailed(t)  => Future.failed(t)
+      case AsyncDelayed(a) => Either.catchNonFatal(a.value).fold(Future.failed, Future.successful)
+      case AsyncEff(e, to) => subscribeToFuture(e, to).detachA(FutureApplicative)
     }
 
   def subscribeToFutureNat(timeout: Option[FiniteDuration]) = new (Subscribe ~> Future) {
-    def apply[X](subscribe: Subscribe[X]): Future[X] = {
+    def startFuture[X](subscribe: Subscribe[X]): (() => Future[X], Callback[X]) = {
       val promise: Promise[X] = Promise[X]()
+
       val callback = (ta: Throwable Either X) =>
         ta match {
           case Left(t)  => promise.failure(t); ()
           case Right(a) => promise.success(a); ()
         }
 
-      withTimeout(FutureApplicative.product(Future(subscribe(callback)), promise.future).map(_._2), timeout)
+      (() => { Future(subscribe(callback)); promise.future }, callback)
+    }
+
+    def startTimeout(to: FiniteDuration, onTimeout: =>Unit): Unit =
+      if (!to.isFinite || to.length >= 1) {
+        val stop = new Runnable { def run: Unit = onTimeout }
+        scheduledExecutorService.schedule(stop, to.toMillis, TimeUnit.MILLISECONDS)
+        ()
+      }
+
+    def apply[X](subscribe: Subscribe[X]): Future[X] = {
+      timeout match {
+        case None => startFuture(subscribe)._1()
+
+        case Some(to) =>
+          subscribe match {
+            case SimpleSubscribe(_) =>
+              val (future, callback) = startFuture(subscribe)
+              startTimeout(to, { callback(Left(new TimeoutException)); () })
+              future()
+
+            case AttemptedSubscribe(_) =>
+              val (future, callback) = startFuture(subscribe)
+              startTimeout(to, { callback(Right(Left(new TimeoutException))); () })
+              future()
+          }
+
+      }
     }
   }
 
   def subscribeToFuture[A](e: Eff[Fx1[Subscribe], A], timeout: Option[FiniteDuration])(implicit m: Subscribe <= Fx1[Subscribe]): Eff[Fx1[Future], A] =
     interpret.transform[Fx1[Subscribe], Fx1[Future], NoFx, Subscribe, Future, A](e, subscribeToFutureNat(timeout))
-
-  def withTimeout[A](future: =>Future[A], timeout: Option[FiniteDuration]): Future[A] =
-    timeout match {
-      case None => future
-      case Some(to) =>
-        lazy val attemptFuture = Either.catchNonFatal(future).fold(Future.failed, identity)
-
-        if (to.isFinite && to.length < 1) attemptFuture
-        else {
-          val p = Promise[A]()
-          val r = new Runnable { def run: Unit = { p.completeWith(attemptFuture); () } }
-          scheduledExecutorService.schedule(r, to.toMillis, TimeUnit.MILLISECONDS)
-          p.future
-        }
-    }
 
   implicit final def toRunAsyncFutureOps[A](e: Eff[Fx.fx1[Async], A]): RunAsyncFutureOps[A] =
     new RunAsyncFutureOps[A](e)

@@ -23,6 +23,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
  Async effects can be executed concurrently                 $e3
  Async effects are stacksafe                                $e4
  Async effects can trampoline a Task                        $e5
+ An Async forked computation can be timed out               $e6
 
 """
 
@@ -86,11 +87,19 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
     Await.result(suspend(loop(100000)).runAsync.runAsync, 5 seconds) must not(throwAn[Exception])
   }
 
+  def e6 = {
+    lazy val slow = { sleepFor(200.millis); 1 }
+    asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsync.runAsync must beLeft[Throwable].await
+  }
+
   /**
    * HELPERS
    */
   def boom: Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
+
+  def sleepFor(duration: FiniteDuration) =
+    try Thread.sleep(duration.toMillis) catch { case t: Throwable => () }
 
 }
 
