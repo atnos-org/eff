@@ -49,22 +49,28 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
           }
         val registerTask = { (_: Scheduler, c: Callback[X]) => subscribe(callback(c)); Cancelable.empty }
 
-        timeout match {
-          case None => Task.fork(Task.async(registerTask))
+        subscribe match {
+          case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)).memoize)
+          case AttemptedSubscribe(s, Some((k, cache))) => cache.memo(k, apply(AttemptedSubscribe(s)).memoize)
 
-          case Some(to) =>
-            subscribe match {
-              case SimpleSubscribe(_) =>
-                Task.fork(Task.async(registerTask)).timeout(to)
+          case _ =>
+            timeout match {
+              case None => Task.fork(Task.async(registerTask))
 
-              case as @ AttemptedSubscribe(sub) =>
+              case Some(to) =>
+                subscribe match {
+                  case SimpleSubscribe(_, _) =>
+                    Task.fork(Task.async(registerTask)).timeout(to)
 
-                Task.fork(Task.async { (scheduler: Scheduler, cb: Callback[X]) =>
-                  val cb1 = callback(cb)
-                  val cancelable = Cancelable(() => subscribe(cb1))
-                  scheduler.scheduleOnce(to) { cb1(Right(Left(new TimeoutException))); cancelable.cancel }
-                  cancelable
-                })
+                  case as @ AttemptedSubscribe(sub, _) =>
+
+                    Task.fork(Task.async { (scheduler: Scheduler, cb: Callback[X]) =>
+                      val cb1 = callback(cb)
+                      val cancelable = Cancelable(() => subscribe(cb1))
+                      scheduler.scheduleOnce(to) { cb1(Right(Left(new TimeoutException))); cancelable.cancel }
+                      cancelable
+                    })
+                }
             }
         }
       }

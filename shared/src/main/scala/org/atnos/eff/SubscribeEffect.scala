@@ -17,14 +17,22 @@ object SubscribeEffect {
 
   type Callback[A] = (Throwable Either A) => Unit
 
-  trait Subscribe[A] extends (Callback[A] => Unit)
-
-  case class SimpleSubscribe[A](subscribe: Callback[A] => Unit) extends Subscribe[A] {
-    def apply(cb: Callback[A]): Unit = subscribe(cb)
+  trait Subscribe[A] extends (Callback[A] => Unit) {
+    def memoizeKey: Option[(AnyRef, Cache[AnyRef])]
   }
 
-  case class AttemptedSubscribe[A](subscribe: Callback[Throwable Either A] => Unit) extends Subscribe[Throwable Either A] {
+  case class SimpleSubscribe[A](subscribe: Callback[A] => Unit, memoizeKey: Option[(AnyRef, Cache[AnyRef])] = None) extends Subscribe[A] {
+    def apply(cb: Callback[A]): Unit = subscribe(cb)
+
+    override def toString: String =
+      s"SimpleSubscribe(<subscribe>, $memoizeKey)"
+  }
+
+  case class AttemptedSubscribe[A](subscribe: Callback[Throwable Either A] => Unit, memoizeKey: Option[(AnyRef, Cache[AnyRef])] = None) extends Subscribe[Throwable Either A] {
     def apply(cb: Callback[Throwable Either A]): Unit = subscribe(cb)
+
+    override def toString: String =
+      s"AttemptedSubscribe(<subscribe>, $memoizeKey)"
   }
 
   type _subscribe[R] = Subscribe |= R
@@ -47,7 +55,7 @@ object SubscribeEffect {
 
           sx.apply((tx: Throwable Either X) => try {
 
-            c(Right(tx))} catch { case NonFatal(t) => c(Right(Left(t))) })})).
+            c(Right(tx))} catch { case NonFatal(t) => c(Right(Left(t))) })}, sx.memoizeKey)).
             flatMap {
               case Left(t)  => left[U, Throwable, X](t)
               case Right(x) => right[U, Throwable, X](x)
@@ -56,5 +64,31 @@ object SubscribeEffect {
     }).runEither
   }
 
+  def memoize[K <: AnyRef, A](key: K, cache: Cache[K], e: Subscribe[A]): Subscribe[A] =
+    e match {
+      case SimpleSubscribe(s, _)    => SimpleSubscribe(s, Option((key, cache)))
+      case AttemptedSubscribe(s, _) => AttemptedSubscribe(s, Option((key, cache)))
+    }
+
+  def memoize[K <: AnyRef, A](key: K, cache: Cache[K], e: Eff[FS, A]): Eff[FS, A] = {
+    def materialize(u: Union[FS, Any]): Union[FS, Any] =
+      u match { case Union1(fs) => Union1(memoize(key, cache, fs)) }
+
+    e match {
+      case Pure(a, last) =>
+        Pure(a, last)
+
+      case Impure(u, c, last) =>
+        Impure(materialize(u), Arrs.singleton((x: u.X) => memoize(key, cache, c(x))), last)
+
+      case ImpureAp(unions, continuation, last) =>
+
+        val materializedUnions =
+          Unions(materialize(unions.first), unions.rest.map(materialize))
+
+        val continuation1 = Arrs.singleton[FS, List[Any], A]((ls: List[Any]) => memoize(key, cache, continuation(ls)))
+        ImpureAp(materializedUnions, continuation1, last)
+    }
+  }
 }
 

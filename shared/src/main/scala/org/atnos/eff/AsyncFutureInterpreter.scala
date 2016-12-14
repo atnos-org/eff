@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import java.util.concurrent.{ExecutorService, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ExecutorService, ScheduledExecutorService, TimeUnit}
 
 import cats._
 import cats.implicits._
@@ -49,6 +49,9 @@ case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInte
       case AsyncEff(e, to) => subscribeToFuture(e, to).detachA(FutureApplicative)
     }
 
+  private val map: ConcurrentHashMap[Int, Eval[Future[Any]]] =
+    new ConcurrentHashMap[Int, Eval[Future[Any]]]
+
   def subscribeToFutureNat(timeout: Option[FiniteDuration]) = new (Subscribe ~> Future) {
     def startFuture[X](subscribe: Subscribe[X]): (() => Future[X], Callback[X]) = {
       val promise: Promise[X] = Promise[X]()
@@ -70,23 +73,29 @@ case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInte
       }
 
     def apply[X](subscribe: Subscribe[X]): Future[X] = {
-      timeout match {
-        case None => startFuture(subscribe)._1()
+      subscribe match {
+        case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)))
+        case AttemptedSubscribe(s, Some((k, cache))) => cache.memo(k, apply(AttemptedSubscribe(s)))
+        case _ =>
+          timeout match {
+            case None => startFuture(subscribe)._1()
 
-        case Some(to) =>
-          subscribe match {
-            case SimpleSubscribe(_) =>
-              val (future, callback) = startFuture(subscribe)
-              startTimeout(to, { callback(Left(new TimeoutException)); () })
-              future()
+            case Some(to) =>
+              subscribe match {
+                case SimpleSubscribe(_, _) =>
+                  val (future, callback) = startFuture(subscribe)
+                  startTimeout(to, { callback(Left(new TimeoutException)); () })
+                  future()
 
-            case AttemptedSubscribe(_) =>
-              val (future, callback) = startFuture(subscribe)
-              startTimeout(to, { callback(Right(Left(new TimeoutException))); () })
-              future()
+                case AttemptedSubscribe(_, _) =>
+                  val (future, callback) = startFuture(subscribe)
+                  startTimeout(to, { callback(Right(Left(new TimeoutException))); () })
+                  future()
+              }
+
           }
-
       }
+
     }
   }
 

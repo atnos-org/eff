@@ -12,9 +12,11 @@ import scala.concurrent._
 import duration._
 import org.scalacheck._
 import Async._
+import org.specs2.matcher.ThrownExpectations
+
 import scala.util.control._
 
-class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
+class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  Async effects can be implemented with an AsyncFuture service $e1
  Async effects can be attempted                               $e2
@@ -24,6 +26,14 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
  Async effects can trampoline a Task                          $e6
  An Async effect can be created from Either                   $e7
  An Async forked computation can be timed out                 $e8
+
+ Simple Async calls can be memoized                 $e9
+ Attempted Async calls can be memoized              $e10
+ Simple Async calls with timeout can be memoized    $e11
+ Attempted Async calls with timeout can be memoized $e12
+
+ Async calls can be memoized with a memo effect $e10
+
 
 """
 
@@ -108,6 +118,52 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
   def e8 = {
     lazy val slow = { sleepFor(200.millis); 1 }
     asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsyncFuture must beLeft.await
+  }
+
+  def e9 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).runAsyncFuture must be_==(1).await
+    invocationsNumber must be_==(1)
+  }
+
+  def e10 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).asyncAttempt.runAsyncFuture must beRight(1).await
+    invocationsNumber must be_==(1)
+  }
+
+  def e11 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+
+    (makeRequest >> makeRequest).runAsyncFuture must be_==(1).await
+    invocationsNumber must be_==(1)
+  }
+
+  def e12 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    (makeRequest >> makeRequest).asyncAttempt.runAsyncFuture must beRight(1).await
+
+    invocationsNumber must be_==(1)
+  }
+
+  def e13 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = asyncMemoized("only once", asyncFork({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).runAsyncMemo(cache).runAsyncFuture must be_==(1).await
+    invocationsNumber must be_==(1)
   }
 
   /**

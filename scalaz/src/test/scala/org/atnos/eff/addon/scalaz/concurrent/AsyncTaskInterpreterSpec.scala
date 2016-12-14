@@ -1,7 +1,7 @@
 package org.atnos.eff.addon.scalaz.concurrent
 
 import cats.implicits._
-import org.atnos.eff.{Async, Eff, Fx}
+import org.atnos.eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
@@ -22,6 +22,11 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
  Async effects are stacksafe                                $e4
  Async effects can trampoline a Task                        $e5
  An Async forked computation can be timed out               $e6
+
+ Simple Async calls can be memoized                 $e7
+ Attempted Async calls can be memoized              $e8
+ Simple Async calls with timeout can be memoized    $e9
+ Attempted Async calls with timeout can be memoized $e10
 
 """
 
@@ -98,6 +103,44 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
     lazy val slow = { sleepFor(200.millis); 1 }
     asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsync must returnValue(beLeft[Throwable])
   }
+
+  def e7 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).runAsync must returnValue(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e8 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).asyncAttempt.runAsync must returnValue(Right(1))
+    invocationsNumber must be_==(1)
+  }
+
+  def e9 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+
+    (makeRequest >> makeRequest).runAsync must returnValue(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e10 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    (makeRequest >> makeRequest).asyncAttempt.runAsync must returnValue(Right(1))
+
+    invocationsNumber must be_==(1)
+  }
+
 
   /**
    * HELPERS

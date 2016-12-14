@@ -51,39 +51,55 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
 
   def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
     new (Subscribe ~> Task) {
+      implicit val ec = executors.executionContext
 
       def apply[X](subscribe: Subscribe[X]): Task[X] = {
 
-        val registerTask = (tx: (Throwable \/ X) => Unit) =>
-          subscribe((c: Throwable Either X) =>
-            c match {
-              case Left(t)  => tx(-\/(t))
-              case Right(a) => tx(\/-(a))
-            })
+        subscribe.memoizeKey match {
+          case Some((k, cache)) =>
+            Task async { cb =>
+              val future = futureInterpreter.subscribeToFutureNat(timeout)(subscribe)
+              val memoized = cache.memo(k, future)
 
-        timeout match {
-          case None => Task.fork(Task.async(registerTask))
+              memoized onComplete {
+                case Success(a) => cb(\/-(a))
+                case Failure(t) => cb(-\/(t))
+              }
+            }
 
-          case Some(to) =>
-            subscribe match {
-              case SimpleSubscribe(_) =>
-                Task.fork(Task.async(registerTask)).timed(to)
+          case None =>
+            val registerTask = (tx: (Throwable \/ X) => Unit) =>
+              subscribe((c: Throwable Either X) =>
+                c match {
+                  case Left(t)  => tx(-\/(t))
+                  case Right(a) => tx(\/-(a))
+                })
 
-              case as @ AttemptedSubscribe(sub) =>
-                implicit val ec = executors.executionContext
-                // there might be a more direct solution to reusing the Future
-                // interpreter but I don't know what it is
-                val future = futureInterpreter.subscribeToFutureNat(timeout)(as)
+            timeout match {
+              case None => Task.fork(Task.async(registerTask))
 
-                Task async { cb =>
-                  future onComplete {
-                    case Success(a) => cb(\/-(a))
-                    case Failure(t) => cb(-\/(t))
-                  }
+              case Some(to) =>
+                subscribe match {
+                  case SimpleSubscribe(_, _) =>
+                    Task.fork(Task.async(registerTask)).timed(to)
+
+                  case as @ AttemptedSubscribe(sub, _) =>
+                    // there might be a more direct solution to reusing the Future
+                    // interpreter but I don't know what it is
+                    val future = futureInterpreter.subscribeToFutureNat(timeout)(as)
+
+                    Task async { cb =>
+                      future onComplete {
+                        case Success(a) => cb(\/-(a))
+                        case Failure(t) => cb(-\/(t))
+                      }
+                    }
                 }
             }
+
         }
       }
+
     }
 
   def subscribeToTask[A](e: Eff[Fx1[Subscribe], A], timeout: Option[FiniteDuration])(implicit m: Subscribe <= Fx1[Subscribe]): Eff[Fx1[Task], A] =
