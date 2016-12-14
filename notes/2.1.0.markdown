@@ -1,0 +1,6 @@
+Maintenance version
+
+ * fixed the use of timeouts for async effects and removed the possibility to pass a timeout for an async delayed computation
+ * make sure `addLast` really executes last
+ * made the `Safe` interpreter a bit more efficient
+ * added `2.12.1` to travis
