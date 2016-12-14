@@ -1,5 +1,7 @@
 package org.atnos.eff.addon.monix
 
+import java.util.concurrent.{TimeUnit, TimeoutException}
+
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import cats._
@@ -25,37 +27,48 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
     fromTask(task).flatten
 
   def fromTask[R :_async, A](task: =>Task[A])(implicit s: Scheduler): Eff[R, A] =
-    subscribe[R, A](callback =>
-    { task.map(a => callback(Right(a))).onErrorHandle(t => callback(Left(t))).runAsync; () },
+    subscribe[R, A](SimpleSubscribe(callback =>
+    { task.map(a => callback(Right(a))).onErrorHandle(t => callback(Left(t))).runAsync; () }),
       None)
 
   def run[A](r: Async[A]): Task[A] =
     r match {
       case AsyncNow(a) => Task.now(a)
       case AsyncFailed(t) => Task.raiseError(t)
-      case AsyncDelayed(a, to) =>
-        val task = Either.catchNonFatal(a.value).fold(Task.raiseError, Task.now)
-        to.fold(task)(timeout => task.timeout(timeout))
-
+      case AsyncDelayed(a) => Either.catchNonFatal(a.value).fold(Task.raiseError, Task.now)
       case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)(AsyncTaskInterpreter.TaskMonad)
     }
 
-  def subscribeToTaskNat(timeout: Option[FiniteDuration]) = new (Subscribe ~> Task) {
-    def apply[X](subscribe: Subscribe[X]): Task[X] = {
-      def callback(c: Callback[X]) = (ta: Throwable Either X) =>
-        ta match {
-          case Left(t)  => c.onError(t)
-          case Right(a) => c.onSuccess(a)
+  def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
+    new (Subscribe ~> Task) {
+      def apply[X](subscribe: Subscribe[X]): Task[X] = {
+        def callback(c: Callback[X]) = (ta: Throwable Either X) =>
+          ta match {
+            case Left(t)  => c.onError(t)
+            case Right(a) => c.onSuccess(a)
+          }
+        val registerTask = { (_: Scheduler, c: Callback[X]) => subscribe(callback(c)); Cancelable.empty }
+
+        timeout match {
+          case None => Task.fork(Task.async(registerTask))
+
+          case Some(to) =>
+            subscribe match {
+              case SimpleSubscribe(_) =>
+                Task.fork(Task.async(registerTask)).timeout(to)
+
+              case as @ AttemptedSubscribe(sub) =>
+
+                Task.fork(Task.async { (scheduler: Scheduler, cb: Callback[X]) =>
+                  val cb1 = callback(cb)
+                  val cancelable = Cancelable(() => subscribe(cb1))
+                  scheduler.scheduleOnce(to) { cb1(Right(Left(new TimeoutException))); cancelable.cancel }
+                  cancelable
+                })
+            }
         }
-
-      val registerTask = { (_: Scheduler, c: Callback[X]) => subscribe(callback(c)); Cancelable.empty }
-
-      timeout match {
-        case Some(to) => Task.async(registerTask).timeout(to)
-        case None     => Task.async(registerTask)
       }
     }
-  }
 
   def subscribeToTask[A](e: Eff[Fx1[Subscribe], A], timeout: Option[FiniteDuration])(implicit m: Subscribe <= Fx1[Subscribe]): Eff[Fx1[Task], A] =
     interpret.transform[Fx1[Subscribe], Fx1[Task], NoFx, Subscribe, Task, A](e, subscribeToTaskNat(timeout))

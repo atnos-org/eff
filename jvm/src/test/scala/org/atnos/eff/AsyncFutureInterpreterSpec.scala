@@ -12,6 +12,7 @@ import scala.concurrent._
 import duration._
 import org.scalacheck._
 import Async._
+import scala.util.control._
 
 class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = s2"""
 
@@ -22,6 +23,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
  Async effects are stacksafe with asyncDelay                  $e5
  Async effects can trampoline a Task                          $e6
  An Async effect can be created from Either                   $e7
+ An Async forked computation can be timed out                 $e8
 
 """
 
@@ -103,6 +105,11 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
     asyncFromEither(Left[Throwable, Int](boomException)).asyncAttempt.runAsyncFuture must beLeft(boomException).awaitFor(1.second)
   }
 
+  def e8 = {
+    lazy val slow = { sleepFor(200.millis); 1 }
+    asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsyncFuture must beLeft.await
+  }
+
   /**
    * HELPERS
    */
@@ -110,6 +117,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
   def boom: Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
 
-
+  def sleepFor(duration: FiniteDuration) =
+    try Thread.sleep(duration.toMillis) catch { case t: Throwable => () }
 }
 

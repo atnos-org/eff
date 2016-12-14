@@ -1,6 +1,6 @@
 package org.atnos.eff.addon.scalaz.concurrent
 
-import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
+import java.util.concurrent._
 
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
@@ -13,7 +13,8 @@ import org.atnos.eff.SubscribeEffect._
 import AsyncTaskInterpreter._
 import org.atnos.eff._
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent._, duration._
+import scala.util.{Either, Success, Failure}
 
 case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
 
@@ -22,6 +23,9 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
 
   val scheduledExecutorService: ScheduledExecutorService =
     executors.scheduledExecutorService
+
+  private lazy val futureInterpreter: AsyncFutureInterpreter =
+    AsyncFutureInterpreter(executors)
 
   def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     run(e.detachA(Async.ApplicativeAsync))
@@ -33,36 +37,51 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
     fromTask(task).flatten
 
   def fromTask[R :_async, A](task: =>Task[A]): Eff[R, A] =
-    subscribe[R, A](callback =>
-    { task.unsafePerformAsync(ta => ta.fold(t => callback(Left(t)), a => callback(Right(a)))) } ,
+    subscribe[R, A](SimpleSubscribe(callback =>
+    { task.unsafePerformAsync(ta => ta.fold(t => callback(Left(t)), a => callback(Right(a)))) }) ,
       None)
 
   def run[A](r: Async[A]): Task[A] =
     r match {
       case AsyncNow(a) => Task.now(a)
       case AsyncFailed(t) => Task.fail(t)
-      case AsyncDelayed(a, to) =>
-        val task = Either.catchNonFatal(a.value).fold(Task.fail, Task.now)
-        to.fold(task)(timeout => task.timed(timeout))
-
+      case AsyncDelayed(a) => Either.catchNonFatal(a.value).fold(Task.fail, Task.now)
       case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)
     }
 
   def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
     new (Subscribe ~> Task) {
-      def apply[X](subscribe: Subscribe[X]): Task[X] = {
-        def callback(ta: (Throwable \/ X) => Unit) = (c: Throwable Either X) =>
-          c match {
-            case Left(t)  => ta(-\/(t))
-            case Right(a) => ta(\/-(a))
-          }
 
-        val registerTask = (c: (Throwable \/ X) => Unit) =>
-          subscribe(callback(c))
+      def apply[X](subscribe: Subscribe[X]): Task[X] = {
+
+        val registerTask = (tx: (Throwable \/ X) => Unit) =>
+          subscribe((c: Throwable Either X) =>
+            c match {
+              case Left(t)  => tx(-\/(t))
+              case Right(a) => tx(\/-(a))
+            })
 
         timeout match {
-          case Some(to) => Task.fork(Task.async(registerTask))(executorService).timed(to)(scheduledExecutorService)
-          case None     => Task.fork(Task.async(registerTask))(executorService)
+          case None => Task.fork(Task.async(registerTask))
+
+          case Some(to) =>
+            subscribe match {
+              case SimpleSubscribe(_) =>
+                Task.fork(Task.async(registerTask)).timed(to)
+
+              case as @ AttemptedSubscribe(sub) =>
+                implicit val ec = executors.executionContext
+                // there might be a more direct solution to reusing the Future
+                // interpreter but I don't know what it is
+                val future = futureInterpreter.subscribeToFutureNat(timeout)(as)
+
+                Task async { cb =>
+                  future onComplete {
+                    case Success(a) => cb(\/-(a))
+                    case Failure(t) => cb(-\/(t))
+                  }
+                }
+            }
         }
       }
     }
