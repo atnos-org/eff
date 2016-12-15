@@ -93,10 +93,14 @@
 <td align="left">an effect for modeling non-determinism</td>
 </tr>
 <tr class="odd">
+<td align="left"><code class="prettyprint">MemoEffect</code></td>
+<td align="left">an effect for memoizing values</td>
+</tr>
+<tr class="even">
 <td align="left"><code class="prettyprint">AsyncEffect</code></td>
 <td align="left">an effect for asynchronous computations</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left"><code class="prettyprint">SafeEffect</code></td>
 <td align="left">an effect for guaranteeing resource safety</td>
 </tr>
@@ -368,6 +372,35 @@ import cats.instances.list._
 
 pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose.run</code></pre>
 <p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
+<h3 id="memo">Memo</h3>
+<p>The Memo effect allows the caching of expensive computations. Computations are “stored” with a given key, so that the next computation with the same key will return the previously computed value. When interpreting those computations a <code class="prettyprint">Cache</code> must be provided:</p>
+<pre><code class="prettyprint">import cats.Eval
+import cats.implicits._
+import org.atnos.eff._, memo._
+import org.atnos.eff.syntax.memo._
+import org.atnos.eff.syntax.eval._
+import org.atnos.eff.syntax.eff._
+
+type S = Fx.fx2[Memoized, Eval]
+
+var i = 0
+
+def expensive[R :_memo]: Eff[R, Int] =
+  memoize(&quot;key&quot;, { i += 1; 10 * 10 })
+
+(expensive[S] &gt;&gt; expensive[S]).runMemo(ConcurrentHashMapCache()).runEval.run === 100
+
+&quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
+<p><code class="prettyprint">&gt; there is only one invocation &lt;=&gt; true</code></p>
+<p>There are 2 cache implementations provided in this library to support the Memo effect:</p>
+<ul>
+<li><p><code class="prettyprint">org.atnos.eff.ConcurrentHashMapCache</code>: backed by a <code class="prettyprint">java.util.concurrent.ConcurrentHashMap</code> where the keys are hashcodes for the keys used to memoize the values. This cache is thread-safe but unbounded so use with care!</p></li>
+<li><p><code class="prettyprint">org.atnos.eff.ConcurrentWeakIdentityHashMapCache</code>: backed by a <code class="prettyprint">ConcurrentWeakIdentityHashMap</code> where the keys are <code class="prettyprint">System.identityHashCode</code> for the keys used to memoize the values. This cache is thread-safe and uses weak references which can be garbage collected when necessary.</p></li>
+</ul>
+<p>You can also use other, and better, cache implementations like <a href="https://github.com/ben-manes/caffeine">Caffeine</a> to get more functionalities like eviction policies, maximum size and so on. You will need to implement the <code class="prettyprint">Cache</code> interface for this</p>
+<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">trait</span> Cache[+K] {
+  <span class="kw">def</span> memo[K1 &gt;: K, V](key: K1, value: =&gt;V): V
+}</code></pre></div>
 <h3 id="async">Async</h3>
 <p>The Async effect is an “abstract” effect. This means that you can create asynchronous expressions using the same API and have it implemented using either <a href="http://docs.scala-lang.org/overviews/core/futures.html">Scala <code class="prettyprint">Future</code></a> or <a href="http://timperrett.com/2014/07/20/scalaz-task-the-missing-documentation/">Scalaz <code class="prettyprint">Task</code></a> or <a href="https://monix.io/docs/2x/eval/task.html">Monix <code class="prettyprint">Task</code></a>.</p>
 <p>For the following example we will assume an implementation using regular Scala futures. Let’s create some <code class="prettyprint">Async</code> effects:</p>
@@ -413,6 +446,35 @@ val scalazService: AsyncTaskInterpreter =
 // the monix service doesn&#39;t require any implicit context!
 val monixService: AsyncTaskInterpreter =
   org.atnos.eff.monix.addon.AsyncTaskInterpreter</code></pre>
+<p>Future computations can also be memoized to avoid expensive computations to be done several times. You can either</p>
+<ul>
+<li>use the <code class="prettyprint">asyncMemo</code> operator with a (mutable) cache</li>
+<li>use the <code class="prettyprint">asyncMemoized</code> operator with the <code class="prettyprint">Memo</code> effect (you will need to provide the cache later)
+<p/></li>
+</ul>
+<pre><code class="prettyprint">import cats.implicits._
+import org.atnos.eff._, all._
+import org.atnos.eff.syntax.all._
+import scala.concurrent._, duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+
+var i = 0
+
+def expensive[R :_Async :_memo]: Eff[R, Int] =
+  asyncMemoized(&quot;key&quot;, asyncFork[R, Int] { i += 1; 10 * 10})
+
+val interpreter = AsyncFutureInterpreter.create
+import interpreter._
+
+type S = Fx.fx2[Memoized, Async]
+
+val future: Future[Int] =
+  (expensive[S] &gt;&gt; expensive[S]).runAsyncMemo(ConcurrentHashMapCache()).runAsyncFuture
+
+Await.result(future, 1.second)
+
+&quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
+<p><code class="prettyprint">&gt; there is only one invocation &lt;=&gt; true</code></p>
 <h3 id="safe">Safe</h3>
 <p>The Safe effect is useful to handle resources which must be closed even in the presence of exceptions. The main operations are</p>
 <ul>
