@@ -4,7 +4,7 @@ import tutorial._
 
 object Tutorial extends UserGuidePage { def is = "Tutorial".title ^ s2"""
 
-This tutorial is intentionally structured like the [Free monad tutorial for cats](https://github.com/typelevel/cats/blob/master/docs/src/main/tut/freemonad.md)
+This tutorial is intentionally structured like the [Free monad tutorial for cats](http://typelevel.org/cats/datatypes/freemonad.html)
  so that a side-by-side comparison of the 2 approaches is possible.
 
 ### Study your topic
