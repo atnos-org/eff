@@ -1,7 +1,6 @@
 package org.atnos.site
 
-import java.util.concurrent.ExecutorService
-
+import org.specs2.matcher.ExpectationsDescription._
 import cats.data._
 import cats.syntax.either._
 import org.specs2.execute._
@@ -22,6 +21,7 @@ This library comes with the following effects:
  `StateEffect`       | an effect to pass state around
  `ListEffect`        | an effect for computations returning several values
  `ChooseEffect`      | an effect for modeling non-determinism
+ `MemoEffect`        | an effect for memoizing values
  `AsyncEffect`       | an effect for asynchronous computations
  `SafeEffect`        | an effect for guaranteeing resource safety
 
@@ -318,6 +318,50 @@ That behaviour is controlled by the `Alternative[F]` instance you use when runni
 For example if we take `List` to run a similar example as before, we get the list of all the accepted pairs:
 ${ChooseSnippets.snippet1}
 
+### Memo
+
+The Memo effect allows the caching of expensive computations. Computations are "stored" with a given key, so that the next
+computation with the same key will return the previously computed value. When interpreting those computations a `Cache` must
+be provided:${snippet{
+
+import cats.Eval
+import cats.implicits._
+import org.atnos.eff._, memo._
+import org.atnos.eff.syntax.memo._
+import org.atnos.eff.syntax.eval._
+import org.atnos.eff.syntax.eff._
+
+type S = Fx.fx2[Memoized, Eval]
+
+var i = 0
+
+def expensive[R :_memo]: Eff[R, Int] =
+  memoize("key", { i += 1; 10 * 10 })
+
+(expensive[S] >> expensive[S]).runMemo(ConcurrentHashMapCache()).runEval.run === 100
+
+"there is only one invocation" <==> (i === 1)
+
+}.eval}
+
+There are 2 cache implementations provided in this library to support the Memo effect:
+
+ - `org.atnos.eff.ConcurrentHashMapCache`: backed by a `java.util.concurrent.ConcurrentHashMap` where the keys are hashcodes
+ for the keys used to memoize the values. This cache is thread-safe but unbounded so use with care!
+
+ - `org.atnos.eff.ConcurrentWeakIdentityHashMapCache`: backed by a `ConcurrentWeakIdentityHashMap` where the keys are `System.identityHashCode`
+   for the keys used to memoize the values. This cache is thread-safe and uses weak references which can be garbage collected when
+   necessary.
+
+You can also use other, and better, cache implementations like [Caffeine](https://github.com/ben-manes/caffeine) to get more functionalities
+like eviction policies, maximum size and so on. You will need to implement the `Cache` interface for this
+
+```scala
+trait Cache[+K] {
+  def memo[K1 >: K, V](key: K1, value: =>V): V
+}
+```
+
 ### Async
 
 The Async effect is an "abstract" effect. This means that you can create asynchronous expressions using the same API
@@ -376,6 +420,38 @@ val scalazService: AsyncTaskInterpreter =
 val monixService: AsyncTaskInterpreter =
   org.atnos.eff.monix.addon.AsyncTaskInterpreter
 ```
+
+Future computations can also be memoized to avoid expensive computations to be done several times. You can either
+
+ - use the `asyncMemo` operator with a (mutable) cache
+ - use the `asyncMemoized` operator with the `Memo` effect (you will need to provide the cache later)
+<p/>
+
+${snippet{
+import cats.implicits._
+import org.atnos.eff._, all._
+import org.atnos.eff.syntax.all._
+import scala.concurrent._, duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+
+var i = 0
+
+def expensive[R :_Async :_memo]: Eff[R, Int] =
+  asyncMemoized("key", asyncFork[R, Int] { i += 1; 10 * 10})
+
+val interpreter = AsyncFutureInterpreter.create
+import interpreter._
+
+type S = Fx.fx2[Memoized, Async]
+
+val future: Future[Int] =
+  (expensive[S] >> expensive[S]).runAsyncMemo(ConcurrentHashMapCache()).runAsyncFuture
+
+Await.result(future, 1.second)
+
+"there is only one invocation" <==> (i === 1)
+
+}.eval}
 
 ### Safe
 

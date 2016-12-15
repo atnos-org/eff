@@ -160,7 +160,9 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
   def e13 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemoized("only once", asyncFork({ invocationsNumber += 1; 1 }))
+
+    type S = Fx.fx2[Memoized, Async]
+    def makeRequest = asyncMemoized("only once", asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
 
     (makeRequest >> makeRequest).runAsyncMemo(cache).runAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)

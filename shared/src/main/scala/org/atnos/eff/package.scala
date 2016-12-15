@@ -18,6 +18,7 @@ package object eff {
   object choose     extends ChooseCreation     with ChooseInterpretation
   object safe       extends SafeCreation       with SafeInterpretation
   object async      extends AsyncCreation      with AsyncInterpretation
+  object memo       extends MemoCreation       with MemoInterpretation
   object batch      extends Batch
 
   object create extends
@@ -31,6 +32,7 @@ package object eff {
     ValidateCreation with
     ChooseCreation with
     AsyncCreation with
+    MemoCreation with
     EffCreation with
     SafeCreation
 
@@ -46,6 +48,7 @@ package object eff {
     ValidateEffect with
     ChooseEffect with
     SafeEffect with
+    MemoEffect with
     Batch with
     EffInterpretation with
     EffCreation with

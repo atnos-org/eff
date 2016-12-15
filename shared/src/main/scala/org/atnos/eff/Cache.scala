@@ -63,7 +63,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
   private val map = new ConcurrentHashMap[WeakReference[K], V]
   private val queue = new ReferenceQueue[K]
 
-  def putIfAbsent(key: K, value: V): V = {
+  override def putIfAbsent(key: K, value: V): V = {
     purgeKeys
     map.putIfAbsent(newKey(key), value)
   }
@@ -139,8 +139,8 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
 
   def putAll(m: java.util.Map[_ <: K, _ <: V]): Unit = {
     purgeKeys
-    import scala.collection.JavaConversions._
-    m.entrySet.foreach(e => map.put(newKey(e.getKey), e.getValue))
+    import scala.collection.JavaConverters._
+    m.entrySet.asScala.foreach(e => map.put(newKey(e.getKey), e.getValue))
   }
 
   def values: java.util.Collection[V] = {
@@ -193,7 +193,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
       next
     }
 
-    def remove = throw new UnsupportedOperationException()
+    override def remove = throw new UnsupportedOperationException()
 
     def extract(u: U): T
   }

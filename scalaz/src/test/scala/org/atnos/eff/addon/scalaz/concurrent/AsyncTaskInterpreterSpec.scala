@@ -96,7 +96,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
       if (i == 0) Task.now(Eff.pure(1))
       else        Task.now(suspend(loop(i - 1)).map(_ + 1))
 
-    suspend(loop(10000)).runAsync must returnBefore(5.seconds)
+    suspend(loop(10000)).runAsync must returnBefore(10.seconds)
   }
 
   def e6 = {
