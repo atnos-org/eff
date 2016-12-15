@@ -89,7 +89,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
       if (i == 0) Task.now(Eff.pure(1))
       else Task.now(suspend(loop(i - 1)).map(_ + 1))
 
-    Await.result(suspend(loop(100000)).runAsync.runAsync, 5 seconds) must not(throwAn[Exception])
+    Await.result(suspend(loop(100000)).runAsync.runAsync, 10 seconds) must not(throwAn[Exception])
   }
 
   def e6 = {
@@ -128,8 +128,8 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
-    (makeRequest >> makeRequest).asyncAttempt.runAsync.runAsync must beRight(1).await
+    def makeRequest = asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)).asyncMemo("only once", cache)
+      (makeRequest >> makeRequest).asyncAttempt.runAsync.runAsync must beRight(1).await
 
     invocationsNumber must be_==(1)
   }

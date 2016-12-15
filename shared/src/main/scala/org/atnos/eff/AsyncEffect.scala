@@ -6,7 +6,6 @@ import org.atnos.eff.all._
 
 import scala.concurrent.duration.FiniteDuration
 import SubscribeEffect._
-import org.atnos.eff.MemoEffect.Memoized
 
 trait AsyncEffect extends AsyncCreation
 
@@ -148,7 +147,7 @@ trait AsyncInterpretation {
    *
    * if this method is called with the same key the previous value will be returned
    */
-  def asyncMemoize[R, K <: AnyRef, A](key: K, e: Eff[R, A])(implicit async: Async /= R, m: Memoized |= R): Eff[R, A] =
+  def asyncMemoized[R, K <: AnyRef, A](key: K, e: Eff[R, A])(implicit async: Async /= R, m: Memoized |= R): Eff[R, A] =
     MemoEffect.getCache[R, K].flatMap(cache => asyncMemo(key, cache, e))
 
   private def memo[K <: AnyRef, A](k: K, cache: Cache[K], a: Async[A]): Async[A] =

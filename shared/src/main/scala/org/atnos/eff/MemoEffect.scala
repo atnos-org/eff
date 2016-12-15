@@ -2,6 +2,7 @@ package org.atnos.eff
 
 import Eff._
 import cats.Eval
+import MemoEffect._
 
 /**
  * Memoization effect
@@ -15,21 +16,33 @@ import cats.Eval
  *  - one concurrent hashmap with weak references (to evict entries based on garbage collection)
  *
  */
-object MemoEffect {
 
-  sealed trait Memoized[A]
+trait MemoEffect extends
+  MemoTypes with
+  MemoCreation with
+  MemoInterpretation
 
+object MemoEffect extends MemoEffect
+
+trait MemoTypes {
+  type _Memo[R] = Memoized <= R
   type _memo[R] = Memoized |= R
-  type _Memo[R] = Memoized /= R
+}
 
-  case class Store[K <: AnyRef, A](key: K, a: () => A) extends Memoized[A]
-  case class GetCache[K <: AnyRef]()                   extends Memoized[Cache[K]]
+object MemoTypes extends MemoTypes
+
+trait MemoCreation extends MemoTypes {
 
   def memoize[R :_memo, K <: AnyRef, A](key: K, a: =>A): Eff[R, A] =
     send[Memoized, R, A](Store(key, () => a))
 
   def getCache[R :_memo, K <: AnyRef]: Eff[R, Cache[K]] =
     send[Memoized, R, Cache[K]](GetCache())
+
+}
+
+trait MemoInterpretation extends MemoTypes {
+
 
   def runMemo[R, U, A](cache: Cache[AnyRef], effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], eval: Eval |= U): Eff[U, A] = {
     interpret.translate(effect)(new Translate[Memoized  , U] {
@@ -52,3 +65,10 @@ object MemoEffect {
   }
 
 }
+
+object MemoInterpretation extends MemoInterpretation
+
+sealed trait Memoized[A]
+
+case class Store[K <: AnyRef, A](key: K, a: () => A) extends Memoized[A]
+case class GetCache[K <: AnyRef]()                   extends Memoized[Cache[K]]
