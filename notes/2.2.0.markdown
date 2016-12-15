@@ -1,0 +1,4 @@
+Memoization version!
+
+ * added a `Memo` effect to cache expensive computations
+ * `Async` computations can be memoized to invoke remote services more than necessary
