@@ -81,7 +81,7 @@ trait MemberInLower5 {
   }
 }
 
-@implicitNotFound("No instance found for MemberInOut[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
+@implicitNotFound("No instance found for MemberInOut[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R} or cannot be extracted from ${R}")
 trait MemberInOut[T[_], R] extends MemberIn[T, R] { outer =>
   def extract[V](union: Union[R, V]): Option[T[V]]
 
@@ -99,7 +99,7 @@ trait MemberInOut[T[_], R] extends MemberIn[T, R] { outer =>
 
 object MemberInOut extends MemberInOutLower1 {
 
-  @implicitNotFound("No instance found for MemberInOut[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
+  @implicitNotFound("No instance found for MemberInOut[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R} or cannot be extracted from ${R}")
   type /=[T[_], R] = MemberInOut[T, R]
 }
 
