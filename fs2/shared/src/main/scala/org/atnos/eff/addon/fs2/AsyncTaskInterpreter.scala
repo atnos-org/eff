@@ -1,6 +1,6 @@
 package org.atnos.eff.addon.fs2
 
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.{ExecutorService, ScheduledExecutorService, TimeoutException}
 
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
@@ -17,7 +17,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Either, Left, Right}
 
-case class AsyncTaskInterpreter(implicit val s: Strategy, val sc: Scheduler) extends AsyncInterpreter[Task] { outer =>
+case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
+
+  implicit val s: Strategy = Strategy.fromExecutionContext(es.executionContext)
+
+  implicit val sc: Scheduler = Scheduler.fromScheduledExecutorService(es.scheduledExecutorService)
 
   def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     run(e.detachA(ApplicativeAsync))
@@ -88,16 +92,12 @@ case class AsyncTaskInterpreter(implicit val s: Strategy, val sc: Scheduler) ext
 
 object AsyncTaskInterpreter  {
 
-  def create(implicit ec: ExecutionContext): AsyncTaskInterpreter =
-    fromExecutionContext(ec)
+  def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTaskInterpreter =
+    fromExecutorServices(es, s)
 
-  /** create an AsyncFutureService but do not evaluate the execution context yet */
-  def fromExecutionContext(ec: =>ExecutionContext): AsyncTaskInterpreter =
-    fromExecutionEnv(ExecutorServices.fromExecutionContext(ec))
-
-  /** create an AsyncFutureService but do not evaluate the execution context yet */
-  def fromExecutionEnv(ee: ExecutorServices): AsyncTaskInterpreter =
-    AsyncTaskInterpreter()(Strategy.fromExecutionContext(ee.executionContext), Scheduler.fromScheduledExecutorService(ee.scheduledExecutorService))
+  /** create an AsyncTaskervice but do not evaluate the executor service yet */
+  def fromExecutorServices(es: =>ExecutorService, s: => ScheduledExecutorService): AsyncTaskInterpreter =
+    AsyncTaskInterpreter(ExecutorServices.fromExecutorServices(es, s))
 
   def TaskApplicative: Applicative[Task] = new Applicative[Task] {
     def pure[A](x: A): Task[A] =
