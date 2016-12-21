@@ -41,6 +41,16 @@ lazy val scalaz = project.in(file("scalaz"))
   .settings(libraryDependencies ++= scalazConcurrent)
   .settings(effSettings ++ commonJvmSettings:_*)
 
+lazy val fs2 = crossProject.crossType(CrossType.Full).in(file("fs2"))
+  .settings(moduleName := "eff-fs2")
+  .dependsOn(core)
+  .settings(effSettings:_*)
+  .jvmSettings(commonJvmSettings ++ Seq(libraryDependencies ++= fs2Jvm):_*)
+  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= fs2Js):_*)
+
+lazy val fs2JVM = fs2.jvm
+lazy val fs2JS =  fs2.js
+
 lazy val scoverageSettings = Seq(
   coverageMinimum := 60,
   coverageFailOnMinimum := false,
@@ -240,6 +250,7 @@ def testTask(task: TaskKey[Tests.Output]) =
 lazy val catsVersion   = "0.8.1"
 lazy val monixVersion  = "2.1.0"
 lazy val scalazVersion = "7.2.7"
+lazy val fs2Version    = "0.9.2"
 lazy val specs2Version = "3.8.6"
 
 lazy val catsJvm = Seq(
@@ -256,6 +267,12 @@ lazy val monixJs = Seq(
 
 lazy val scalazConcurrent = Seq(
   "org.scalaz" %% "scalaz-concurrent" % scalazVersion)
+
+lazy val fs2Jvm = Seq(
+  "co.fs2" %% "fs2-core" % fs2Version)
+
+lazy val fs2Js = Seq(
+  "co.fs2" %%%! "fs2-core" % fs2Version)
 
 lazy val specs2 = Seq(
     "org.specs2" %% "specs2-core"
