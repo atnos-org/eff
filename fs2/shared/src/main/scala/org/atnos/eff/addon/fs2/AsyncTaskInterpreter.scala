@@ -64,11 +64,12 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
                     Task.async(registerTask).unsafeTimed(to)
 
                   case as @ AttemptedSubscribe(sub, _) =>
-
                     Task.ref[X].flatMap { f =>
-                      sc.scheduleOnce(to) { f.set(Task.async((cb: Callback[X]) => cb(Right(Left(new TimeoutException))))); () }
-                      val ta = Task.async { subscribe }
-                      f.set(ta)
+                      sc.scheduleOnce(to) {
+                        f.set(Task.async((cb: Callback[X]) => cb(Right(Left(new TimeoutException))))); ()
+                      }
+
+                      Task.async(subscribe).flatMap { r => f.set(Task.now(r)) }
                       f.get
                     }
                 }
@@ -93,11 +94,11 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
 object AsyncTaskInterpreter  {
 
   def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTaskInterpreter =
-    fromExecutorServices(es, s)
+    fromExecutorServices(ExecutorServices.fromExecutorServices(es, s))
 
   /** create an AsyncTaskervice but do not evaluate the executor service yet */
-  def fromExecutorServices(es: =>ExecutorService, s: => ScheduledExecutorService): AsyncTaskInterpreter =
-    AsyncTaskInterpreter(ExecutorServices.fromExecutorServices(es, s))
+  def fromExecutorServices(es: ExecutorServices): AsyncTaskInterpreter =
+    AsyncTaskInterpreter(es)
 
   def TaskApplicative: Applicative[Task] = new Applicative[Task] {
     def pure[A](x: A): Task[A] =
