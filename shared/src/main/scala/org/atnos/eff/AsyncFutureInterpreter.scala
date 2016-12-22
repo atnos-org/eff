@@ -49,9 +49,6 @@ case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInte
       case AsyncEff(e, to) => subscribeToFuture(e, to).detachA(FutureApplicative)
     }
 
-  private val map: ConcurrentHashMap[Int, Eval[Future[Any]]] =
-    new ConcurrentHashMap[Int, Eval[Future[Any]]]
-
   def subscribeToFutureNat(timeout: Option[FiniteDuration]) = new (Subscribe ~> Future) {
     def startFuture[X](subscribe: Subscribe[X]): (() => Future[X], Callback[X]) = {
       val promise: Promise[X] = Promise[X]()
