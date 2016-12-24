@@ -15,13 +15,17 @@ import org.atnos.eff.Async._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Either, Left, Right}
+import scala.util.{Either, Failure, Left, Right, Success}
 
 case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
 
   implicit val s: Strategy = Strategy.fromExecutionContext(es.executionContext)
 
   implicit val sc: Scheduler = Scheduler.fromScheduledExecutorService(es.scheduledExecutorService)
+
+  private lazy val futureInterpreter: AsyncFutureInterpreter =
+    AsyncFutureInterpreter(es)
+
 
   def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     run(e.detachA(ApplicativeAsync))
@@ -39,21 +43,33 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
 
   def run[A](r: Async[A]): Task[A] =
     r match {
-      case AsyncNow(a) => Task.now(a)
-      case AsyncFailed(t) => Task.fail(t)
+      case AsyncNow(a)     => Task.now(a)
+      case AsyncFailed(t)  => Task.fail(t)
       case AsyncDelayed(a) => Either.catchNonFatal(a.value).fold(Task.fail, Task.now)
       case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)(AsyncTaskInterpreter.TaskMonad)
     }
 
   def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
     new (Subscribe ~> Task) {
+      implicit val ec = es.executionContext
+
       def apply[X](subscribe: Subscribe[X]): Task[X] = {
 
-        subscribe match {
-          case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)))
-          case AttemptedSubscribe(s, Some((k, cache))) => cache.memo(k, apply(AttemptedSubscribe(s)))
+        subscribe.memoizeKey match {
+          case Some((k, cache)) =>
+            Task async { cb =>
+              val future = futureInterpreter.subscribeToFutureNat(timeout)(subscribe)
+              val memoized = cache.memo(k, future)
 
-          case _ =>
+              memoized onComplete {
+                case Success(a) => cb(Right(a))
+                case Failure(t) => cb(Left(t))
+              }
+            }
+
+          case None =>
+            val registerTask = { (c: Callback[X]) => subscribe(c) }
+
             timeout match {
               case None => Task.async(subscribe)
 
@@ -76,6 +92,7 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
             }
         }
       }
+
     }
 
   def subscribeToTask[A](e: Eff[Fx1[Subscribe], A], timeout: Option[FiniteDuration])(implicit m: Subscribe <= Fx1[Subscribe]): Eff[Fx1[Task], A] =
@@ -100,12 +117,12 @@ object AsyncTaskInterpreter  {
   def fromExecutorServices(es: ExecutorServices): AsyncTaskInterpreter =
     AsyncTaskInterpreter(es)
 
-  def TaskApplicative: Applicative[Task] = new Applicative[Task] {
+  def TaskApplicative(implicit s: Strategy): Applicative[Task] = new Applicative[Task] {
     def pure[A](x: A): Task[A] =
       Task.now(x)
 
     def ap[A, B](ff: Task[A => B])(fa: Task[A]): Task[B] =
-      ff.map2(fa)(_(_))
+      Task.parallelTraverse(Seq(ff, fa))(identity)(s).map(v => v(0).asInstanceOf[A => B](v(1).asInstanceOf[A]))
 
     override def toString = "Applicative[Task]"
   }
