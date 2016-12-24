@@ -33,7 +33,10 @@ type _stateMap[R]     = State[Map[String, Any], ?] |= R
  * translating one effect of the stack to other effects in the same stack
  *
  *
- * NOTE: It is really important for type inference that the effects for U are listed after those for R!
+ * NOTE:
+ * - It is really important for type inference that the effects for U are listed after those for R!
+ * - There's a name conflict in the `State Monad` in the pattern match for `Get(key)`
+ *   ;hence, remember to rename your smart constructor defined earlier to something else.
  *
  * Implicit member definitions will NOT be found with the following definition:
  *
