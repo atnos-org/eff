@@ -39,7 +39,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   lazy val executorServices: ExecutorServices =
     ExecutorServices.fromExecutionContext(ee.executionContext)
 
-  lazy val asyncService = AsyncTaskInterpreter.fromExecutorServices(executorServices)
+  lazy val asyncService = fromExecutorServices(executorServices)
   import asyncService._
 
   def e1 = {

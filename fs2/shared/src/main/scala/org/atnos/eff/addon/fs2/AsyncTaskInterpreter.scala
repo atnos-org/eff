@@ -17,15 +17,37 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Either, Failure, Left, Right, Success}
 
-case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
+case class AsyncTaskInterpreterEffects()(implicit s: Strategy, sc: Scheduler, es: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
 
-  implicit val s: Strategy = Strategy.fromExecutionContext(es.executionContext)
+  implicit val TaskApplicative: Applicative[Task] = new Applicative[Task] {
+    def pure[A](x: A): Task[A] =
+      Task.now(x)
 
-  implicit val sc: Scheduler = Scheduler.fromScheduledExecutorService(es.scheduledExecutorService)
+    def ap[A, B](ff: Task[A => B])(fa: Task[A]): Task[B] =
+      Task.parallelTraverse(Seq(ff, fa))(identity)(s).map(v => v(0).asInstanceOf[A => B](v(1).asInstanceOf[A]))
+
+    override def toString = "Applicative[Task]"
+  }
+
+  implicit val TaskMonad: Monad[Task] = new Monad[Task] {
+    def pure[A](x: A): Task[A] =
+      Task.now(x)
+
+    def flatMap[A, B](fa: Task[A])(f: A => Task[B]): Task[B] =
+      fa.flatMap(f)
+
+    def tailRecM[A, B](a: A)(f: A => Task[Either[A, B]]): Task[B] =
+      f(a).flatMap {
+        case Left(a1) => tailRecM(a1)(f)
+        case Right(b) => pure(b)
+      }
+
+    override def toString = "Monad[Task]"
+
+  }
 
   private lazy val futureInterpreter: AsyncFutureInterpreter =
     AsyncFutureInterpreter(es)
-
 
   def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     run(e.detachA(ApplicativeAsync))
@@ -33,10 +55,11 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
   def runSequential[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     run(e.detach)
 
-  def suspend[R :_async, A](task: =>Task[Eff[R, A]])(implicit s: Strategy): Eff[R, A] =
+  def suspend[R :_async, A](task: =>Task[Eff[R, A]]): Eff[R, A] =
     fromTask(task).flatten
 
-  def fromTask[R :_async, A](task: => Task[A])(implicit s: Strategy): Eff[R, A] =
+
+  def fromTask[R :_async, A](task: => Task[A]): Eff[R, A] =
     subscribe[R, A](SimpleSubscribe(callback =>
     { task.unsafeRunAsync(callback) }),
       None)
@@ -46,7 +69,7 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
       case AsyncNow(a)     => Task.now(a)
       case AsyncFailed(t)  => Task.fail(t)
       case AsyncDelayed(a) => Either.catchNonFatal(a.value).fold(Task.fail, Task.now)
-      case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)(AsyncTaskInterpreter.TaskMonad)
+      case AsyncEff(e, to) => subscribeToTask(e, to).detachA(TaskApplicative)(TaskMonad)
     }
 
   def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
@@ -108,40 +131,12 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
 
 }
 
-object AsyncTaskInterpreter  {
+trait AsyncTaskInterpreter  {
 
-  def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTaskInterpreter =
+  def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTaskInterpreterEffects =
     fromExecutorServices(ExecutorServices.fromExecutorServices(es, s))
 
-  /** create an AsyncTaskervice but do not evaluate the executor service yet */
-  def fromExecutorServices(es: ExecutorServices): AsyncTaskInterpreter =
-    AsyncTaskInterpreter(es)
-
-  def TaskApplicative(implicit s: Strategy): Applicative[Task] = new Applicative[Task] {
-    def pure[A](x: A): Task[A] =
-      Task.now(x)
-
-    def ap[A, B](ff: Task[A => B])(fa: Task[A]): Task[B] =
-      Task.parallelTraverse(Seq(ff, fa))(identity)(s).map(v => v(0).asInstanceOf[A => B](v(1).asInstanceOf[A]))
-
-    override def toString = "Applicative[Task]"
-  }
-
-  implicit def TaskMonad: Monad[Task] = new Monad[Task] {
-    def pure[A](x: A): Task[A] =
-      Task.now(x)
-
-    def flatMap[A, B](fa: Task[A])(f: A => Task[B]): Task[B] =
-      fa.flatMap(f)
-
-    def tailRecM[A, B](a: A)(f: A => Task[Either[A, B]]): Task[B] =
-      f(a).flatMap {
-        case Left(a1) => tailRecM(a1)(f)
-        case Right(b) => pure(b)
-      }
-
-    override def toString = "Monad[Task]"
-
-  }
+  /** implement in js and jvm */
+  def fromExecutorServices(es: ExecutorServices): AsyncTaskInterpreterEffects
 
 }
