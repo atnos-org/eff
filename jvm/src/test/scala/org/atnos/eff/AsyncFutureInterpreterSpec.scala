@@ -32,7 +32,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
  Simple Async calls with timeout can be memoized    $e11
  Attempted Async calls with timeout can be memoized $e12
 
- Async calls can be memoized with a memo effect $e10
+ Async calls can be memoized with a memo effect $e13
 
 
 """
