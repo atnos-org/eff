@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 
 class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "fs2 task".title ^ s2"""
 
-Async effects can be implemented with an AsyncFuture service $e1
+ Async effects can be implemented with an AsyncFuture service $e1
  Async effects can be attempted                               $e2
  Async effects can be executed concurrently                   $e3
  Async effects are stacksafe with asyncFork                   $e4
@@ -29,7 +29,7 @@ Async effects can be implemented with an AsyncFuture service $e1
  Simple Async calls with timeout can be memoized    $e11
  Attempted Async calls with timeout can be memoized $e12
 
- Async calls can be memoized with a memo effect $e10
+ Async calls can be memoized with a memo effect $e13
 
 
 """

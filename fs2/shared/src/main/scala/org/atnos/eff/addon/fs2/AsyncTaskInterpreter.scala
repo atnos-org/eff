@@ -48,7 +48,6 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
   def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
     new (Subscribe ~> Task) {
       def apply[X](subscribe: Subscribe[X]): Task[X] = {
-        val registerTask = { (c: Callback[X]) => subscribe(c) }
 
         subscribe match {
           case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)))
@@ -56,21 +55,22 @@ case class AsyncTaskInterpreter(es: ExecutorServices) extends AsyncInterpreter[T
 
           case _ =>
             timeout match {
-              case None => Task.async(registerTask)
+              case None => Task.async(subscribe)
 
               case Some(to) =>
                 subscribe match {
                   case SimpleSubscribe(_, _) =>
-                    Task.async(registerTask).unsafeTimed(to)
+                    Task.ref[X].flatMap { f =>
+                      f.setRace(Task.async { cb =>
+                        sc.delayedStrategy(to).apply(cb(Left(new TimeoutException)))
+                      }, Task.async(subscribe)) flatMap (_ => f.get)
+                    }
 
                   case as @ AttemptedSubscribe(sub, _) =>
                     Task.ref[X].flatMap { f =>
-                      sc.scheduleOnce(to) {
-                        f.set(Task.async((cb: Callback[X]) => cb(Right(Left(new TimeoutException))))); ()
-                      }
-
-                      Task.async(subscribe).flatMap { r => f.set(Task.now(r)) }
-                      f.get
+                      f.setRace(Task.async { cb =>
+                        sc.delayedStrategy(to).apply(cb(Right(Left(new TimeoutException))))
+                      }, Task.async(subscribe)) flatMap (_ => f.get)
                     }
                 }
             }
