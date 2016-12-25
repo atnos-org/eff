@@ -1,5 +1,7 @@
 package org.atnos.site
 
+import java.util.concurrent.ScheduledThreadPoolExecutor
+
 import org.specs2.matcher.ExpectationsDescription._
 import cats.data._
 import cats.syntax.either._
@@ -22,7 +24,7 @@ This library comes with the following effects:
  `ListEffect`        | an effect for computations returning several values
  `ChooseEffect`      | an effect for modeling non-determinism
  `MemoEffect`        | an effect for memoizing values
- `AsyncEffect`       | an effect for asynchronous computations
+ `FutureEffect`      | an effect for asynchronous computations
  `SafeEffect`        | an effect for guaranteeing resource safety
 
 <small>(from `org.atnos.eff._`)</small>
@@ -358,73 +360,62 @@ like eviction policies, maximum size and so on. You will need to implement the `
 
 ```scala
 trait Cache {
+<<<<<<< 92a1607ddcf282c87606d7253d05f4161af30856
   def memo[V](key: K1, value: =>V): V
+=======
+  def memo[V](key: AnyRef, value: =>V): V
+>>>>>>> Concrete asynchronous effects
 }
 ```
 
-### Async
+### TimedFuture
 
-The Async effect is an "abstract" effect. This means that you can create asynchronous expressions using the same API
-and have it implemented using either [Scala `Future`](http://docs.scala-lang.org/overviews/core/futures.html) or
-[Scalaz `Task`](http://timperrett.com/2014/07/20/scalaz-task-the-missing-documentation/) or [Monix `Task`](https://monix.io/docs/2x/eval/task.html).
+The `TimedFuture` effect is a thin shim on top of Scala's `Future`. The only extra capability it has built-in is
+timeouts, which are supported by passing in a `ScheduledExecutionContext`.
+Note that because `Future` represents a computation already taking place, `TimedFuture` is a function that returns a `Future`.
+This means if you start a computation before passing the `Future` into Eff, the `Future` will begin less predictably.
 
-For the following example we will assume an implementation using regular Scala futures. Let's create some
-`Async` effects:${snippet{
+Now, let's create some `TimedFuture` effects:${snippet{
 
 import org.atnos.eff._
-import org.atnos.eff.async._
+import org.atnos.eff.future._
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-type R = Fx.fx2[Async, Option]
+type R = Fx.fx2[TimedFuture, Option]
 
 val action: Eff[R, Int] =
   for {
     // create a value now
-    a <- asyncNow[R, Int](1)
+    a <- Eff.pure[R, Int](1)
 
-    // evaluate a value later
-    b <- asyncDelay[R, Int](1)
-
-    // evaluate a value asynchronously
-    c <- asyncFork[R, Int](a + b)
-  } yield c
+    // evaluate a value later, on some other thread pool, and continue when it's finished
+    b <- futureDelay[R, Int](1)
+  } yield b
 
 /*p
-Then we need an interpreter to interpret them as `Futures`. The `AsyncFutureInterpreter.create` method uses an implicit
-`ExecutionContext` to create the interpreter. If we import the interpreter methods we can finally invoke `runAsyncFuture`
-to get a `Future` back.
+Then we need to pass a `ScheduledExecutorService` and `ExecutionContext` in to begin the computation.
 */
 
-val interpreter = AsyncFutures.create
-import interpreter._
+val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
 
-Await.result(action.runOption.runAsyncFuture, 1 second)
+Await.result(action.runOption.detach.runNow(ses, global), 1 second)
 }.eval}
 
-If you prefer to use monix or scalaz you need to add a dependency on `eff-monix` or `eff-scalaz` and create
-the corresponding `org.atnos.eff.monix.AsyncTaskInterpreter` or `org.atnos.eff.addon.scalaz.concurrent.AsyncTaskInterpreter`:
-```
-import org.atnos.eff._
+If you prefer to use monix or scalaz `Task` you need to add a dependency on `eff-monix` or `eff-scalaz` and
+use one of their `TaskEffect`s.
 
-import java.util.concurrent._
-import scalaz.concurrent._
+Future and Task computations can also be memoized to avoid expensive computations to be done several times. You can either
 
-implicit val es = Strategy.DefaultExecutorService
-val scalazService: AsyncTaskInterpreter =
-  org.atnos.eff.addon.scalaz.concurrent.AsyncTaskInterpreter.create
-
-// the monix service doesn't require any implicit context!
-val monixService: AsyncTaskInterpreter =
-  org.atnos.eff.monix.addon.AsyncTaskInterpreter
-```
-
-Future computations can also be memoized to avoid expensive computations to be done several times. You can either
-
+<<<<<<< 92a1607ddcf282c87606d7253d05f4161af30856
  - use the `asyncMemo` operator with a (mutable) cache
  - use the `asyncMemoized` operator with the `Memoized` effect (you will need to provide the cache later)
+=======
+ - use the `futureMemo/taskMemo` operator with a (mutable) cache
+ - use the `futureMemoized/taskMemoized` operator with the `Memo` effect (you will need to provide the cache later)
+>>>>>>> Concrete asynchronous effects
 <p/>
 
 ${snippet{
@@ -436,16 +427,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 var i = 0
 
-def expensive[R :_Async :_memo]: Eff[R, Int] =
-  asyncMemoized(asyncFork[R, Int] { i += 1; 10 * 10})
+def expensive[R :_Future :_memo]: Eff[R, Int] =
+  futureMemoized[R, Int]("key", futureDelay[R, Int] { i += 1; 10 * 10})
 
-val interpreter = AsyncFutures.create
-import interpreter._
+type S = Fx.fx2[Memoized, TimedFuture]
 
-type S = Fx.fx2[Memoized, Async]
+val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
 
 val future: Future[Int] =
-  (expensive[S] >> expensive[S]).runAsyncMemo(ConcurrentHashMapCache()).runAsyncFuture
+  (expensive[S] >> expensive[S]).runFutureMemo(ConcurrentHashMapCache()).detach.runNow(ses, scala.concurrent.ExecutionContext.Implicits.global)
 
 Await.result(future, 1.second)
 

@@ -257,10 +257,12 @@ lazy val catsJs = Seq(
   "org.typelevel" %%%! "cats-core" % catsVersion)
 
 lazy val monixEval = Seq(
-  "io.monix" %% "monix-eval" % monixVersion)
+  "io.monix" %% "monix-eval" % monixVersion,
+  "io.monix" %% "monix-cats" % monixVersion)
 
 lazy val monixJs = Seq(
-  "io.monix" %%%! "monix-eval" % monixVersion)
+  "io.monix" %%%! "monix-eval" % monixVersion,
+  "io.monix" %%%! "monix-cats" % monixVersion)
 
 lazy val scalazConcurrent = Seq(
   "org.scalaz" %% "scalaz-concurrent" % scalazVersion)

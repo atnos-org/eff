@@ -17,6 +17,7 @@ package object eff {
   object validate   extends ValidateCreation       with ValidateInterpretation
   object choose     extends ChooseCreation         with ChooseInterpretation
   object safe       extends SafeCreation           with SafeInterpretation
+  object future     extends FutureCreation         with FutureInterpretation
   object async      extends AsyncCreation          with AsyncInterpretation
   object memo       extends MemoCreation           with MemoInterpretation
   object batch      extends Batch
@@ -31,12 +32,32 @@ package object eff {
     EitherCreation with
     ValidateCreation with
     ChooseCreation with
+    FutureCreation with
     AsyncCreation with
     MemoCreation with
     EffCreation with
     SafeCreation
 
   object all extends
+    AsyncEffect with
+    FutureEffect with
+    ReaderEffect with
+    WriterEffect with
+    StateEffect with
+    EvalEffect with
+    OptionEffect with
+    ListEffect with
+    EitherEffect with
+    ValidateEffect with
+    ChooseEffect with
+    SafeEffect with
+    MemoEffect with
+    Batch with
+    EffInterpretation with
+    EffCreation with
+    EffImplicits
+
+  object allbutfuture extends
     AsyncEffect with
     ReaderEffect with
     WriterEffect with
