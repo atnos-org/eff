@@ -11,8 +11,8 @@ lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
   .settings(effSettings)
   .settings(noPublishSettings)
-  .aggregate(coreJVM, coreJS, monixJVM, monixJS, scalaz)
-  .dependsOn(coreJVM, coreJS, monixJVM, monixJS, scalaz)
+  .aggregate(coreJVM, coreJS, monixJVM, monixJS, scalaz, twitter)
+  .dependsOn(coreJVM, coreJS, monixJVM, monixJS, scalaz, twitter)
 
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff")
@@ -39,6 +39,12 @@ lazy val scalaz = project.in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
   .dependsOn(coreJVM)
   .settings(libraryDependencies ++= scalazConcurrent)
+  .settings(effSettings ++ commonJvmSettings:_*)
+
+lazy val twitter = project
+  .settings(moduleName := "eff-twitter")
+  .dependsOn(coreJVM)
+  .settings(libraryDependencies ++= twitterUtilCore ++ catbird)
   .settings(effSettings ++ commonJvmSettings:_*)
 
 lazy val scoverageSettings = Seq(
@@ -241,6 +247,8 @@ lazy val catsVersion   = "0.8.1"
 lazy val monixVersion  = "2.1.0"
 lazy val scalazVersion = "7.2.7"
 lazy val specs2Version = "3.8.6"
+lazy val twitterUtilVersion = "6.40.0"
+lazy val catbirdVersion = "0.9.0"
 
 lazy val catsJvm = Seq(
   "org.typelevel" %% "cats-core" % catsVersion)
@@ -266,6 +274,14 @@ lazy val specs2 = Seq(
 
 lazy val scalameter = Seq(
   "com.storm-enroute" %% "scalameter" % "0.8.2" % "test")
+
+lazy val twitterUtilCore = Seq(
+  "com.twitter" %% "util-collection" % twitterUtilVersion
+)
+
+lazy val catbird = Seq(
+  "io.catbird" %% "catbird-util" % catbirdVersion
+)
 
 def si2712Dependency(scalaVersion: String) =
   if (CrossVersion.partialVersion(scalaVersion).exists(_._2 < 12))
