@@ -14,7 +14,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent._
 import scala.util._
 
-case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInterpreter[Future] { outer =>
+case class  AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInterpreter[Future] { outer =>
 
   implicit lazy val executorService: ExecutorService =
     executors.executorService
@@ -70,10 +70,10 @@ case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInte
       }
 
     def apply[X](subscribe: Subscribe[X]): Future[X] = {
-      subscribe match {
-        case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)))
-        case AttemptedSubscribe(s, Some((k, cache))) => cache.memo(k, apply(AttemptedSubscribe(s)))
-        case _ =>
+      subscribe.memoizeKey match {
+        case Some((k, cache)) => cache.memo(k, apply(subscribe.unmemoize))
+
+        case None =>
           timeout match {
             case None => startFuture(subscribe)._1()
 

@@ -49,11 +49,10 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
           }
         val registerTask = { (_: Scheduler, c: Callback[X]) => subscribe(callback(c)); Cancelable.empty }
 
-        subscribe match {
-          case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)).memoize)
-          case AttemptedSubscribe(s, Some((k, cache))) => cache.memo(k, apply(AttemptedSubscribe(s)).memoize)
+        subscribe.memoizeKey match {
+          case Some((k, cache)) => cache.memo(k, apply(subscribe.unmemoize).memoize)
 
-          case _ =>
+          case None =>
             timeout match {
               case None => Task.fork(Task.async(registerTask))
 
@@ -66,8 +65,11 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
 
                     Task.fork(Task.async { (scheduler: Scheduler, cb: Callback[X]) =>
                       val cb1 = callback(cb)
-                      val cancelable = Cancelable(() => subscribe(cb1))
-                      scheduler.scheduleOnce(to) { cb1(Right(Left(new TimeoutException))); cancelable.cancel }
+                      val cancelable = Task.fork(Task.delay(subscribe(cb1))).runAsync(scheduler)
+                      scheduler.scheduleOnce(to) {
+                        cb1(Right(Left(new TimeoutException)))
+                        cancelable.cancel
+                      }
                       cancelable
                     })
                 }

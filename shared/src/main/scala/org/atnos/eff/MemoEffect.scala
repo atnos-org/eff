@@ -9,12 +9,13 @@ import MemoEffect._
  *
  * Memoize a computation for a given key
  *
- * This effect is backed-up by a cache which can be implemented with
+ * This effect can be interpreted with a cache implemented with
  * many different libraries. See Cache.scala for 2 default implementations:
  *
  *  - one concurrent hashmap (meaning an unbounded cache)
  *  - one concurrent hashmap with weak references (to evict entries based on garbage collection)
  *
+ * You can implement your own version using ScalaCache for example
  */
 
 trait MemoEffect extends
@@ -33,18 +34,17 @@ object MemoTypes extends MemoTypes
 
 trait MemoCreation extends MemoTypes {
 
-  def memoize[R :_memo, K <: AnyRef, A](key: K, a: =>A): Eff[R, A] =
+  def memoize[R :_memo, A](key: AnyRef, a: =>A): Eff[R, A] =
     send[Memoized, R, A](Store(key, () => a))
 
-  def getCache[R :_memo, K <: AnyRef]: Eff[R, Cache[K]] =
-    send[Memoized, R, Cache[K]](GetCache())
+  def getCache[R :_memo]: Eff[R, Cache] =
+    send[Memoized, R, Cache](GetCache())
 
 }
 
 trait MemoInterpretation extends MemoTypes {
 
-
-  def runMemo[R, U, A](cache: Cache[AnyRef], effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], eval: Eval |= U): Eff[U, A] = {
+  def runMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], eval: Eval |= U): Eff[U, A] = {
     interpret.translate(effect)(new Translate[Memoized  , U] {
       def apply[X](mx: Memoized[X]): Eff[U, X] =
         mx match {
@@ -54,7 +54,7 @@ trait MemoInterpretation extends MemoTypes {
     })
   }
 
-  def runAsyncMemo[R, U, A](cache: Cache[AnyRef], effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], async: Async |= U): Eff[U, A] = {
+  def runAsyncMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], async: Async |= U): Eff[U, A] = {
     interpret.translate(effect)(new Translate[Memoized, U] {
       def apply[X](mx: Memoized[X]): Eff[U, X] =
         mx match {
@@ -70,5 +70,5 @@ object MemoInterpretation extends MemoInterpretation
 
 sealed trait Memoized[A]
 
-case class Store[K <: AnyRef, A](key: K, a: () => A) extends Memoized[A]
-case class GetCache[K <: AnyRef]()                   extends Memoized[Cache[K]]
+case class Store[A](key: AnyRef, a: () => A) extends Memoized[A]
+case class GetCache()                        extends Memoized[Cache]

@@ -57,11 +57,9 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
 
         subscribe.memoizeKey match {
           case Some((k, cache)) =>
-            Task async { cb =>
-              val future = futureInterpreter.subscribeToFutureNat(timeout)(subscribe)
-              val memoized = cache.memo(k, future)
-
-              memoized onComplete {
+            Task.async[X] { cb =>
+              val future = cache.memo(k, futureInterpreter.subscribeToFutureNat(timeout)(subscribe.unmemoize))
+              future onComplete {
                 case Success(a) => cb(\/-(a))
                 case Failure(t) => cb(-\/(t))
               }

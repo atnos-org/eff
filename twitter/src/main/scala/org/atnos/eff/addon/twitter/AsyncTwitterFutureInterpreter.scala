@@ -63,10 +63,11 @@ case class AsyncTwitterFutureInterpreter(
       }
 
     def apply[X](subscribe: Subscribe[X]): Future[X] = {
-      subscribe match {
-        case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)))
-        case AttemptedSubscribe(s, Some((k, cache))) => cache.memo(k, apply(AttemptedSubscribe(s)))
-        case _ =>
+      subscribe.memoizeKey match {
+        case Some((k, cache)) =>
+          cache.memo(k, apply(subscribe.unmemoize))
+
+        case None =>
           timeout match {
             case None => startFuture(subscribe)._1()
 

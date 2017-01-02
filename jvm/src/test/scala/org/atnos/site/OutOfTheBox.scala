@@ -357,8 +357,8 @@ You can also use other, and better, cache implementations like [Caffeine](https:
 like eviction policies, maximum size and so on. You will need to implement the `Cache` interface for this
 
 ```scala
-trait Cache[+K] {
-  def memo[K1 >: K, V](key: K1, value: =>V): V
+trait Cache {
+  def memo[V](key: K1, value: =>V): V
 }
 ```
 
@@ -424,7 +424,7 @@ val monixService: AsyncTaskInterpreter =
 Future computations can also be memoized to avoid expensive computations to be done several times. You can either
 
  - use the `asyncMemo` operator with a (mutable) cache
- - use the `asyncMemoized` operator with the `Memo` effect (you will need to provide the cache later)
+ - use the `asyncMemoized` operator with the `Memoized` effect (you will need to provide the cache later)
 <p/>
 
 ${snippet{
@@ -437,7 +437,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 var i = 0
 
 def expensive[R :_Async :_memo]: Eff[R, Int] =
-  asyncMemoized("key", asyncFork[R, Int] { i += 1; 10 * 10})
+  asyncMemoized(asyncFork[R, Int] { i += 1; 10 * 10})
 
 val interpreter = AsyncFutureInterpreter.create
 import interpreter._

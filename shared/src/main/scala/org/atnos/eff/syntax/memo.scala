@@ -14,11 +14,11 @@ trait memo {
 
 final class MemoEffectOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
-  def runMemo[U, K <: AnyRef](cache: Cache[K])(implicit member: Member.Aux[Memoized, R, U], eval: Eval |= U): Eff[U, A] =
-    MemoEffect.runMemo(cache, e)(member, eval)
+  def runMemo[U](cache: Cache)(implicit member: Member.Aux[Memoized, R, U], eval: Eval |= U): Eff[U, A] =
+    MemoEffect.runMemo(cache)(e)(member, eval)
 
-  def runAsyncMemo[U, K <: AnyRef](cache: Cache[K])(implicit member: Member.Aux[Memoized, R, U], async: Async |= U): Eff[U, A] =
-    MemoEffect.runAsyncMemo(cache, e)(member, async)
+  def runAsyncMemo[U](cache: Cache)(implicit member: Member.Aux[Memoized, R, U], async: Async |= U): Eff[U, A] =
+    MemoEffect.runAsyncMemo(cache)(e)(member, async)
 
 }
 

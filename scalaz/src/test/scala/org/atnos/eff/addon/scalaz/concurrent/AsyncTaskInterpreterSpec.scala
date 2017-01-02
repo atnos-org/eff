@@ -6,6 +6,7 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
+import org.specs2.matcher.ThrownExpectations
 
 import scala.collection.mutable.ListBuffer
 import scalaz.concurrent._
@@ -14,7 +15,7 @@ import duration._
 import org.scalacheck._
 import org.specs2.matcher.TaskMatchers._
 
-class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "scalaz task".title ^ s2"""
+class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = "scalaz task".title ^ s2"""
 
  Async effects can be implemented with an AsyncTask service $e1
  Async effects can be attempted                             $e2
@@ -27,6 +28,9 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
  Attempted Async calls can be memoized              $e8
  Simple Async calls with timeout can be memoized    $e9
  Attempted Async calls with timeout can be memoized $e10
+
+ Async calls with flatMaps can be memoized with a memo effect $e11
+   if 'def' is used to create the computation, then a unique key must be provided $e12
 
 """
 
@@ -107,7 +111,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   def e7 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }))
 
     (makeRequest >> makeRequest).runAsync must returnValue(1)
     invocationsNumber must be_==(1)
@@ -116,7 +120,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   def e8 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }))
 
     (makeRequest >> makeRequest).asyncAttempt.runAsync must returnValue(Right(1))
     invocationsNumber must be_==(1)
@@ -125,7 +129,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   def e9 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
 
     (makeRequest >> makeRequest).runAsync must returnValue(1)
     invocationsNumber must be_==(1)
@@ -135,12 +139,37 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
     (makeRequest >> makeRequest).asyncAttempt.runAsync must returnValue(Right(1))
 
     invocationsNumber must be_==(1)
   }
 
+  def e11 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, Async]
+    val intAsync: Eff[S, Int] = asyncFork[S, String]("a").flatMap(_ => asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+    val makeRequest: Eff[S, Int] = asyncMemoized(intAsync)
+
+    runAsyncMemo(cache)(makeRequest >> makeRequest).runAsync must returnValue(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e12 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, Async]
+    val intAsync: Eff[S, Int] = asyncFork[S, String]("a").flatMap(_ => asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+
+    // with a 'def' we need to specify a key to store the request async values
+    def makeRequest: Eff[S, Int] = asyncMemoized("key", intAsync)
+
+    runAsyncMemo(cache)(makeRequest >> makeRequest).runAsync must returnValue(1)
+    invocationsNumber must be_==(1)
+  }
 
   /**
    * HELPERS

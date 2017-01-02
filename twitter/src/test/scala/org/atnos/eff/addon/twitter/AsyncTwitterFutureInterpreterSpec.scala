@@ -24,14 +24,18 @@ class AsyncTwitterFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Speci
  Async effects can trampoline a Task                                                $e6
  An Async effect can be created from Either                                         $e7
  An Async forked computation can be timed out                                       $e8
- An Async forked computation which throws an exception can be executed concurrently $e14
+ An Async forked computation which throws an exception can be executed concurrently $e9
 
- Simple Async calls can be memoized                 $e9
- Attempted Async calls can be memoized              $e10
- Simple Async calls with timeout can be memoized    $e11
- Attempted Async calls with timeout can be memoized $e12
+ Simple Async calls can be memoized                 $e10
+ Attempted Async calls can be memoized              $e11
+ Simple Async calls with timeout can be memoized    $e12
+ Attempted Async calls with timeout can be memoized $e13
 
- Async calls can be memoized with a memo effect $e13
+ Async calls can be memoized with a memo effect $e14
+
+ Async calls with flatMaps can be memoized with a memo effect $e15
+   if 'def' is used to create the computation, then a unique key must be provided $e16
+
 """
 
   type S = Fx.fx2[Async, Option]
@@ -115,54 +119,6 @@ class AsyncTwitterFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Speci
   }
 
   def e9 = {
-    var invocationsNumber = 0
-    val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
-
-    Await.result((makeRequest >> makeRequest).runAsyncFuture) must be_==(1)
-    invocationsNumber must be_==(1)
-  }
-
-  def e10 = {
-    var invocationsNumber = 0
-    val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
-
-    Await.result((makeRequest >> makeRequest).asyncAttempt.runAsyncFuture) must beRight(1)
-    invocationsNumber must be_==(1)
-  }
-
-  def e11 = {
-    var invocationsNumber = 0
-    val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
-
-    Await.result((makeRequest >> makeRequest).runAsyncFuture) must be_==(1)
-    invocationsNumber must be_==(1)
-  }
-
-  def e12 = {
-    var invocationsNumber = 0
-    val cache = ConcurrentHashMapCache()
-
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
-    Await.result((makeRequest >> makeRequest).asyncAttempt.runAsyncFuture) must beRight(1)
-
-    invocationsNumber must be_==(1)
-  }
-
-  def e13 = {
-    var invocationsNumber = 0
-    val cache = ConcurrentHashMapCache()
-
-    type S = Fx.fx2[Memoized, Async]
-    def makeRequest = asyncMemoized("only once", asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
-
-    Await.result((makeRequest >> makeRequest).runAsyncMemo(cache).runAsyncFuture) must be_==(1)
-    invocationsNumber must be_==(1)
-  }
-
-  def e14 = {
     type S = Fx.fx1[Async]
     def makeRequest[R: _async] = asyncFork[R, Unit](boom)
 
@@ -171,6 +127,81 @@ class AsyncTwitterFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Speci
       twitter.util.Duration.fromSeconds(1)
     ) } must not(throwAn[Exception])
   }
+
+  def e10 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    val makeRequest = asyncMemo(cache)(asyncFork({invocationsNumber += 1; 1}))
+
+    Await.result((makeRequest >> makeRequest).runAsyncFuture) must be_==(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e11 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }))
+
+    Await.result((makeRequest >> makeRequest).asyncAttempt.runAsyncFuture) must beRight(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e12 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+
+    Await.result((makeRequest >> makeRequest).runAsyncFuture) must be_==(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e13 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    Await.result((makeRequest >> makeRequest).asyncAttempt.runAsyncFuture) must beRight(1)
+
+    invocationsNumber must be_==(1)
+  }
+
+  def e14 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, Async]
+    val makeRequest = asyncMemoized(asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+
+    Await.result((makeRequest >> makeRequest).runAsyncMemo(cache).runAsyncFuture) must be_==(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e15 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, Async]
+    val intAsync: Eff[S, Int] = asyncFork[S, String]("a").flatMap(_ => asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+    val makeRequest: Eff[S, Int] = asyncMemoized(intAsync)
+
+    Await.result(runAsyncMemo(cache)(makeRequest >> makeRequest).runAsyncFuture) must be_==(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e16 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, Async]
+    val intAsync: Eff[S, Int] = asyncFork[S, String]("a").flatMap(_ => asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+
+    // with a 'def' we need to specify a key to store the request async values
+    def makeRequest: Eff[S, Int] = asyncMemoized("key", intAsync)
+
+    Await.result(runAsyncMemo(cache)(makeRequest >> makeRequest).runAsyncFuture) must be_==(1)
+    invocationsNumber must be_==(1)
+  }
+
 
   /**
    * HELPERS

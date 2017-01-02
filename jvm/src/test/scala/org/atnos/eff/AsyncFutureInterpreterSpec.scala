@@ -1,6 +1,5 @@
 package org.atnos.eff
 
-import cats.Eval
 import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
@@ -32,8 +31,13 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
  Simple Async calls with timeout can be memoized    $e11
  Attempted Async calls with timeout can be memoized $e12
 
- Async calls can be memoized with a memo effect $e13
+ Async calls can be memoized with a memo effect and run with runAsyncMemo $e13
 
+ Async calls with flatMaps can be memoized with a memo effect $e14
+   if 'def' is used to create the computation, then a unique key must be provided $e15
+
+ A memoized Async computation can be executed simultaneously by several threads.
+   They should all return the same results $e16
 
 """
 
@@ -123,7 +127,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
   def e9 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }))
 
     (makeRequest >> makeRequest).runAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)
@@ -132,7 +136,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
   def e10 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }))
 
     (makeRequest >> makeRequest).asyncAttempt.runAsyncFuture must beRight(1).await
     invocationsNumber must be_==(1)
@@ -141,7 +145,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
   def e11 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
 
     (makeRequest >> makeRequest).runAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)
@@ -151,7 +155,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
     (makeRequest >> makeRequest).asyncAttempt.runAsyncFuture must beRight(1).await
 
     invocationsNumber must be_==(1)
@@ -162,9 +166,49 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
     val cache = ConcurrentHashMapCache()
 
     type S = Fx.fx2[Memoized, Async]
-    def makeRequest = asyncMemoized("only once", asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+    val makeRequest = asyncMemoized(asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
 
     (makeRequest >> makeRequest).runAsyncMemo(cache).runAsyncFuture must be_==(1).await
+    invocationsNumber must be_==(1)
+  }
+
+  def e14 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, Async]
+    val intAsync: Eff[S, Int] = asyncFork[S, String]("a").flatMap(_ => asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+    val makeRequest: Eff[S, Int] = asyncMemoized(intAsync)
+
+    runAsyncMemo(cache)(makeRequest >> makeRequest).runAsyncFuture must be_==(1).await
+    invocationsNumber must be_==(1)
+  }
+
+  def e15 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, Async]
+    val intAsync: Eff[S, Int] = asyncFork[S, String]("a").flatMap(_ => asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+
+    // with a 'def' we need to specify a key to store the request async values
+    def makeRequest: Eff[S, Int] = asyncMemoized("key", intAsync)
+
+    runAsyncMemo(cache)(makeRequest >> makeRequest).runAsyncFuture must be_==(1).await
+    invocationsNumber must be_==(1)
+  }
+
+  def e16 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, Async]
+    val intAsync: Eff[S, Int] = asyncFork[S, String]("a").flatMap(_ => asyncFork[S, Int]({ invocationsNumber += 1; 1 }))
+
+    def makeRequest: Eff[S, Int] = asyncMemoized("key", intAsync)
+
+    Eff.sequenceA(List.fill(5)(makeRequest)).runAsyncMemo(cache).runAsyncFuture must be_==(List.fill(5)(1)).await
+
     invocationsNumber must be_==(1)
   }
 
