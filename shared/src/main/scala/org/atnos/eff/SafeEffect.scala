@@ -1,7 +1,6 @@
 package org.atnos.eff
 
 import cats._
-import cats.data._
 import cats.implicits._
 import eff._
 import interpret._
@@ -98,22 +97,22 @@ trait SafeInterpretation extends SafeCreation { outer =>
         sx match {
           case EvaluateValue(v) =>
             Either.catchNonFatal(v()) match {
-              case Left(e) =>
+              case Left(_) =>
                 Right(pure(()))
 
               case Right(x) =>
                 Either.catchNonFatal(continuation(x)) match {
-                  case Left(e) => Right(pure(()))
+                  case Left(_) => Right(pure(()))
                   case Right(c) =>  Left((c, s))
                 }
             }
 
-          case FailedValue(t) =>
+          case FailedValue(_) =>
             Right(pure(()))
 
           case FailedFinalizer(t) =>
             Either.catchNonFatal(continuation(())) match {
-              case Left(e) => Right(pure(()))
+              case Left(_) => Right(pure(()))
               case Right(c) =>  Left((c, s :+ t))
             }
         }
@@ -163,7 +162,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
         }
 
         error match {
-          case Some(t) => Right(pure(()))
+          case Some(_) => Right(pure(()))
           case None    => Left((continuation(traversed), s ++ failedFinalizers.toVector))
         }
       }
@@ -173,7 +172,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
 
 
   /**
-   * evaluate 1 action possibly having error effects
+   * evaluate first action possibly having error effects
    * execute a second action whether the first is successful or not but keep track of finalizer exceptions
    */
   def thenFinally[R, A](action: Eff[R, A], last: Eff[R, Unit])(implicit m: Safe /= R): Eff[R, A] = {
@@ -298,7 +297,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
     } yield b
 
   /**
-   * evaluate 1 action possibly having error effects
+   * evaluate first action possibly having error effects
    *
    * Execute a second action if the first one is not successful
    */
@@ -306,18 +305,27 @@ trait SafeInterpretation extends SafeCreation { outer =>
     whenFailed(action, _ => onThrowable)
 
   /**
-   * evaluate 1 action possibly having error effects
+   * evaluate first action possibly having error effects
    *
    * Execute a second action if the first one is not successful, based on the error
    */
   def catchThrowable[R, A, B](action: Eff[R, A], pureValue: A => B, onThrowable: Throwable => Eff[R, B])(implicit m: Safe /= R): Eff[R, B] =
+    recoverThrowable[R, A, B](action, pureValue, PartialFunction(onThrowable))
+
+  /**
+   * evaluate first action possibly having error effects
+   *
+   * Execute a second action if the first one is not successful and second is defined for the error
+   */
+  def recoverThrowable[R, A, B](action: Eff[R, A], pureValue: A => B, onThrowable: PartialFunction[Throwable, Eff[R, B]])(implicit m: Safe /= R): Eff[R, B] =
     attemptSafe(action).flatMap {
-      case (Left(t), ls)  => onThrowable(t).flatMap(b => ls.traverse(f => finalizerException(f)).as(b))
+      case (Left(t), ls)  if onThrowable.isDefinedAt(t) => onThrowable(t).flatMap(b => ls.traverse(f => finalizerException(f)).as(b))
+      case (Left(t), _) => exception(t)
       case (Right(a), ls) => pure(pureValue(a)).flatMap(b => ls.traverse(f => finalizerException(f)).as(b))
     }
 
   /**
-   * evaluate 1 action possibly throwing exceptions
+   * evaluate first action possibly throwing exceptions
    *
    * Execute a second action if the first one is not successful, based on the exception
    *
@@ -325,6 +333,16 @@ trait SafeInterpretation extends SafeCreation { outer =>
    */
   def whenFailed[R, A](action: Eff[R, A], onThrowable: Throwable => Eff[R, A])(implicit m: Safe /= R): Eff[R, A] =
     catchThrowable(action, identity[A], onThrowable)
+
+  /**
+   * evaluate first action possibly throwing exceptions
+   *
+   * Execute a second action if the first one is not successful and second is defined for the error
+   *
+   * The final value type is the same as the original type
+   */
+  def whenThrowable[R, A](action: Eff[R, A], onThrowable: PartialFunction[Throwable, Eff[R, A]])(implicit m: Safe /= R): Eff[R, A] =
+    recoverThrowable(action, identity[A], onThrowable)
 
   /**
    * try to execute an action an report any issue
@@ -336,9 +354,8 @@ trait SafeInterpretation extends SafeCreation { outer =>
    * ignore one possible exception that could be thrown
    */
   def ignoreException[R, E <: Throwable : ClassTag, A](action: Eff[R, A])(implicit m: Safe /= R): Eff[R, Unit] =
-    catchThrowable[R, A, Unit](action, (a: A) => (), {
+    recoverThrowable[R, A, Unit](action, _ => (), {
       case t if implicitly[ClassTag[E]].runtimeClass.isInstance(t) => pure(())
-      case t => outer.exception(t)
     })
 
 }
