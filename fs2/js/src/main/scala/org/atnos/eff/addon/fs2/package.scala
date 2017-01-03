@@ -4,9 +4,9 @@ import org.atnos.eff.ExecutorServices
 
 package object fs2  extends AsyncTaskInterpreter {
   /** implement in js and jvm */
-  def fromExecutorServices(es: ExecutorServices): AsyncTaskInterpreterEffects = {
+  def fromExecutorServices(es: ExecutorServices): AsyncTasks = {
     val s: Strategy = Strategy.fromExecutionContext(es.executionContext)
     val sc: Scheduler = Scheduler.default
-    AsyncTaskInterpreterEffects()(s, sc, es)
+    AsyncTasks()(s, sc, es)
   }
 }

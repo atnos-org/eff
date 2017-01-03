@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Either, Failure, Left, Right, Success}
 
-case class AsyncTaskInterpreterEffects()(implicit s: Strategy, sc: Scheduler, es: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
+case class AsyncTasks()(implicit s: Strategy, sc: Scheduler, es: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
 
   implicit val TaskApplicative: Applicative[Task] = new Applicative[Task] {
     def pure[A](x: A): Task[A] =
@@ -133,10 +133,10 @@ case class AsyncTaskInterpreterEffects()(implicit s: Strategy, sc: Scheduler, es
 
 trait AsyncTaskInterpreter  {
 
-  def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTaskInterpreterEffects =
+  def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTasks =
     fromExecutorServices(ExecutorServices.fromExecutorServices(es, s))
 
   /** implement in js and jvm */
-  def fromExecutorServices(es: ExecutorServices): AsyncTaskInterpreterEffects
+  def fromExecutorServices(es: ExecutorServices): AsyncTasks
 
 }
