@@ -211,7 +211,7 @@ import org.atnos.eff._, syntax.all._
 
 type Stack = Fx.fx2[Interact, DataOp]
 
-runInteract(runDataOp(program[Stack])).run
+runInteract(runDataOp(program[Stack]))
 }}
 ```
 What's the kitty's name?
