@@ -10,22 +10,22 @@ import scalaz.concurrent._
 import cats._
 import cats.implicits._
 import org.atnos.eff.SubscribeEffect._
-import AsyncTaskInterpreter._
+import AsyncTasks._
 import org.atnos.eff._
 
 import scala.concurrent._, duration._
 import scala.util.{Either, Success, Failure}
 
-case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
+case class AsyncTasks(executors: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
 
-  val executorService: ExecutorService =
+  lazy val executorService: ExecutorService =
     executors.executorService
 
-  val scheduledExecutorService: ScheduledExecutorService =
+  lazy val scheduledExecutorService: ScheduledExecutorService =
     executors.scheduledExecutorService
 
-  private lazy val futureInterpreter: AsyncFutureInterpreter =
-    AsyncFutureInterpreter(executors)
+  private lazy val futureInterpreter: AsyncFutures =
+    AsyncFutures(executors)
 
   def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     run(e.detachA(Async.ApplicativeAsync))
@@ -33,20 +33,12 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
   def runSequential[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
     run(e.detach)
 
-  def suspend[R :_async, A](task: =>Task[Eff[R, A]]): Eff[R, A] =
-    fromTask(task).flatten
-
-  def fromTask[R :_async, A](task: =>Task[A]): Eff[R, A] =
-    subscribe[R, A](SimpleSubscribe(callback =>
-    { task.unsafePerformAsync(ta => ta.fold(t => callback(Left(t)), a => callback(Right(a)))) }) ,
-      None)
-
   def run[A](r: Async[A]): Task[A] =
     r match {
       case AsyncNow(a) => Task.now(a)
       case AsyncFailed(t) => Task.fail(t)
       case AsyncDelayed(a) => Either.catchNonFatal(a.value).fold(Task.fail, Task.now)
-      case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)
+      case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTasks.TaskApplicative)
     }
 
   def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
@@ -113,14 +105,22 @@ case class AsyncTaskInterpreter(executors: ExecutorServices) extends AsyncInterp
 
 }
 
-object AsyncTaskInterpreter {
+object AsyncTasks {
 
-  def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTaskInterpreter =
+  def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTasks =
     fromExecutorServices(es, s)
 
   /** create an AsyncTaskervice but do not evaluate the executor service yet */
-  def fromExecutorServices(es: =>ExecutorService, s: =>ScheduledExecutorService): AsyncTaskInterpreter =
-    AsyncTaskInterpreter(ExecutorServices.fromExecutorServices(es, s))
+  def fromExecutorServices(es: =>ExecutorService, s: =>ScheduledExecutorService): AsyncTasks =
+    AsyncTasks(ExecutorServices.fromExecutorServices(es, s))
+
+  def suspend[R :_async, A](task: =>Task[Eff[R, A]]): Eff[R, A] =
+    fromTask(task).flatten
+
+  def fromTask[R :_async, A](task: =>Task[A]): Eff[R, A] =
+    subscribe[R, A](SimpleSubscribe(callback =>
+    { task.unsafePerformAsync(ta => ta.fold(t => callback(Left(t)), a => callback(Right(a)))) }) ,
+      None)
 
   def TaskApplicative: Applicative[Task] = new Applicative[Task] {
     def pure[A](x: A): Task[A] =

@@ -15,7 +15,7 @@ import org.specs2.matcher.ThrownExpectations
 
 import scala.util.control._
 
-class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  Async effects can be implemented with an AsyncFuture service $e1
  Async effects can be attempted                               $e2
@@ -46,7 +46,7 @@ class AsyncFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specificatio
   lazy val executorServices: ExecutorServices =
     ExecutorServices.fromExecutionContext(ee.executionContext)
 
-  lazy val asyncService = AsyncFutureInterpreter(executorServices)
+  lazy val asyncService = AsyncFutures(executorServices)
   import asyncService._
 
   def e1 = {

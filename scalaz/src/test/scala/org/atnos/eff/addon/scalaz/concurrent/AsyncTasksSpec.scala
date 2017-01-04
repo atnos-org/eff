@@ -14,6 +14,7 @@ import scala.concurrent._
 import duration._
 import org.scalacheck._
 import org.specs2.matcher.TaskMatchers._
+import AsyncTasks._
 
 class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = "scalaz task".title ^ s2"""
 
@@ -36,7 +37,7 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
   type S = Fx.fx2[Async, Option]
 
-  lazy val asyncInterpreter = AsyncTaskInterpreter.create(ee.executorService, ee.scheduledExecutorService)
+  lazy val asyncInterpreter = AsyncTasks.create(ee.executorService, ee.scheduledExecutorService)
   import asyncInterpreter._
 
   def e1 = {

@@ -15,16 +15,9 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.{NoFx, interpret, _}
 
-case class AsyncTwitterFutureInterpreter(
+case class AsyncTwitterFutures(
   fp: FuturePool = FuturePool.unboundedPool,
-  timer: Timer = new ScheduledThreadPoolTimer()
-) extends AsyncInterpreter[Future] { outer =>
-
-  def runAsync[A](e: Eff[Fx.fx1[Async], A]): Future[A] =
-    run(e.detachA(ApplicativeAsync))
-
-  def runSequential[A](e: Eff[Fx.fx1[Async], A]): Future[A] =
-    run(e.detach)
+  timer: Timer = new ScheduledThreadPoolTimer) extends AsyncInterpreter[Future] { outer =>
 
   def suspend[R :_async, A](future: =>Future[Eff[R, A]]): Eff[R, A] =
     fromFuture(future).flatten
@@ -34,6 +27,12 @@ case class AsyncTwitterFutureInterpreter(
       case Return(a) => callback(Right(a))
       case Throw(t) => callback(Left(t))
     }; ()}), None)
+
+  def runAsync[A](e: Eff[Fx.fx1[Async], A]): Future[A] =
+    run(e.detachA(ApplicativeAsync))
+
+  def runSequential[A](e: Eff[Fx.fx1[Async], A]): Future[A] =
+    run(e.detach)
 
   def run[A](r: Async[A]): Future[A] =
     r match {

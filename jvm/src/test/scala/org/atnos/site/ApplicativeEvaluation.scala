@@ -19,7 +19,7 @@ type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, Async, WriterString]
 
-val futureService = AsyncFutureInterpreter.create
+val futureService = AsyncFutures.create
 import futureService._
 
 def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
@@ -50,7 +50,7 @@ type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, Async, WriterString]
-val futureService = AsyncFutureInterpreter.create
+val futureService = AsyncFutures.create
 import futureService._
 
 def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =

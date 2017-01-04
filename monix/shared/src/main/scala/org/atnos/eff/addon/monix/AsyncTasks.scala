@@ -15,13 +15,7 @@ import org.atnos.eff.SubscribeEffect.{Callback => _, _}
 import scala.concurrent.duration.FiniteDuration
 import scala.util._
 
-trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
-
-  def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
-    run(e.detachA(ApplicativeAsync))
-
-  def runSequential[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
-    run(e.detach)
+trait AsyncTasks extends AsyncInterpreter[Task] { outer =>
 
   def suspend[R :_async, A](task: =>Task[Eff[R, A]])(implicit s: Scheduler): Eff[R, A] =
     fromTask(task).flatten
@@ -31,12 +25,18 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
     { task.map(a => callback(Right(a))).onErrorHandle(t => callback(Left(t))).runAsync; () }),
       None)
 
+  def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
+    run(e.detachA(ApplicativeAsync))
+
+  def runSequential[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
+    run(e.detach)
+
   def run[A](r: Async[A]): Task[A] =
     r match {
       case AsyncNow(a) => Task.now(a)
       case AsyncFailed(t) => Task.raiseError(t)
       case AsyncDelayed(a) => Either.catchNonFatal(a.value).fold(Task.raiseError, Task.now)
-      case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)(AsyncTaskInterpreter.TaskMonad)
+      case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTasks.TaskApplicative)(AsyncTasks.TaskMonad)
     }
 
   def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
@@ -91,7 +91,7 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
 
 }
 
-object AsyncTaskInterpreter extends AsyncTaskInterpreter {
+object AsyncTasks extends AsyncTasks {
 
   def TaskApplicative: Applicative[Task] = new Applicative[Task] {
     def pure[A](x: A): Task[A] =

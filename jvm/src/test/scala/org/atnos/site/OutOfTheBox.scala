@@ -398,7 +398,7 @@ Then we need an interpreter to interpret them as `Futures`. The `AsyncFutureInte
 to get a `Future` back.
 */
 
-val interpreter = AsyncFutureInterpreter.create
+val interpreter = AsyncFutures.create
 import interpreter._
 
 Await.result(action.runOption.runAsyncFuture, 1 second)
@@ -439,7 +439,7 @@ var i = 0
 def expensive[R :_Async :_memo]: Eff[R, Int] =
   asyncMemoized(asyncFork[R, Int] { i += 1; 10 * 10})
 
-val interpreter = AsyncFutureInterpreter.create
+val interpreter = AsyncFutures.create
 import interpreter._
 
 type S = Fx.fx2[Memoized, Async]

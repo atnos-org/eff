@@ -14,7 +14,7 @@ import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.ThrownExpectations
 
-class AsyncTwitterFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  Async effects can be implemented with an AsyncFuture service                       $e1
  Async effects can be attempted                                                     $e2
@@ -40,7 +40,7 @@ class AsyncTwitterFutureInterpreterSpec(implicit ee: ExecutionEnv) extends Speci
 
   type S = Fx.fx2[Async, Option]
 
-  lazy val asyncService = AsyncTwitterFutureInterpreter()
+  lazy val asyncService = AsyncTwitterFutures()
   import asyncService._
 
   def e1 = {
