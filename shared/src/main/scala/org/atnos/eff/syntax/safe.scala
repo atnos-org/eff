@@ -25,11 +25,17 @@ trait safe {
     def catchThrowable[B](pure: A => B, onThrowable: Throwable => Eff[R, B])(implicit m: Safe /= R): Eff[R, B] =
       SafeEffect.catchThrowable(e, pure, onThrowable)
 
+    def recoverThrowable[B](pure: A => B, onThrowable: PartialFunction[Throwable, Eff[R, B]])(implicit m: Safe /= R): Eff[R, B] =
+      SafeEffect.recoverThrowable(e, pure, onThrowable)
+
     def otherwise(onThrowable: Eff[R, A])(implicit m: Safe /= R): Eff[R, A] =
       SafeEffect.otherwise(e, onThrowable)
 
     def whenFailed(onThrowable: Throwable => Eff[R, A])(implicit m: Safe /= R): Eff[R, A] =
       SafeEffect.whenFailed(e, onThrowable)
+
+    def whenThrowable(onThrowable: PartialFunction[Throwable, Eff[R, A]])(implicit m: Safe /= R): Eff[R, A] =
+      SafeEffect.whenThrowable(e, onThrowable)
 
     def attempt(implicit m: Safe /= R): Eff[R, Throwable Either A] =
       SafeEffect.attempt(e)
