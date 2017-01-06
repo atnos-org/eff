@@ -338,6 +338,51 @@ trait EffInterpretation {
    */
   def effInto[R, U, A](e: Eff[R, A])(implicit f: IntoPoly[R, U]): Eff[U, A] =
     f(e)
+
+
+  /**
+   * Memoize an effect using a cache
+   *
+   * all the consecutive effects M[X] leading to the computation of Eff[R, A]
+   * will be cached in the cache and retrieved from there if the Eff[R, A] computation is
+   * executed again
+   */
+  def memoizeEffect[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] =
+    cache.get(key.toString).map(Eff.pure[R, A]).getOrElse(memoizeEffectSequence(e, cache, key, 0))
+
+  private def memoizeEffectSequence[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef, sequenceKey: Int)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] = {
+    val action: Eff[R, A] =
+      e match {
+        case Pure(a, last) =>
+          Pure(a, last)
+
+        case Impure(u, c, last) =>
+          member.extract(u) match {
+            case Some(tx) => Impure(member.inject(cached(cache, key, sequenceKey, tx)), Arrs.singleton((x: u.X) => memoizeEffectSequence(c(x), cache, key, sequenceKey + 1)), last)
+            case None     => Impure(u, Arrs.singleton((x: u.X) => memoizeEffectSequence(c(x), cache, key, sequenceKey)), last)
+          }
+
+        case ImpureAp(unions, continuation, last) =>
+          var seqKey = sequenceKey
+          def incrementSeqKey = { val s = seqKey; seqKey += 1; s }
+
+          def materialize(u: Union[R, Any]): Union[R, Any] =
+            member.extract(u) match {
+              case Some(tx) => member.inject(cached(cache, key, incrementSeqKey, tx))
+              case None => u
+            }
+
+          val materializedUnions =
+            Unions(materialize(unions.first), unions.rest.map(materialize))
+
+          val continuation1 = Arrs.singleton[R, List[Any], A]((ls: List[Any]) => memoizeEffectSequence(continuation(ls), cache, key, seqKey))
+          ImpureAp(materializedUnions, continuation1, last)
+      }
+
+    // once all the values for Eff[R, A] have been computed, we can store the final value
+    action.map(a => cache.put(key, a))
+  }
+
 }
 
 object EffInterpretation extends EffInterpretation

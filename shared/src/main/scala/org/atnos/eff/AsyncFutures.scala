@@ -6,7 +6,7 @@ import cats._
 import cats.implicits._
 import org.atnos.eff.Async._
 import org.atnos.eff.SubscribeEffect._
-import org.atnos.eff.AsyncFutureInterpreter._
+import org.atnos.eff.AsyncFutures._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
@@ -14,7 +14,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent._
 import scala.util._
 
-case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInterpreter[Future] { outer =>
+case class AsyncFutures(executors: ExecutorServices) extends AsyncInterpreter[Future] { outer =>
 
   implicit lazy val executorService: ExecutorService =
     executors.executorService
@@ -70,10 +70,10 @@ case class AsyncFutureInterpreter(executors: ExecutorServices) extends AsyncInte
       }
 
     def apply[X](subscribe: Subscribe[X]): Future[X] = {
-      subscribe match {
-        case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)))
-        case AttemptedSubscribe(s, Some((k, cache))) => cache.memo(k, apply(AttemptedSubscribe(s)))
-        case _ =>
+      subscribe.memoizeKey match {
+        case Some((k, cache)) => cache.memo(k, apply(subscribe.unmemoize))
+
+        case None =>
           timeout match {
             case None => startFuture(subscribe)._1()
 
@@ -122,18 +122,18 @@ trait AsyncInterpreter[F[_]] {
 }
 
 
-object AsyncFutureInterpreter {
+object AsyncFutures {
 
-  def create(implicit ec: ExecutionContext): AsyncFutureInterpreter =
+  def create(implicit ec: ExecutionContext): AsyncFutures =
     fromExecutionContext(ec)
 
   /** create an AsyncFutureService but do not evaluate the execution context yet */
-  def fromExecutionContext(ec: =>ExecutionContext): AsyncFutureInterpreter =
+  def fromExecutionContext(ec: =>ExecutionContext): AsyncFutures =
     fromExecutionEnv(ExecutorServices.fromExecutionContext(ec))
 
   /** create an AsyncFutureService but do not evaluate the execution context yet */
-  def fromExecutionEnv(ee: ExecutorServices): AsyncFutureInterpreter =
-    AsyncFutureInterpreter(ee)
+  def fromExecutionEnv(ee: ExecutorServices): AsyncFutures =
+    AsyncFutures(ee)
 
   def FutureApplicative(implicit ec: ExecutionContext): Applicative[Future] = new Applicative[Future] {
     def pure[A](x: A): Future[A] =

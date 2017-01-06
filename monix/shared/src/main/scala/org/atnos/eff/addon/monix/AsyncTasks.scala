@@ -15,13 +15,7 @@ import org.atnos.eff.SubscribeEffect.{Callback => _, _}
 import scala.concurrent.duration.FiniteDuration
 import scala.util._
 
-trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
-
-  def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
-    run(e.detachA(ApplicativeAsync))
-
-  def runSequential[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
-    run(e.detach)
+trait AsyncTasks extends AsyncInterpreter[Task] { outer =>
 
   def suspend[R :_async, A](task: =>Task[Eff[R, A]])(implicit s: Scheduler): Eff[R, A] =
     fromTask(task).flatten
@@ -31,12 +25,18 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
     { task.map(a => callback(Right(a))).onErrorHandle(t => callback(Left(t))).runAsync; () }),
       None)
 
+  def runAsync[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
+    run(e.detachA(ApplicativeAsync))
+
+  def runSequential[A](e: Eff[Fx.fx1[Async], A]): Task[A] =
+    run(e.detach)
+
   def run[A](r: Async[A]): Task[A] =
     r match {
       case AsyncNow(a) => Task.now(a)
       case AsyncFailed(t) => Task.raiseError(t)
       case AsyncDelayed(a) => Either.catchNonFatal(a.value).fold(Task.raiseError, Task.now)
-      case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTaskInterpreter.TaskApplicative)(AsyncTaskInterpreter.TaskMonad)
+      case AsyncEff(e, to) => subscribeToTask(e, to).detachA(AsyncTasks.TaskApplicative)(AsyncTasks.TaskMonad)
     }
 
   def subscribeToTaskNat(timeout: Option[FiniteDuration]) =
@@ -49,11 +49,10 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
           }
         val registerTask = { (_: Scheduler, c: Callback[X]) => subscribe(callback(c)); Cancelable.empty }
 
-        subscribe match {
-          case SimpleSubscribe(s, Some((k, cache))) => cache.memo(k, apply(SimpleSubscribe(s)).memoize)
-          case AttemptedSubscribe(s, Some((k, cache))) => cache.memo(k, apply(AttemptedSubscribe(s)).memoize)
+        subscribe.memoizeKey match {
+          case Some((k, cache)) => cache.memo(k, apply(subscribe.unmemoize).memoize)
 
-          case _ =>
+          case None =>
             timeout match {
               case None => Task.fork(Task.async(registerTask))
 
@@ -66,8 +65,11 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
 
                     Task.fork(Task.async { (scheduler: Scheduler, cb: Callback[X]) =>
                       val cb1 = callback(cb)
-                      val cancelable = Cancelable(() => subscribe(cb1))
-                      scheduler.scheduleOnce(to) { cb1(Right(Left(new TimeoutException))); cancelable.cancel }
+                      val cancelable = Task.fork(Task.delay(subscribe(cb1))).runAsync(scheduler)
+                      scheduler.scheduleOnce(to) {
+                        cb1(Right(Left(new TimeoutException)))
+                        cancelable.cancel
+                      }
                       cancelable
                     })
                 }
@@ -89,7 +91,7 @@ trait AsyncTaskInterpreter extends AsyncInterpreter[Task] { outer =>
 
 }
 
-object AsyncTaskInterpreter extends AsyncTaskInterpreter {
+object AsyncTasks extends AsyncTasks {
 
   def TaskApplicative: Applicative[Task] = new Applicative[Task] {
     def pure[A](x: A): Task[A] =

@@ -1,5 +1,7 @@
 package org.atnos.eff
 
+import java.util.UUID
+
 import cats._
 import cats.implicits._
 import org.atnos.eff.all._
@@ -112,77 +114,75 @@ trait AsyncInterpretation {
   implicit final def toAsyncOps[R, A](e: Eff[R, A]): AsyncOps[R, A] = new AsyncOps[R, A](e)
 
   /**
+   * Memoize async values using a cache.
+   *
+   * A random key is generated for the computation e
+   */
+  def asyncMemo[R, A](cache: Cache)(e: Eff[R, A])(implicit async: Async /= R): Eff[R, A] =
+    asyncMemo(e, cache, UUID.randomUUID.toString)
+
+  /**
    * Memoize async values using a cache
    *
    * if this method is called with the same key the previous value will be returned
    */
-  def asyncMemo[R, K <: AnyRef, A](key: K, cache: Cache[K], e: Eff[R, A])(implicit async: Async /= R): Eff[R, A] = {
-    e match {
-      case Pure(a, last) =>
-        Pure(a, last)
-
-      case Impure(u, c, last) =>
-        async.extract(u) match {
-          case Some(tx) => Impure(async.inject(memo(key, cache, tx)), Arrs.singleton((x: u.X) => asyncMemo(key, cache, c(x))), last)
-          case None     => Impure(u, Arrs.singleton((x: u.X) => asyncMemo(key, cache, c(x))), last)
-        }
-
-      case ImpureAp(unions, continuation, last) =>
-        def materialize(u: Union[R, Any]): Union[R, Any] =
-          async.extract(u) match {
-            case Some(tx) => async.inject(memo(key, cache, tx))
-            case None => u
-          }
-
-        val materializedUnions =
-          Unions(materialize(unions.first), unions.rest.map(materialize))
-
-        val continuation1 = Arrs.singleton[R, List[Any], A]((ls: List[Any]) => asyncMemo(key, cache, continuation(ls)))
-        ImpureAp(materializedUnions, continuation1, last)
-    }
-  }
+  def asyncMemo[R, A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit async: Async /= R): Eff[R, A] =
+    memoizeEffect(e, cache, key)
 
   /**
    * Memoize async values using a memoization effect
    *
-   * if this method is called with the same key the previous value will be returned
+   * if this computation is called twice the results from previous async calls will
+   * be retrieved from the cache using the provided key
    */
-  def asyncMemoized[R, K <: AnyRef, A](key: K, e: Eff[R, A])(implicit async: Async /= R, m: Memoized |= R): Eff[R, A] =
-    MemoEffect.getCache[R, K].flatMap(cache => asyncMemo(key, cache, e))
+  def asyncMemoized[R, A](key: AnyRef, e: Eff[R, A])(implicit async: Async /= R, m: Memoized |= R): Eff[R, A] =
+    MemoEffect.getCache[R].flatMap(cache => asyncMemo(e, cache, key))
 
-  private def memo[K <: AnyRef, A](k: K, cache: Cache[K], a: Async[A]): Async[A] =
-    a.memoize(k, cache)
-
+  /**
+   * Memoize async values using a memoization effect
+   *
+   * if this computation is called twice the results from previous async calls will
+   * be retrieved from the cache using a randomly generated key
+   */
+  def asyncMemoized[R, A](e: Eff[R, A])(implicit async: Async /= R, m: Memoized |= R): Eff[R, A] = {
+    val key = UUID.randomUUID.toString
+    MemoEffect.getCache[R].flatMap(cache => asyncMemo(e, cache, key))
+  }
 }
 
 final class AsyncOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def asyncAttempt(implicit async: Async /= R): Eff[R, Throwable Either A] =
     AsyncInterpretation.asyncAttempt(e)
 
-  def asyncMemo[K <: AnyRef](key: K, cache: Cache[K])(implicit async: Async /= R): Eff[R, A] =
-    AsyncInterpretation.asyncMemo(key, cache, e)
+  def asyncMemo(cache: Cache)(implicit async: Async /= R): Eff[R, A] =
+    AsyncInterpretation.asyncMemo(cache)(e)
 }
 
 object AsyncInterpretation extends AsyncInterpretation
 
 sealed trait Async[A] extends Any {
-  def memoize[K <: AnyRef](key: K, cache: Cache[K]): Async[A]
+  def memoize(key: AnyRef, sequenceKey: Int, cache: Cache): Async[A]
 }
 
 case class AsyncNow[A](a: A) extends Async[A] {
-  def memoize[K <: AnyRef](key: K, cache: Cache[K]) = this
+  def memoize(key: AnyRef, sequenceKey: Int, cache: Cache) = this
 }
 case class AsyncFailed[A](t: Throwable) extends Async[A] {
-  def memoize[K <: AnyRef](key: K, cache: Cache[K]) = this
+  def memoize(key: AnyRef, sequenceKey: Int, cache: Cache) = this
 }
 case class AsyncDelayed[A](a: Eval[A]) extends Async[A] {
-  def memoize[K <: AnyRef](key: K, cache: Cache[K]) = AsyncDelayed(a.memoize)
+  def memoize(key: AnyRef, sequenceKey: Int, cache: Cache) = AsyncDelayed(a.memoize)
 }
 case class AsyncEff[A](e: Eff[FS, A], timeout: Option[FiniteDuration] = None) extends Async[A] {
-  def memoize[K <: AnyRef](key: K, cache: Cache[K]) = AsyncEff(SubscribeEffect.memoize(key, cache, e), timeout)
+  def memoize(key: AnyRef, sequenceKey: Int, cache: Cache) = AsyncEff(SubscribeEffect.memoize(key, sequenceKey, cache, e), timeout)
 }
 
 object Async {
+
+  implicit def AsyncCached: SequenceCached[Async] = new SequenceCached[Async] {
+    def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, ax: =>Async[X]): Async[X] =
+      ax.memoize(key, sequenceKey, cache)
+  }
 
   def ApplicativeAsync: Applicative[Async] = new Applicative[Async] {
 
