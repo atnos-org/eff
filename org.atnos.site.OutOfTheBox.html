@@ -398,8 +398,8 @@ def expensive[R :_memo]: Eff[R, Int] =
 <li><p><code class="prettyprint">org.atnos.eff.ConcurrentWeakIdentityHashMapCache</code>: backed by a <code class="prettyprint">ConcurrentWeakIdentityHashMap</code> where the keys are <code class="prettyprint">System.identityHashCode</code> for the keys used to memoize the values. This cache is thread-safe and uses weak references which can be garbage collected when necessary.</p></li>
 </ul>
 <p>You can also use other, and better, cache implementations like <a href="https://github.com/ben-manes/caffeine">Caffeine</a> to get more functionalities like eviction policies, maximum size and so on. You will need to implement the <code class="prettyprint">Cache</code> interface for this</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">trait</span> Cache[+K] {
-  <span class="kw">def</span> memo[K1 &gt;: K, V](key: K1, value: =&gt;V): V
+<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">trait</span> Cache {
+  <span class="kw">def</span> memo[V](key: K1, value: =&gt;V): V
 }</code></pre></div>
 <h3 id="async">Async</h3>
 <p>The Async effect is an “abstract” effect. This means that you can create asynchronous expressions using the same API and have it implemented using either <a href="http://docs.scala-lang.org/overviews/core/futures.html">Scala <code class="prettyprint">Future</code></a> or <a href="http://timperrett.com/2014/07/20/scalaz-task-the-missing-documentation/">Scalaz <code class="prettyprint">Task</code></a> or <a href="https://monix.io/docs/2x/eval/task.html">Monix <code class="prettyprint">Task</code></a>.</p>
@@ -428,7 +428,7 @@ val action: Eff[R, Int] =
 </code></pre>
 <p>Then we need an interpreter to interpret them as <code class="prettyprint">Futures</code>. The <code class="prettyprint">AsyncFutureInterpreter.create</code> method uses an implicit <code class="prettyprint">ExecutionContext</code> to create the interpreter. If we import the interpreter methods we can finally invoke <code class="prettyprint">runAsyncFuture</code> to get a <code class="prettyprint">Future</code> back.</p>
 <pre><code class="prettyprint">
-val interpreter = AsyncFutureInterpreter.create
+val interpreter = AsyncFutures.create
 import interpreter._
 
 Await.result(action.runOption.runAsyncFuture, 1 second)</code></pre>
@@ -449,7 +449,7 @@ val monixService: AsyncTaskInterpreter =
 <p>Future computations can also be memoized to avoid expensive computations to be done several times. You can either</p>
 <ul>
 <li>use the <code class="prettyprint">asyncMemo</code> operator with a (mutable) cache</li>
-<li>use the <code class="prettyprint">asyncMemoized</code> operator with the <code class="prettyprint">Memo</code> effect (you will need to provide the cache later)
+<li>use the <code class="prettyprint">asyncMemoized</code> operator with the <code class="prettyprint">Memoized</code> effect (you will need to provide the cache later)
 <p/></li>
 </ul>
 <pre><code class="prettyprint">import cats.implicits._
@@ -461,9 +461,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 var i = 0
 
 def expensive[R :_Async :_memo]: Eff[R, Int] =
-  asyncMemoized(&quot;key&quot;, asyncFork[R, Int] { i += 1; 10 * 10})
+  asyncMemoized(asyncFork[R, Int] { i += 1; 10 * 10})
 
-val interpreter = AsyncFutureInterpreter.create
+val interpreter = AsyncFutures.create
 import interpreter._
 
 type S = Fx.fx2[Memoized, Async]
@@ -474,7 +474,7 @@ val future: Future[Int] =
 Await.result(future, 1.second)
 
 &quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
-<p><code class="prettyprint">&gt; there is only one invocation &lt;=&gt; true</code></p>
+<p><code class="prettyprint">&gt; there is not only one invocation because false</code></p>
 <h3 id="safe">Safe</h3>
 <p>The Safe effect is useful to handle resources which must be closed even in the presence of exceptions. The main operations are</p>
 <ul>

@@ -208,7 +208,10 @@ type _stateMap[R]     = State[Map[String, Any], ?] |= R
  * translating one effect of the stack to other effects in the same stack
  *
  *
- * NOTE: It is really important for type inference that the effects for U are listed after those for R!
+ * NOTE:
+ * - It is really important for type inference that the effects for U are listed after those for R!
+ * - There&#39;s a name conflict in the `State Monad` in the pattern match for `Get(key)`
+ *   ;hence, remember to rename your smart constructor defined earlier to something else.
  *
  * Implicit member definitions will NOT be found with the following definition:
  *
@@ -416,7 +419,7 @@ def runDataOp[R, A](effects: Eff[R, A])(implicit m: DataOp &lt;= R): Eff[m.Out, 
 <p>Now if we run our program for a Stack combining both effects and type in “snuggles” when prompted, we see something like this:</p>
 <pre><code class="prettyprint">type Stack = Fx.fx2[Interact, DataOp]
 
-runInteract(runDataOp(program[Stack])).run</code></pre>
+runInteract(runDataOp(program[Stack]))</code></pre>
 <pre><code class="prettyprint">What&#39;s the kitty&#39;s name?
 Current cats: snuggles</code></pre>
 </div>
