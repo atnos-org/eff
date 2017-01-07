@@ -10,7 +10,11 @@ trait either {
 }
 
 final class EitherEffectOps[R, A](val e: Eff[R, A]) extends AnyVal {
-  def runEither[E, U](implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E Either A] =
+
+  def runEither[E](implicit m: Member[(E Either ?), R]): Eff[m.Out, E Either A] =
+    EitherInterpretation.runEither(e)(m)
+
+  def runEitherU[E, U](implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E Either A] =
     EitherInterpretation.runEither(e)(m)
 
   def runEitherCombine[E, U](implicit m: Member.Aux[(E Either ?), R, U], s: Semigroup[E]): Eff[U, E Either A] =
