@@ -405,7 +405,7 @@ Await.result(action.runOption.runAsyncFuture, 1 second)
 }.eval}
 
 If you prefer to use monix or scalaz you need to add a dependency on `eff-monix` or `eff-scalaz` and create
-the corresponding `org.atnos.eff.monix.AsyncTaskInterpreter` or `org.atnos.eff.addon.scalaz.concurrent.AsyncTaskInterpreter`:
+the corresponding `org.atnos.eff.addon.monix.AsyncTaskInterpreter` or `org.atnos.eff.addon.scalaz.concurrent.AsyncTaskInterpreter`:
 ```
 import org.atnos.eff._
 
