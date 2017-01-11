@@ -428,7 +428,7 @@ val action: Eff[R, Int] =
 </code></pre>
 <p>Then we need an interpreter to interpret them as <code class="prettyprint">Futures</code>. The <code class="prettyprint">AsyncFutureInterpreter.create</code> method uses an implicit <code class="prettyprint">ExecutionContext</code> to create the interpreter. If we import the interpreter methods we can finally invoke <code class="prettyprint">runAsyncFuture</code> to get a <code class="prettyprint">Future</code> back.</p>
 <pre><code class="prettyprint">
-val interpreter = AsyncFutures.create
+val interpreter = AsyncFutureInterpreter.create
 import interpreter._
 
 Await.result(action.runOption.runAsyncFuture, 1 second)</code></pre>
@@ -445,7 +445,7 @@ val scalazService: AsyncTaskInterpreter =
 
 // the monix service doesn&#39;t require any implicit context!
 val monixService: AsyncTaskInterpreter =
-  org.atnos.eff.monix.addon.AsyncTaskInterpreter</code></pre>
+  org.atnos.eff.addon.monix.AsyncTaskInterpreter</code></pre>
 <p>Future computations can also be memoized to avoid expensive computations to be done several times. You can either</p>
 <ul>
 <li>use the <code class="prettyprint">asyncMemo</code> operator with a (mutable) cache</li>
