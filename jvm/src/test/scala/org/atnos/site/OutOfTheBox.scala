@@ -418,7 +418,7 @@ val scalazService: AsyncTaskInterpreter =
 
 // the monix service doesn't require any implicit context!
 val monixService: AsyncTaskInterpreter =
-  org.atnos.eff.monix.addon.AsyncTaskInterpreter
+  org.atnos.eff.addon.monix.AsyncTaskInterpreter
 ```
 
 Future computations can also be memoized to avoid expensive computations to be done several times. You can either
