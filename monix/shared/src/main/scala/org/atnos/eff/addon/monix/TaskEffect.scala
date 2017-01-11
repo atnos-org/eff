@@ -212,7 +212,7 @@ trait TaskInterpretation extends TaskTypes {
 
 final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
-  def runTaskMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], task: TimedTask |= U): Eff[U, A] = {
+  def runTaskMemo[U](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], task: TimedTask |= U): Eff[U, A] =
     TaskEffect.runTaskMemo(cache)(effect)
 
   def taskAttempt(implicit task: TimedTask /= R): Eff[R, Throwable Either A] =

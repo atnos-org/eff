@@ -120,7 +120,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   def e9 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+    def makeRequest = asyncMemo(asyncFork({ invocationsNumber += 1; 1 }), cache, "only once")
 
     (makeRequest >> makeRequest).runAsync.unsafeRunAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)
@@ -129,7 +129,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   def e10 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }))
+    def makeRequest = asyncMemo(asyncFork({ invocationsNumber += 1; 1 }), cache, "only once")
 
     (makeRequest >> makeRequest).asyncAttempt.runAsync.unsafeRunAsyncFuture must beRight(1).await
     invocationsNumber must be_==(1)
@@ -138,7 +138,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   def e11 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    def makeRequest = asyncMemo(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)), cache, "only once")
 
     (makeRequest >> makeRequest).runAsync.unsafeRunAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)
@@ -148,7 +148,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    def makeRequest = asyncMemo("only once", cache, asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    def makeRequest = asyncMemo(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)), cache, "only once")
     (makeRequest >> makeRequest).asyncAttempt.runAsync.unsafeRunAsyncFuture must beRight(1).await
 
     invocationsNumber must be_==(1)
