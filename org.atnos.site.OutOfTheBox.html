@@ -433,7 +433,7 @@ import interpreter._
 
 Await.result(action.runOption.runAsyncFuture, 1 second)</code></pre>
 <p><code class="prettyprint">&gt; Some(2)</code></p>
-<p>If you prefer to use monix or scalaz you need to add a dependency on <code class="prettyprint">eff-monix</code> or <code class="prettyprint">eff-scalaz</code> and create the corresponding <code class="prettyprint">org.atnos.eff.monix.AsyncTaskInterpreter</code> or <code class="prettyprint">org.atnos.eff.addon.scalaz.concurrent.AsyncTaskInterpreter</code>:</p>
+<p>If you prefer to use monix or scalaz you need to add a dependency on <code class="prettyprint">eff-monix</code> or <code class="prettyprint">eff-scalaz</code> and create the corresponding <code class="prettyprint">org.atnos.eff.addon.monix.AsyncTaskInterpreter</code> or <code class="prettyprint">org.atnos.eff.addon.scalaz.concurrent.AsyncTaskInterpreter</code>:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 
 import java.util.concurrent._
@@ -445,7 +445,7 @@ val scalazService: AsyncTaskInterpreter =
 
 // the monix service doesn&#39;t require any implicit context!
 val monixService: AsyncTaskInterpreter =
-  org.atnos.eff.monix.addon.AsyncTaskInterpreter</code></pre>
+  org.atnos.eff.addon.monix.AsyncTaskInterpreter</code></pre>
 <p>Future computations can also be memoized to avoid expensive computations to be done several times. You can either</p>
 <ul>
 <li>use the <code class="prettyprint">asyncMemo</code> operator with a (mutable) cache</li>
