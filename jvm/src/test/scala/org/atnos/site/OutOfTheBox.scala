@@ -360,11 +360,7 @@ like eviction policies, maximum size and so on. You will need to implement the `
 
 ```scala
 trait Cache {
-<<<<<<< 92a1607ddcf282c87606d7253d05f4161af30856
-  def memo[V](key: K1, value: =>V): V
-=======
   def memo[V](key: AnyRef, value: =>V): V
->>>>>>> Concrete asynchronous effects
 }
 ```
 
@@ -409,13 +405,8 @@ use one of their `TaskEffect`s.
 
 Future and Task computations can also be memoized to avoid expensive computations to be done several times. You can either
 
-<<<<<<< 92a1607ddcf282c87606d7253d05f4161af30856
- - use the `asyncMemo` operator with a (mutable) cache
- - use the `asyncMemoized` operator with the `Memoized` effect (you will need to provide the cache later)
-=======
  - use the `futureMemo/taskMemo` operator with a (mutable) cache
- - use the `futureMemoized/taskMemoized` operator with the `Memo` effect (you will need to provide the cache later)
->>>>>>> Concrete asynchronous effects
+ - use the `futureMemoized/taskMemoized` operator with the `Memoized` effect (you will need to provide the cache later)
 <p/>
 
 ${snippet{
