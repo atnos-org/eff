@@ -72,7 +72,7 @@ class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification w
       }
 
     val run = Eff.traverseA(ls)(i => action[S](i))
-    eventually(retries = 1, sleep = 1.second) {
+    eventually(retries = 5, sleep = 1.second) {
       messages.clear
       Await.result(run.runOption.runAsyncFuture)
 
