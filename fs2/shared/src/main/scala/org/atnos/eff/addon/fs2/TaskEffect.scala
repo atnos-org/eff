@@ -14,9 +14,11 @@ case class TimedTask[A](task: (Strategy, Scheduler) => Task[A], timeout: Option[
   def runNow(implicit strategy: Strategy, scheduler: Scheduler): Task[A] = timeout.fold(task(strategy, scheduler)) { t =>
     for {
       ref <- Task.ref[A]
-      _ <- ref.setRace(
-        task(strategy, scheduler),
-        Task.schedule(Task.fail(new TimeoutException), t).flatMap(identity)
+      _ <- ref.set(
+        Task.fail(new TimeoutException).schedule(t)
+          .map[A](identity)
+          .race(task(strategy, scheduler))
+          .map(_.merge)
       )
       result <- ref.get
     } yield result
@@ -45,7 +47,8 @@ object TimedTask {
   }
 
   final def const[A](value: A): TimedTask[A] = TimedTask((_, _) => Task.now(value))
-  final def task[A](task: Task[A]): TimedTask[A] = TimedTask((_, _) => task)
+  final def task[A](task: Task[A], timeout: Option[FiniteDuration] = None): TimedTask[A] =
+    TimedTask((_, _) => task, timeout)
 
 }
 
@@ -61,7 +64,7 @@ trait TaskCreation extends TaskTypes {
     Eff.send[TimedTask, R, A](TimedTask(c, timeout))
 
   final def task[R: _task, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    TimedTask((_, _) => task).send[R]
+    TimedTask.task(task, timeout).send[R]
 
   final def taskFailed[R: _task, A](t: Throwable): Eff[R, A] =
     task(Task.fail(t))
@@ -94,7 +97,7 @@ object TaskCreation extends TaskCreation
 trait TaskInterpretation extends TaskTypes {
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] =
-    TimedTask[Throwable Either A]((strategy, scheduler) => task.runNow(strategy, scheduler).attempt)
+    TimedTask[Throwable Either A](task.runNow(_, _).attempt)
 
   def taskAttempt[R, A](e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, Throwable Either A] = {
     e match {
