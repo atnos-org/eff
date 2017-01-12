@@ -27,6 +27,8 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
  Simple Task calls with timeout can be memoized    $e9
  Attempted Task calls with timeout can be memoized $e10
 
+ Async calls can be memoized with a memo effect $e13
+
 """
 
   implicit val scheduler = Scheduler.fromScheduledExecutorService(ee.ses)
@@ -123,6 +125,17 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     def makeRequest = taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)).taskMemo("only once", cache)
     (makeRequest >> makeRequest).taskAttempt.detach.runNow.unsafeRunAsyncFuture() must beRight(1).await
 
+    invocationsNumber must be_==(1)
+  }
+
+  def e13 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx2[Memoized, TimedTask]
+    def makeRequest = taskMemoized("only once", taskDelay[S, Int]({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).runTaskMemo(cache).detach.runNow.unsafeRunAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)
   }
 
