@@ -18,8 +18,6 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
  Async effects can be implemented with an AsyncTask service   $e1
  Async effects can be attempted                               $e2
  Async effects can be executed concurrently                   $e3
- Async effects are stacksafe with asyncFork                   $e4
- Async effects are stacksafe with asyncDelay                  $e5
  Async effects can trampoline a Task                          $e6
  An Async effect can be created from Either                   $e7
  An Async forked computation can be timed out                 $e8
@@ -71,7 +69,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
       }
 
     val run = Eff.traverseA(ls)(i => action[S](i))
-    eventually(retries = 1, sleep = 1.second) {
+    eventually(retries = 5, sleep = 1.second) {
       messages.clear
       Await.result(run.runOption.runAsync.unsafeRunAsyncFuture, 5 seconds)
 
@@ -86,14 +84,6 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
     val action = list.traverse(i => asyncFork[S, String](i.toString))
 
     action.runOption.runAsync.unsafeRunAsyncFuture must beSome(list.map(_.toString)).await(retries = 5, timeout = 5.seconds)
-  }
-
-  def e5 = {
-    val list = (1 to 5000).toList
-    type U = Fx.prepend[Choose, S]
-    val action = list.traverse(i => chooseFrom[U, Int](List(1)) >> asyncDelay[U, String](i.toString))
-
-    action.runChoose[List].runOption.map(_.map(_.flatten)).runAsync.unsafeRunAsyncFuture must beSome(list.map(_.toString)).await(retries = 5, timeout = 5.seconds)
   }
 
   def e6 = {

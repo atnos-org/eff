@@ -46,8 +46,10 @@ object TimedTask {
       })
   }
 
-  final def const[A](value: A): TimedTask[A] = TimedTask((_, _) => Task.now(value))
-  final def task[A](task: Task[A], timeout: Option[FiniteDuration] = None): TimedTask[A] =
+  final def now[A](value: A): TimedTask[A] = TimedTask((_, _) => Task.now(value))
+  implicit final def fromTask[A](task: Task[A]): TimedTask[A] =
+    TimedTask((_, _) => task)
+  final def fromTask[A](task: Task[A], timeout: Option[FiniteDuration] = None): TimedTask[A] =
     TimedTask((_, _) => task, timeout)
 
 }
@@ -60,35 +62,35 @@ trait TaskTypes {
 trait TaskCreation extends TaskTypes {
 
   final def taskWithContext[R: _task, A](c: (Strategy, Scheduler) => Task[A],
-                                           timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    Eff.send[TimedTask, R, A](TimedTask(c, timeout))
+                                         timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    TimedTask(c, timeout).send
 
   final def task[R: _task, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    TimedTask.task(task, timeout).send[R]
+    TimedTask((_, _) => task, timeout).send[R]
 
   final def taskFailed[R: _task, A](t: Throwable): Eff[R, A] =
-    task(Task.fail(t))
+    task[R, A](Task.fail(t))
 
-  final def taskSuspend[R: _task, A](tisk: => Task[Eff[R, A]], timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    task(Task.suspend(tisk), timeout).flatten
+  final def taskSuspend[R: _task, A](tisk: => TimedTask[Eff[R, A]]): Eff[R, A] =
+    TimedTask((strategy, scheduler) => Task.suspend(tisk.runNow(strategy, scheduler))).send.flatten
 
   final def taskDelay[R: _task, A](call: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    task(Task.delay(call), timeout)
+    task[R, A](Task.delay(call), timeout)
 
-  final def taskForkStrategy[R: _task, A](call: Task[A], timeout: Option[FiniteDuration] = None)(implicit strategy: Strategy): Eff[R, A] =
-    task(Task.start(call).flatMap(identity), timeout)
+  final def taskForkStrategy[R: _task, A](call: TimedTask[A])(implicit strategy: Strategy): Eff[R, A] =
+    TimedTask[A]((_, scheduler) => Task.start(call.runNow(strategy, scheduler)).flatMap(identity)).send
 
-  final def taskFork[R: _task, A](call: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    TimedTask((strategy, _) => Task.start(call)(strategy).flatMap(identity), timeout).send
+  final def taskFork[R: _task, A](call: TimedTask[A]): Eff[R, A] =
+    TimedTask[A]((strategy, scheduler) => Task.start(call.runNow(strategy, scheduler))(strategy).flatMap(identity)).send[R]
 
-  final def async[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
-                               timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    TimedTask((strategy, _) => Task.async[A](callbackConsumer)(strategy), timeout).send
-
-  final def asyncFork[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
-                                   strategy: Strategy,
+  final def taskAsync[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                    timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    TimedTask((_, _) => Task.async[A](callbackConsumer)(strategy), timeout).send
+    TimedTask[A]((strategy, _) => Task.async[A](callbackConsumer)(strategy), timeout).send[R]
+
+  final def taskAsyncStrategy[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
+                                           strategy: Strategy,
+                                           timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    task(Task.async[A](callbackConsumer)(strategy), timeout)
 
 }
 

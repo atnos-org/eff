@@ -54,6 +54,13 @@ object TimedTask {
       })
   }
 
+  final def now[A](value: A): TimedTask[A] =
+    TimedTask(_ => Task.now(value))
+  implicit final def fromTask[A](task: Task[A]): TimedTask[A] =
+    TimedTask(_ => task)
+  final def fromTask[A](task: Task[A], timeout: Option[FiniteDuration] = None): TimedTask[A] =
+    TimedTask(_ => task, timeout)
+
 }
 
 trait TaskTypes {
@@ -63,9 +70,12 @@ trait TaskTypes {
 
 trait TaskCreation extends TaskTypes {
 
-  final def taskWithExecutors[R: _task, A](c: ScheduledExecutorService => Task[A],
+  final def taskWithContext[R: _task, A](c: ScheduledExecutorService => Task[A],
                                            timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    Eff.send[TimedTask, R, A](TimedTask(c, timeout))
+    TimedTask(c, timeout).send
+
+  final def task[R: _task, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    TimedTask(_ => task, timeout).send[R]
 
   final def taskFailed[R: _task, A](t: Throwable): Eff[R, A] =
     TimedTask(_ => Task.fromTry[A](Failure(t))).send
@@ -82,14 +92,15 @@ trait TaskCreation extends TaskTypes {
   final def taskFork[R: _task, A](call: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.fork(call), timeout).send
 
-  final def async[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
+  final def taskAsync[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.async[A] { (_, cb) =>
       callbackConsumer(tea => cb(tea.fold(Failure(_), Success(_)))); Cancelable.empty
     }, timeout).send
 
-  final def asyncCancelable[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Cancelable,
-                                         timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def taskAsyncScheduler[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Cancelable,
+                                            scheduler: Scheduler,
+                                             timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.async[A] { (_, cb) =>
       callbackConsumer(tea => cb(tea.fold(Failure(_), Success(_))))
     }, timeout).send

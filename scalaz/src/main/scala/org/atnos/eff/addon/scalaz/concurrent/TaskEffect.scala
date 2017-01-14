@@ -34,7 +34,7 @@ case class TimedTask[A](task: (ScheduledExecutorService, ExecutionContext) => Ta
 
 object TimedTask {
 
-  def TaskApplicative: Applicative[TimedTask] = new Applicative[TimedTask] {
+  def TimedTaskApplicative: Applicative[TimedTask] = new Applicative[TimedTask] {
     def pure[A](x: A): TimedTask[A] =
       TimedTask((_, _) => Task.now(x))
 
@@ -44,7 +44,7 @@ object TimedTask {
     override def toString = "Applicative[Task]"
   }
 
-  implicit def TaskMonad: Monad[TimedTask] = new Monad[TimedTask] {
+  implicit def TimedTaskMonad: Monad[TimedTask] = new Monad[TimedTask] {
     def pure[A](x: A): TimedTask[A] =
       TimedTask((_, _) => Task.now(x))
 
@@ -61,6 +61,12 @@ object TimedTask {
 
   }
 
+  final def now[A](value: A): TimedTask[A] = TimedTask((_, _) => Task.now(value))
+  implicit final def fromTask[A](task: Task[A]): TimedTask[A] =
+    TimedTask((_, _) => task)
+  final def fromTask[A](task: Task[A], timeout: Option[FiniteDuration] = None): TimedTask[A] =
+    TimedTask((_, _) => task, timeout)
+
 }
 
 trait TaskTypes {
@@ -73,6 +79,9 @@ trait TaskCreation extends TaskTypes {
   final def taskWithExecutors[R: _task, A](c: (ScheduledExecutorService, ExecutionContext) => Task[A],
                                            timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedTask, R, A](TimedTask(c, timeout))
+
+  final def task[R: _task, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    TimedTask((_, _) => task, timeout).send[R]
 
   final def taskFailed[R: _task, A](t: Throwable): Eff[R, A] =
     TimedTask((_, _) => Task.fromDisjunction[Throwable, A](-\/(t))).send[R]
