@@ -13,6 +13,9 @@ trait writer {
     def runWriter[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, (A, List[O])] =
       WriterInterpretation.runWriter(e)(member.aux)
 
+    def runWriterU[O, U](implicit member: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, List[O])] =
+      WriterInterpretation.runWriter(e)(member)
+
     def runWriterNoLog[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =
       runWriterUnsafe[O](_ => ())
 
