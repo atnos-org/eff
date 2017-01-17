@@ -23,10 +23,10 @@ trait SafeTypes {
 trait SafeCreation extends SafeTypes {
 
   def protect[R :_safe, A](a: =>A): Eff[R, A] =
-    send[Safe, R, A](EvaluateValue[A](() => a))
+    send[Safe, R, A](EvaluateValue[A](Eval.later(a)))
 
   def eval[R :_safe , A](a: Eval[A]): Eff[R, A] =
-    send[Safe, R, A](EvaluateValue[A](() => a.value))
+    send[Safe, R, A](EvaluateValue[A](a))
 
   def exception[R :_safe, A](t: Throwable): Eff[R, A] =
     send[Safe, R, A](FailedValue(t))
@@ -72,7 +72,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, Out] =
         sx match {
           case EvaluateValue(v) =>
-            Either.catchNonFatal(v()) match {
+            Either.catchNonFatal(v.value) match {
               case Left(e) =>
                 Right(pure((Left(e), s)))
 
@@ -96,7 +96,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onLastEffect[X](sx: Safe[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
         sx match {
           case EvaluateValue(v) =>
-            Either.catchNonFatal(v()) match {
+            Either.catchNonFatal(v.value) match {
               case Left(_) =>
                 Right(pure(()))
 
@@ -127,7 +127,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
           case EvaluateValue(v)   =>
             error match {
               case None =>
-                Either.catchNonFatal(v()) match {
+                Either.catchNonFatal(v.value) match {
                   case Right(a) => a
                   case Left(t)  => error = Some(t); ().asInstanceOf[X]
                 }
@@ -153,7 +153,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
           case EvaluateValue(v)   =>
             error match {
               case None =>
-                Either.catchNonFatal(v()) match {
+                Either.catchNonFatal(v.value) match {
                   case Right(a) => a
                   case Left(t)  => error = Some(t); ().asInstanceOf[X]
                 }
@@ -186,7 +186,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A]): Eff[R, A] Either Eff[R, A] =
         sx match {
           case EvaluateValue(v) =>
-            Either.catchNonFatal(v()) match {
+            Either.catchNonFatal(v.value) match {
               case Left(e) =>
                 Right(attempt(last) flatMap {
                   case Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, A](e)
@@ -210,7 +210,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       def onLastEffect[X](sx: Safe[X], continuation: Arrs[R, X, Unit]): Eff[R, Unit] Either Eff[R, Unit] =
         sx match {
           case EvaluateValue(v) =>
-            Either.catchNonFatal(v()) match {
+            Either.catchNonFatal(v.value) match {
               case Left(e) =>
                 Right(attempt(last) flatMap {
                   case Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, Unit](e)
@@ -239,7 +239,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
           case FailedFinalizer(t) => ().asInstanceOf[X]
           case FailedValue(t)     => ().asInstanceOf[X]
           case EvaluateValue(v)   =>
-            Either.catchNonFatal(v()) match {
+            Either.catchNonFatal(v.value) match {
               case Right(a) => a
               case Left(t)  => failedValues.append(FailedValue(t)); ().asInstanceOf[X]
             }
@@ -266,7 +266,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
           case FailedFinalizer(t) => ().asInstanceOf[X]
           case FailedValue(t)     => ().asInstanceOf[X]
           case EvaluateValue(v)   =>
-            Either.catchNonFatal(v()) match {
+            Either.catchNonFatal(v.value) match {
               case Right(a) => a
               case Left(t)  => failedValues.append(FailedValue(t)); ().asInstanceOf[X]
             }
@@ -366,8 +366,32 @@ object SafeInterpretation extends SafeInterpretation
  * The Safe type is a mix of a ThrowableEither / Eval effect
  *   and a writer effect to collect finalizer failures
  */
-sealed trait Safe[A]
+sealed trait Safe[A] {
+  def memoize: Safe[A]
+}
 
-case class EvaluateValue[A](a: () => A)  extends Safe[A]
-case class FailedValue[A](t: Throwable)  extends Safe[A]
-case class FailedFinalizer(t: Throwable) extends Safe[Unit]
+case class EvaluateValue[A](run: Eval[A])  extends Safe[A] {
+  def memoize: Safe[A] =
+    copy(run.memoize)
+}
+
+case class FailedValue[A](t: Throwable)  extends Safe[A] {
+  def memoize: Safe[A] =
+    this
+}
+
+case class FailedFinalizer(t: Throwable) extends Safe[Unit] {
+  def memoize: Safe[Unit] =
+    this
+}
+
+object Safe {
+
+  implicit val safeSequenceCached: SequenceCached[Safe] =
+    new SequenceCached[Safe] {
+      def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Safe[X]): Safe[X] = {
+        cache.memo((key, sequenceKey), tx.memoize)
+      }
+    }
+
+}
