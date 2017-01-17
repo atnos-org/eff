@@ -35,6 +35,8 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
 
   Safe effect can be mixed with other effects $mixedWithOtherEffects1
 
+  The Safe effet can be memoized $memoizeSafe
+
 """
 
   type S = Fx.fx1[Safe]
@@ -181,6 +183,22 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
     }
   }.setGen(genInt)
 
+  def memoizeSafe = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx1[Safe]
+
+    val intSafe: Eff[S, Int] =
+      protect[S, String]("a").flatMap(_ => protect[S, Int]({ invocationsNumber += 1; 1 }))
+
+    def makeRequest: Eff[S, Int] = memoizeEffect(intSafe, cache, "safe")
+
+    Eff.sequenceA(List.fill(5)(makeRequest)).execSafe.run must beRight(List.fill(5)(1))
+
+    invocationsNumber must be_==(1)
+
+  }
   /**
    * HELPERS
    */
