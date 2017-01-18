@@ -1,5 +1,7 @@
 package org.atnos.eff.addon.fs2
 
+import java.util.concurrent.ScheduledExecutorService
+
 import cats._
 import cats.implicits._
 import fs2._
@@ -7,7 +9,7 @@ import org.atnos.eff._
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.TimeoutException
+import scala.concurrent.{ExecutionContext, TimeoutException}
 import scala.util._
 
 case class TimedTask[A](task: (Strategy, Scheduler) => Task[A], timeout: Option[FiniteDuration] = None) {
@@ -15,8 +17,7 @@ case class TimedTask[A](task: (Strategy, Scheduler) => Task[A], timeout: Option[
     for {
       ref <- Task.ref[A]
       _ <- ref.set(
-        Task.fail(new TimeoutException).schedule(t)
-          .map[A](identity)
+        (Task.fail(new TimeoutException).schedule(t): Task[A])
           .race(task(strategy, scheduler))
           .map(_.merge)
       )
@@ -27,19 +28,27 @@ case class TimedTask[A](task: (Strategy, Scheduler) => Task[A], timeout: Option[
 
 object TimedTask {
   final def TimedTaskApplicative: Applicative[TimedTask] = new Applicative[TimedTask] {
-    override def pure[A](x: A) = TimedTask((_, _) => Task.now(x))
-    override def ap[A, B](ff: TimedTask[(A) => B])(fa: TimedTask[A]) =
+    def pure[A](x: A) = TimedTask((_, _) => Task.now(x))
+
+    def ap[A, B](ff: TimedTask[(A) => B])(fa: TimedTask[A]) =
       TimedTask((strategy, scheduler) =>
-        Task.parallelTraverse(List(fa.runNow(strategy, scheduler), ff.runNow(strategy, scheduler)))(identity)(strategy)
-        .map(v => v.last.asInstanceOf[A => B](v.head.asInstanceOf[A]))
+        for {
+          fStarted <- Task.start(ff.runNow(strategy, scheduler))(strategy)
+          aStarted <- Task.start(fa.runNow(strategy, scheduler))(strategy)
+          fDone <- fStarted
+          aDone <- aStarted
+        } yield fDone(aDone)
       )
   }
 
   implicit final def TimedTaskMonad: Monad[TimedTask] = new Monad[TimedTask] {
-    override def pure[A](x: A) = TimedTask((_, _) => Task.now(x))
-    override def flatMap[A, B](fa: TimedTask[A])(f: (A) => TimedTask[B]) =
+    def pure[A](x: A) = TimedTask((_, _) => Task.now(x))
+
+    def flatMap[A, B](fa: TimedTask[A])(f: (A) => TimedTask[B]) =
       TimedTask((strategy, scheduler) => fa.runNow(strategy, scheduler).flatMap(f(_).runNow(strategy, scheduler)))
-    override def tailRecM[A, B](a: A)(f: (A) => TimedTask[Either[A, B]]): TimedTask[B] =
+
+    def tailRecM[A, B](a: A)(f: (A) => TimedTask[Either[A, B]]): TimedTask[B] =
+
       TimedTask[B]({ (strategy, scheduler) =>
         def loop(na: A): Task[B] = f(na).runNow(strategy, scheduler).flatMap(_.fold(loop, Task.now))
         loop(a)
@@ -61,42 +70,48 @@ trait TaskTypes {
 
 trait TaskCreation extends TaskTypes {
 
-  final def taskWithContext[R: _task, A](c: (Strategy, Scheduler) => Task[A],
+  final def taskWithContext[R :_task, A](c: (Strategy, Scheduler) => Task[A],
                                          timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(c, timeout).send
 
-  final def task[R: _task, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def fromTask[R :_task, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask((_, _) => task, timeout).send[R]
 
-  final def taskFailed[R: _task, A](t: Throwable): Eff[R, A] =
-    task[R, A](Task.fail(t))
+  final def taskFailed[R :_task, A](t: Throwable): Eff[R, A] =
+    fromTask[R, A](Task.fail(t))
 
-  final def taskSuspend[R: _task, A](tisk: => TimedTask[Eff[R, A]]): Eff[R, A] =
+  final def taskSuspend[R :_task, A](tisk: => TimedTask[Eff[R, A]]): Eff[R, A] =
     TimedTask((strategy, scheduler) => Task.suspend(tisk.runNow(strategy, scheduler))).send.flatten
 
-  final def taskDelay[R: _task, A](call: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    task[R, A](Task.delay(call), timeout)
+  final def taskDelay[R :_task, A](call: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+    fromTask[R, A](Task.delay(call), timeout)
 
-  final def taskForkStrategy[R: _task, A](call: TimedTask[A])(implicit strategy: Strategy): Eff[R, A] =
+  final def taskForkStrategy[R :_task, A](call: TimedTask[A])(implicit strategy: Strategy): Eff[R, A] =
     TimedTask[A]((_, scheduler) => Task.start(call.runNow(strategy, scheduler)).flatMap(identity)).send
 
-  final def taskFork[R: _task, A](call: TimedTask[A]): Eff[R, A] =
+  final def taskFork[R :_task, A](call: TimedTask[A]): Eff[R, A] =
     TimedTask[A]((strategy, scheduler) => Task.start(call.runNow(strategy, scheduler))(strategy).flatMap(identity)).send[R]
 
-  final def taskAsync[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
+  final def taskAsync[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                    timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask[A]((strategy, _) => Task.async[A](callbackConsumer)(strategy), timeout).send[R]
 
-  final def taskAsyncStrategy[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
+  final def taskAsyncStrategy[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                            strategy: Strategy,
                                            timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    task(Task.async[A](callbackConsumer)(strategy), timeout)
+    fromTask(Task.async[A](callbackConsumer)(strategy), timeout)
 
 }
 
 object TaskCreation extends TaskCreation
 
 trait TaskInterpretation extends TaskTypes {
+
+  def runAsync[A](e: Eff[Fx.fx1[TimedTask], A])(implicit strat: Strategy, sched: Scheduler): Task[A] =
+    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative).runNow(strat, sched)
+
+  def runSequential[A](e: Eff[Fx.fx1[TimedTask], A])(implicit strat: Strategy, sched: Scheduler): Task[A] =
+    Eff.detach(e).runNow(strat, sched)
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] =
     TimedTask[Throwable Either A](task.runNow(_, _).attempt)
@@ -217,6 +232,12 @@ final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def taskMemo(key: AnyRef, cache: Cache)(implicit task: TimedTask /= R): Eff[R, A] =
     TaskInterpretation.taskMemo(key, cache, e)
+
+  def runAsync(implicit strat: Strategy, sched: Scheduler, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
+    TaskInterpretation.runAsync(e)
+
+  def runSequential(implicit strat: Strategy, sched: Scheduler, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
+    TaskInterpretation.runSequential(e)
 }
 
 object TaskInterpretation extends TaskInterpretation

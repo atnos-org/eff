@@ -3,6 +3,7 @@ package org.atnos.eff.addon.scalaz.concurrent
 import java.util.concurrent._
 
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 
 import scalaz.{-\/, Nondeterminism, \/, \/-}
@@ -16,6 +17,7 @@ import org.atnos.eff._
 import scala.concurrent._, duration._
 import scala.util.{Either, Success, Failure}
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 case class AsyncTasks(executors: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
 
   lazy val executorService: ExecutorService =
@@ -105,6 +107,7 @@ case class AsyncTasks(executors: ExecutorServices) extends AsyncInterpreter[Task
 
 }
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 object AsyncTasks {
 
   def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTasks =

@@ -39,6 +39,7 @@ lazy val scalaz = project.in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
   .dependsOn(coreJVM)
   .settings(libraryDependencies ++= scalazConcurrent)
+  .settings(libraryDependencies ++= specs2Scalaz)
   .settings(effSettings ++ commonJvmSettings:_*)
 
 lazy val fs2 = crossProject.crossType(CrossType.Full).in(file("fs2"))
@@ -94,9 +95,16 @@ lazy val commonJsSettings = Seq(
   requiresDOM := false,
   libraryDependencies ++= catsJs,
   jsEnv := NodeJSEnv().value
+) ++ disableTests
+
+def disableTests = Seq(
+  test := {},
+  testQuick := {},
+  testOnly := {}
 )
 
 lazy val commonJvmSettings = Seq(
+  (scalacOptions in Test) ~= (_.filterNot(_ == "-Xfatal-warnings")),
   libraryDependencies ++= catsJvm,
   libraryDependencies ++= specs2
 ) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
@@ -253,11 +261,11 @@ def testTask(task: TaskKey[Tests.Output]) =
       )).flatMap(identity)
   }.value
 
-lazy val catsVersion   = "0.8.1"
+lazy val catsVersion   = "0.9.0"
 lazy val monixVersion  = "2.1.0"
 lazy val scalazVersion = "7.2.7"
 lazy val fs2Version    = "0.9.2"
-lazy val specs2Version = "3.8.6"
+lazy val specs2Version = "3.8.7"
 lazy val twitterUtilVersion = "6.40.0"
 lazy val catbirdVersion = "0.9.0"
 
@@ -277,6 +285,9 @@ lazy val monixJs = Seq(
 
 lazy val scalazConcurrent = Seq(
   "org.scalaz" %% "scalaz-concurrent" % scalazVersion)
+
+lazy val specs2Scalaz = Seq(
+  "org.specs2" %% "specs2-scalaz" % specs2Version % "test")
 
 lazy val fs2Jvm = Seq(
   "co.fs2" %% "fs2-core" % fs2Version)

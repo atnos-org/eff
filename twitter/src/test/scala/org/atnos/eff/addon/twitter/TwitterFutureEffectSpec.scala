@@ -1,13 +1,12 @@
 package org.atnos.eff.addon.twitter
 
 import scala.concurrent.duration._
-import com.twitter.util.{Await, Future}
-
+import com.twitter.util.{Await, Future, FuturePool}
 import cats.Eval
 import TwitterFutureEffect._
 import cats.implicits._
 import org.atnos.eff._
-import org.atnos.eff.allbutfuture._
+import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
@@ -16,12 +15,11 @@ import org.scalacheck._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent._
 import duration._
-
 import org.specs2.matcher.ThrownExpectations
 
 import scala.util.control._
 
-class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = sequential ^ s2"""
 
  Future effects can work as normal values                      $e1
  Future effects can be attempted                               $e2
@@ -41,6 +39,9 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
 """
 
   type S = Fx.fx2[TwitterTimedFuture, Option]
+  
+  implicit val pool = FuturePool(ee.es)
+  implicit val ses = ee.ses
 
   def e1 = {
     def action[R :_future :_option]: Eff[R, Int] = for {
@@ -48,7 +49,7 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
       b <- futureDelay(20)
     } yield a + b
 
-    Await.result(action[S].runOption.detach.runNow(ee.ses)) must beSome(30)
+    Await.result(action[S].runOption.runSequential) must beSome(30)
   }
 
   def e2 = {
@@ -57,26 +58,26 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
       b <- futureDelay { boom; 20 }
     } yield a + b
 
-    Await.result(action[S].twitterFutureAttempt.runOption.detach.runNow(ee.ses)) must beSome(beLeft(boomException))
+    Await.result(action[S].twitterFutureAttempt.runOption.runSequential) must beSome(beLeft(boomException))
   }
 
   def e3 = {
     val messages: ListBuffer[Int] = new ListBuffer[Int]
-    val orderedMessages = List(600, 200, 400)
+    val delays = List(600, 200, 400, 800)
 
     def action(i: Int): Eff[S, Unit] =
-      futureDelay {
-        Thread.sleep(i.toLong)
-        messages.append(i)
-      }
+      futureFork {
+          Thread.sleep(i.toLong)
+          messages.append(i)
+      }(FuturePool.unboundedPool)
 
-    val run = Eff.traverseA(orderedMessages)(action)
-    eventually(retries = 5, sleep = 2.second) {
+    val run = futureDelay[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action)
+    eventually(retries = 5, sleep = 0.seconds) {
       messages.clear
-      Await.result(run.runOption.detachA(TwitterTimedFuture.ApplicativeTwitterTimedFuture).runNow(ee.ses))
+      Await.result(run.runOption.runAsync)
 
       "the messages are ordered" ==> {
-        messages.toList ==== List(200, 400, 600)
+        messages.toList ==== delays.sorted
       }
     }
   }
@@ -86,7 +87,7 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
     type U = Fx.prepend[Choose, S]
     val action = list.traverseA(i => chooseFrom[U, Int](List(1)) >> futureDelay[U, String](i.toString))
 
-    Await.result(action.runChoose[List].runOption.map(_.map(_.flatten)).detach.runNow(ee.ses)) must beSome(list.map(_.toString))
+    Await.result(action.runChoose[List].runOption.map(_.map(_.flatten)).runSequential) must beSome(list.map(_.toString))
   }
 
   def e6 = {
@@ -96,18 +97,17 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
       if (i == 0) Eff.pure(1)
       else        futureDelay[R, Eff[R, Int]](loop(i - 1)).flatten[Int].map(_ + 1)
 
-    eventually(retries = 5, sleep = 1.second) {
-      Await.result(futureDelay(loop(100000)).detach.runNow(ee.ses)) must not(throwAn[Exception])
+    eventually(retries = 5, sleep = 0.seconds) {
+      Await.result(futureDelay(loop(100000)).runSequential) must not(throwAn[Exception])
     }
   }
 
   def e7 = {
-    Await.result(futureFromEither(Left[Throwable, Int](boomException)).twitterFutureAttempt.detach.runNow(ee.ses)) must beLeft(boomException)
+    Await.result(futureFromEither(Left[Throwable, Int](boomException)).twitterFutureAttempt.runSequential) must beLeft(boomException)
   }
 
   def e8 = {
-    lazy val slow = { sleepFor(200.millis); 1 }
-    Await.result(futureDelay(slow, timeout = Some(50.millis)).twitterFutureAttempt.detach.runNow(ee.ses)) must beLeft
+    Await.result(futureDelay({ sleepFor(10000.millis); 1 }, timeout = Some(50.millis)).twitterFutureAttempt.runSequential) must beLeft
   }
 
   def e9 = {
@@ -115,7 +115,7 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
     val cache = ConcurrentHashMapCache()
     def makeRequest = futureMemo("only once", cache, futureDelay({ invocationsNumber += 1; 1 }))
 
-    Await.result((makeRequest >> makeRequest).detach.runNow(ee.ses)) must be_==(1)
+    Await.result((makeRequest >> makeRequest).runSequential) must be_==(1)
     invocationsNumber must be_==(1)
   }
 
@@ -124,16 +124,16 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
     val cache = ConcurrentHashMapCache()
     def makeRequest = futureMemo("only once", cache, futureDelay({ invocationsNumber += 1; 1 }))
 
-    Await.result((makeRequest >> makeRequest).twitterFutureAttempt.detach.runNow(ee.ses)) must beRight(1)
+    Await.result((makeRequest >> makeRequest).twitterFutureAttempt.runSequential) must beRight(1)
     invocationsNumber must be_==(1)
   }
 
   def e11 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = futureMemo("only once", cache, futureDelay({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    def makeRequest = futureMemo("only once", cache, futureDelay({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
 
-    Await.result((makeRequest >> makeRequest).detach.runNow(ee.ses)) must be_==(1)
+    Await.result((makeRequest >> makeRequest).runSequential) must be_==(1)
     invocationsNumber must be_==(1)
   }
 
@@ -141,8 +141,8 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    def makeRequest = futureMemo("only once", cache, futureDelay({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
-    Await.result((makeRequest >> makeRequest).twitterFutureAttempt.detach.runNow(ee.ses)) must beRight(1)
+    def makeRequest = futureMemo("only once", cache, futureDelay({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
+    Await.result((makeRequest >> makeRequest).twitterFutureAttempt.runSequential) must beRight(1)
 
     invocationsNumber must be_==(1)
   }
@@ -154,7 +154,7 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
     type S = Fx.fx2[Memoized, TwitterTimedFuture]
     def makeRequest = futureMemoized("only once", futureDelay[S, Int]({ invocationsNumber += 1; 1 }))
 
-    Await.result((makeRequest >> makeRequest).runTwitterFutureMemo(cache).detach.runNow(ee.ses)) must be_==(1)
+    Await.result((makeRequest >> makeRequest).runTwitterFutureMemo(cache).runSequential) must be_==(1)
     invocationsNumber must be_==(1)
   }
 

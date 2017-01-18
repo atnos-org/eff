@@ -18,6 +18,7 @@ package object eff {
   object choose     extends ChooseCreation         with ChooseInterpretation
   object safe       extends SafeCreation           with SafeInterpretation
   object future     extends FutureCreation         with FutureInterpretation
+  @deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
   object async      extends AsyncCreation          with AsyncInterpretation
   object memo       extends MemoCreation           with MemoInterpretation
   object batch      extends Batch
@@ -33,32 +34,11 @@ package object eff {
     ValidateCreation with
     ChooseCreation with
     FutureCreation with
-    AsyncCreation with
     MemoCreation with
     EffCreation with
     SafeCreation
 
   object all extends
-    AsyncEffect with
-    FutureEffect with
-    ReaderEffect with
-    WriterEffect with
-    StateEffect with
-    EvalEffect with
-    OptionEffect with
-    ListEffect with
-    EitherEffect with
-    ValidateEffect with
-    ChooseEffect with
-    SafeEffect with
-    MemoEffect with
-    Batch with
-    EffInterpretation with
-    EffCreation with
-    EffImplicits
-
-  object allbutfuture extends
-    AsyncEffect with
     ReaderEffect with
     WriterEffect with
     StateEffect with

@@ -3,6 +3,7 @@ package org.atnos.eff.addon.fs2
 import cats.implicits._
 import fs2.Task
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 import org.atnos.eff._
 import org.scalacheck._
@@ -13,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "fs2 task".title ^ s2"""
+class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "fs2 task".title ^ sequential ^ s2"""
 
  Async effects can be implemented with an AsyncTask service   $e1
  Async effects can be attempted                               $e2
@@ -58,8 +59,9 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
     action[S].asyncAttempt.runOption.runAsync.unsafeRunAsyncFuture must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
   }
 
-  def e3 = prop { ls: List[Int] =>
+  def e3 = {
     val messages: ListBuffer[Int] = new ListBuffer[Int]
+    val delays = List(600, 200, 400, 800)
 
     def action[R :_async](i: Int): Eff[R, Int] =
       asyncFork {
@@ -68,16 +70,16 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
         i
       }
 
-    val run = Eff.traverseA(ls)(i => action[S](i))
-    eventually(retries = 5, sleep = 1.second) {
+    val run = asyncFork[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action[S])
+    eventually(retries = 5, sleep = 0.seconds) {
       messages.clear
       Await.result(run.runOption.runAsync.unsafeRunAsyncFuture, 5 seconds)
 
       "the messages are ordered" ==> {
-        messages.toList ==== ls.sorted
+        messages.toList ==== delays.sorted
       }
     }
-  }.set(minTestsOk = 10).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
+  }
 
   def e4 = {
     val list = (1 to 5000).toList
@@ -93,8 +95,8 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
       if (i == 0) Task.now(Eff.pure(1))
       else        Task.now(suspend(loop(i - 1)).map(_ + 1))
 
-    eventually(retries = 5, sleep = 1.second) {
-      Await.result(suspend(loop(100000)).runAsync.unsafeRunAsyncFuture, 10.seconds) must not(throwAn[Exception])
+    eventually(retries = 5, sleep = 0.seconds) {
+      Await.result(suspend(loop(100000)).runAsync.unsafeRunAsyncFuture, Duration.Inf) must not(throwAn[Exception])
     }
   }
 
@@ -103,8 +105,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   }
 
   def e8 = {
-    lazy val slow = { sleepFor(200.millis); 1 }
-    asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsync.unsafeRunAsyncFuture must beLeft.await
+    asyncFork({ sleepFor(10000.millis); 1 }, timeout = Option(10.millis)).asyncAttempt.runAsync.unsafeRunAsyncFuture must beLeft.awaitFor(20.seconds)
   }
 
   def e9 = {
@@ -128,7 +129,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
   def e11 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = asyncMemo(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)), cache, "only once")
+    def makeRequest = asyncMemo(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)), cache, "only once")
 
     (makeRequest >> makeRequest).runAsync.unsafeRunAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)
@@ -138,7 +139,7 @@ class AsyncTaskInterpreterSpec(implicit ee: ExecutionEnv) extends Specification 
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    def makeRequest = asyncMemo(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)), cache, "only once")
+    def makeRequest = asyncMemo(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)), cache, "only once")
     (makeRequest >> makeRequest).asyncAttempt.runAsync.unsafeRunAsyncFuture must beRight(1).await
 
     invocationsNumber must be_==(1)

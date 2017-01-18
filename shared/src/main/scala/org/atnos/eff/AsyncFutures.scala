@@ -8,12 +8,14 @@ import org.atnos.eff.Async._
 import org.atnos.eff.SubscribeEffect._
 import org.atnos.eff.AsyncFutures._
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent._
 import scala.util._
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 case class AsyncFutures(executors: ExecutorServices) extends AsyncInterpreter[Future] { outer =>
 
   implicit lazy val executorService: ExecutorService =
@@ -113,6 +115,7 @@ case class AsyncFutures(executors: ExecutorServices) extends AsyncInterpreter[Fu
 
 }
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 trait AsyncInterpreter[F[_]] {
 
   def runAsync[A](e: Eff[Fx.fx1[Async], A]): F[A]
@@ -122,6 +125,7 @@ trait AsyncInterpreter[F[_]] {
 }
 
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 object AsyncFutures {
 
   def create(implicit ec: ExecutionContext): AsyncFutures =

@@ -395,9 +395,9 @@ val action: Eff[R, Int] =
 Then we need to pass a `ScheduledExecutorService` and `ExecutionContext` in to begin the computation.
 */
 
-val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
 
-Await.result(action.runOption.detach.runNow(ses, global), 1 second)
+Await.result(action.runOption.runSequential, 1 second)
 }.eval}
 
 If you prefer to use monix or scalaz `Task` you need to add a dependency on `eff-monix` or `eff-scalaz` and
@@ -411,7 +411,7 @@ Future and Task computations can also be memoized to avoid expensive computation
 
 ${snippet{
 import cats.implicits._
-import org.atnos.eff._, all._
+import org.atnos.eff._, future._, all._
 import org.atnos.eff.syntax.all._
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -423,12 +423,12 @@ def expensive[R :_Future :_memo]: Eff[R, Int] =
 
 type S = Fx.fx2[Memoized, TimedFuture]
 
-val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
 
-val future: Future[Int] =
-  (expensive[S] >> expensive[S]).runFutureMemo(ConcurrentHashMapCache()).detach.runNow(ses, scala.concurrent.ExecutionContext.Implicits.global)
+val futureMemo: Future[Int] =
+  (expensive[S] >> expensive[S]).runFutureMemo(ConcurrentHashMapCache()).runSequential
 
-Await.result(future, 1.second)
+Await.result(futureMemo, 1.second)
 
 "there is only one invocation" <==> (i === 1)
 

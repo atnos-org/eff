@@ -2,8 +2,9 @@ package org.atnos.eff.addon.monix
 
 import cats.implicits._
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
-import org.atnos.eff.syntax.addon.monix._
+import org.atnos.eff.addon.monix.AsyncTasks._
 import org.scalacheck._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
@@ -17,7 +18,7 @@ import org.atnos.eff._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = "monix task".title ^ s2"""
+class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = "monix task".title ^ sequential ^ s2"""
 
  Async effects can be implemented with an AsyncTask service $e1
  Async effects can be attempted                             $e2
@@ -56,8 +57,9 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     action[S].asyncAttempt.runOption.runAsync.runAsync must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
   }
 
-  def e3 = prop { ls: List[Int] =>
+  def e3 = {
     val messages: ListBuffer[Int] = new ListBuffer[Int]
+    val delays = List(600, 200, 400, 800)
 
     def action[R :_async](i: Int): Eff[R, Int] =
       asyncFork {
@@ -66,18 +68,18 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
         i
       }
 
-    val run = Eff.traverseA(ls)(i => action[S](i))
+    val run = asyncFork[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action[S])
 
-    eventually(retries = 5, sleep = 1.second) {
+    eventually(retries = 5, sleep = 0.seconds) {
       messages.clear
       Await.result(run.runOption.runAsync.runAsync, 3.seconds)
 
       "the messages are ordered" ==> {
-        messages.toList ==== ls.sorted
+        messages.toList ==== delays.sorted
       }
     }
 
-  }.set(minTestsOk = 10).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
+  }
 
   def e4 = {
     val list = (1 to 5000).toList
@@ -93,12 +95,11 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       if (i == 0) Task.now(Eff.pure(1))
       else Task.now(suspend(loop(i - 1)).map(_ + 1))
 
-    Await.result(suspend(loop(100000)).runAsync.runAsync, 10 seconds) must not(throwAn[Exception])
+    Await.result(suspend(loop(100000)).runAsync.runAsync, Duration.Inf) must not(throwAn[Exception])
   }
 
   def e6 = {
-    lazy val slow = { sleepFor(200.millis); 1 }
-    asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsync.runAsync must beLeft[Throwable].await
+    asyncFork({ sleepFor(10000.millis); 1 }, timeout = Option(50.millis)).asyncAttempt.runAsync.runAsync must beLeft[Throwable].awaitFor(20.seconds)
   }
 
   def e7 = {
@@ -122,7 +123,7 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   def e9 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
 
     (makeRequest >> makeRequest).runAsync.runAsync must be_==(1).await
     invocationsNumber must be_==(1)

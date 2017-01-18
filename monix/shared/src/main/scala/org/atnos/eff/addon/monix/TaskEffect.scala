@@ -24,10 +24,11 @@ case class TimedTask[A](task: ScheduledExecutorService => Task[A], timeout: Opti
       }
       sexs.schedule(onTimeout, t.length, t.unit)
       Task.unsafeStartAsync(task(sexs), context, new Callback[A] {
-        override def onSuccess(value: A): Unit = {
+        def onSuccess(value: A): Unit = {
           val _ = promise.trySuccess(value)
         }
-        override def onError(ex: Throwable): Unit = {
+
+        def onError(ex: Throwable): Unit = {
           val _ = promise.tryFailure(ex)
         }
       })
@@ -38,16 +39,19 @@ case class TimedTask[A](task: ScheduledExecutorService => Task[A], timeout: Opti
 
 object TimedTask {
   final def TimedTaskApplicative: Applicative[TimedTask] = new Applicative[TimedTask] {
-    override def pure[A](x: A) = TimedTask(_ => Task.now(x))
-    override def ap[A, B](ff: TimedTask[(A) => B])(fa: TimedTask[A]) =
+    def pure[A](x: A) = TimedTask(_ => Task.now(x))
+
+    def ap[A, B](ff: TimedTask[(A) => B])(fa: TimedTask[A]) =
       TimedTask(sexs => Task.mapBoth(ff.runNow(sexs), fa.runNow(sexs))(_ (_)))
   }
 
   implicit final def TimedTaskMonad: Monad[TimedTask] = new Monad[TimedTask] {
-    override def pure[A](x: A) = TimedTask(_ => Task.now(x))
-    override def flatMap[A, B](fa: TimedTask[A])(f: (A) => TimedTask[B]) =
+    def pure[A](x: A) = TimedTask(_ => Task.now(x))
+
+    def flatMap[A, B](fa: TimedTask[A])(f: (A) => TimedTask[B]) =
       TimedTask(sexs => fa.runNow(sexs).flatMap(f(_).runNow(sexs)))
-    override def tailRecM[A, B](a: A)(f: (A) => TimedTask[Either[A, B]]): TimedTask[B] =
+
+    def tailRecM[A, B](a: A)(f: (A) => TimedTask[Either[A, B]]): TimedTask[B] =
       TimedTask[B]({ sexs =>
         def loop(na: A): Task[B] = f(na).runNow(sexs).flatMap(_.fold(loop, Task.now))
         loop(a)
@@ -70,35 +74,35 @@ trait TaskTypes {
 
 trait TaskCreation extends TaskTypes {
 
-  final def taskWithContext[R: _task, A](c: ScheduledExecutorService => Task[A],
+  final def taskWithContext[R :_task, A](c: ScheduledExecutorService => Task[A],
                                            timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(c, timeout).send
 
-  final def task[R: _task, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def fromTask[R :_task, A](task: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => task, timeout).send[R]
 
-  final def taskFailed[R: _task, A](t: Throwable): Eff[R, A] =
+  final def taskFailed[R :_task, A](t: Throwable): Eff[R, A] =
     TimedTask(_ => Task.fromTry[A](Failure(t))).send
 
-  final def taskSuspend[R: _task, A](task: => Task[Eff[R, A]], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def taskSuspend[R :_task, A](task: => Task[Eff[R, A]], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.suspend(task), timeout).send.flatten
 
-  final def taskDelay[R: _task, A](call: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def taskDelay[R :_task, A](call: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.delay(call), timeout).send
 
-  final def taskForkScheduler[R: _task, A](call: Task[A], scheduler: Scheduler, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def taskForkScheduler[R :_task, A](call: Task[A], scheduler: Scheduler, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.fork(call, scheduler), timeout).send
 
-  final def taskFork[R: _task, A](call: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def taskFork[R :_task, A](call: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.fork(call), timeout).send
 
-  final def taskAsync[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
+  final def taskAsync[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.async[A] { (_, cb) =>
       callbackConsumer(tea => cb(tea.fold(Failure(_), Success(_)))); Cancelable.empty
     }, timeout).send
 
-  final def taskAsyncScheduler[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Cancelable,
+  final def taskAsyncScheduler[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Cancelable,
                                             scheduler: Scheduler,
                                              timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(_ => Task.async[A] { (_, cb) =>
@@ -110,6 +114,12 @@ trait TaskCreation extends TaskTypes {
 object TaskCreation extends TaskCreation
 
 trait TaskInterpretation extends TaskTypes {
+
+  def runAsync[A](e: Eff[Fx.fx1[TimedTask], A])(implicit sexs: ScheduledExecutorService): Task[A] =
+    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative).runNow(sexs)
+
+  def runSequential[A](e: Eff[Fx.fx1[TimedTask], A])(implicit sexs: ScheduledExecutorService): Task[A] =
+    Eff.detach(e).runNow(sexs)
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] = {
     TimedTask[Throwable Either A](sexs => task.runNow(sexs).materialize.map(t => Either.cond(t.isSuccess, t.get, t.failed.get)))
@@ -231,6 +241,12 @@ final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def taskMemo(key: AnyRef, cache: Cache)(implicit task: TimedTask /= R): Eff[R, A] =
     TaskInterpretation.taskMemo(key, cache, e)
+
+  def runAsync(implicit sexs: ScheduledExecutorService, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
+    TaskInterpretation.runAsync(e)
+
+  def runSequential(implicit sexs: ScheduledExecutorService, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
+    TaskInterpretation.runSequential(e)
 }
 
 object TaskInterpretation extends TaskInterpretation

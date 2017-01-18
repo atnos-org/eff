@@ -13,6 +13,9 @@ trait state {
     def runState[S](s: S)(implicit member: Member[State[S, ?], R]): Eff[member.Out, (A, S)] =
       StateInterpretation.runState(s)(e)(member.aux)
 
+    def runStateU[S, U](s: S)(implicit member: Member.Aux[State[S, ?], R, U]): Eff[U, (A, S)] =
+      StateInterpretation.runState(s)(e)(member)
+
     def runStateZero[S : Monoid](implicit member: Member[State[S, ?], R]): Eff[member.Out, (A, S)] =
       StateInterpretation.runStateZero(e)(Monoid[S], member.aux)
 

@@ -12,9 +12,11 @@ import io.catbird.util._
 import org.atnos.eff.Async._
 import org.atnos.eff.SubscribeEffect.{AttemptedSubscribe, _}
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.{NoFx, interpret, _}
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 case class AsyncTwitterFutures(
   fp: FuturePool = FuturePool.unboundedPool,
   timer: Timer = new ScheduledThreadPoolTimer) extends AsyncInterpreter[Future] { outer =>

@@ -8,13 +8,14 @@ import com.twitter
 import com.twitter.util.{Await, Future}
 import org.atnos.eff._
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 import org.scalacheck._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.ThrownExpectations
 
-class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = sequential ^ s2"""
 
  Async effects can be implemented with an AsyncFuture service                       $e1
  Async effects can be attempted                                                     $e2
@@ -61,8 +62,9 @@ class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification w
     Await.result(action[S].asyncAttempt.runOption.runAsyncFuture) must beSome(beLeft(boomException))
   }
 
-  def e3 = prop { ls: List[Int] =>
+  def e3 = {
     val messages: ListBuffer[Int] = new ListBuffer[Int]
+    val delays = List(600, 200, 400, 800)
 
     def action[R :_async](i: Int): Eff[R, Int] =
       asyncFork {
@@ -71,16 +73,16 @@ class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification w
         i
       }
 
-    val run = Eff.traverseA(ls)(i => action[S](i))
-    eventually(retries = 5, sleep = 1.second) {
+    val run = asyncFork[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action[S])
+    eventually(retries = 5, sleep = 0.seconds) {
       messages.clear
       Await.result(run.runOption.runAsyncFuture)
 
       "the messages are ordered" ==> {
-        messages.toList ==== ls.sorted
+        messages.toList ==== delays.sorted
       }
     }
-  }.set(minTestsOk = 5).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
+  }
 
   def e4 = {
     val list = (1 to 5000).toList
@@ -104,7 +106,7 @@ class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification w
       if (i == 0) Future(Eff.pure(1))
       else        Future(suspend(loop(i - 1)).map(_ + 1))
 
-    eventually(retries = 5, sleep = 1.second) {
+    eventually(retries = 5, sleep = 0.seconds) {
       Await.result(suspend(loop(100000)).runAsyncFuture) must not(throwAn[Exception])
     }
   }
@@ -114,13 +116,12 @@ class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification w
   }
 
   def e8 = {
-    lazy val slow = { sleepFor(200.millis); 1 }
-    Await.result(asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsyncFuture) must beLeft
+    Await.result(asyncFork({ sleepFor(10000.millis); 1 }, timeout = Option(50.millis)).asyncAttempt.runAsyncFuture) must beLeft
   }
 
   def e9 = {
     type S = Fx.fx1[Async]
-    def makeRequest[R: _async] = asyncFork[R, Unit](boom)
+    def makeRequest[R :_async] = asyncFork[R, Unit](boom)
 
     { Await.ready(
       makeRequest[S].runAsyncFuture,
@@ -149,7 +150,7 @@ class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification w
   def e12 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
 
     Await.result((makeRequest >> makeRequest).runAsyncFuture) must be_==(1)
     invocationsNumber must be_==(1)
@@ -159,7 +160,7 @@ class AsyncTwitterFuturesSpec(implicit ee: ExecutionEnv) extends Specification w
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
     Await.result((makeRequest >> makeRequest).asyncAttempt.runAsyncFuture) must beRight(1)
 
     invocationsNumber must be_==(1)

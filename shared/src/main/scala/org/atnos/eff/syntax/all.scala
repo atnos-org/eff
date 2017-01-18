@@ -15,7 +15,6 @@ trait all extends
   state    with
   safe     with
   batch    with
-  async    with
   memo     with
   eff
 

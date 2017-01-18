@@ -121,68 +121,68 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
   private val queue = new ReferenceQueue[K]
 
   override def putIfAbsent(key: K, value: V): V = {
-    purgeKeys()
+    purgeKeys
     map.putIfAbsent(newKey(key), value)
   }
 
   def get(key: Object): V =  {
-    purgeKeys()
+    purgeKeys
     map.get(new WeakReference[Object](key, null))
   }
 
   def clear(): Unit = {
-    purgeKeys()
-    map.clear()
+    purgeKeys
+    map.clear
   }
   
   def containsKey(key: Any): Boolean = {
-    purgeKeys()
+    purgeKeys
     map.containsKey(new WeakReference[K](key.asInstanceOf[K], null))
   }
 
   def containsValue(value: Object): Boolean = {
-    purgeKeys()
+    purgeKeys
     map.containsValue(value)
   }
 
   def isEmpty: Boolean = {
-    purgeKeys()
+    purgeKeys
     map.isEmpty
   }
 
   def remove(key: Any): V = {
-    purgeKeys()
+    purgeKeys
     map.remove(new WeakReference[K](key.asInstanceOf[K], null))
   }
 
   def size: Int = {
-    purgeKeys()
+    purgeKeys
     map.size
   }
 
   def put(key: K, value: V): V =  {
-    purgeKeys()
+    purgeKeys
     map.put(newKey(key), value)
   }
 
   def keySet(): java.util.Set[K] = {
     new util.AbstractSet[K] {
       def iterator: java.util.Iterator[K] = {
-        purgeKeys()
+        purgeKeys
         new WeakSafeIterator[K, WeakReference[K]](map.keySet.iterator) {
           def extract(u: WeakReference[K]): K = u.get
         }
       }
 
       override def contains(o: Object): Boolean = ConcurrentWeakIdentityHashMap.this.containsKey(o)
-      def size: Int = map.size
+      def size = map.size
     }
 
   }
 
   def entrySet(): java.util.Set[java.util.Map.Entry[K,V]] =     new util.AbstractSet[java.util.Map.Entry[K,V]] {
     def iterator: java.util.Iterator[java.util.Map.Entry[K,V]] = {
-      purgeKeys()
+      purgeKeys
       new WeakSafeIterator[java.util.Map.Entry[K,V], java.util.Map.Entry[WeakReference[K], V]](map.entrySet.iterator) {
         def extract(u: java.util.Map.Entry[WeakReference[K], V]): java.util.Map.Entry[K,V] = {
           val key = u.getKey.get
@@ -191,22 +191,22 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
         }
       }
     }
-    def size: Int = map.size
+    def size = map.size
   }
 
   def putAll(m: java.util.Map[_ <: K, _ <: V]): Unit = {
-    purgeKeys()
+    purgeKeys
     import scala.collection.JavaConverters._
     m.entrySet.asScala.foreach(e => map.put(newKey(e.getKey), e.getValue))
   }
 
   def values: java.util.Collection[V] = {
-    purgeKeys()
+    purgeKeys
     map.values
   }
 
   
-  private def purgeKeys(): Unit = {
+  private def purgeKeys: Unit = {
     var reference = queue.poll
     while (reference != null) {
       reference = queue.poll
@@ -230,10 +230,10 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
   }
 
   private abstract class WeakSafeIterator[T, U](weakIterator: java.util.Iterator[U]) extends java.util.Iterator[T] {
-    advance()
+    advance
     private var strongNext: T = null.asInstanceOf[T]
 
-    def advance(): Unit  = {
+    def advance: Unit  = {
       while (weakIterator.hasNext) {
         val nextU = weakIterator.next
         strongNext = extract(nextU)
@@ -246,11 +246,11 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
 
     def next: T = {
       val next = strongNext
-      advance()
+      advance
       next
     }
 
-    override def remove() = throw new UnsupportedOperationException()
+    override def remove = throw new UnsupportedOperationException()
 
     def extract(u: U): T
   }

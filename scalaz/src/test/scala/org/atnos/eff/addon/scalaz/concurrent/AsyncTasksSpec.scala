@@ -3,6 +3,7 @@ package org.atnos.eff.addon.scalaz.concurrent
 import cats.implicits._
 import org.atnos.eff._
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
@@ -16,13 +17,12 @@ import org.scalacheck._
 import org.specs2.matcher.TaskMatchers._
 import AsyncTasks._
 
-class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = "scalaz task".title ^ s2"""
+class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = "scalaz task".title ^ sequential ^ s2"""
 
  Async effects can be implemented with an AsyncTask service $e1
  Async effects can be attempted                             $e2
  Async effects can be executed concurrently                 $e3
  Async effects are stacksafe                                $e4
- Async effects can trampoline a Task                        $e5
  An Async forked computation can be timed out               $e6
 
  Simple Async calls can be memoized                 $e7
@@ -46,7 +46,7 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       b <- asyncFork(20)
     } yield a + b
 
-    eventually(retries = 5, sleep = 1.second) {
+    eventually(retries = 5, sleep = 0.seconds) {
       action[S].runOption.runAsync must returnValue(beSome(30))
     }
   }
@@ -57,14 +57,15 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       b <- asyncFork { boom; 20 }
     } yield a + b
 
-    eventually(retries = 5, sleep = 1.second) {
+    eventually(retries = 5, sleep = 0.seconds) {
       action[S].asyncAttempt.runOption.runAsync must returnValue(beSome(beLeft(boomException)))
     }
   }
 
-  def e3 = prop { ls: List[Int] =>
+  def e3 = {
 
     val messages: ListBuffer[Int] = new ListBuffer[Int]
+    val delays = List(600, 200, 400, 800)
 
     def action[R :_async](i: Int): Eff[R, Int] =
       asyncFork {
@@ -73,23 +74,23 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
         i
       }
 
-    val actions = Eff.traverseA(ls)(i => action[S](i))
+    val actions = asyncFork[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action[S])
 
-    eventually(retries = 5, sleep = 1.second) {
+    eventually(retries = 5, sleep = 0.seconds) {
       messages.clear
       actions.runOption.runAsync.unsafePerformSync
 
       "the messages are ordered" ==> {
-        messages.toList ==== ls.sorted
+        messages.toList ==== delays.sorted
       }
     }
-  }.set(minTestsOk = 5).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
+  }
 
   def e4 = {
     val list = (1 to 5000).toList
     val action = list.traverse(i => asyncFork[S, String](i.toString))
 
-    eventually(retries = 5, sleep = 1.second) {
+    eventually(retries = 5, sleep = 0.seconds) {
       action.runOption.runAsync must returnValue(beSome(list.map(_.toString)))
     }
   }
@@ -105,8 +106,7 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   }
 
   def e6 = {
-    lazy val slow = { sleepFor(200.millis); 1 }
-    asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsync must returnValue(beLeft[Throwable])
+    asyncFork({ sleepFor(10000.millis); 1 }, timeout = Option(50.millis)).asyncAttempt.runAsync must returnValue(beLeft[Throwable])
   }
 
   def e7 = {
@@ -130,7 +130,7 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   def e9 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
 
     (makeRequest >> makeRequest).runAsync must returnValue(1)
     invocationsNumber must be_==(1)
@@ -140,7 +140,7 @@ class AsyncTasksSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
     (makeRequest >> makeRequest).asyncAttempt.runAsync must returnValue(Right(1))
 
     invocationsNumber must be_==(1)

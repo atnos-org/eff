@@ -32,6 +32,9 @@ class EitherEffectSpec extends Specification with ScalaCheck { def is = s2"""
  left values can be accumulated in the applicative case if they have a Semigroup instance
    when running the effect $runEitherWithCombine
 
+ runEitherU can also run the Either effect monad  $runEitherU
+ runEither can run two Either effects             $runTwoEither
+
 """
 
   def EitherCreation = prop { stringOrInt: String Either Int =>
@@ -188,6 +191,26 @@ class EitherEffectSpec extends Specification with ScalaCheck { def is = s2"""
       EitherEffect.left[R, String, Int]("c")
 
     action.runEitherCombine.run must beLeft("abc")
+  }
+
+  def runEitherU = {
+    type S = Fx.fx1[EitherString]
+
+    val either: Eff[S, Int] = fromEither(Right(3))
+
+    either.runEitherU.run === Right(3)
+  }
+
+  def runTwoEither = {
+    type EitherInt[A] = Int Either A
+    type S = Fx.fx2[EitherString, EitherInt]
+
+    val either: Eff[S, Int] = fromEither(Right[Int, Int](3))
+
+    val e1: Either[Int, Either[String, Int]] = either.runEither[String].runEither[Int].run
+    val e2: Either[String, Either[Int, Int]] = either.runEither[Int].runEither[String].run
+
+    e1 === Right(Right(3)) && e2 === Right(Right(3))
   }
 }
 

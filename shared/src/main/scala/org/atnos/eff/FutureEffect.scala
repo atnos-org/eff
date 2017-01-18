@@ -30,7 +30,7 @@ object FutureCreation extends FutureCreation
     }
   }
 
-  final object TimedFuture {
+  object TimedFuture {
 
     final def ApplicativeTimedFuture: Applicative[TimedFuture] = new Applicative[TimedFuture] {
       override def pure[A](x: A) = TimedFuture((_, _) => Future.successful(x))
@@ -62,41 +62,42 @@ object FutureCreation extends FutureCreation
   }
 
 trait FutureTypes {
-
   type _future[R] = TimedFuture |= R
   type _Future[R] = TimedFuture <= R
 }
 
 trait FutureCreation extends FutureTypes {
 
-  final def futureWithExecutors[R: _future, A](c: (ScheduledExecutorService, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def fromFutureWithExecutors[R :_future, A](c: (ScheduledExecutorService, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TimedFuture, R, A](TimedFuture(c, timeout))
 
-  final def future[R: _future, A](c: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def fromFuture[R :_future, A](c: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TimedFuture, R, A](TimedFuture((_, _) => c, timeout))
 
-  final def futureCB[R: _future, A](c: (ScheduledExecutorService, ExecutionContext) => Future[A],
-                                    timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    send[TimedFuture, R, A](TimedFuture(c, timeout))
-
-  final def futureFailed[R: _future, A](t: Throwable): Eff[R, A] =
+  final def futureFail[R :_future, A](t: Throwable): Eff[R, A] =
     send[TimedFuture, R, A](TimedFuture((_, _) => Future.failed(t)))
 
-  final def futureFromEither[R: _future, A](e: Throwable Either A): Eff[R, A] =
-    e.fold(futureFailed[R, A], Eff.pure[R, A])
+  final def futureFromEither[R :_future, A](e: Throwable Either A): Eff[R, A] =
+    e.fold(futureFail[R, A], Eff.pure[R, A])
 
-  final def futureDelay[R: _future, A](a: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def futureDelay[R :_future, A](a: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TimedFuture, R, A](TimedFuture((_, ec) => Future(a)(ec), timeout))
 
-  final def futureFork[R: _future, A](a: => A, ec: ExecutionContext, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def futureFork[R :_future, A](a: => A, ec: ExecutionContext, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TimedFuture, R, A](TimedFuture((_, _) => Future(a)(ec), timeout))
 
-  final def futureDefer[R: _future, A](a: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def futureDefer[R :_future, A](a: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TimedFuture, R, A](TimedFuture((_, _) => a, timeout))
 
 }
 
 trait FutureInterpretation extends FutureTypes {
+
+  def runAsync[A](e: Eff[Fx.fx1[TimedFuture], A])(implicit sexs: ScheduledExecutorService, exc: ExecutionContext): Future[A] =
+    Eff.detachA(e)(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(sexs, exc)
+
+  def runSequential[A](e: Eff[Fx.fx1[TimedFuture], A])(implicit sexs: ScheduledExecutorService, exc: ExecutionContext): Future[A] =
+    Eff.detach(e).runNow(sexs, exc)
 
   final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, Throwable Either A] = {
     e match {
@@ -217,6 +218,12 @@ final class FutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def futureMemo(key: AnyRef, cache: Cache)(implicit future: TimedFuture /= R): Eff[R, A] =
     FutureInterpretation.futureMemo(key, cache, e)
+
+  def runAsync(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedFuture], A]): Future[A] =
+    FutureInterpretation.runAsync(e)
+
+  def runSequential(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedFuture], A]): Future[A] =
+    FutureInterpretation.runSequential(e)
 }
 
 object FutureInterpretation extends FutureInterpretation

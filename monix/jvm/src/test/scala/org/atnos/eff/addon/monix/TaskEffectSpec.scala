@@ -16,7 +16,7 @@ import org.atnos.eff._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "monix task".title ^ s2"""
+class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "monix task".title ^ sequential ^ s2"""
 
  Tasks can work as normal values                           $e1
  Task effects can be attempted                             $e2
@@ -33,13 +33,15 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
   type S = Fx.fx2[TimedTask, Option]
 
+  implicit val ses = ee.ses
+
   def e1 = {
     def action[R :_task :_option]: Eff[R, Int] = for {
       a <- taskDelay(10)
       b <- taskDelay(20)
     } yield a + b
 
-    action[S].runOption.detach.runNow(ee.ses).runAsync must beSome(30).await(retries = 5, timeout = 5.seconds)
+    action[S].runOption.runSequential.runAsync must beSome(30).await(retries = 5, timeout = 5.seconds)
   }
 
   def e2 = {
@@ -48,11 +50,12 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       b <- taskDelay { boom; 20 }
     } yield a + b
 
-    action[S].taskAttempt.runOption.detach.runNow(ee.ses).runAsync must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
+    action[S].taskAttempt.runOption.runSequential.runAsync must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
   }
 
-  def e3 = prop { ls: List[Int] =>
+  def e3 = {
     val messages: ListBuffer[Int] = new ListBuffer[Int]
+    val delays = List(600, 200, 400, 800)
 
     def action(i: Int): Eff[S, Unit] =
       taskFork(Task.delay {
@@ -60,18 +63,18 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
         messages.append(i)
       })
 
-    val run = Eff.traverseA(ls)(action)
+    val run = taskDelay[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action)
 
-    eventually(retries = 5, sleep = 1.second) {
+    eventually(retries = 5, sleep = 0.seconds) {
       messages.clear
-      Await.result(run.runOption.detachA(TimedTask.TimedTaskApplicative).runNow(ee.ses).runAsync, 3.seconds)
+      Await.result(run.runOption.runAsync.runAsync, 3.seconds)
 
       "the messages are ordered" ==> {
-        messages.toList ==== ls.sorted
+        messages.toList ==== delays.sorted
       }
     }
 
-  }.set(minTestsOk = 10).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
+  }
 
   def e5 = {
     type R = Fx.fx1[TimedTask]
@@ -80,12 +83,11 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       if (i == 0) Task.now(Eff.pure(1))
       else Task.now(taskSuspend(loop(i - 1)).map(_ + 1))
 
-    Await.result(taskSuspend(loop(100000)).detach.runNow(ee.ses).runAsync, 10 seconds) must not(throwAn[Exception])
+    Await.result(taskSuspend(loop(100000)).runSequential.runAsync, Duration.Inf) must not(throwAn[Exception])
   }
 
   def e6 = {
-    lazy val slow = { sleepFor(200.millis); 1 }
-    taskDelay(slow, timeout = Some(50.millis)).taskAttempt.detach.runNow(ee.ses).runAsync must beLeft[Throwable].await
+    taskDelay({ sleepFor(10000.millis); 1 }, timeout = Some(50.millis)).taskAttempt.runSequential.runAsync must beLeft[Throwable].awaitFor(20.seconds)
   }
 
   def e7 = {
@@ -93,7 +95,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val cache = ConcurrentHashMapCache()
     def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }))
 
-    (makeRequest >> makeRequest).detach.runNow(ee.ses).runAsync must be_==(1).await
+    (makeRequest >> makeRequest).runSequential.runAsync must be_==(1).await
     invocationsNumber must be_==(1)
   }
 
@@ -102,16 +104,16 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val cache = ConcurrentHashMapCache()
     def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }))
 
-    (makeRequest >> makeRequest).taskAttempt.detach.runNow(ee.ses).runAsync must beRight(1).await
+    (makeRequest >> makeRequest).taskAttempt.runSequential.runAsync must beRight(1).await
     invocationsNumber must be_==(1)
   }
 
   def e9 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
 
-    (makeRequest >> makeRequest).detach.runNow(ee.ses).runAsync must be_==(1).await
+    (makeRequest >> makeRequest).runSequential.runAsync must be_==(1).await
     invocationsNumber must be_==(1)
   }
 
@@ -119,8 +121,8 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    def makeRequest = taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)).taskMemo("only once", cache)
-      (makeRequest >> makeRequest).taskAttempt.detach.runNow(ee.ses).runAsync must beRight(1).await
+    def makeRequest = taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)).taskMemo("only once", cache)
+      (makeRequest >> makeRequest).taskAttempt.runSequential.runAsync must beRight(1).await
 
     invocationsNumber must be_==(1)
   }

@@ -3,6 +3,7 @@ package org.atnos.eff.addon.fs2
 import java.util.concurrent.{ExecutorService, ScheduledExecutorService, TimeoutException}
 
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 import cats._
 import cats.implicits._
@@ -17,6 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Either, Failure, Left, Right, Success}
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 case class AsyncTasks()(implicit s: Strategy, sc: Scheduler, es: ExecutorServices) extends AsyncInterpreter[Task] { outer =>
 
   implicit val TaskApplicative: Applicative[Task] = new Applicative[Task] {
@@ -24,7 +26,12 @@ case class AsyncTasks()(implicit s: Strategy, sc: Scheduler, es: ExecutorService
       Task.now(x)
 
     def ap[A, B](ff: Task[A => B])(fa: Task[A]): Task[B] =
-      Task.parallelTraverse(Seq(ff, fa))(identity)(s).map(v => v(0).asInstanceOf[A => B](v(1).asInstanceOf[A]))
+      for {
+        fStarted <- Task.start(ff)
+        aStarted <- Task.start(fa)
+        fDone <- fStarted
+        aDone <- aStarted
+      } yield fDone(aDone)
 
     override def toString = "Applicative[Task]"
   }
@@ -131,7 +138,8 @@ case class AsyncTasks()(implicit s: Strategy, sc: Scheduler, es: ExecutorService
 
 }
 
-trait AsyncTaskInterpreter  {
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
+trait AsyncTaskInterpreter {
 
   def create(implicit es: ExecutorService, s: ScheduledExecutorService): AsyncTasks =
     fromExecutorServices(ExecutorServices.fromExecutorServices(es, s))
