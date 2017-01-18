@@ -84,6 +84,12 @@ lazy val commonJsSettings = Seq(
   requiresDOM := false,
   libraryDependencies ++= catsJs,
   jsEnv := NodeJSEnv().value
+) ++ disableTests
+
+def disableTests = Seq(
+  test := {},
+  testQuick := {},
+  testOnly := {}
 )
 
 lazy val commonJvmSettings = Seq(
