@@ -3,6 +3,7 @@ package org.atnos.eff.addon.monix
 import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 import cats._
 import implicits._
@@ -15,6 +16,7 @@ import org.atnos.eff.SubscribeEffect.{Callback => _, _}
 import scala.concurrent.duration.FiniteDuration
 import scala.util._
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 trait AsyncTasks extends AsyncInterpreter[Task] { outer =>
 
   def suspend[R :_async, A](task: =>Task[Eff[R, A]])(implicit s: Scheduler): Eff[R, A] =
@@ -91,6 +93,7 @@ trait AsyncTasks extends AsyncInterpreter[Task] { outer =>
 
 }
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 object AsyncTasks extends AsyncTasks {
 
   def TaskApplicative: Applicative[Task] = new Applicative[Task] {

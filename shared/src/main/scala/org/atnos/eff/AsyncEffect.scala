@@ -9,10 +9,13 @@ import org.atnos.eff.all._
 import scala.concurrent.duration.FiniteDuration
 import SubscribeEffect._
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 trait AsyncEffect extends AsyncCreation
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 object AsyncEffect extends AsyncEffect
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 trait AsyncCreation {
 
   type _async[R] = Async |= R
@@ -51,8 +54,10 @@ trait AsyncCreation {
 
 }
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 object AsyncCreation extends AsyncCreation
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 trait AsyncInterpretation {
 
   def asyncAttempt[R, A](e: Eff[R, A])(implicit async: Async /= R): Eff[R, Throwable Either A] = {
@@ -150,6 +155,7 @@ trait AsyncInterpretation {
   }
 }
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 final class AsyncOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def asyncAttempt(implicit async: Async /= R): Eff[R, Throwable Either A] =
     AsyncInterpretation.asyncAttempt(e)
@@ -158,25 +164,32 @@ final class AsyncOps[R, A](val e: Eff[R, A]) extends AnyVal {
     AsyncInterpretation.asyncMemo(cache)(e)
 }
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 object AsyncInterpretation extends AsyncInterpretation
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 sealed trait Async[A] extends Any {
   def memoize(key: AnyRef, sequenceKey: Int, cache: Cache): Async[A]
 }
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 case class AsyncNow[A](a: A) extends Async[A] {
   def memoize(key: AnyRef, sequenceKey: Int, cache: Cache) = this
 }
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 case class AsyncFailed[A](t: Throwable) extends Async[A] {
   def memoize(key: AnyRef, sequenceKey: Int, cache: Cache) = this
 }
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 case class AsyncDelayed[A](a: Eval[A]) extends Async[A] {
   def memoize(key: AnyRef, sequenceKey: Int, cache: Cache) = AsyncDelayed(a.memoize)
 }
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 case class AsyncEff[A](e: Eff[FS, A], timeout: Option[FiniteDuration] = None) extends Async[A] {
   def memoize(key: AnyRef, sequenceKey: Int, cache: Cache) = AsyncEff(SubscribeEffect.memoize(key, sequenceKey, cache, e), timeout)
 }
 
+@deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
 object Async {
 
   implicit def AsyncCached: SequenceCached[Async] = new SequenceCached[Async] {

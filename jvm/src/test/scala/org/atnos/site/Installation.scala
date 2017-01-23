@@ -20,10 +20,10 @@ libraryDependencies += "org.atnos" %% "eff-scalaz" % "2.0.0"
 ```
 
 This will allows you to use the `Eff` monad as a Scalaz `Monad` (instead of the cats `Monad` which is the default implementation).
-The `eff-scalaz` dependency is also necessary if you want to use scalaz `Task` as the implementation for the `Async` effect
+The `eff-scalaz` dependency is also necessary if you want to use scalaz `Task` as an effect.
 (see $OutOfTheBox).
 
-On the other hand if you prefer to use [Monix](http://monix.io) as the implementation for the `Async` effect you will need
+On the other hand if you prefer to use [Monix](http://monix.io) `Task`, you will need
 a dependency on `eff-monix`:
 
 ```scala

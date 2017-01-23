@@ -2,6 +2,7 @@ package org.atnos.eff
 
 import cats.implicits._
 import org.atnos.eff.all._
+import org.atnos.eff.async._
 import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
@@ -15,7 +16,7 @@ import org.specs2.matcher.ThrownExpectations
 
 import scala.util.control._
 
-class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = sequential ^ s2"""
 
  Async effects can be implemented with an AsyncFuture service $e1
  Async effects can be attempted                               $e2
@@ -67,8 +68,9 @@ class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with Sca
     action[S].asyncAttempt.runOption.runAsyncFuture must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
   }
 
-  def e3 = prop { ls: List[Int] =>
+  def e3 = {
     val messages: ListBuffer[Int] = new ListBuffer[Int]
+    val delays = List(600, 200, 400, 800)
 
     def action[R :_async](i: Int): Eff[R, Int] =
       asyncFork {
@@ -77,16 +79,16 @@ class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with Sca
         i
       }
 
-    val run = Eff.traverseA(ls)(i => action[S](i))
-    eventually(retries = 5, sleep = 1.second) {
+    val run = asyncFork[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(i => action[S](i))
+    eventually(retries = 5, sleep = 0.seconds) {
       messages.clear
       Await.result(run.runOption.runAsyncFuture, 5 seconds)
 
       "the messages are ordered" ==> {
-        messages.toList ==== ls.sorted
+        messages.toList ==== delays.sorted
       }
     }
-  }.set(minTestsOk = 5).setGen(Gen.const(scala.util.Random.shuffle(List(10, 200, 300, 400, 500))))
+  }
 
   def e4 = {
     val list = (1 to 5000).toList
@@ -110,8 +112,8 @@ class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with Sca
       if (i == 0) Future.successful(Eff.pure(1))
       else        Future.successful(suspend(loop(i - 1)).map(_ + 1))
 
-    eventually(retries = 5, sleep = 1.second) {
-      Await.result(suspend(loop(100000)).runAsyncFuture, 10.seconds) must not(throwAn[Exception])
+    eventually(retries = 5, sleep = 0.seconds) {
+      Await.result(suspend(loop(100000)).runAsyncFuture, Duration.Inf) must not(throwAn[Exception])
     }
   }
 
@@ -120,8 +122,7 @@ class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   }
 
   def e8 = {
-    lazy val slow = { sleepFor(200.millis); 1 }
-    asyncFork(slow, timeout = Option(50.millis)).asyncAttempt.runAsyncFuture must beLeft.await
+    asyncFork({ sleepFor(10000.millis); 1 }, timeout = Option(50.millis)).asyncAttempt.runAsyncFuture must beLeft.awaitFor(20.seconds)
   }
 
   def e9 = {
@@ -145,7 +146,7 @@ class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   def e11 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
 
     (makeRequest >> makeRequest).runAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)
@@ -155,7 +156,7 @@ class AsyncFuturesSpec(implicit ee: ExecutionEnv) extends Specification with Sca
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(100.millis)))
+    val makeRequest = asyncMemo(cache)(asyncFork({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
     (makeRequest >> makeRequest).asyncAttempt.runAsyncFuture must beRight(1).await
 
     invocationsNumber must be_==(1)

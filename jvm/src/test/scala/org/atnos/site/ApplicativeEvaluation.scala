@@ -1,62 +1,61 @@
 package org.atnos.site
 
+import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
+
+
 object ApplicativeEvaluation extends UserGuidePage { def is = "Applicative".title ^ s2"""
 
 ### Concurrent evaluation
 
 The default interpretation of `Eff` values is "monadic" meaning that effectful values are being evaluated in order. This
   becomes clear when traversing a list of values with the `FutureEffect`:${snippet{
-import org.atnos.eff._, all._, syntax.all._
+import org.atnos.eff._, all._, future._, syntax.all._
 import cats.Eval
 import cats.data.Writer
 import cats.syntax.traverse._
 import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
-import Async._
 
 type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
-type S = Fx.fx3[Eval, Async, WriterString]
+type S = Fx.fx3[Eval, TimedFuture, WriterString]
 
-val futureService = AsyncFutures.create
-import futureService._
+implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
 
-def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
+def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
     i1 <- delay(i)
-    i2 <- asyncFork(i1)
+    i2 <- futureDelay(i1)
     _  <- tell(i2.toString)
   } yield i2
 
 val action: Eff[S, List[Int]] =
   List(1000, 500, 50).traverse(execute[S])
 
-Await.result(action.runEval.runWriterLog.runAsyncFuture, 2.seconds)
+Await.result(action.runEval.runWriterLog.runSequential, 2.seconds)
 
 }.eval}
 
 
 We can however run all those computations concurrently using the applicative execution for `Eff`:${snippet{
  // 8<--
-import org.atnos.eff._, all._, syntax.all._
+import org.atnos.eff._, all._, future._, syntax.all._
 import cats.Eval
 import cats.data.Writer
 import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
-import Async._
 
 type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
-type S = Fx.fx3[Eval, Async, WriterString]
-val futureService = AsyncFutures.create
-import futureService._
+type S = Fx.fx3[Eval, TimedFuture, WriterString]
+val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
 
-def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
+def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
     i1 <- delay(i)
-    i2 <- asyncFork(i1)
+    i2 <- futureDelay(i1)
     _  <- tell(i2.toString)
   } yield i2
 // 8<--
@@ -64,7 +63,8 @@ def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
 val action: Eff[S, List[Int]] =
   List(1000, 500, 50).traverseA(execute[S])
 
-Await.result(action.runEval.runWriterLog.runAsyncFuture, 2.seconds)
+Await.result(Eff.detachA(action.runEval.runWriterLog[String])(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(ses, global
+), 2.seconds)
 }.eval}
 
 This uses now `traverseA` (instead of `traverse`) to do an applicative traversal and execute futures concurrently and

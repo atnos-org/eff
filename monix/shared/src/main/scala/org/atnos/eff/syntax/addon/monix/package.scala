@@ -1,5 +1,5 @@
 package org.atnos.eff.syntax.addon
 
-import org.atnos.eff.addon.monix.AsyncTasks
+import org.atnos.eff.addon.monix.TaskEffect
 
-package object monix extends AsyncTasks
+package object monix extends TaskEffect

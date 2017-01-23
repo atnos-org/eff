@@ -60,10 +60,16 @@ sealed trait Eff[R, A] {
     EffApplicative[R].ap(f)(this)
 
   def *>[B](fb: Eff[R, B]): Eff[R, B] =
-    EffApplicative.product(this, fb).map { case (a, b) => b }
+    EffApplicative[R].map2(this, fb) { case (_, b) => b }
 
   def <*[B](fb: Eff[R, B]): Eff[R, A] =
-    EffApplicative.product(this, fb).map { case (a, b) => a }
+    EffApplicative[R].map2(this, fb) { case (a, _) => a }
+
+  def >>[B](fb: Eff[R, B]): Eff[R, B] =
+    flatMap(_ => fb)
+
+  def <<[B](fb: Eff[R, B]): Eff[R, A] =
+    flatMap(a => fb.map(_ => a))
 
   def flatMap[B](f: A => Eff[R, B]): Eff[R, B] =
     EffMonad[R].flatMap(this)(f)
@@ -138,13 +144,14 @@ object Eff extends EffCreation with
 trait EffImplicits {
 
   /**
-   * Monad implementation for the Eff[R, ?] type
-   */
-  implicit final def EffMonad[R]: Monad[Eff[R, ?]] = new Monad[Eff[R, ?]] {
-    def pure[A](a: A): Eff[R, A] =
+    * Monad implementation for the Eff[R, ?] type
+    */
+  final val effMonadUnsafe: Monad[Eff[AnyRef, ?]] = new Monad[Eff[AnyRef, ?]] {
+
+    def pure[A](a: A): Eff[AnyRef, A] =
       Pure(a)
 
-    override def map[A, B](fa: Eff[R, A])(f: A => B): Eff[R, B] =
+    override def map[A, B](fa: Eff[AnyRef, A])(f: A => B): Eff[AnyRef, B] =
       fa match {
         case Pure(a, l) =>
           pure(f(a)).addLast(l)
@@ -157,9 +164,9 @@ trait EffImplicits {
       }
 
     /**
-     * When flatMapping the last action must still be executed after the next action
-     */
-    def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
+      * When flatMapping the last action must still be executed after the next action
+      */
+    def flatMap[A, B](fa: Eff[AnyRef, A])(f: A => Eff[AnyRef, B]): Eff[AnyRef, B] =
       fa match {
         case Pure(a, l) =>
           f(a).addLast(l)
@@ -171,22 +178,24 @@ trait EffImplicits {
           ImpureAp(unions, continuation.append(f), last)
       }
 
-    def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
+    // this is not tail-recursive.
+    // There may be a solution if your output monad is trampolined.
+    def tailRecM[A, B](a: A)(f: A => Eff[AnyRef, Either[A, B]]): Eff[AnyRef, B] =
       flatMap(f(a)) {
         case Right(b)   => pure(b)
         case Left(next) => tailRecM(next)(f)
       }
-
   }
 
-  def EffApplicative[R]: Applicative[Eff[R, ?]] = new Applicative[Eff[R, ?]] {
-    def pure[A](a: A): Eff[R, A] =
+  final val effApplicativeUnsafe: Applicative[Eff[AnyRef, ?]] = new Applicative[Eff[AnyRef, ?]] {
+
+    def pure[A](a: A): Eff[AnyRef, A] =
       Pure(a)
 
-    override def product[A, B](fa: Eff[R, A], fb: Eff[R, B]): Eff[R, (A, B)] =
+    override def product[A, B](fa: Eff[AnyRef, A], fb: Eff[AnyRef, B]): Eff[AnyRef, (A, B)] =
       ap(map(fb)(b => (a: A) => (a, b)))(fa)
 
-    def ap[A, B](ff: Eff[R, A => B])(fa: Eff[R, A]): Eff[R, B] =
+    def ap[A, B](ff: Eff[AnyRef, A => B])(fa: Eff[AnyRef, A]): Eff[AnyRef, B] =
       fa match {
         case Pure(a, last) =>
           ff match {
@@ -211,6 +220,10 @@ trait EffImplicits {
 
       }
   }
+
+  implicit final def EffMonad[R]: Monad[Eff[R, ?]] = effMonadUnsafe.asInstanceOf[Monad[Eff[R, ?]]]
+
+  final def EffApplicative[R]: Applicative[Eff[R, ?]] = effApplicativeUnsafe.asInstanceOf[Applicative[Eff[R, ?]]]
 
 }
 

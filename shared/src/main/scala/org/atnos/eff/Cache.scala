@@ -64,7 +64,6 @@ case class ConcurrentHashMapCache(map: ConcurrentHashMap[AnyRef, Eval[Any]] = ne
     map.remove(key)
     this
   }
-
 }
 
 case class ConcurrentWeakIdentityHashMapCache(
@@ -192,7 +191,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
         }
       }
     }
-    def size= map.size
+    def size = map.size
   }
 
   def putAll(m: java.util.Map[_ <: K, _ <: V]): Unit = {
