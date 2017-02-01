@@ -368,36 +368,13 @@ trait EffInterpretation {
     cache.get(key.toString).map(Eff.pure[R, A]).getOrElse(memoizeEffectSequence(e, cache, key, 0))
 
   private def memoizeEffectSequence[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef, sequenceKey: Int)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] = {
-    val action: Eff[R, A] =
-      e match {
-        case Pure(a, last) =>
-          Pure(a, last)
+    var seqKey = sequenceKey
+    def incrementSeqKey = { val s = seqKey; seqKey += 1; s }
 
-        case Impure(u, c, last) =>
-          member.extract(u) match {
-            case Some(tx) => Impure(member.inject(cached(cache, key, sequenceKey, tx)), Arrs.singleton((x: u.X) => memoizeEffectSequence(c(x), cache, key, sequenceKey + 1)), last)
-            case None     => Impure(u, Arrs.singleton((x: u.X) => memoizeEffectSequence(c(x), cache, key, sequenceKey)), last)
-          }
+    interpret.interceptNat[R, M, A](e)(new (M ~> M) {
+      override def apply[X](fa: M[X]): M[X] = cached.apply(cache, key, incrementSeqKey, fa)
+    })
 
-        case ImpureAp(unions, continuation, last) =>
-          var seqKey = sequenceKey
-          def incrementSeqKey = { val s = seqKey; seqKey += 1; s }
-
-          def materialize(u: Union[R, Any]): Union[R, Any] =
-            member.extract(u) match {
-              case Some(tx) => member.inject(cached(cache, key, incrementSeqKey, tx))
-              case None => u
-            }
-
-          val materializedUnions =
-            Unions(materialize(unions.first), unions.rest.map(materialize))
-
-          val continuation1 = Arrs.singleton[R, Vector[Any], A]((ls: Vector[Any]) => memoizeEffectSequence(continuation(ls), cache, key, seqKey))
-          ImpureAp(materializedUnions, continuation1, last)
-      }
-
-    // once all the values for Eff[R, A] have been computed, we can store the final value
-    action.map(a => cache.put(key, a))
   }
 
 }

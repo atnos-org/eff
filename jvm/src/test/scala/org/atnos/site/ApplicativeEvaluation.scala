@@ -2,6 +2,8 @@ package org.atnos.site
 
 import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
 
+import scala.annotation.tailrec
+
 
 object ApplicativeEvaluation extends UserGuidePage { def is = "Applicative".title ^ s2"""
 
@@ -103,12 +105,13 @@ def getWebUsers(is: List[Int]): List[User] = is.map(i => User(i))
 // the interpreter simply calls the webservice
 // and return a trace of the executed call
 def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
+  @tailrec
   def go(e: Eff[Fx1[UserDsl], A], trace: Vector[String]): (A, Vector[String]) =
     e match {
       case Pure(a,_) => (a, trace)
       case Impure(Union1(GetUser(i)), c, _)   => go(c(getWebUser(i)), trace :+ "getWebUser")
       case Impure(Union1(GetUsers(is)), c, _) => go(c(getWebUsers(is)), trace :+ "getWebUsers")
-      case ap @ ImpureAp(u, m, _)             => go(ap.toMonadic, trace)
+      case ap @ ImpureAp(_, _, _)             => go(ap.toMonadic, trace)
   }
   go(eff, Vector())
 }
