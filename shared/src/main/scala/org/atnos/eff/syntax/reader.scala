@@ -19,6 +19,10 @@ trait reader {
       implicit readerS: Member.Aux[Reader[S, ?], R, U],
                readerT: Member.Aux[Reader[T, ?], R2, U]): Eff[R2, A] =
       ReaderInterpretation.modifyReader[R, R2, U, S, T, A](e)(f)
+
+    def updateReader[T](update: T => T)(implicit r: Reader[T, ?] /= R): Eff[R, A] =
+      ReaderInterpretation.updateReader(e)(update)(r)
+
   }
 
 }

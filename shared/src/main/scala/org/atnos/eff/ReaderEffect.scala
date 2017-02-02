@@ -66,6 +66,15 @@ trait ReaderInterpretation {
       def apply[X](r: Reader[S, X]): Reader[T, X] =
         Reader((t: T) => r.run(f(t)))
     })
+
+  /**
+   * update the read value
+   */
+  def updateReader[R, T, A](e: Eff[R, A])(f: T => T)(implicit r: Reader[T, ?] /= R): Eff[R, A] =
+    interceptNat(e)(new ~>[Reader[T, ?], Reader[T, ?]] {
+      def apply[X](r: Reader[T, X]): Reader[T, X] =
+        Reader((t: T) => r.run(f(t)))
+    })
 }
 
 object ReaderInterpretation extends ReaderInterpretation

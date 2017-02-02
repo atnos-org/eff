@@ -1,5 +1,6 @@
 package org.atnos.eff
 
+import cats.Eval
 import org.specs2.Specification
 import cats.data._
 import org.atnos.eff.all._
@@ -13,6 +14,8 @@ class ReaderEffectSpec extends Specification { def is = s2"""
 
  modifyReader can be used to transform a "small" reader effect into a "bigger" one
    and stay in the same stack $modifyReaderEffect
+
+ updateReader can be used to modify the read value (but keep the same type for that value) $updateReaderEffect
 
 """
 
@@ -77,6 +80,22 @@ class ReaderEffectSpec extends Specification { def is = s2"""
     } yield s"Value: $v, env: $e"
 
     program.runReader(env).runOption.run ==== Option(s"Value: 2, env: Map()")
+  }
+
+
+  def updateReaderEffect = {
+    type ReaderInt[A] = Reader[Int, A]
+    type _ReaderInt[R] = ReaderInt /= R
+
+    type Stack = Fx.fx2[ReaderInt, Eval]
+
+    def bar[R :_ReaderInt :_eval](x: String): Eff[R, String] = for {
+      y <- ask[R, Int]
+      r <- if (y == 1) delay[R, String](x) else bar(x).updateReader((z: Int) => z - 1)
+    } yield r + "."
+
+    bar[Stack]("x").runReader(3).runEval.run ==== "x..."
+
   }
 
   case class Config(factor: Int, host: String)
