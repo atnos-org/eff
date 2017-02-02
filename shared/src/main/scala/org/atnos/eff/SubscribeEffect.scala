@@ -106,7 +106,7 @@ object SubscribeEffect {
         val materializedUnions =
           Unions(materialize(unions.first), unions.rest.map(materialize))
 
-        val continuation1 = Arrs.singleton[FS, List[Any], A]((ls: List[Any]) => memoizeSubsequence(key, sequenceKey, sub, cache, continuation(ls)))
+        val continuation1 = Arrs.singleton[FS, Vector[Any], A]((ls: Vector[Any]) => memoizeSubsequence(key, sequenceKey, sub, cache, continuation(ls)))
         ImpureAp(materializedUnions, continuation1, last)
     }
   }
