@@ -17,9 +17,9 @@ trait Batch {
         // where the result of each effect after interpretation will be at the right place as a argument to the
         // 'map' function
         collected.effects zip collected.indices match {
-          case Nil =>  eff
+          case v if v.isEmpty =>  eff
 
-          case e :: rest =>
+          case e +: rest =>
 
             // batch any effects which can be batched together
             // by using the Batched datastructure keeping track
@@ -31,14 +31,14 @@ trait Batch {
               }
             }
 
-            result.effects.toList match {
-              case Nil =>
+            result.effects match {
+              case v if v.isEmpty =>
                 eff
 
-              case e1 :: rest1 =>
+              case e1 +: rest1 =>
                 ImpureAp(Unions(m.inject(e1), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
                   // the map operation has to reorder the results based on what could be batched or not
-                  Arrs.singleton(ls => continuation(reorder(ls, result.hasBatched, result.keys.toList ++ collected.otherIndices))), last)
+                  Arrs.singleton(ls => continuation(reorder(ls, result.hasBatched, result.keys ++ collected.otherIndices))), last)
             }
         }
 
@@ -46,17 +46,17 @@ trait Batch {
     }
 
   // reorder an input list based on the expected indices for that list
-  private def reorder[T[_]](ls: List[Any], hasBatched: Boolean, indices: List[Int])(implicit batchable: Batchable[T]): List[Any] =
+  private def reorder[T[_]](ls: Vector[Any], hasBatched: Boolean, indices: Vector[Int])(implicit batchable: Batchable[T]): Vector[Any] =
     indices.zip(flatten(ls, hasBatched)).sortBy(_._1).map(_._2)
 
   // the result of batching
-  private def flatten[T[_]](ls: List[Any], hasBatch: Boolean)(implicit batchable: Batchable[T]): List[Any] =
+  private def flatten[T[_]](ls: Vector[Any], hasBatch: Boolean)(implicit batchable: Batchable[T]): Vector[Any] =
     ls match {
       case xs :+ z =>
         xs ++ batchable.distribute(z.asInstanceOf[batchable.Z])
 
-      case Nil =>
-        Nil
+      case v if v.isEmpty =>
+        Vector.empty
     }
 
 }

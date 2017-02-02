@@ -233,7 +233,7 @@ trait IntoPolyLower5 {
 
         case ImpureAp(unions, c, l) =>
           ImpureAp(unions.into(new UnionInto[U, R] { def apply[X](u: Union[U, X]) = m.accept(u) }),
-            Arrs.singleton((xs: List[Any]) => intoMember.apply(c(xs))), l.interpret(apply))
+            Arrs.singleton((xs: Vector[Any]) => intoMember.apply(c(xs))), l.interpret(apply))
       }
   }
 }

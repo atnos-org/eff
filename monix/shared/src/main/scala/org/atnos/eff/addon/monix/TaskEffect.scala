@@ -156,7 +156,7 @@ trait TaskInterpretation extends TaskTypes {
           Unions(materialize(unions.first), unions.rest.map(materialize))
 
         val collected = unions.extract(task)
-        val continuation1 = Arrs.singleton[R, List[Any], Throwable Either A] { ls: List[Any] =>
+        val continuation1 = Arrs.singleton[R, Vector[Any], Throwable Either A] { ls: Vector[Any] =>
           val xors =
             ls.zipWithIndex.collect { case (a, i) =>
               if (collected.indices.contains(i)) a.asInstanceOf[Throwable Either Any]
@@ -206,7 +206,7 @@ trait TaskInterpretation extends TaskTypes {
         val materializedUnions =
           Unions(materialize(unions.first), unions.rest.map(materialize))
 
-        val continuation1 = Arrs.singleton[R, List[Any], A]((ls: List[Any]) => taskMemo(key, cache, continuation(ls)))
+        val continuation1 = Arrs.singleton[R, Vector[Any], A]((ls: Vector[Any]) => taskMemo(key, cache, continuation(ls)))
         ImpureAp(materializedUnions, continuation1, last)
     }
   }

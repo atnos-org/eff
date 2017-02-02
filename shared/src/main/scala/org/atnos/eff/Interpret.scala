@@ -438,7 +438,7 @@ trait Interpret {
               if (collected.effects.isEmpty)
                 collected.othersEff(Arrs.singleton(x => goLast(Last.eff(continuation(x).addLast(last)))))
               else {
-                val translated: Eff[U, List[Any]] = EffApplicative.traverse(collected.effects)(tr.apply)
+                val translated: Eff[U, Vector[Any]] = EffApplicative.traverse(collected.effects)(tr.apply)
                 translated.flatMap(ls => goLast(Last.eff(collected.continuation(continuation, m).apply(ls).addLast(last))))
               }
           }
@@ -464,7 +464,7 @@ trait Interpret {
           if (collected.effects.isEmpty)
             collected.othersEff(Arrs.singleton(x => go(continuation(x).addLast(last))))
           else {
-            val translated: Eff[U, List[Any]] = EffApplicative.traverse(collected.effects)(tr.apply)
+            val translated: Eff[U, Vector[Any]] = EffApplicative.traverse(collected.effects)(tr.apply)
             translated.flatMap(ls => translate(collected.continuation(continuation, m).apply(ls).addLast(last))(tr))
           }
       }
@@ -502,7 +502,7 @@ trait Interpret {
               }
 
             case ap @ ImpureAp(unions, continuation, last) =>
-              val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).addLast(goLast(last)))
+              val translated: Eff[U, Vector[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).addLast(goLast(last)))
               translated.flatMap(ts => goLast(Last.eff(continuation(ts).addLast(last))))
           }
       }
@@ -517,7 +517,7 @@ trait Interpret {
         }
 
       case ImpureAp(unions, c, last) =>
-        val translated: Eff[U, List[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).addLast(goLast(last)))
+        val translated: Eff[U, Vector[Any]] = Eff.traverseA(unions.extract.effects)(tx => translate(tx).addLast(goLast(last)))
         translated.flatMap(ts => translateInto(c(ts).addLast(last))(translate))
     }
   }
