@@ -109,8 +109,8 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
   def go(e: Eff[Fx1[UserDsl], A], trace: Vector[String]): (A, Vector[String]) =
     e match {
       case Pure(a,_) => (a, trace)
-      case Impure(Union1(GetUser(i)), c, _)   => go(c(getWebUser(i)), trace :+ "getWebUser")
-      case Impure(Union1(GetUsers(is)), c, _) => go(c(getWebUsers(is)), trace :+ "getWebUsers")
+      case Impure(UnionTagged(GetUser(i), _), c, _)   => go(c(getWebUser(i)), trace :+ "getWebUser")
+      case Impure(UnionTagged(GetUsers(is), _), c, _) => go(c(getWebUsers(is)), trace :+ "getWebUsers")
       case ap @ ImpureAp(_, _, _)             => go(ap.toMonadic, trace)
   }
   go(eff, Vector())

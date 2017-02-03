@@ -349,8 +349,8 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     def runDsl[A](eff: Eff[Fx1[UserDsl], A]): A =
       eff match {
         case Pure(a,_) => a
-        case Impure(Union1(GetUser(i)), c, _)   => runDsl(c(getWebUser(i)))
-        case Impure(Union1(GetUsers(is)), c, _) => runDsl(c(getWebUsers(is)))
+        case Impure(UnionTagged(GetUser(i), _), c, _)   => runDsl(c(getWebUser(i)))
+        case Impure(UnionTagged(GetUsers(is), _), c, _) => runDsl(c(getWebUsers(is)))
         case ap @ ImpureAp(u, m, _)             => runDsl(ap.toMonadic)
       }
 
