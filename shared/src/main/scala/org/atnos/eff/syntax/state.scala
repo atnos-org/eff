@@ -34,6 +34,9 @@ trait state {
     def lensState[BR, U, T, S](getter: S => T, setter: (S, T) => S)(implicit m1: Member.Aux[State[T, ?], R, U], m2: Member.Aux[State[S, ?], BR, U]): Eff[BR, A] =
       StateInterpretation.lensState[R, BR, U, T, S, A](e, getter, setter)
 
+    def localState[S](modify: S => S)(implicit s: State[S, ?] /= R): Eff[R, A] =
+      StateInterpretation.localState[R, S, A](e)(modify)
+
   }
 
 }

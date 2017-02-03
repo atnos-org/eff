@@ -32,7 +32,10 @@ trait ReaderCreation {
 object ReaderCreation extends ReaderCreation
 
 trait ReaderInterpretation {
-  /** interpret the Reader effect by providing an environment when required */
+
+  /**
+   * interpret the Reader effect by providing an environment when required
+   */
   def runReader[R, U, A, B](env: A)(r: Eff[R, B])(implicit m: Member.Aux[Reader[A, ?], R, U]): Eff[U, B] = {
     val recurse = new Recurse[Reader[A, ?], U, B] {
       def apply[X](m: Reader[A, X]): X Either Eff[U, B] = Left(m.run(env))
@@ -44,11 +47,11 @@ trait ReaderInterpretation {
   }
 
   /**
-   * Lift a computation over a "small" reader (for a subsystem) into
-   * a computation over a "bigger" reader (for the full application)
+   * Interpret a Reader effect by using another Reader effect in the same stack
    */
-  def localReader[R, U, S, B, A](e: Eff[R, A], getter: B => S)
-                             (implicit sr: Member.Aux[Reader[S, ?], R, U], br: (Reader[B, ?]) |= U): Eff[U, A] =
+  def runLocalReader[R, U, S, B, A](e: Eff[R, A], getter: B => S)
+                                   (implicit sr: Member.Aux[Reader[S, ?], R, U],
+                                             br: (Reader[B, ?]) |= U): Eff[U, A] =
     translate(e) {
       new Translate[Reader[S, ?], U] {
         def apply[X](r: Reader[S, X]): Eff[U, X] =
@@ -57,23 +60,24 @@ trait ReaderInterpretation {
     }
 
   /**
-   * Modify the read value
+   * Modify the type of the read value
+   *
+   * This changes the stack of the Eff computation
    */
-  def modifyReader[R1, R2, U, S, T, A](e: Eff[R1, A])(f: T => S)(
-    implicit readerS: Member.Aux[Reader[S, ?], R1, U],
-             readerT: Member.Aux[Reader[T, ?], R2, U]): Eff[R2, A] =
+  def zoomReader[R1, R2, U, S, T, A](e: Eff[R1, A])(f: T => S)(implicit readerS: Member.Aux[Reader[S, ?], R1, U],
+                                                                        readerT: Member.Aux[Reader[T, ?], R2, U]): Eff[R2, A] =
     transform(e, new ~>[Reader[S, ?], Reader[T, ?]] {
       def apply[X](r: Reader[S, X]): Reader[T, X] =
         Reader((t: T) => r.run(f(t)))
     })
 
   /**
-   * update the read value
+   * Update the read value, the stack of the Eff computation stays the same
    */
-  def updateReader[R, T, A](e: Eff[R, A])(f: T => T)(implicit r: Reader[T, ?] /= R): Eff[R, A] =
+  def localReader[R, T, A](e: Eff[R, A])(modify: T => T)(implicit r: Reader[T, ?] /= R): Eff[R, A] =
     interceptNat(e)(new ~>[Reader[T, ?], Reader[T, ?]] {
       def apply[X](r: Reader[T, X]): Reader[T, X] =
-        Reader((t: T) => r.run(f(t)))
+        Reader((t: T) => r.run(modify(t)))
     })
 }
 

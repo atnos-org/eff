@@ -120,6 +120,15 @@ trait StateInterpretation {
         }
     })
 
+  /**
+   * Update the state value, the stack of the Eff computation stays the same
+   */
+  def localState[R, S, A](e: Eff[R, A])(modify: S => S)(implicit s: State[S, ?] /= R): Eff[R, A] =
+    interceptNat(e)(new ~>[State[S, ?], State[S, ?]] {
+      def apply[X](r: State[S, X]): State[S, X] =
+        r.modify(modify)
+    })
+
 }
 
 object StateInterpretation extends StateInterpretation

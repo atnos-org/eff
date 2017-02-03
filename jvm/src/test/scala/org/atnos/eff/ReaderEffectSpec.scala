@@ -50,8 +50,8 @@ class ReaderEffectSpec extends Specification { def is = s2"""
     type S2 = Fx.fx3[ReaderString, ReaderConfig, Option]
 
     def action = for {
-      s1 <- readFactor[S1].localReader((c: Config) => c.factor)
-      s2 <- readHost[S2].localReader((c: Config) => c.host)
+      s1 <- readFactor[S1].runLocalReader((c: Config) => c.factor)
+      s2 <- readHost[S2].runLocalReader((c: Config) => c.host)
     } yield s1 + " " + s2
 
     action.runReader(Config(10, "www.me.com")).runOption.run ==== Some("hello world")
@@ -70,12 +70,12 @@ class ReaderEffectSpec extends Specification { def is = s2"""
     } yield v
 
     def runLocal[A](f: Env => Env, c: Eff[Comp, A]): Eff[Comp, A] =
-      c.modifyReader(f)
+      c.zoomReader(f)
 
     // the lookup should work on the modified environment
     // but this should not change subsequent calls to the environment
     def program: Eff[Comp, String] = for {
-      v <- lookup("x").modifyReader((_:Env).updated("x", 2))
+      v <- lookup("x").zoomReader((_:Env).updated("x", 2))
       e <- ask[Comp, Env]
     } yield s"Value: $v, env: $e"
 
@@ -91,7 +91,7 @@ class ReaderEffectSpec extends Specification { def is = s2"""
 
     def bar[R :_ReaderInt :_eval](x: String): Eff[R, String] = for {
       y <- ask[R, Int]
-      r <- if (y == 1) delay[R, String](x) else bar(x).updateReader((z: Int) => z - 1)
+      r <- if (y == 1) delay[R, String](x) else bar(x).localReader((z: Int) => z - 1)
     } yield r + "."
 
     bar[Stack]("x").runReader(3).runEval.run ==== "x..."
