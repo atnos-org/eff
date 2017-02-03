@@ -101,53 +101,13 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
   def runSequential[A](e: Eff[Fx.fx1[TwitterTimedFuture], A])(implicit pool: FuturePool, sexs: ScheduledExecutorService): Future[A] =
     Eff.detach(e).runNow(pool, sexs)
 
-  final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, Throwable Either A] = {
-    e match {
-      case Pure(a, last) =>
-        pure[R, Throwable Either A](Either.right(a)).addLast(last)
+  import interpret.of
 
-      case Impure(u, c, last) =>
-        future.extract(u) match {
-          case Some(tx) =>
-            val union = future.inject(attempt(tx))
-
-            Impure(union, Arrs.singleton { ex: (Throwable Either u.X) =>
-              ex match {
-                case Right(x) => futureAttempt(c(x))
-                case Left(t) => pure(Either.left(t))
-              }
-            }, last)
-
-          case None => Impure(u, Arrs.singleton((x: u.X) => futureAttempt(c(x))), last)
-        }
-
-      case ImpureAp(unions, continuation, last) =>
-        def materialize(u: Union[R, Any]): Union[R, Any] =
-          future.extract(u) match {
-            case Some(tx) => future.inject(attempt(tx).asInstanceOf[TwitterTimedFuture[Any]])
-            case None => u
-          }
-
-        val materializedUnions =
-          Unions(materialize(unions.first), unions.rest.map(materialize))
-
-        val collected = unions.extract(future)
-        val continuation1 = Arrs.singleton[R, Vector[Any], Throwable Either A] { ls: Vector[Any] =>
-          val xors =
-            ls.zipWithIndex.collect { case (a, i) =>
-              if (collected.indices.contains(i)) a.asInstanceOf[Throwable Either Any]
-              else Either.right(a)
-            }.sequence
-
-          xors match {
-            case Left(t) => pure(Either.left(t))
-            case Right(anys) => futureAttempt(continuation(anys))
-          }
-        }
-
-        ImpureAp(materializedUnions, continuation1, last)
-    }
-  }
+  final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, Throwable Either A] =
+    interpret.interceptNatM[R, TwitterTimedFuture, Throwable Either ?, A](e,
+      new (TwitterTimedFuture ~> (TwitterTimedFuture of (Throwable Either ?))#l) {
+        override def apply[X](fa: TwitterTimedFuture[X]): TwitterTimedFuture[Throwable Either X] = attempt(fa)
+      })
 
   final def attempt[A](a: TwitterTimedFuture[A]): TwitterTimedFuture[Throwable Either A] = {
     TwitterTimedFuture[Throwable Either A](callback =
@@ -174,31 +134,12 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
     *
     * if this method is called with the same key the previous value will be returned
     */
-  final def futureMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, A] = {
-    e match {
-      case Pure(a, last) =>
-        Pure(a, last)
-
-      case Impure(u, c, last) =>
-        future.extract(u) match {
-          case Some(tx) => Impure(future.inject(memoize(key, cache, tx)), Arrs.singleton((x: u.X) => futureMemo(key, cache, c(x))), last)
-          case None => Impure(u, Arrs.singleton((x: u.X) => futureMemo(key, cache, c(x))), last)
-        }
-
-      case ImpureAp(unions, continuation, last) =>
-        def materialize(u: Union[R, Any]): Union[R, Any] =
-          future.extract(u) match {
-            case Some(tx) => future.inject(memoize(key, cache, tx))
-            case None => u
-          }
-
-        val materializedUnions =
-          Unions(materialize(unions.first), unions.rest.map(materialize))
-
-        val continuation1 = Arrs.singleton[R, Vector[Any], A]((ls: Vector[Any]) => futureMemo(key, cache, continuation(ls)))
-        ImpureAp(materializedUnions, continuation1, last)
-    }
-  }
+  final def futureMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, A] =
+    interpret.interceptNat[R, TwitterTimedFuture, A](e)(
+      new (TwitterTimedFuture ~> TwitterTimedFuture) {
+        override def apply[X](fa: TwitterTimedFuture[X]): TwitterTimedFuture[X] = memoize(key, cache, fa)
+      }
+    )
 
   /**
     * Memoize Future values using a memoization effect

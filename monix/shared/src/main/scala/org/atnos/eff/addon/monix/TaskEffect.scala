@@ -125,53 +125,14 @@ trait TaskInterpretation extends TaskTypes {
     TimedTask[Throwable Either A](sexs => task.runNow(sexs).materialize.map(t => Either.cond(t.isSuccess, t.get, t.failed.get)))
   }
 
-  def taskAttempt[R, A](e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, Throwable Either A] = {
-    e match {
-      case Pure(a, last) =>
-        Eff.pure[R, Throwable Either A](Either.right(a)).addLast(last)
+  import interpret.of
 
-      case Impure(u, c, last) =>
-        task.extract(u) match {
-          case Some(tx) =>
-            val union = task.inject(attempt(tx))
-
-            Impure(union, Arrs.singleton { ex: (Throwable Either u.X) =>
-              ex match {
-                case Right(x) => taskAttempt(c(x))
-                case Left(t) => Eff.pure(Either.left(t))
-              }
-            }, last)
-
-          case None => Impure(u, Arrs.singleton((x: u.X) => taskAttempt(c(x))), last)
-        }
-
-      case ImpureAp(unions, continuation, last) =>
-        def materialize(u: Union[R, Any]): Union[R, Any] =
-          task.extract(u) match {
-            case Some(tx) => task.inject(attempt(tx).asInstanceOf[TimedTask[Any]])
-            case None => u
-          }
-
-        val materializedUnions =
-          Unions(materialize(unions.first), unions.rest.map(materialize))
-
-        val collected = unions.extract(task)
-        val continuation1 = Arrs.singleton[R, Vector[Any], Throwable Either A] { ls: Vector[Any] =>
-          val xors =
-            ls.zipWithIndex.collect { case (a, i) =>
-              if (collected.indices.contains(i)) a.asInstanceOf[Throwable Either Any]
-              else Either.right(a)
-            }.sequence
-
-          xors match {
-            case Left(t) => Eff.pure(Either.left(t))
-            case Right(anys) => taskAttempt(continuation(anys))
-          }
-        }
-
-        ImpureAp(materializedUnions, continuation1, last)
-    }
-  }
+  def taskAttempt[R, A](e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, Throwable Either A] =
+    interpret.interceptNatM[R, TimedTask, Throwable Either ?, A](e,
+      new (TimedTask ~> (TimedTask of (Throwable Either ?))#l) {
+        override def apply[X](fa: TimedTask[X]): TimedTask[Throwable Either X] =
+          attempt(fa)
+      })
 
   def memoize[A](key: AnyRef, cache: Cache, task: Task[A]): Task[A] =
     Task.suspend {
@@ -185,31 +146,13 @@ trait TaskInterpretation extends TaskTypes {
     *
     * if this method is called with the same key the previous value will be returned
     */
-  def taskMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, A] = {
-    e match {
-      case Pure(a, last) =>
-        Pure(a, last)
-
-      case Impure(u, c, last) =>
-        task.extract(u) match {
-          case Some(tx) => Impure(task.inject(tx.copy(task = tx.task.andThen(memoize(key, cache, _)))), Arrs.singleton((x: u.X) => taskMemo(key, cache, c(x))), last)
-          case None => Impure(u, Arrs.singleton((x: u.X) => taskMemo(key, cache, c(x))), last)
-        }
-
-      case ImpureAp(unions, continuation, last) =>
-        def materialize(u: Union[R, Any]): Union[R, Any] =
-          task.extract(u) match {
-            case Some(tx) => task.inject(tx.copy(task = tx.task.andThen(memoize(key, cache, _))))
-            case None => u
-          }
-
-        val materializedUnions =
-          Unions(materialize(unions.first), unions.rest.map(materialize))
-
-        val continuation1 = Arrs.singleton[R, Vector[Any], A]((ls: Vector[Any]) => taskMemo(key, cache, continuation(ls)))
-        ImpureAp(materializedUnions, continuation1, last)
-    }
-  }
+  def taskMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, A] =
+    interpret.interceptNat[R, TimedTask, A](e)(
+      new (TimedTask ~> TimedTask) {
+        override def apply[X](fa: TimedTask[X]): TimedTask[X] =
+          fa.copy(task = fa.task.andThen(memoize(key, cache, _)))
+      }
+    )
 
   /**
     * Memoize task values using a memoization effect
