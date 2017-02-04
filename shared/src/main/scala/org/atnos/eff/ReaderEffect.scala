@@ -49,8 +49,8 @@ trait ReaderInterpretation {
   /**
    * Interpret a Reader effect by using another Reader effect in the same stack
    */
-  def runLocalReader[R, U, S, B, A](e: Eff[R, A], getter: B => S)
-                                   (implicit sr: Member.Aux[Reader[S, ?], R, U],
+  def translateReader[R, U, S, B, A](e: Eff[R, A], getter: B => S)
+                                    (implicit sr: Member.Aux[Reader[S, ?], R, U],
                                              br: (Reader[B, ?]) |= U): Eff[U, A] =
     translate(e) {
       new Translate[Reader[S, ?], U] {

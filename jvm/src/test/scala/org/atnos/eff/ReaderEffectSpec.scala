@@ -50,8 +50,8 @@ class ReaderEffectSpec extends Specification { def is = s2"""
     type S2 = Fx.fx3[ReaderString, ReaderConfig, Option]
 
     def action = for {
-      s1 <- readFactor[S1].runLocalReader((c: Config) => c.factor)
-      s2 <- readHost[S2].runLocalReader((c: Config) => c.host)
+      s1 <- readFactor[S1].translateReader((c: Config) => c.factor)
+      s2 <- readHost[S2].translateReader((c: Config) => c.host)
     } yield s1 + " " + s2
 
     action.runReader(Config(10, "www.me.com")).runOption.run ==== Some("hello world")

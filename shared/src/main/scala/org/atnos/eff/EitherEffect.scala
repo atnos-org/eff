@@ -147,8 +147,8 @@ trait EitherInterpretation {
    * Translate an error effect to another one in the same stack
    * a computation over a "bigger" error (for the full application)
    */
-  def runLocalEither[R, U, E1, E2, A](r: Eff[R, A], getter: E1 => E2)
-                                  (implicit sr: Member.Aux[E1 Either ?, R, U], br: (E2 Either ?) |= U): Eff[U, A] =
+  def translateEither[R, U, E1, E2, A](r: Eff[R, A], getter: E1 => E2)
+                                      (implicit sr: Member.Aux[E1 Either ?, R, U], br: (E2 Either ?) |= U): Eff[U, A] =
     translate(r) { new Translate[E1 Either ?, U] {
       def apply[X](ex: E1 Either X): Eff[U, X] =
         ex match {

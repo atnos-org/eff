@@ -12,9 +12,9 @@ trait reader {
     def runReader[C](c: C)(implicit member: Member[Reader[C, ?], R]): Eff[member.Out, A] =
       ReaderInterpretation.runReader(c)(e)(member.aux)
 
-    def runLocalReader[U, S, B](getter: B => S)(implicit m1: Member.Aux[Reader[S, ?], R, U],
-                                                         m2: (Reader[B, ?]) |= U): Eff[U, A] =
-      ReaderInterpretation.runLocalReader[R, U, S, B, A](e, getter)(m1, m2)
+    def translateReader[U, S, B](getter: B => S)(implicit m1: Member.Aux[Reader[S, ?], R, U],
+                                                          m2: (Reader[B, ?]) |= U): Eff[U, A] =
+      ReaderInterpretation.translateReader[R, U, S, B, A](e, getter)(m1, m2)
 
     def zoomReader[R2, U, S, T](f: T => S)(implicit readerS: Member.Aux[Reader[S, ?], R, U],
                                                     readerT: Member.Aux[Reader[T, ?], R2, U]): Eff[R2, A] =
