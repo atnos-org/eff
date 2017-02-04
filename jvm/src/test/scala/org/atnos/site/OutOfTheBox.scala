@@ -189,7 +189,7 @@ def getPort[R](implicit r: Reader[Int, ?] |= R): Eff[R, String] = for {
   p1 <- ask[R, Int]
 } yield "the port is " + p1
 
-getPort[S].localReader((_: Conf).port).runReader(Conf("prod", 80)).run
+getPort[S].translateReader((_: Conf).port).runReader(Conf("prod", 80)).run
 }.eval}
 
 ### Writer

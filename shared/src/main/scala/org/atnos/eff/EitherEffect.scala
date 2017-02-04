@@ -131,12 +131,12 @@ trait EitherInterpretation {
   }
 
   /**
-   * Lift a computation over a "small" error (for a subsystem) into
-   * a computation over a "bigger" error (for the full application)
+   * Modify the type of the read value
+   *
+   * This changes the stack of the Eff computation
    */
-  def localEither[SR, BR, U, E1, E2, A](r: Eff[SR, A], getter: E1 => E2)
-                                    (implicit sr: Member.Aux[E1 Either ?, SR, U],
-                                       br: Member.Aux[E2 Either ?, BR, U]): Eff[BR, A] =
+  def zoomEither[SR, BR, U, E1, E2, A](r: Eff[SR, A], getter: E1 => E2)(implicit sr: Member.Aux[E1 Either ?, SR, U],
+                                                                                 br: Member.Aux[E2 Either ?, BR, U]): Eff[BR, A] =
     transform[SR, BR, U, E1 Either ?, E2 Either ?, A](r,
       new ~>[E1 Either ?, E2 Either ?] {
         def apply[X](r: E1 Either X): E2 Either X =
@@ -147,8 +147,8 @@ trait EitherInterpretation {
    * Translate an error effect to another one in the same stack
    * a computation over a "bigger" error (for the full application)
    */
-  def runLocalEither[R, U, E1, E2, A](r: Eff[R, A], getter: E1 => E2)
-                                  (implicit sr: Member.Aux[E1 Either ?, R, U], br: (E2 Either ?) |= U): Eff[U, A] =
+  def translateEither[R, U, E1, E2, A](r: Eff[R, A], getter: E1 => E2)
+                                      (implicit sr: Member.Aux[E1 Either ?, R, U], br: (E2 Either ?) |= U): Eff[U, A] =
     translate(r) { new Translate[E1 Either ?, U] {
       def apply[X](ex: E1 Either X): Eff[U, X] =
         ex match {
@@ -156,6 +156,15 @@ trait EitherInterpretation {
           case Right(x) => pure(x)
         }
     }}
+
+  /**
+   * Update the error value, the stack of the Eff computation stays the same
+   */
+  def localEither[R, E, A](e: Eff[R, A])(modify: E => E)(implicit m: (E Either ?) /= R): Eff[R, A] =
+    interceptNat(e)(new ~>[E Either ?, E Either ?] {
+      def apply[X](ex: E Either X): E Either X =
+        ex.leftMap(modify)
+    })
 
 }
 
