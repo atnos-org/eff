@@ -36,9 +36,9 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
   implicit class RunNOps[T[_] <: OptionN[_], R, A](e: Eff[R, A]) {
     def runN[U](implicit m: Member.Aux[T, R, U]): Eff[U, A] =
       e match {
-        case Pure(a) => Eff.pure[U, A](a)
-        case Impure(u, c) => Eff.pure[U, A](m.project(u).toOption.get.asInstanceOf[A])
-        case ImpureAp(unions, map) => Eff.pure[U, A](map(unions.unions.map(u => m.project(u).toOption.get.a)))
+        case Pure(a, _) => Eff.pure[U, A](a)
+        case Impure(u, c, _) => Eff.pure[U, A](m.project(u).toOption.get.asInstanceOf[A])
+        case ap@ImpureAp(unions, map, _) => new RunNOps(ap.toMonadic).runN
       }
   }
 

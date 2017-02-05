@@ -71,12 +71,11 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
   def contramap[C](f: C => A): Arrs[R, C, B] =
     Arrs(((c: Any) => Eff.pure[R, Any](f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions)
 
-  def contraFlatMap[C](f: C => Eff[R, A]): Arrs[R, C, B] = {
-      Arrs(f.asInstanceOf[Any => Eff[R, Any]] +: functions)
-  }
+  def contraFlatMap[C](f: C => Eff[R, A]): Arrs[R, C, B] =
+    Arrs(f.asInstanceOf[Any => Eff[R, Any]] +: functions)
 
   def transform[U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, R, U]): Arrs[R, A, B] =
-    Arrs(functions.map(f => (x: Any) => Interpret.transform(f(x), t)(m, n)))
+    Arrs(functions.map(f => (x: Any) => Interpret.transform(f(x): Eff[R, Any], t)(m, n)))
 }
 
 object Arrs {

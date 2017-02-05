@@ -239,13 +239,7 @@ object Async {
               case Right(b) => AsyncNow[B](b)
             }
 
-            case imp @ Impure(u, c, last) =>
-              AsyncEff(imp.flatMap {
-                case Left(a1) => subscribeAsync(tailRecM(a1)(f))
-                case Right(b) => Eff.pure(b)
-              }, to)
-
-            case imp @ ImpureAp(unions, continuation, last) =>
+            case imp @ (Impure(_, _, _) | ImpureAp(_, _, _)) =>
               AsyncEff(imp.flatMap {
                 case Left(a1) => subscribeAsync(tailRecM(a1)(f))
                 case Right(b) => Eff.pure(b)

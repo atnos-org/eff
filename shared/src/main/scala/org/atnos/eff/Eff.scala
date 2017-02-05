@@ -74,8 +74,8 @@ sealed trait Eff[R, A] {
   def flatMap[B](f: A => Eff[R, B]): Eff[R, B] =
     EffMonad[R].flatMap(this)(f)
 
-  def flatten[B](implicit ev: A =:= Eff[R, B]): Eff[R, B] =
-    flatMap(a => a)
+  def flatten[B](implicit ev: A <:< Eff[R, B]): Eff[R, B] =
+    flatMap(ev(_))
 
   /** add one last action to be executed after any computation chained to this Eff value */
   def addLast(l: =>Eff[R, Unit]): Eff[R, A] =
@@ -149,7 +149,7 @@ trait EffImplicits {
   final val effMonadUnsafe: Monad[Eff[AnyRef, ?]] = new Monad[Eff[AnyRef, ?]] {
 
     def pure[A](a: A): Eff[AnyRef, A] =
-      Pure(a)
+      Pure[AnyRef, A](a)
 
     override def map[A, B](fa: Eff[AnyRef, A])(f: A => B): Eff[AnyRef, B] =
       fa match {
@@ -190,7 +190,7 @@ trait EffImplicits {
   final val effApplicativeUnsafe: Applicative[Eff[AnyRef, ?]] = new Applicative[Eff[AnyRef, ?]] {
 
     def pure[A](a: A): Eff[AnyRef, A] =
-      Pure(a)
+      Pure[AnyRef, A](a)
 
     override def product[A, B](fa: Eff[AnyRef, A], fb: Eff[AnyRef, B]): Eff[AnyRef, (A, B)] =
       ap(map(fb)(b => (a: A) => (a, b)))(fa)
@@ -306,20 +306,18 @@ trait EffInterpretation {
       case Pure(a, Last(None))    => monad.pure(Right(a))
 
       case Impure(u, continuation, last) =>
-        u match {
-          case Union1(ta) =>
-            last match {
-              case Last(Some(l)) => ta.map(x => Left(continuation(x).addLast(last)))
-              case Last(None)    => ta.map(x => Left(continuation(x)))
-            }
+        val ta = u.tagged.valueUnsafe.asInstanceOf[M[A]]
+        last match {
+          case Last(Some(l)) => ta.map(x => Left(continuation(x).addLast(last)))
+          case Last(None)    => ta.map(x => Left(continuation(x)))
         }
 
       case ap @ ImpureAp(unions, continuation, last) =>
-        val effects = unions.unions.collect { case Union1(mx) => mx }
+        val effects = unions.unions.map(_.tagged.valueUnsafe.asInstanceOf[M[Any]])
         val sequenced = applicative.sequence(effects)
 
         last match {
-          case Last(Some(l)) => sequenced.map(x => Left(continuation(x).addLast(last)))
+          case Last(Some(_)) => sequenced.map(x => Left(continuation(x).addLast(last)))
           case Last(None)    => sequenced.map(x => Left(continuation(x)))
         }
     }

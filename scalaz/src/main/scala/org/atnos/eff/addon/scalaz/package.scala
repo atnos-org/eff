@@ -61,14 +61,14 @@ package object scalaz {
 
         case Impure(u, continuation, last) =>
           u match {
-            case Union1(ta) =>
+            case UnionTagged(ta: M[Nothing] @unchecked, _) =>
               last match {
                 case Last(Some(l)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
                 case Last(None)    => Monad[M].map(ta)(x => -\/(continuation(x)))
               }
           }
 
-        case ap @ ImpureAp(u, continuation, last) =>
+        case ap @ ImpureAp(_, _, _) =>
           Monad[M].point(-\/(ap.toMonadic))
       }(eff)
 
@@ -79,7 +79,7 @@ package object scalaz {
 
         case Impure(u, continuation, last) =>
           u match {
-            case Union1(ta) =>
+            case UnionTagged(ta: M[Nothing] @unchecked, _) =>
               last match {
                 case Last(Some(l)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
                 case Last(None)    => Monad[M].map(ta)(x => -\/(continuation(x)))
@@ -87,8 +87,8 @@ package object scalaz {
           }
 
         case ap @ ImpureAp(unions, continuation, last) =>
-          val effects = unions.unions.collect { case Union1(mx) => mx }
-          val sequenced = applicative.sequence(effects)
+          val effects = unions.unions.collect { case UnionTagged(mx: M[Nothing] @unchecked, _) => mx }
+          val sequenced = applicative.sequence[Nothing, Vector](effects)
 
           last match {
             case Last(Some(l)) => Monad[M].map(sequenced)(x => -\/(continuation(x).addLast(last)))

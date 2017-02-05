@@ -42,7 +42,7 @@ trait WriterInterpretation {
    * This uses a ListBuffer internally to append values
    */
   def runWriter[R, U, O, A, B](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, List[O])] =
-    runWriterFold(w)(ListFold)
+    runWriterFold(w)(ListFold[O])
 
   /**
    * More general fold of runWriter where we can use a fold to accumulate values in a mutable buffer

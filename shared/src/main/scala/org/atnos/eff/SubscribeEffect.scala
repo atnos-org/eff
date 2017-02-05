@@ -6,7 +6,7 @@ import scala.concurrent._
 import duration._
 import Eff._
 import org.atnos.eff.either._
-import org.atnos.eff.syntax.either._
+import org.atnos.eff.syntax.all._
 
 import scala.util.control.NonFatal
 
@@ -52,23 +52,27 @@ object SubscribeEffect {
       AttemptedSubscribe((c: Callback[Throwable Either X]) => subscribe((tx: Throwable Either X) => c(Right(tx))))
   }
 
-  def subscribeAttempt[A](e: Eff[FS, A])(implicit m: Subscribe /= FS): Eff[FS, ThrowableEither[A]] = {
+  def subscribeAttempt[A](e: Eff[FS, A]): Eff[FS, ThrowableEither[A]] = {
     type U = Fx.prepend[ThrowableEither, FS]
 
     interpret.translateInto[FS, Subscribe, U, A](e)(new Translate[Subscribe, U] {
       def apply[X](sx: Subscribe[X]): Eff[U, X] = {
 
         send[Subscribe, U, ThrowableEither[X]](AttemptedSubscribe((c: Callback[Throwable Either X]) => {
-
-          sx.apply((tx: Throwable Either X) => try {
-
-            c(Right(tx))} catch { case NonFatal(t) => c(Right(Left(t))) })}, sx.memoizeKey)).
+          sx.apply((tx: Throwable Either X) =>
+            try {
+              c(Right(tx))
+            } catch {
+              case NonFatal(t) => c(Right(Left(t)))
+            }
+          )
+        }, sx.memoizeKey)).
             flatMap {
               case Left(t)  => left[U, Throwable, X](t)
               case Right(x) => right[U, Throwable, X](x)
             }
       }
-    }).runEither
+    }).runEither[Throwable].into[FS]
   }
 
   def memoizeSubscribe[A](key: AnyRef, cache: Cache, e: Subscribe[A]): Subscribe[A] =
@@ -88,10 +92,10 @@ object SubscribeEffect {
       key.toString+"-"+sequenceKey+"-"+sub
 
     def materialize(u: Union[FS, Any]): Union[FS, Any] =
-      u match { case Union1(fs) =>
-        val u1 = Union1(memoizeSubscribe(cacheKey, cache, fs))
+      u match { case tagged@UnionTagged(fs, _) =>
+        val u1 = tagged.copy(valueUnsafe = memoizeSubscribe(cacheKey, cache, fs.asInstanceOf[Subscribe[Any]]))
         sub += 1
-        u1
+        u1.forget
       }
 
     e match {
