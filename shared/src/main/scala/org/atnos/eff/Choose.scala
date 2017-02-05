@@ -146,7 +146,7 @@ object Rand {
   def none[A]: Rand[A] =
     Rand(_ => None)
 
-  implicit def AlternativeRandom: Alternative[Rand] = new Alternative[Rand] {
+  implicit def MonadCombineRandom: MonadCombine[Rand] = new MonadCombine[Rand] {
     def pure[A](x: A): Rand[A] = Rand(_ => Option(x))
 
     def empty[A]: Rand[A] = Rand.none[A]
@@ -164,9 +164,13 @@ object Rand {
         }
       }
 
-    def ap[A, B](ff: Rand[A => B])(fa: Rand[A]): Rand[B] =
-      Rand(r => ff.run(r).flatMap(f => fa.run(r).map(f)))
+    def flatMap[A, B](fa: Rand[A])(f: (A) => Rand[B]): Rand[B] =
+      Rand[B](rand => fa.run(rand).flatMap(f(_).run(rand)))
 
+    def tailRecM[A, B](a: A)(f: (A) => Rand[Either[A, B]]): Rand[B] =
+      Rand[B] { random =>
+        Monad[Option].tailRecM(a)(f(_).run(random))
+      }
   }
 
 }
