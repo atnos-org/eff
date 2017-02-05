@@ -295,22 +295,7 @@ trait EffInterpretation {
    * peel-off the only present effect
    */
   def detach[M[_] : Monad, A](eff: Eff[Fx1[M], A]): M[A] =
-    Monad[M].tailRecM[Eff[Fx1[M], A], A](eff) {
-      case Pure(a, Last(Some(l))) => Monad[M].pure(Left(l.value.as(a)))
-      case Pure(a, Last(None))    => Monad[M].pure(Right(a))
-
-      case Impure(u, continuation, last) =>
-        u match {
-          case Union1(ta) =>
-            last match {
-              case Last(Some(l)) => ta.map(x => Left(continuation(x).addLast(last)))
-              case Last(None)    => ta.map(x => Left(continuation(x)))
-            }
-        }
-
-      case ap @ ImpureAp(u, continuation, last) =>
-        Monad[M].pure(Left(ap.toMonadic))
-    }
+    detachA(eff)
 
   /**
    * peel-off the only present effect, using an Applicative instance where possible
