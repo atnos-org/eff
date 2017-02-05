@@ -15,7 +15,7 @@ You can learn more in the following sections:
  - ${"interpret and manipulate effect stacks" ~ TransformStack}
  - ${"use Member implicits" ~/ MemberImplicits }
  - ${"use an applicative evaluation" ~ ApplicativeEvaluation}
- - ${"Cookbook" ~ Cookbook}
+ - ${"tips and tricks" ~ Cookbook}
 
 ### Contributing
 
