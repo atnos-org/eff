@@ -9,13 +9,13 @@ import org.specs2.concurrent.ExecutionEnv
 
 import scala.collection.mutable.ListBuffer
 import org.atnos.eff.addon.scalaz.concurrent.TaskEffect._
+import org.atnos.eff.syntax.addon.scalaz.task._
 
 import scala.concurrent._
 import duration._
 import org.scalacheck._
 import org.specs2.matcher.FutureMatchers._
 import org.specs2.matcher.TaskMatchers._
-
 import scalaz.concurrent.Task
 
 class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "scalaz task".title ^ sequential ^ s2"""

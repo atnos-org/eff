@@ -5,6 +5,7 @@ import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.future._
 import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.future._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 

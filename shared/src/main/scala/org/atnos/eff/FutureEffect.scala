@@ -129,8 +129,6 @@ trait FutureInterpretation extends FutureTypes {
       prom.future
     }
 
-  implicit final def toFutureOps[R, A](e: Eff[R, A]): FutureOps[R, A] = new FutureOps[R, A](e)
-
   /**
     * Memoize future values using a cache
     *
@@ -151,20 +149,6 @@ trait FutureInterpretation extends FutureTypes {
   final def futureMemoized[R, A](key: AnyRef, e: Eff[R, A])(implicit future: TimedFuture /= R, m: Memoized |= R): Eff[R, A] =
     MemoEffect.getCache[R].flatMap(cache => futureMemo(key, cache, e))
 
-}
-
-final class FutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
-  def futureAttempt(implicit future: TimedFuture /= R): Eff[R, Throwable Either A] =
-    FutureInterpretation.futureAttempt(e)
-
-  def futureMemo(key: AnyRef, cache: Cache)(implicit future: TimedFuture /= R): Eff[R, A] =
-    FutureInterpretation.futureMemo(key, cache, e)
-
-  def runAsync(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedFuture], A]): Future[A] =
-    FutureInterpretation.runAsync(e)
-
-  def runSequential(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedFuture], A]): Future[A] =
-    FutureInterpretation.runSequential(e)
 }
 
 object FutureInterpretation extends FutureInterpretation
