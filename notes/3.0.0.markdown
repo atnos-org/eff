@@ -1,0 +1,35 @@
+New and improved!
+
+This version contains some breaking changes, most notably around the `Async` effect which is removed (details in [#46](https://github.com/atnos-org/eff/pull/46)). 
+Most improvements have been contributed by @edmundnoble and @benhutchison.
+
+## Improvements
+
+Breaking changes:
+
+ * removed the `Async` effect and repackaged the syntax implicits for the various task/future effects. Now you 
+   need to specify which `TaskEffect` (with implementations for `scalaz`, `monix`, `fs2`) or `FutureEffect` you want to use
+  
+ * added a method to update the read value of a Reader effect [#60](https://github.com/atnos-org/eff/pull/60). Three methods 
+   are now available: 
+     * `translateReader` to interpret a `Reader[A, ?]` effect into another `Reader[B, ?]` effect in the stack
+     * `zoomReader` to replace a `Reader[A, ?]` effect with `Reader[B, ?]` in the same stack
+     * `localReader` to modify the read value `A` in the `Reader[A, ?]` effect
+    
+ * similarly we have `translateEither`, `zoomEither` and `localEither` for the `EitherEffect`    
+   
+ * the implementation of effect coproducts (`Union` of effects) has been simplified with the introduction of 
+   a `UnionTagged` class for better performance [#59](https://github.com/atnos-org/eff/pull/59)
+   
+ * it is possible to specify the target stack type with the `.runEither[U]` method [#50](https://github.com/atnos-org/eff/pull/50)
+
+Non-breaking changes: 
+   
+ * implement `detach` in terms of `detachA` [#62](https://github.com/atnos-org/eff/pull/62)
+ * promote `Rand` `Alternative` instance to `MonadPlus` [#63](https://github.com/atnos-org/eff/pull/63)
+ * added a cookbook section on how to prepend effects "locally" [#64](https://github.com/atnos-org/eff/pull/64)
+ * added `interceptNatM` to modify a given effect `T[_]` to `T[F[_]]` where `F` is a traversable monad [#57](https://github.com/atnos-org/eff/pull/57)
+ * make `Unions` use `Vector` instead of `List` for asymptotic reasons [#58](https://github.com/atnos-org/eff/pull/58)
+ * added the possibility to memoize `Safe` effects [#54](https://github.com/atnos-org/eff/pull/54)
+ * updated the try-eff script [#51](https://github.com/atnos-org/eff/pull/51)
+
