@@ -17,6 +17,7 @@ import cats.data.Writer
 import cats.syntax.traverse._
 import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
+import org.atnos.eff.syntax.future._
 
 type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
@@ -111,7 +112,8 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
       case Pure(a,_) => (a, trace)
       case Impure(UnionTagged(GetUser(i), _), c, _)   => go(c(getWebUser(i)), trace :+ "getWebUser")
       case Impure(UnionTagged(GetUsers(is), _), c, _) => go(c(getWebUsers(is)), trace :+ "getWebUsers")
-      case ap @ ImpureAp(_, _, _)             => go(ap.toMonadic, trace)
+      case ap @ ImpureAp(_, _, _)                     => go(ap.toMonadic, trace)
+      case Impure(_, _, _)                            => sys.error("this should not happen with just one effect")
   }
   go(eff, Vector())
 }
