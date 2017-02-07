@@ -348,10 +348,11 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     def runDsl[A](eff: Eff[Fx1[UserDsl], A]): A =
       eff match {
-        case Pure(a,_) => a
+        case Pure(a, _) => a
         case Impure(UnionTagged(GetUser(i), _), c, _)   => runDsl(c(getWebUser(i)))
         case Impure(UnionTagged(GetUsers(is), _), c, _) => runDsl(c(getWebUsers(is)))
-        case ap @ ImpureAp(u, m, _)             => runDsl(ap.toMonadic)
+        case ap @ ImpureAp(u, m, _)                     => runDsl(ap.toMonadic)
+        case Impure(_, _, _)                            => sys.error("this should not happen with just one effect")
       }
 
     def action1[R :_userDsl] =

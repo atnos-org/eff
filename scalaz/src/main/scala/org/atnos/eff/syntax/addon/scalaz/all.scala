@@ -5,4 +5,5 @@ object all extends
   either   with
   eval     with
   safe     with
+  task     with
   validate

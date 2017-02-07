@@ -63,18 +63,6 @@ trait MemoInterpretation extends MemoTypes {
         }
     })
   }
-
-  @deprecated("The Async effect will be removed in favor of concrete asynchronous effects, like TimedFuture.", since = "2.3.0")
-  def runAsyncMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], async: Async |= U): Eff[U, A] = {
-    interpret.translate(effect)(new Translate[Memoized, U] {
-      def apply[X](mx: Memoized[X]): Eff[U, X] =
-        mx match {
-          case Store(key, value) => AsyncEffect.asyncDelay(cache.memo(key, value()))
-          case GetCache()        => AsyncEffect.asyncDelay(cache)
-        }
-    })
-  }
-
 }
 
 object MemoInterpretation extends MemoInterpretation

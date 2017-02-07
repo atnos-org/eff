@@ -396,6 +396,7 @@ Then we need to pass a `ScheduledExecutorService` and `ExecutionContext` in to b
 */
 
 implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+import org.atnos.eff.syntax.future._
 
 Await.result(action.runOption.runSequential, 1 second)
 }.eval}
@@ -413,6 +414,7 @@ ${snippet{
 import cats.implicits._
 import org.atnos.eff._, future._, all._
 import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.future._
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 

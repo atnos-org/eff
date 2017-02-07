@@ -56,8 +56,10 @@ object TimedTask {
   }
 
   final def now[A](value: A): TimedTask[A] = TimedTask((_, _) => Task.now(value))
+
   implicit final def fromTask[A](task: Task[A]): TimedTask[A] =
     TimedTask((_, _) => task)
+
   final def fromTask[A](task: Task[A], timeout: Option[FiniteDuration] = None): TimedTask[A] =
     TimedTask((_, _) => task, timeout)
 
@@ -129,8 +131,6 @@ trait TaskInterpretation extends TaskTypes {
       cache.get[A](key).fold(task.map { r => cache.put(key, r); r })(Task.now)
     }
 
-  implicit final def toTaskOps[R, A](e: Eff[R, A]): TaskOps[R, A] = new TaskOps[R, A](e)
-
   /**
     * Memoize tasks using a cache
     *
@@ -160,24 +160,6 @@ trait TaskInterpretation extends TaskTypes {
     })
   }
 
-}
-
-final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
-
-  def runTaskMemo[U](cache: Cache)(implicit m: Member.Aux[Memoized, R, U], task: TimedTask |= U): Eff[U, A] =
-    TaskEffect.runTaskMemo(cache)(e)
-
-  def taskAttempt(implicit task: TimedTask /= R): Eff[R, Throwable Either A] =
-    TaskInterpretation.taskAttempt(e)
-
-  def taskMemo(key: AnyRef, cache: Cache)(implicit task: TimedTask /= R): Eff[R, A] =
-    TaskInterpretation.taskMemo(key, cache, e)
-
-  def runAsync(implicit strat: Strategy, sched: Scheduler, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
-    TaskInterpretation.runAsync(e)
-
-  def runSequential(implicit strat: Strategy, sched: Scheduler, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
-    TaskInterpretation.runSequential(e)
 }
 
 object TaskInterpretation extends TaskInterpretation

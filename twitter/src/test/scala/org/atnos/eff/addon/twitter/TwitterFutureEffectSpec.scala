@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 import com.twitter.util.{Await, Future, FuturePool}
 import cats.Eval
 import TwitterFutureEffect._
+import org.atnos.eff.syntax.addon.twitter.task._
 import cats.implicits._
 import org.atnos.eff._
 import org.atnos.eff.all._
