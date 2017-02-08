@@ -59,13 +59,14 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
 
           case Impure(_, _, _) => sys.error("impossible")
 
-          case ImpureAp(unions, continuation, l) =>
+          case ImpureAp(unions, continuation, last) =>
             ImpureAp[FxAppend[Fx2[T1, T2], R], unions.X, A](
               unions.into(new UnionInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] {
                 def apply[X](union: Union[FxAppend[Fx1[T1], R], X]) = union match {
                   case UnionAppendR(r) => UnionAppendR(r)
-                  case UnionAppendL(UnionTagged(tx, _)) => UnionAppendL(Union.twoL(tx.asInstanceOf[T1[X]]))
-                }}), Arrs.singleton(x => apply(continuation(x))), l.interpret(apply))
+                  case UnionAppendL(l) => UnionAppendL(Union.twoL(l.tagged.valueUnsafe.asInstanceOf[T1[X]]))
+                  case UnionTagged(_, _) => sys.error("impossible")
+                }}), Arrs.singleton(x => apply(continuation(x))), last.interpret(apply))
         }
     }
 
@@ -93,14 +94,19 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
 
           case Impure(_, _, _) => sys.error("impossible")
 
-          case ImpureAp(unions, continuation, l) =>
+          case ImpureAp(unions, continuation, last) =>
             ImpureAp[FxAppend[Fx3[T1, T2, T3], R], unions.X, A](
               unions.into(new UnionInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
                 def apply[X](union: Union[FxAppend[Fx2[T1, T3], R], X]) = union match {
                   case UnionAppendR(r) => UnionAppendR(r)
-                  case UnionAppendL(UnionTagged(_, 1)) => union.forget
-                  case UnionAppendL(UnionTagged(tx, 2)) => UnionAppendL(UnionTagged(tx, 3))
-                }}), Arrs.singleton(x => apply(continuation(x))), l.interpret(apply))
+                  case UnionAppendL(l) =>
+                    val tagged = l.tagged
+                    if (tagged.index == 1)
+                      tagged.forget
+                    else
+                      tagged.increment
+                  case UnionTagged(_, _) => sys.error("impossible")
+                }}), Arrs.singleton(x => apply(continuation(x))), last.interpret(apply))
         }
     }
 
@@ -114,19 +120,20 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           case Impure(u@UnionAppendR(r), c, l) =>
             Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](r.forget, Arrs.singleton(x => apply(c(x))), l.interpret(apply))
 
-          case Impure(u@UnionAppendL(tagged@UnionTagged(_, _)), c, l) =>
-            Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(tagged.increment), Arrs.singleton(x => apply(c(x))), l.interpret(apply))
+          case Impure(u@UnionAppendL(l), c, last) =>
+            val tagged = l.tagged
+            Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(tagged.increment), Arrs.singleton(x => apply(c(x))), last.interpret(apply))
 
           case Impure(_, _, _) => sys.error("impossible")
 
-          case ImpureAp(unions, continuation, l) =>
+          case ImpureAp(unions, continuation, last) =>
             ImpureAp[FxAppend[Fx3[T1, T2, T3], R], unions.X, A](
               unions.into(new UnionInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] {
                 def apply[X](union: Union[FxAppend[Fx2[T1, T2], R], X]) = union match {
                   case UnionAppendR(r) => UnionAppendR(r)
-                  case UnionAppendL(UnionTagged(tx, 1)) => UnionAppendL(UnionTagged(tx, 2))
-                  case UnionAppendL(UnionTagged(tx, 2)) => UnionAppendL(UnionTagged(tx, 3))
-                }}), Arrs.singleton(x => apply(continuation(x))), l.interpret(apply))
+                  case UnionAppendL(l) => UnionAppendL(l.tagged.increment)
+                  case UnionTagged(_, _) => sys.error("impossible")
+                }}), Arrs.singleton(x => apply(continuation(x))), last.interpret(apply))
 
         }
     }
