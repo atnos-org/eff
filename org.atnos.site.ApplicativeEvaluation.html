@@ -41,39 +41,38 @@
 
 <h3 id="concurrent-evaluation">Concurrent evaluation</h3>
 <p>The default interpretation of <code class="prettyprint">Eff</code> values is “monadic” meaning that effectful values are being evaluated in order. This becomes clear when traversing a list of values with the <code class="prettyprint">FutureEffect</code>:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
+<pre><code class="prettyprint">import org.atnos.eff._, all._, future._, syntax.all._
 import cats.Eval
 import cats.data.Writer
 import cats.syntax.traverse._
 import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
-import Async._
 
 type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
-type S = Fx.fx3[Eval, Async, WriterString]
+type S = Fx.fx3[Eval, TimedFuture, WriterString]
 
-val futureService = AsyncFutures.create
-import futureService._
+implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
 
-def execute[E :_eval :_writerString :_async](i: Int): Eff[E, Int] =
+def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
     i1 &lt;- delay(i)
-    i2 &lt;- asyncFork(i1)
+    i2 &lt;- futureDelay(i1)
     _  &lt;- tell(i2.toString)
   } yield i2
 
 val action: Eff[S, List[Int]] =
   List(1000, 500, 50).traverse(execute[S])
 
-Await.result(action.runEval.runWriterLog.runAsyncFuture, 2.seconds)</code></pre>
+Await.result(action.runEval.runWriterLog.runSequential, 2.seconds)</code></pre>
 <p><code class="prettyprint">&gt; List(1000, 500, 50)</code></p>
 <p>We can however run all those computations concurrently using the applicative execution for <code class="prettyprint">Eff</code>:</p>
 <pre><code class="prettyprint">val action: Eff[S, List[Int]] =
   List(1000, 500, 50).traverseA(execute[S])
 
-Await.result(action.runEval.runWriterLog.runAsyncFuture, 2.seconds)</code></pre>
+Await.result(Eff.detachA(action.runEval.runWriterLog[String])(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(ses, global
+), 2.seconds)</code></pre>
 <p><code class="prettyprint">&gt; List(50, 500, 1000)</code></p>
 <p>This uses now <code class="prettyprint">traverseA</code> (instead of <code class="prettyprint">traverse</code>) to do an applicative traversal and execute futures concurrently and the fastest actions finish first.</p>
 <h3 id="batching">Batching</h3>
@@ -106,12 +105,13 @@ def getWebUsers(is: List[Int]): List[User] = is.map(i =&gt; User(i))
 // the interpreter simply calls the webservice
 // and return a trace of the executed call
 def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
+  @tailrec
   def go(e: Eff[Fx1[UserDsl], A], trace: Vector[String]): (A, Vector[String]) =
     e match {
       case Pure(a,_) =&gt; (a, trace)
       case Impure(Union1(GetUser(i)), c, _)   =&gt; go(c(getWebUser(i)), trace :+ &quot;getWebUser&quot;)
       case Impure(Union1(GetUsers(is)), c, _) =&gt; go(c(getWebUsers(is)), trace :+ &quot;getWebUsers&quot;)
-      case ap @ ImpureAp(u, m, _)             =&gt; go(ap.toMonadic, trace)
+      case ap @ ImpureAp(_, _, _)             =&gt; go(ap.toMonadic, trace)
   }
   go(eff, Vector())
 }
