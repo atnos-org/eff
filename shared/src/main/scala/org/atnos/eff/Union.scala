@@ -16,7 +16,7 @@ package org.atnos.eff
  *  In that respect UnionTagged behaves similarly to a tagged union in C or C++.
  *
  */
-trait Union[R, A] {
+sealed trait Union[R, A] {
   type X = A
   final private[eff] def forget[E, B]: Union[E, B] =
     asInstanceOf[Union[E, B]]

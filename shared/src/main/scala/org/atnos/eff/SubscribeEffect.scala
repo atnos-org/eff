@@ -17,7 +17,7 @@ object SubscribeEffect {
 
   type Callback[A] = (Throwable Either A) => Unit
 
-  trait Subscribe[A] extends (Callback[A] => Unit) {
+  sealed trait Subscribe[A] extends (Callback[A] => Unit) {
     def memoizeKey: Option[(AnyRef, Cache)]
     def unmemoize: Subscribe[A]
   }
@@ -91,12 +91,12 @@ object SubscribeEffect {
     def cacheKey =
       key.toString+"-"+sequenceKey+"-"+sub
 
-    def materialize(u: Union[FS, Any]): Union[FS, Any] =
-      u match { case tagged@UnionTagged(fs, _) =>
-        val u1 = tagged.copy(valueUnsafe = memoizeSubscribe(cacheKey, cache, fs.asInstanceOf[Subscribe[Any]]))
-        sub += 1
-        u1.forget
-      }
+    def materialize(u: Union[FS, Any]): Union[FS, Any] = {
+      val tagged = u.tagged
+      val u1 = tagged.copy(valueUnsafe = memoizeSubscribe(cacheKey, cache, tagged.valueUnsafe.asInstanceOf[Subscribe[Any]]))
+      sub += 1
+      u1.forget
+    }
 
     e match {
       case Pure(a, last) =>
