@@ -79,8 +79,7 @@ sealed trait Eff[R, A] {
 
   /** add one last action to be executed after any computation chained to this Eff value */
   def addLast(l: =>Eff[R, Unit]): Eff[R, A] =
-    // force this computation to finish before adding last
-    flatMap(a => pure(a).addLast(Last.eff(l)))
+    addLast(Last.eff(l))
 
   /** add one last action to be executed after any computation chained to this Eff value */
   private[eff] def addLast(l: Last[R]): Eff[R, A]
@@ -200,26 +199,26 @@ trait EffImplicits {
         case Pure(a, last) =>
           ff match {
             case Pure(f, last1)        => Pure(f(a), last1).addLast(last)
-            case Impure(u, c, last1)   => ImpureAp(Unions(u, Vector.empty), Arrs.singleton(ls => c(ls.head).map(_(a))), last1 *> last)
-            case ImpureAp(u, c, last1) => ImpureAp(u, Arrs.singleton(xs => c(xs).map(_(a))), last1 *> last)
+            case Impure(u, c, last1)   => ImpureAp(Unions(u, Vector.empty), c.dimapEff((_:Vector[Any]).head)(_.map(_(a))), last1 *> last)
+            case ImpureAp(u, c, last1) => ImpureAp(u, c.map(_(a)), last1 *> last)
           }
 
         case Impure(u, c, last) =>
           ff match {
-            case Pure(f, last1)          => ImpureAp(Unions(u, Vector.empty), Arrs.singleton(ls => c(ls.head).map(f)), last1 *> last)
-            case Impure(u1, c1, last1)   => ImpureAp(Unions(u, Vector(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head))), last1 *> last)
-            case ImpureAp(u1, c1, last1) => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head))), last1 *> last)
+            case Pure(f, last1)          => ImpureAp(Unions(u, Vector.empty), c.contramap((_:Vector[Any]).head).map(f), last1 *> last)
+            case Impure(u1, c1, last1)   => ImpureAp(Unions(u, Vector(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
+            case ImpureAp(u1, c1, last1) => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
           }
           
         case ImpureAp(unions, c, last) =>
           ff match {
             case Pure(f, last1)         => ImpureAp(unions, c map f, last1 *> last)
-            case Impure(u, c1, last1)   => ImpureAp(Unions(unions.first, unions.rest :+ u), Arrs.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1)))), last1 *> last)
-            case ImpureAp(u, c1, last1) => ImpureAp(u append unions, Arrs.singleton { xs =>
+            case Impure(u, c1, last1)   => ImpureAp(Unions(unions.first, unions.rest :+ u), Arrs.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
+            case ImpureAp(u, c1, last1) => ImpureAp(u append unions, Arrs.singleton({ xs =>
               val usize = u.size
               val (taken, dropped) = xs.splitAt(usize)
               ap(c1(taken))(c(dropped))
-            }, last1 *> last)
+            }, c.onNone), last1 *> last)
           }
 
       }
@@ -273,6 +272,21 @@ trait EffCreation {
   /** use the applicative instance of Eff to sequence a list of values, then flatten it */
   def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[A]] =
     FT.flatSequence[Eff[R, ?], A](fs)(EffImplicits.EffApplicative[R], FM)
+
+  /** bracket an action with one last action to execute at the end of the program */
+  def bracketLast[R, A, B, C](acquire: Eff[R, A])(use: A => Eff[R, B])(release: A => Eff[R, C]): Eff[R, B] =
+    for {
+      a <- acquire
+      b <- use(a).addLast(release(a).void)
+    } yield b
+
+  /** attach a clean-up action to the continuation (if any) */
+  def whenStopped[R, A](e: Eff[R, A], action: Last[R]): Eff[R, A] =
+    e match {
+      case Pure(a, l)        => Pure(a, action *> l)
+      case Impure(u, c, l)   => Impure(u, c.copy(onNone = action), l)
+      case ImpureAp(u, c, l) => ImpureAp(u, c.copy(onNone = action), l)
+    }
 }
 
 object EffCreation extends EffCreation

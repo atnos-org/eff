@@ -47,9 +47,6 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
  Applicative calls can be optimised by "batching" requests $optimiseRequests
 
- An action can run completely at the end, regardless of the number of flatmaps $runLast
-   now with one very last action which fails, there should be no exception     $runLastFail
-
 """
 
   def laws =
@@ -368,39 +365,6 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     result ==== optimisedResult
   }
 
-  def runLast = prop { xs: List[String] =>
-    type R = Fx.fx2[Safe, Eval]
-    val messages = new ListBuffer[String]
-
-    import org.atnos.eff.all._
-    import org.atnos.eff.syntax.all._
-
-    val act = for {
-      _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit](messages.append("end")))
-      _ <- protect[R, Unit](messages.append("b"))
-    } yield ()
-
-    act.runSafe.runEval.run
-
-    messages.toList ==== List("a", "b", "end")
-  }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
-
-  def runLastFail = prop { xs: List[String] =>
-    type R = Fx.fx2[Safe, Eval]
-    val messages = new ListBuffer[String]
-
-    import org.atnos.eff.all._
-    import org.atnos.eff.syntax.all._
-
-    val act = for {
-      _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit]{ messages.append("boom"); throw new Exception("boom")})
-      _ <- protect[R, Unit](messages.append("b"))
-    } yield ()
-
-    act.runSafe.runEval.run
-
-    messages.toList ==== List("a", "b", "boom")
-  }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
 
   /**
    * Helpers
