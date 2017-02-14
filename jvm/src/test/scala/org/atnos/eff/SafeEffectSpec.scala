@@ -10,7 +10,7 @@ import org.scalacheck.Gen
 
 import scala.collection.mutable.ListBuffer
 
-class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectations { def is = isolated ^ s2"""
 
   The Safe effect can be used to protect resources and computations
   in the presence of exceptions.
@@ -36,6 +36,12 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
   Safe effect can be mixed with other effects $mixedWithOtherEffects1
 
   The Safe effet can be memoized $memoizeSafe
+
+  Finalization will happen even if other effects are involved
+    either right + ok $bracket1
+    either right + protect exception $bracket2
+    either left + ok $bracket3
+    either left + protect exception $bracket4
 
 """
 
@@ -199,6 +205,25 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
     invocationsNumber must be_==(1)
 
   }
+
+  var i = 0
+
+  def bracket1 = checkRelease {
+    EitherEffect.right[U, String, Int](1) >>= (v => protect[U, Int](v))
+  }
+
+  def bracket2 = checkRelease {
+    EitherEffect.right[U, String, Int](1) >>= (v => protect[U, Int] { sys.error("ouch"); v })
+  }
+
+  def bracket3 = checkRelease {
+    EitherEffect.left[U, String, Int]("Error") >>= (v => protect[U, Int](v))
+  }
+
+  def bracket4 = checkRelease {
+    EitherEffect.left[U, String, Int]("Error") >>= (v => protect[U, Int] { sys.error("ouch"); v })
+  }
+
   /**
    * HELPERS
    */
@@ -221,5 +246,23 @@ class SafeSpec extends Specification with ScalaCheck with ThrownExpectations { d
 
   def beEven: Matcher[Int] = (n: Int) => (isEven(n), s"$n is not even")
   def beOdd: Matcher[Int] = (n: Int) => (isOdd(n), s"$n is not odd")
+
+  // to check finalization with other effects
+  type _eitherString[R] = Either[String, ?] |= R
+
+  def acquire[R :_Safe]: Eff[R, Int] = protect[R, Int] { i += 1; i }
+  def release[R :_Safe]: Int => Eff[R, Int] = (_: Int) => protect[R, Int] { i -= 1; i }
+
+  def checkRelease(use: Eff[U, Int]) = {
+    eff(use).execSafe.flatMap(either => fromEither(either.leftMap(_.getMessage))).runEither.run
+    i ==== 0
+  }
+
+  def eff[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
+    bracket(acquire[R])(_ => use)(release[R])
+
+  type U = Fx.fx2[Safe, Either[String, ?]]
+
+
 
 }

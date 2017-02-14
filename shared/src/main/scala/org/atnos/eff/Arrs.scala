@@ -11,8 +11,12 @@ import scala.annotation.tailrec
  *
  *  A => Eff[R, X1]; X1 => Eff[R, X2]; X2 => Eff[R, X3]; ...; X3 => Eff[R, B]
  *
+ * An alternate unit value can also be set on this function in case the argument A is not available.
+ * This value can be set by an effect to do some cleanup if it doesn't even get the chance
+ * to add its own effect. See SafeEffect.bracket
+ *
  */
-case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Eff[R, B]) {
+case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: Last[R] = Last.none[R]) extends (A => Eff[R, B]) {
 
   /**
    * append a new monadic function to this list of functions such that
@@ -21,18 +25,18 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
    *
    */
   def append[C](f: B => Eff[R, C]): Arrs[R, A, C] =
-    Arrs(functions :+ f.asInstanceOf[Any => Eff[R, Any]])
+    Arrs(functions :+ f.asInstanceOf[Any => Eff[R, Any]], onNone)
 
   /** map the last returned effect */
-  def mapLast(f: Eff[R, B] => Eff[R, B]): Arrs[R, A, B] =
+  def mapLast[C](f: Eff[R, B] => Eff[R, C]): Arrs[R, A, C] =
     functions match {
-      case v if v.isEmpty => Arrs[R, A, B](v :+ ((a: Any) => f(Eff.pure(a.asInstanceOf[B])).asInstanceOf[Eff[R, Any]]))
-      case fs :+ last => Arrs(fs :+ ((x: Any) => f(last(x).asInstanceOf[Eff[R, B]]).asInstanceOf[Eff[R, Any]]))
+      case v if v.isEmpty => Arrs[R, A, C](v :+ ((a: Any) => f(Eff.pure(a.asInstanceOf[B])).asInstanceOf[Eff[R, Any]]), onNone)
+      case fs :+ last => Arrs(fs :+ ((x: Any) => f(last(x).asInstanceOf[Eff[R, B]]).asInstanceOf[Eff[R, Any]]), onNone)
     }
 
   /** map the last value */
   def map[C](f: B => C): Arrs[R, A, C] =
-    Arrs(functions :+ ((x: Any) => Eff.pure[R, Any](f(x.asInstanceOf[B]).asInstanceOf[Any])))
+    Arrs(functions :+ ((x: Any) => Eff.pure[R, Any](f(x.asInstanceOf[B]).asInstanceOf[Any])), onNone)
 
   /**
    * execute this monadic function
@@ -69,20 +73,32 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]]) extends (A => Ef
   }
 
   def contramap[C](f: C => A): Arrs[R, C, B] =
-    Arrs(((c: Any) => Eff.pure[R, Any](f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions)
+    Arrs(((c: Any) => Eff.pure[R, Any](f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions, onNone)
 
   def contraFlatMap[C](f: C => Eff[R, A]): Arrs[R, C, B] =
-    Arrs(f.asInstanceOf[Any => Eff[R, Any]] +: functions)
+    Arrs(f.asInstanceOf[Any => Eff[R, Any]] +: functions, onNone)
+
+  /** adapt the input and output of an Arrs function */
+  def dimapEff[C, D](f: C => A)(g: Eff[R, B] => Eff[R, D]): Arrs[R, C, D] =
+    Arrs.singleton((c: C) => g(apply(f(c))), onNone)
+
+  /** create an Arrs function from the result of another Arrs function */
+  def interpret[U, C](map: Eff[R, B] => Eff[U, C])(mapOnNone: Last[R] => Last[U]): Arrs[U, A, C] =
+    Arrs.singleton((a: A) => map(apply(a)), mapOnNone(onNone))
+
+  /** create an Arrs function from the result of another Arrs function */
+  def interpretEff[U, C](map: Eff[R, B] => Eff[U, C])(mapOnNone: Eff[R, Unit] => Eff[U, Unit]): Arrs[U, A, C] =
+    Arrs.singleton((a: A) => map(apply(a)), onNone.interpret(mapOnNone))
 
   def transform[U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, R, U]): Arrs[R, A, B] =
-    Arrs(functions.map(f => (x: Any) => Interpret.transform(f(x): Eff[R, Any], t)(m, n)))
+    Arrs(functions.map(f => (x: Any) => Interpret.transform(f(x): Eff[R, Any], t)(m, n)), onNone)
 }
 
 object Arrs {
 
   /** create an Arrs function from a single monadic function */
-  def singleton[R, A, B](f: A => Eff[R, B]): Arrs[R, A, B] =
-    Arrs(Vector.empty :+ f.asInstanceOf[Any => Eff[R, Any]])
+  def singleton[R, A, B](f: A => Eff[R, B], otherwise: Last[R] = Last.none[R]): Arrs[R, A, B] =
+    Arrs(Vector.empty :+ f.asInstanceOf[Any => Eff[R, Any]], otherwise)
 
   /** create an Arrs function with no effect, which is similar to using an identity a => EffMonad[R].pure(a) */
   def unit[R, A]: Arrs[R, A, A] =

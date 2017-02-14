@@ -38,7 +38,7 @@ trait Batch {
               case e1 +: rest1 =>
                 ImpureAp(Unions(m.inject(e1), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
                   // the map operation has to reorder the results based on what could be batched or not
-                  Arrs.singleton(ls => continuation(reorder(ls, result.hasBatched, result.keys ++ collected.otherIndices))), last)
+                  continuation.contramap(ls => reorder(ls, result.hasBatched, result.keys ++ collected.otherIndices)), last)
             }
         }
 

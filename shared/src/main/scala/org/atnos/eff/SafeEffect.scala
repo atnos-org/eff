@@ -143,7 +143,6 @@ trait SafeInterpretation extends SafeCreation { outer =>
 
       def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] = {
         type F = (Vector[Throwable], Option[Throwable])
-
         val failedFinalizers = new collection.mutable.ListBuffer[Throwable]
         var error: Option[Throwable] = None
 
@@ -287,17 +286,26 @@ trait SafeInterpretation extends SafeCreation { outer =>
 
     }
 
-    interceptStatelessLoop1[R, Safe, A, A]((a: A) => a)(loop)(action)
+    interceptStatelessLoop1[R, Safe, A, A]((a: A) => a)(loop)(Eff.whenStopped(action, Last.eff(last)))
   }
 
-  def bracket[R, A, B, C](acquire: Eff[R, A])(step: A => Eff[R, B])(release: A => Eff[R, C])(implicit m: Safe /= R): Eff[R, B] =
+  /**
+   * get a resource A and use it.
+   * Call the release function whether an exception is thrown or not when using the resource
+   *
+   * NOTE: Eff interpreters are independent so if there is an effect short-circuiting all computations inside 'use',
+   * like Option or Either then the release function will not be called. If you want to make sure
+   * that the release function is always called "at the end of the world and whatever happens" you need to call
+   * Eff.bracketLast
+   */
+  def bracket[R, A, B, C](acquire: Eff[R, A])(use: A => Eff[R, B])(release: A => Eff[R, C])(implicit m: Safe /= R): Eff[R, B] =
     for {
       a <- acquire
-      b <- thenFinally(step(a), release(a).void)
+      b <- thenFinally(use(a), release(a).void)
     } yield b
 
   /**
-   * evaluate first action possibly having error effects
+   * evaluate first action possibly having exceptions
    *
    * Execute a second action if the first one is not successful
    */

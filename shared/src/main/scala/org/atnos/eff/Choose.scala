@@ -83,7 +83,7 @@ trait ChooseInterpretation {
             case Impure(u, c, last) =>
               m.project(u) match {
                 case Left(u1) =>
-                  val r1 = Impure(u1, Arrs.singleton((x: u1.X) => runChoose[R, U, A, F](c(x)))).addLast(lastRun(last))
+                  val r1 = Impure(u1, c.interpret(runChoose[R, U, A, F])(_.interpret(l => runChoose[R, U, Unit, F](l).void))).addLast(lastRun(last))
                   go(rest, (r1 |@| result).map(alternativeF.combineK))
 
                 case Right(choose) =>
