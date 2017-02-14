@@ -34,7 +34,7 @@ trait StateCreation {
 
   /** modify the current state value */
   def modify[R, S](f: S => S)(implicit member: State[S, ?] |= R): Eff[R, Unit] =
-    get >>= ((s: S) => put(f(s)))
+    send[State[S, ?], R, Unit](State.modify(f))
 
 }
 

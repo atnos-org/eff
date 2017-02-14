@@ -11,6 +11,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  The state monad can be used to put/get state $putGetState
  modify can be used to modify the current state $modifyState
+ The state monad works applicatively $applicativeState
 
  A State[T, ?] effect can be lifted into a State[S, ?] effect
    provided there is a "lens" (a getter and a setter) from T to S $lensedState
@@ -52,6 +53,15 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
     action.runState(0).run ==== ((list.map(_.toString), 5000))
   }
+
+  def applicativeState = {
+
+    val stateAction = StateEffect.modify[SI, Int](_ + 1)
+
+    (stateAction *> stateAction).runState(0).run ====
+      (stateAction >> stateAction).runState(0).run
+  }
+
 
   def lensedState = {
     type StateIntPair[A] = State[(Int, Int), A]
