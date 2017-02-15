@@ -7,6 +7,7 @@ import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.matcher.{Matcher, ThrownExpectations}
 import org.scalacheck.Gen
+import EitherEffect.{right => rightEffect, left => leftEffect}
 
 import scala.collection.mutable.ListBuffer
 
@@ -42,6 +43,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     either right + protect exception $bracket2
     either left + ok $bracket3
     either left + protect exception $bracket4
+    it works even with flatMapped eithers $bracket5
 
 """
 
@@ -209,19 +211,23 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   var i = 0
 
   def bracket1 = checkRelease {
-    EitherEffect.right[U, String, Int](1) >>= (v => protect[U, Int](v))
+    rightEffect[U, String, Int](1) >>= (v => protect[U, Int](v))
   }
 
   def bracket2 = checkRelease {
-    EitherEffect.right[U, String, Int](1) >>= (v => protect[U, Int] { sys.error("ouch"); v })
+    rightEffect[U, String, Int](1) >>= (v => protect[U, Int] { sys.error("ouch"); v })
   }
 
   def bracket3 = checkRelease {
-    EitherEffect.left[U, String, Int]("Error") >>= (v => protect[U, Int](v))
+    leftEffect[U, String, Int]("Error") >>= (v => protect[U, Int](v))
   }
 
   def bracket4 = checkRelease {
-    EitherEffect.left[U, String, Int]("Error") >>= (v => protect[U, Int] { sys.error("ouch"); v })
+    leftEffect[U, String, Int]("Error") >>= (v => protect[U, Int] { sys.error("ouch"); v })
+  }
+
+  def bracket5 = checkRelease {
+    rightEffect[U, String, Int](1).flatMap(_ => leftEffect[U, String, Int]("Error")) >>= (v => protect[U, Int](v))
   }
 
   /**
