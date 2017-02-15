@@ -1,0 +1,18 @@
+Maintenance version.
+
+This version contains some important fixes to the `Safe` and `State` effects.
+
+## Improvements
+
+ * allow finalizers for the `SafeEffect` to be triggered even in presence of "short-circuiting" effects like `Either`, 
+   `Option` or `TimedFuture` [#68](https://github.com/atnos-org/eff/pull/68)
+   
+ * added a `Eff.bracketLast` method to allow the clean up of resources on an `Eff` computation. The scope of the clean-up 
+   extends to future `flatMaps` done on the bracketed computation, whereas `SafeEffect.bracket` only brackets the current 
+   computation
+
+## Fixes: 
+   
+ * fix `State.modify` for applicative case [#69](https://github.com/atnos-org/eff/pull/69)
+ * fix errors caused by more exhaustive matching in TLS [#66](https://github.com/atnos-org/eff/pull/66)
+
