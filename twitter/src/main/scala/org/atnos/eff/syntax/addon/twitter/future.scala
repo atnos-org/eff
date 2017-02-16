@@ -6,13 +6,13 @@ import com.twitter.util.{Future, FuturePool}
 import org.atnos.eff.addon.twitter._
 import org.atnos.eff.{Fx, _}
 
-trait task {
+trait future {
 
   implicit final def toTwitterFutureOps[R, A](e: Eff[R, A]): TwitterFutureOps[R, A] = new TwitterFutureOps[R, A](e)
 
 }
 
-object task extends task
+object future extends future
 
 final class TwitterFutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
 

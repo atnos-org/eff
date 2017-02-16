@@ -1,7 +1,10 @@
 package org.atnos.eff
 package addon
 
-import _root_.scalaz._, Scalaz._
+import org.atnos.eff.addon.scalaz.concurrent.TaskEffect
+
+import _root_.scalaz._
+import Scalaz._
 
 package object scalaz {
 
@@ -10,6 +13,8 @@ package object scalaz {
     eval   with
     safe   with
     validate
+
+  object task extends TaskEffect
 
   /**
    * Monad implementation for the Eff[R, ?] type

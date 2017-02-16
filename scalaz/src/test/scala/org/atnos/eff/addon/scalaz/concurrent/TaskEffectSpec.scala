@@ -8,7 +8,7 @@ import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 
 import scala.collection.mutable.ListBuffer
-import org.atnos.eff.addon.scalaz.concurrent.TaskEffect._
+import org.atnos.eff.addon.scalaz.task._
 import org.atnos.eff.syntax.addon.scalaz.task._
 
 import scala.concurrent._

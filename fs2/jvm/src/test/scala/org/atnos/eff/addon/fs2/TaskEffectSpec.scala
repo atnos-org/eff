@@ -9,9 +9,9 @@ import org.specs2.concurrent.ExecutionEnv
 
 import scala.collection.mutable.ListBuffer
 import org.atnos.eff._
+import org.atnos.eff.addon.fs2.task._
 import org.atnos.eff.syntax.addon.fs2.task._
 import fs2._
-import TaskEffect._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
