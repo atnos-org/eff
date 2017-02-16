@@ -283,11 +283,13 @@ trait MemberLower5 extends MemberLower6 {
 
     def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Union[Fx3[T, M, R], V] Either L[V] =
       union match {
-        case UnionAppendL(l) => Right(l.tagged.valueUnsafe.asInstanceOf[L[V]])
+        case UnionAppendL(l) => Left(l.tagged.copy(index = 3))
         case UnionAppendR(r) =>
           val tagged = r.tagged
-          if (tagged.index == 3) Left(tagged.forget)
-          else Left(tagged.decrement)
+          (tagged.index: @switch) match {
+            case 1 | 2 => Left(tagged.forget)
+            case 3 => Right(tagged.valueUnsafe.asInstanceOf[L[V]])
+          }
         case UnionTagged(_, _) => sys.error("impossible")
       }
   }
