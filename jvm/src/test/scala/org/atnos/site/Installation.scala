@@ -5,7 +5,7 @@ object Installation extends UserGuidePage { def is = "Installation".title ^ s2""
 You add `eff` as an sbt dependency:
 
 ```scala
-libraryDependencies += "org.atnos" %% "eff" % "2.0.0"
+libraryDependencies += "org.atnos" %% "eff" % "$version"
 
 // to write types like Reader[String, ?]
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
@@ -16,7 +16,7 @@ addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
 
 If you want to use [Scalaz](http://github.com/scalaz/scalaz) as a library for functional programming you will also need:
 ```scala
-libraryDependencies += "org.atnos" %% "eff-scalaz" % "2.0.0"
+libraryDependencies += "org.atnos" %% "eff-scalaz" % "$version"
 ```
 
 This will allows you to use the `Eff` monad as a Scalaz `Monad` (instead of the cats `Monad` which is the default implementation).
@@ -27,7 +27,7 @@ On the other hand if you prefer to use [Monix](http://monix.io) `Task`, you will
 a dependency on `eff-monix`:
 
 ```scala
-libraryDependencies += "org.atnos" %% "eff-monix" % "2.0.0"
+libraryDependencies += "org.atnos" %% "eff-monix" % "$version"
 ```
 
 ### Imports

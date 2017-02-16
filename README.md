@@ -22,7 +22,7 @@ You can also check out [this presentation](http://bit.ly/eff_flatmap_2016) at fl
 
 You add `eff` as an sbt dependency:
 ```scala
-libraryDependencies += "org.atnos" %% "eff" % "3.0.0"
+libraryDependencies += "org.atnos" %% "eff" % "3.0.2"
 
 // to write types like Reader[String, ?]
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")

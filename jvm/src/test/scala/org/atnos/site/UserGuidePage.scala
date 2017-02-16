@@ -34,6 +34,7 @@ abstract class UserGuidePage extends
     load(FilePath.unsafe("jvm/src/test/scala/"+name.replace(".", "/")+".scala"))
   }
 
+  val version = org.atnos.eff.BuildInfo.version
 
   override implicit def defaultSnippetParameters[T] = Snippet.defaultParams[T].copy(
     asCode = (s1: String, s2: String) => splitText(Snippet.markdownCode()(s1, s2)))
