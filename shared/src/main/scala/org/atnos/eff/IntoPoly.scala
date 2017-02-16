@@ -41,101 +41,64 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
   implicit def intoAppendL2L[T1[_], T2[_], R]: IntoPoly[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] =
     new IntoPoly[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] {
       def apply[A](e: Eff[FxAppend[Fx1[T2], R], A]): Eff[FxAppend[Fx2[T1, T2], R], A] =
-        e.asInstanceOf[Eff[FxAppend[Fx2[T1, T2], R], A]]
+        new UnionInto[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] {
+          def apply[X](union: Union[FxAppend[Fx1[T2], R], X]) = union match {
+            case UnionAppendL(l)   => UnionAppendL(l.tagged.increment)
+            case UnionAppendR(r)   => UnionAppendR(r)
+            case UnionTagged(_, _) => sys.error("impossible")
+          }
+        }.into(e)
+
     }
 
   implicit def intoAppendL2R[T1[_], T2[_], R]: IntoPoly[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] =
     new IntoPoly[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] {
       def apply[A](e: Eff[FxAppend[Fx1[T1], R], A]): Eff[FxAppend[Fx2[T1, T2], R], A] =
-        e match {
-          case Pure(a, last) =>
-            pure(a).addLast(last.interpret(apply))
-
-          case Impure(u@UnionAppendR(r), c, l) =>
-            Impure[FxAppend[Fx2[T1, T2], R], u.X, A](Union.appendR(r), c.interpretEff(apply)(apply), l.interpret(apply))
-
-          case Impure(u@UnionAppendL(UnionTagged(value, _)), c, l) =>
-            Impure[FxAppend[Fx2[T1, T2], R], u.X, A](Union.appendL(Union.twoL(value.asInstanceOf[T1[A]])).forget, c.interpretEff(apply)(apply), l.interpret(apply))
-
-          case Impure(_, _, _) => sys.error("impossible")
-
-          case ImpureAp(unions, continuation, last) =>
-            ImpureAp[FxAppend[Fx2[T1, T2], R], unions.X, A](
-              unions.into(new UnionInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] {
-                def apply[X](union: Union[FxAppend[Fx1[T1], R], X]) = union match {
-                  case UnionAppendR(r) => UnionAppendR(r)
-                  case UnionAppendL(l) => UnionAppendL(Union.twoL(l.tagged.valueUnsafe.asInstanceOf[T1[X]]))
-                  case UnionTagged(_, _) => sys.error("impossible")
-                }}), continuation.interpretEff(apply)(apply), last.interpret(apply))
-        }
+        new UnionInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] {
+          def apply[X](union: Union[FxAppend[Fx1[T1], R], X]) = union match {
+            case UnionAppendL(l)   => UnionAppendL(l.tagged.forget)
+            case UnionAppendR(r)   => UnionAppendR(r)
+            case UnionTagged(_, _) => sys.error("impossible")
+          }
+        }.into(e)
     }
 
   implicit def intoAppendL3L[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] =
     new IntoPoly[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
       def apply[A](e: Eff[FxAppend[Fx2[T2, T3], R], A]): Eff[FxAppend[Fx3[T1, T2, T3], R], A] =
-        e.asInstanceOf[Eff[FxAppend[Fx3[T1, T2, T3], R], A]]
+        new UnionInto[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
+          def apply[X](union: Union[FxAppend[Fx2[T2, T3], R], X]) = union match {
+            case UnionAppendL(l)   => UnionAppendL(l.tagged.increment)
+            case UnionAppendR(r)   => UnionAppendR(r)
+            case UnionTagged(_, _) => sys.error("impossible")
+          }
+        }.into(e)
     }
 
   implicit def intoAppendL3M[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] =
     new IntoPoly[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
       def apply[A](e: Eff[FxAppend[Fx2[T1, T3], R], A]): Eff[FxAppend[Fx3[T1, T2, T3], R], A] =
-        e match {
-          case Pure(a, last) =>
-            pure(a).addLast(last.interpret(apply))
-
-          case Impure(u@UnionAppendR(_), c, l) =>
-            Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](u.forget, c.interpretEff(apply)(apply), l.interpret(apply))
-
-          case Impure(u@UnionAppendL(tagged@UnionTagged(_, 1)), c, l) =>
-            Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(tagged.forget), c.interpretEff(apply)(apply), l.interpret(apply))
-
-          case Impure(u@UnionAppendL(UnionTagged(value, 2)), c, l) =>
-            Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(UnionTagged(value, 3)), c.interpretEff(apply)(apply), l.interpret(apply))
-
-          case Impure(_, _, _) => sys.error("impossible")
-
-          case ImpureAp(unions, continuation, last) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], unions.X, A](
-              unions.into(new UnionInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
-                def apply[X](union: Union[FxAppend[Fx2[T1, T3], R], X]) = union match {
-                  case UnionAppendR(r) => UnionAppendR(r)
-                  case UnionAppendL(l) =>
-                    val tagged = l.tagged
-                    if (tagged.index == 1)
-                      tagged.forget
-                    else
-                      tagged.increment
-                  case UnionTagged(_, _) => sys.error("impossible")
-                }}), continuation.interpretEff(apply)(apply), last.interpret(apply))
-        }
+        new UnionInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
+          def apply[X](union: Union[FxAppend[Fx2[T1, T3], R], X]) = union match {
+            case UnionAppendL(l)   =>
+              if (l.tagged.index == 1) UnionAppendL(l.tagged.forget)
+              else                     UnionAppendL(l.tagged.increment)
+            case UnionAppendR(r)   => UnionAppendR(r)
+            case UnionTagged(_, _) => sys.error("impossible")
+          }
+        }.into(e)
     }
 
   implicit def intoAppendL3R[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] =
     new IntoPoly[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] {
       def apply[A](e: Eff[FxAppend[Fx2[T1, T2], R], A]): Eff[FxAppend[Fx3[T1, T2, T3], R], A] =
-        e match {
-          case Pure(a, last) =>
-            pure(a).addLast(last.interpret(apply))
-
-          case Impure(u@UnionAppendR(r), c, l) =>
-            Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](r.forget, c.interpretEff(apply)(apply), l.interpret(apply))
-
-          case Impure(u@UnionAppendL(l), c, last) =>
-            val tagged = l.tagged
-            Impure[FxAppend[Fx3[T1, T2, T3], R], u.X, A](UnionAppendL(tagged.increment), c.interpretEff(apply)(apply), last.interpret(apply))
-
-          case Impure(_, _, _) => sys.error("impossible")
-
-          case ImpureAp(unions, continuation, last) =>
-            ImpureAp[FxAppend[Fx3[T1, T2, T3], R], unions.X, A](
-              unions.into(new UnionInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] {
-                def apply[X](union: Union[FxAppend[Fx2[T1, T2], R], X]) = union match {
-                  case UnionAppendR(r) => UnionAppendR(r)
-                  case UnionAppendL(l) => UnionAppendL(l.tagged.increment)
-                  case UnionTagged(_, _) => sys.error("impossible")
-                }}), continuation.interpretEff(apply)(apply), last.interpret(apply))
-
-        }
+        new UnionInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] {
+          def apply[X](union: Union[FxAppend[Fx2[T1, T2], R], X]) = union match {
+            case UnionAppendL(l) => UnionAppendL(l.tagged.forget)
+            case UnionAppendR(r)   => UnionAppendR(r)
+            case UnionTagged(_, _) => sys.error("impossible")
+          }
+        }.into(e)
     }
 }
 
@@ -143,19 +106,10 @@ trait IntoPolyLower3 extends IntoPolyLower4 {
   implicit def intoAppendL1[T[_], R]: IntoPoly[R, FxAppend[Fx1[T], R]] =
     new IntoPoly[R, FxAppend[Fx1[T], R]] {
       def apply[A](e: Eff[R, A]): Eff[FxAppend[Fx1[T], R], A] =
-        e match {
-          case Pure(a, last) =>
-            pure(a).addLast(last.interpret(apply))
-
-          case Impure(u, c, l) =>
-            Impure[FxAppend[Fx1[T], R], u.X, A](UnionAppendR(u), c.interpretEff(apply)(apply), l.interpret(apply))
-
-          case ImpureAp(unions, continuation, l) =>
-            ImpureAp[FxAppend[Fx1[T], R], unions.X, A](
-              unions.into(new UnionInto[R, FxAppend[Fx1[T], R]] {
-                def apply[X](union: Union[R, X]) = UnionAppendR(union)
-              }), continuation.interpretEff(apply)(apply), l.interpret(apply))
-        }
+        new UnionInto[R, FxAppend[Fx1[T], R]] {
+          def apply[X](union: Union[R, X]): Union[FxAppend[Fx1[T], R], X] =
+            UnionAppendR(union)
+          }.into(e)
     }
 }
 
@@ -199,7 +153,9 @@ trait IntoPolyLower5 {
   implicit def intoMember[T[_], R, U](implicit m: Member.Aux[T, R, U]): IntoPoly[U, R] = new IntoPoly[U, R] {
     def apply[A](e: Eff[U, A]): Eff[R, A] =
       e match {
-        case Pure(a, last) => pure(a).addLast(last.interpret(apply))
+        case Pure(a, last) =>
+          pure(a).addLast(last.interpret(apply))
+
         case Impure(u, c, l) =>
           Impure(m.accept(u), c.interpretEff(apply)(apply), l.interpret(apply))
 

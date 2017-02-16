@@ -34,18 +34,25 @@ case class UnionAppendR[L, R, A](value: Union[R, A]) extends Union[FxAppend[L, R
 object Union {
   def one[M[_], A](value: M[A]): Union[Fx1[M], A] =
     UnionTagged(value, 1)
+
   def twoL[M[_], T[_], A](value: M[A]): Union[Fx2[M, T], A] =
-    UnionTagged(value, 2)
-  def twoR[M[_], T[_], A](value: T[A]): Union[Fx2[M, T], A] =
     UnionTagged(value, 1)
+
+  def twoR[M[_], T[_], A](value: T[A]): Union[Fx2[M, T], A] =
+    UnionTagged(value, 2)
+
   def threeL[M[_], T[_], N[_], A](value: M[A]): Union[Fx3[M, T, N], A] =
-    UnionTagged(value, 3)
+    UnionTagged(value, 1)
+
   def threeM[M[_], T[_], N[_], A](value: T[A]): Union[Fx3[M, T, N], A] =
     UnionTagged(value, 2)
+
   def threeR[M[_], T[_], N[_], A](value: N[A]): Union[Fx3[M, T, N], A] =
-    UnionTagged(value, 1)
+    UnionTagged(value, 3)
+
   def appendL[L, R, A](union: Union[L, A]): Union[FxAppend[L, R], A] =
     UnionAppendL(union)
+
   def appendR[L, R, A](union: Union[R, A]): Union[FxAppend[L, R], A] =
     UnionAppendR(union)
 }
