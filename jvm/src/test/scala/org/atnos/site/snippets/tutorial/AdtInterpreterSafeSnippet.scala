@@ -2,13 +2,11 @@
 package org.atnos.site.snippets.tutorial
 
 import AdtSnippet._
-import AdtCreationSnippet._
-import cats.~>
 
 trait AdtInterpreterSafeSnippet {
 // 8<---
 
-import org.atnos.eff._, all._, interpret._, syntax._
+import org.atnos.eff._, all._, interpret._
 import cats.implicits._
 import cats.data._
 

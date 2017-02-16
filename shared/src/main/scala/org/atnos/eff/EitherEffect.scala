@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats._, data._
+import cats._
 import cats.implicits._
 import Eff._
 import Interpret._

@@ -136,7 +136,6 @@ import org.atnos.eff.eff._
 import org.atnos.eff.syntax.eff._
 import org.atnos.eff.future._
 import org.atnos.eff.interpret._
-import scala.concurrent.Future
 
 // list of access rights for a valid token
 case class AccessRights(rights: List[String])

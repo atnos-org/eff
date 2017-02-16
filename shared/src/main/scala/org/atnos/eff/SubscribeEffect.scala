@@ -2,8 +2,6 @@ package org.atnos.eff
 
 import cats._
 
-import scala.concurrent._
-import duration._
 import Eff._
 import org.atnos.eff.either._
 import org.atnos.eff.syntax.all._

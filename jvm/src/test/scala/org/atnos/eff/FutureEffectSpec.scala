@@ -1,6 +1,5 @@
 package org.atnos.eff
 
-import cats.Eval
 import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.future._
@@ -12,7 +11,6 @@ import org.specs2.concurrent.ExecutionEnv
 import scala.collection.mutable.ListBuffer
 import scala.concurrent._
 import duration._
-import org.scalacheck._
 
 import org.specs2.matcher.ThrownExpectations
 

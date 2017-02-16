@@ -6,7 +6,6 @@ import UserInteractionSnippet._
 trait UserInteractionProgramSnippet {
 // 8<---
 import org.atnos.eff._
-import cats.implicits._
 
 def program[R :_interact :_dataOp]: Eff[R, Unit] =
   for {

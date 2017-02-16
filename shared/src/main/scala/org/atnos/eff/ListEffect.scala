@@ -3,9 +3,7 @@ package org.atnos.eff
 import Eff._
 
 import scala.collection.mutable.ListBuffer
-import cats.data._
 import cats.implicits._
-import Either._
 import Interpret._
 import cats.Traverse
 

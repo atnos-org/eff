@@ -2,9 +2,6 @@ package org.atnos.eff.syntax
 
 import cats._
 import org.atnos.eff._
-import MemoEffect._
-
-import scala.concurrent.Future
 
 object memo extends memo
 

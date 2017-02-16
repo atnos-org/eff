@@ -2,7 +2,7 @@ package org.atnos.site
 
 import cats.data._
 import cats.Eval
-import org.atnos.eff._, all._
+import org.atnos.eff._
 
 object Introduction extends UserGuidePage { def is = "Introduction".title ^ s2"""
 

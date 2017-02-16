@@ -2,7 +2,6 @@ package org.atnos.eff
 package syntax.addon.scalaz
 
 import scalaz._
-import org.atnos.eff.addon.scalaz._
 
 object either extends org.atnos.eff.syntax.either with either
 

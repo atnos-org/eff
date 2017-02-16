@@ -12,7 +12,7 @@ import org.atnos.eff._
 
 import scala.concurrent.{ExecutionContext, Promise, TimeoutException}
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Either, Failure, Success, Try}
+import scala.util.{Either, Failure, Success}
 
 case class TimedTask[A](task: (ScheduledExecutorService, ExecutionContext) => Task[A], timeout: Option[FiniteDuration] = None) {
   @inline def runNow(sexs: ScheduledExecutorService, ec: ExecutionContext): Task[A] = timeout.fold(task(sexs, ec)) { t =>

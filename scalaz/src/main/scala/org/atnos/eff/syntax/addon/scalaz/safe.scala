@@ -1,8 +1,6 @@
 package org.atnos.eff
 package syntax.addon.scalaz
 
-import cats.Eval
-
 import scalaz._
 
 object safe extends org.atnos.eff.syntax.safe with safe

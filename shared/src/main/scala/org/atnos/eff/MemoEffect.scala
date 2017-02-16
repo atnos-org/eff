@@ -2,7 +2,6 @@ package org.atnos.eff
 
 import Eff._
 import cats.Eval
-import MemoEffect._
 
 /**
  * Memoization effect

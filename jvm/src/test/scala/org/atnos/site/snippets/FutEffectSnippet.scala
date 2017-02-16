@@ -1,8 +1,7 @@
 // 8<---
 package org.atnos.site.snippets
 
-import cats.{Applicative, Eval, Traverse}
-import cats.implicits._
+import cats.{Applicative, Traverse}
 import org.atnos.eff._
 import all._
 import org.atnos.eff.interpret._

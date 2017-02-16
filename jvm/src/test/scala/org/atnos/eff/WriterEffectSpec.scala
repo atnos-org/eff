@@ -2,7 +2,7 @@ package org.atnos.eff
 
 import cats.data._
 import cats.Eval
-import org.atnos.eff._, all._
+import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2.Specification
 

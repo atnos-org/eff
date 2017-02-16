@@ -2,7 +2,6 @@
 package org.atnos.site.snippets.tutorial
 
 import AdtSnippet._
-import AdtCreationSnippet._
 import cats.Traverse
 
 trait AdtInterpreterSnippet {
@@ -10,7 +9,6 @@ trait AdtInterpreterSnippet {
 
 import org.atnos.eff._, interpret._
 import cats.implicits._
-import cats.data._
 import scala.collection.mutable._
 
 /**

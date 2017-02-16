@@ -2,7 +2,7 @@ package org.atnos.eff.syntax
 
 import cats.Eval
 import cats.data.Writer
-import org.atnos.eff._, eff._
+import org.atnos.eff._
 
 object writer extends writer
 

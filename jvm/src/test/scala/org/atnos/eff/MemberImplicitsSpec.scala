@@ -1,8 +1,6 @@
 package org.atnos.eff
 
-import cats.data._
 import org.specs2.Specification
-import org.atnos.eff.syntax.all._
 
 class MemberImplicitsSpec extends Specification { def is = s2"""
 
@@ -10,6 +8,9 @@ class MemberImplicitsSpec extends Specification { def is = s2"""
 
 """
 /*
+import cats.data._
+import org.atnos.eff.syntax.all._
+
 // UNCOMMENT TO TEST COMPILATION TIMES AND IMPLICIT SEARCH
   sealed trait OptionN[A] { def a: A }
   case class Option1[A](a: A)   extends OptionN[A]

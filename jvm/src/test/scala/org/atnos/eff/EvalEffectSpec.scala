@@ -7,7 +7,6 @@ import org.atnos.eff.syntax.all._
 import cats.syntax.all._
 import cats.instances.all._
 import cats.instances.all._
-import cats.data._
 import cats.Eval
 
 class EvalEffectSpec extends Specification { def is = s2"""

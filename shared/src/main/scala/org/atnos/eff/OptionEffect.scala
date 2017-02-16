@@ -1,11 +1,9 @@
 package org.atnos.eff
 
-import cats.data._
-import Either._
 import cats.implicits._
 import Interpret._
 import Eff._
-import cats.{Eval, Traverse}
+import cats._
 
 /**
  * Effect for optional computations

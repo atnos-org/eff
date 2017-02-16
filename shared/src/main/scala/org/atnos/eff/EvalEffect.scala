@@ -2,9 +2,7 @@ package org.atnos.eff
 
 import scala.util.control.NonFatal
 import cats._
-import cats.data._
 import cats.implicits._
-import Either._
 import Eff._
 import Interpret._
 

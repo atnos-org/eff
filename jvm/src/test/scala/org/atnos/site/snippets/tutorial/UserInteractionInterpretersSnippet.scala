@@ -9,8 +9,6 @@ trait UserInteractionInterpretersSnippet {
 def readLine(): String = "snuggles"
 // 8<---
 import org.atnos.eff._, interpret._
-import cats.data._
-
 
 def runInteract[R, A](effects: Eff[R, A])(implicit m: Interact <= R): Eff[m.Out, A] = {
   val recurse = new Recurse[Interact, m.Out, A] {

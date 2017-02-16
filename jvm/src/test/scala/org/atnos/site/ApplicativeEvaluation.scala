@@ -1,6 +1,6 @@
 package org.atnos.site
 
-import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
+import java.util.concurrent.ScheduledThreadPoolExecutor
 
 import scala.annotation.tailrec
 
@@ -78,7 +78,6 @@ the fastest actions finish first.
 Another advantage of applicative effects is that we can intercept them individual requests and "batch" them into one single
 request. For example: ${snippet {
 import org.atnos.eff._, all._, syntax.all._
-import cats._
 import cats.implicits._
 
 // An effect to get users from a database

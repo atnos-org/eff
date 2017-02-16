@@ -3,7 +3,6 @@ package org.atnos.eff
 import Eff._
 import cats._
 import cats.implicits._
-import org.atnos.eff.interpret._
 
 import scala.annotation.tailrec
 import scala.util.Random

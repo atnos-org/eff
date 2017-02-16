@@ -5,12 +5,10 @@ import java.util.concurrent.ScheduledExecutorService
 import cats._
 import cats.implicits._
 import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
-import org.atnos.eff.{NoFx, interpret, _}
-import io.catbird.util._
+import org.atnos.eff._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, TimeoutException}
+import scala.concurrent.TimeoutException
 import com.twitter.util._
 
 object TwitterFutureCreation extends TwitterFutureCreation

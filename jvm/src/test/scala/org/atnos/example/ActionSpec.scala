@@ -11,7 +11,6 @@ import WarningsEffect._
 import ConsoleEffect._
 import ErrorEffect._
 import Member.{<=}
-import cats.data._
 import cats.Eval
 import org.specs2._
 

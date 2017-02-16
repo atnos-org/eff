@@ -8,7 +8,6 @@ import cats.Eval
 import ReaderEffect._
 import WriterEffect._
 import EvalEffect._
-import Member.<=
 import Eff._
 
 class ReadmeSpec extends Specification { def is = s2"""

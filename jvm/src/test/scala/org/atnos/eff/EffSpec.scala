@@ -10,7 +10,6 @@ import cats.instances.all._
 import cats.Eq
 import cats.~>
 
-import scala.collection.mutable.ListBuffer
 //import cats.laws.discipline.{arbitrary => _, _}
 //import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._

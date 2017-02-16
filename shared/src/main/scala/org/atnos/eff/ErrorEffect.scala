@@ -5,7 +5,6 @@ import cats._
 import cats.implicits._
 import Eff._
 import Interpret._
-import Either._
 
 import scala.reflect.ClassTag
 

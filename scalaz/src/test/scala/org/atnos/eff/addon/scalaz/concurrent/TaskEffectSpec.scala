@@ -13,8 +13,6 @@ import org.atnos.eff.syntax.addon.scalaz.task._
 
 import scala.concurrent._
 import duration._
-import org.scalacheck._
-import org.specs2.matcher.FutureMatchers._
 import org.specs2.matcher.TaskMatchers._
 import scalaz.concurrent.Task
 

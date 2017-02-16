@@ -1,8 +1,7 @@
 package org.atnos.eff.addon.twitter
 
 import scala.concurrent.duration._
-import com.twitter.util.{Await, Future, FuturePool}
-import cats.Eval
+import com.twitter.util.{Await, FuturePool}
 import org.atnos.eff.addon.twitter.future._
 import org.atnos.eff.syntax.addon.twitter.future._
 import cats.implicits._
@@ -11,7 +10,6 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
-import org.scalacheck._
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent._

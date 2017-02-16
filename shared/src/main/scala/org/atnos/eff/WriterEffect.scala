@@ -6,7 +6,6 @@ import data._
 import cats.implicits._
 import Eff._
 import Interpret._
-import EvalEffect._
 
 /**
  * Effect for logging values alongside computations

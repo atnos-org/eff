@@ -10,7 +10,7 @@ import org.atnos.eff._
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Promise, TimeoutException}
+import scala.concurrent.{Promise, TimeoutException}
 import scala.util._
 
 case class TimedTask[A](task: ScheduledExecutorService => Task[A], timeout: Option[FiniteDuration] = None) {

@@ -3,7 +3,6 @@ package org.atnos.eff.addon.fs2
 import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-import org.scalacheck._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 

@@ -1,7 +1,6 @@
 package org.atnos.eff
 
 import org.specs2.{ScalaCheck, Specification}
-import cats._, syntax.all._
 import cats.data._
 import cats.implicits._
 import org.atnos.eff.all._

@@ -449,7 +449,6 @@ operations are
 Let's see an example for the protection of a resource: ${snippet{
 import org.atnos.eff.syntax.all._
 import org.atnos.eff._, all._
-import cats.Eval
 
 // let's represent a resource which can be in use
 case class Resource(values: List[Int] = (1 to 10).toList, inUse: Boolean = false) {

@@ -1,10 +1,6 @@
 package org.atnos.eff
 
-import cats.~>
-
-import scala.annotation.tailrec
 import cats._
-import cats.data._
 import cats.implicits._
 import Eff._
 
