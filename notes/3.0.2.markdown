@@ -1,0 +1,23 @@
+Super important maintenance version!!!
+
+This version contains some important fixes to `Member` implicits. You should definitely **not use 3.0.0 or 3.0.1** because
+those versions contain the possibility to throw `ClassCastExceptions` depending on the effect stack you use.
+
+## Improvements
+
+ * added objects to import creation / interpretation methods for task and future effects
+    - `org.atnos.eff.addon.scalaz.task._` 
+    - `org.atnos.eff.addon.monix.task._`
+    - `org.atnos.eff.addon.fs2.task._`
+    - `org.atnos.eff.addon.twitter.future._`
+   
+ * added objects to import syntax methods for task and future effects
+    - `org.atnos.eff.syntax.addon.scalaz.task._` 
+    - `org.atnos.eff.syntax.addon.monix.task._`
+    - `org.atnos.eff.syntax.addon.fs2.task._`
+    - `org.atnos.eff.syntax.addon.twitter.future._`
+
+## Fixes: 
+   
+ * possible `ClassCastException` when running [stacks of 4 effects](https://gitter.im/atnos-org/eff?at=58a4f376fef1d2de52aa6288)
+
