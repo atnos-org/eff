@@ -430,8 +430,21 @@ import org.atnos.eff.syntax.future._
 
 Await.result(action.runOption.runSequential, 1 second)</code></pre>
 <p><code class="prettyprint">&gt; Some(1)</code></p>
-<p>If you prefer to use monix or scalaz <code class="prettyprint">Task</code> you need to add a dependency on <code class="prettyprint">eff-monix</code> or <code class="prettyprint">eff-scalaz</code> and use one of their <code class="prettyprint">TaskEffect</code>s.</p>
-<p>Future and Task computations can also be memoized to avoid expensive computations to be done several times. You can either</p>
+<p>You can also use other <code class="prettyprint">Future</code> or <code class="prettyprint">Task</code> effects:</p>
+<ul>
+<li><code class="prettyprint">twitter</code>: depend on <code class="prettyprint">eff-twitter</code> and import <code class="prettyprint">org.atnos.eff.addon.twitter.future._</code></li>
+<li><code class="prettyprint">scalaz</code>: depend on <code class="prettyprint">eff-scalaz</code> and import <code class="prettyprint">org.atnos.eff.addon.scalaz.task._</code></li>
+<li><code class="prettyprint">monix</code>: depend on <code class="prettyprint">eff-monix</code> and import <code class="prettyprint">org.atnos.eff.addon.monix.task._</code></li>
+<li><code class="prettyprint">fs2</code>: depend on <code class="prettyprint">eff-fs2</code> and import <code class="prettyprint">org.atnos.eff.addon.fs2.task._</code></li>
+</ul>
+<p>There are corresponding syntax import to be able to call <code class="prettyprint">runAsync</code> methods in:</p>
+<ul>
+<li><code class="prettyprint">twitter</code>: <code class="prettyprint">org.atnos.eff.syntax.addon.twitter.future._</code></li>
+<li><code class="prettyprint">scalaz</code>: <code class="prettyprint">org.atnos.eff.syntax.addon.scalaz.task._</code></li>
+<li><code class="prettyprint">monix</code>: <code class="prettyprint">org.atnos.eff.syntax.addon.monix.task._</code></li>
+<li><code class="prettyprint">fs2</code>: <code class="prettyprint">org.atnos.eff.syntax.addon.fs2.task._</code></li>
+</ul>
+<p><code class="prettyprint">Future</code> and <code class="prettyprint">Task</code> computations can also be memoized to avoid expensive computations to be done several times. You can either</p>
 <ul>
 <li>use the <code class="prettyprint">futureMemo/taskMemo</code> operator with a (mutable) cache</li>
 <li>use the <code class="prettyprint">futureMemoized/taskMemoized</code> operator with the <code class="prettyprint">Memoized</code> effect (you will need to provide the cache later)
@@ -470,7 +483,6 @@ Await.result(futureMemo, 1.second)
 <p>Let’s see an example for the protection of a resource:</p>
 <pre><code class="prettyprint">import org.atnos.eff.syntax.all._
 import org.atnos.eff._, all._
-import cats.Eval
 
 // let&#39;s represent a resource which can be in use
 case class Resource(values: List[Int] = (1 to 10).toList, inUse: Boolean = false) {

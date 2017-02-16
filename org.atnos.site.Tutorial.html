@@ -125,7 +125,6 @@ def program[R :_kvstore]: Eff[R, Option[Int]] =
 <p>To do this, we will use an interpreter transforming our <code class="prettyprint">KVStore</code> effects using a simple mutable map:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, interpret._
 import cats.implicits._
-import cats.data._
 import scala.collection.mutable._
 
 /**
@@ -183,7 +182,7 @@ def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff
 <li><code class="prettyprint">E Either ?</code> for type errors
 <p/></li>
 </ul>
-<pre><code class="prettyprint">import org.atnos.eff._, all._, interpret._, syntax._
+<pre><code class="prettyprint">import org.atnos.eff._, all._, interpret._
 import cats.implicits._
 import cats.data._
 
@@ -358,7 +357,6 @@ def getAllCats[R :_dataOp]: Eff[R, List[String]] =
 </code></pre>
 <p>Then you simply require your program to have <code class="prettyprint">MemberIn</code> instances for those effects:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
-import cats.implicits._
 
 def program[R :_interact :_dataOp]: Eff[R, Unit] =
   for {
@@ -369,8 +367,6 @@ def program[R :_interact :_dataOp]: Eff[R, Unit] =
   } yield ()</code></pre>
 <p>Finally we write one interpreter per ADT:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, interpret._
-import cats.data._
-
 
 def runInteract[R, A](effects: Eff[R, A])(implicit m: Interact &lt;= R): Eff[m.Out, A] = {
   val recurse = new Recurse[Interact, m.Out, A] {
