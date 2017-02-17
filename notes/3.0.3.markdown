@@ -1,0 +1,6 @@
+Maintenance version
+
+## Fixes
+   
+ * the memoization of tasks and future effects was broken after the `3.0.0` upgrade, this version fixes it
+
