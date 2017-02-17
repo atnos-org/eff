@@ -64,8 +64,44 @@ object TimedTask {
   final def now[A](value: A): TimedTask[A] = TimedTask((_, _) => Task.now(value))
   implicit final def fromTask[A](task: Task[A]): TimedTask[A] =
     TimedTask((_, _) => task)
+
   final def fromTask[A](task: Task[A], timeout: Option[FiniteDuration] = None): TimedTask[A] =
     TimedTask((_, _) => task, timeout)
+
+  implicit val timedTaskSequenceCached: SequenceCached[TimedTask] = new SequenceCached[TimedTask] {
+    def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = TimedTask { (sexs, ec) =>
+      implicit val executionContext = ec
+      // there is no built-in memoization for Scalaz tasks so we need to memoize future instead
+      lazy val cached = cache.memo((key, sequenceKey), taskToFuture(tx.runNow(sexs, ec)))
+
+      Task async { cb =>
+        cached.onComplete {
+          case Success(a) => cb(\/-(a))
+          case Failure(t) => cb(-\/(t))
+        }
+      }
+    }
+  }
+
+  private[concurrent] def futureToTask[A](future: =>scala.concurrent.Future[A])(implicit ec: ExecutionContext, S: Strategy): Task[A] =
+    Task async { cb =>
+      future onComplete {
+        case Success(a) => S { cb(\/-(a)) }
+        case Failure(t) => S { cb(-\/(t)) }
+      }
+    }
+
+  private[concurrent] def taskToFuture[A](task: Task[A]): scala.concurrent.Future[A] = {
+    val p = Promise[A]()
+
+    task unsafePerformAsync {
+      case \/-(a) => p.complete(Success(a)); ()
+      case -\/(t) => p.complete(Failure(t)); ()
+    }
+
+    p.future
+  }
+
 
 }
 
@@ -128,6 +164,7 @@ trait TaskInterpretation extends TaskTypes {
         override def apply[X](fa: TimedTask[X]): TimedTask[Throwable Either X] = attempt(fa)
       })
 
+  /** memoize the task result */
   def memoize[A](key: AnyRef, cache: Cache, task: TimedTask[A]): TimedTask[A] =
     TimedTask((sexs, ec) => Task.suspend {
       cache.get(key).fold(task.runNow(sexs, ec).map { r => cache.put(key, r); r })(Task.now)
@@ -135,19 +172,14 @@ trait TaskInterpretation extends TaskTypes {
 
 
   /**
-    * Memoize tasks using a cache
+    * Memoize task effects using a cache
     *
     * if this method is called with the same key the previous value will be returned
     */
-  def taskMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit async: TimedTask /= R): Eff[R, A] =
-    interpret.interceptNat[R, TimedTask, A](e)(
-      new (TimedTask ~> TimedTask) {
-        override def apply[X](fa: TimedTask[X]): TimedTask[X] =
-          memoize(key, cache, fa)
-      }
-    )
+  def taskMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, A] =
+    Eff.memoizeEffect(e, cache, key)
 
-  def runTaskMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], async: TimedTask |= U): Eff[U, A] = {
+  def runTaskMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], task: TimedTask |= U): Eff[U, A] =
     interpret.translate(effect)(new Translate[Memoized, U] {
       def apply[X](mx: Memoized[X]): Eff[U, X] =
         mx match {
@@ -155,8 +187,6 @@ trait TaskInterpretation extends TaskTypes {
           case GetCache()        => TaskEffect.taskDelay[U, Cache](cache)
         }
     })
-  }
-
 }
 
 object TaskInterpretation extends TaskInterpretation

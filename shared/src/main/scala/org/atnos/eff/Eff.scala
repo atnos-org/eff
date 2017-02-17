@@ -358,14 +358,17 @@ trait EffInterpretation {
    * executed again
    */
   def memoizeEffect[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] =
-    cache.get(key.toString).map(Eff.pure[R, A]).getOrElse(memoizeEffectSequence(e, cache, key, 0))
+    cache.get(key).map(Eff.pure[R, A]).getOrElse(memoizeEffectSequence(e, cache, key, 0).map(a => {
+      cache.put(key, a);
+      a
+    }))
 
   private def memoizeEffectSequence[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef, sequenceKey: Int)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] = {
     var seqKey = sequenceKey
     def incrementSeqKey = { val s = seqKey; seqKey += 1; s }
 
     interpret.interceptNat[R, M, A](e)(new (M ~> M) {
-      override def apply[X](fa: M[X]): M[X] = cached.apply(cache, key, incrementSeqKey, fa)
+      def apply[X](fa: M[X]): M[X] = cached.apply(cache, key, incrementSeqKey, fa)
     })
 
   }

@@ -7,10 +7,10 @@ import org.atnos.eff._
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.TimeoutException
+import scala.concurrent.{ExecutionContext, Promise, TimeoutException}
 import scala.util._
 
-case class TimedTask[A](task: (Strategy, Scheduler) => Task[A], timeout: Option[FiniteDuration] = None) {
+case class TimedTask[A](task: (Strategy, Scheduler) =>Task[A], timeout: Option[FiniteDuration] = None) {
   def runNow(implicit strategy: Strategy, scheduler: Scheduler): Task[A] = timeout.fold(task(strategy, scheduler)) { t =>
     for {
       ref <- Task.ref[A]
@@ -25,8 +25,10 @@ case class TimedTask[A](task: (Strategy, Scheduler) => Task[A], timeout: Option[
 }
 
 object TimedTask {
+
   final def TimedTaskApplicative: Applicative[TimedTask] = new Applicative[TimedTask] {
-    def pure[A](x: A) = TimedTask((_, _) => Task.now(x))
+    def pure[A](x: A): TimedTask[A] =
+      TimedTask((_, _) => Task.now(x))
 
     def ap[A, B](ff: TimedTask[(A) => B])(fa: TimedTask[A]) =
       TimedTask((strategy, scheduler) =>
@@ -40,7 +42,8 @@ object TimedTask {
   }
 
   implicit final def TimedTaskMonad: Monad[TimedTask] = new Monad[TimedTask] {
-    def pure[A](x: A) = TimedTask((_, _) => Task.now(x))
+    def pure[A](x: A): TimedTask[A] =
+      TimedTask((_, _) => Task.now(x))
 
     def flatMap[A, B](fa: TimedTask[A])(f: (A) => TimedTask[B]) =
       TimedTask((strategy, scheduler) => fa.runNow(strategy, scheduler).flatMap(f(_).runNow(strategy, scheduler)))
@@ -60,6 +63,28 @@ object TimedTask {
 
   final def fromTask[A](task: Task[A], timeout: Option[FiniteDuration] = None): TimedTask[A] =
     TimedTask((_, _) => task, timeout)
+
+  implicit val timedTaskSequenceCached: SequenceCached[TimedTask] = new SequenceCached[TimedTask] {
+    def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = TimedTask { (strategy, scheduler) =>
+      implicit val s = strategy
+      implicit val ec = strategyToExecutionContext(s)
+      // there is no built-in memoization for fs2 tasks so we need to memoize future instead
+      lazy val cached = cache.memo(key + "-" + sequenceKey, tx.runNow(strategy, scheduler).unsafeRunAsyncFuture)
+
+      Task async { cb =>
+        cached.onComplete {
+          case Success(a) => cb(Right(a))
+          case Failure(t) => cb(Left(t))
+        }
+      }
+    }
+  }
+
+  def strategyToExecutionContext(strategy: Strategy): ExecutionContext =
+    new ExecutionContext {
+      def reportFailure(cause: Throwable): Unit = ExecutionContext.defaultReporter(cause)
+      def execute(runnable: Runnable): Unit = strategy.apply(runnable.run)
+    }
 
 }
 
@@ -124,21 +149,19 @@ trait TaskInterpretation extends TaskTypes {
         override def apply[X](fa: TimedTask[X]): TimedTask[Throwable Either X] = attempt(fa)
     })
 
+  /** memoized the task result */
   def memoize[A](key: AnyRef, cache: Cache, task: Task[A]): Task[A] =
     Task.suspend {
       cache.get[A](key).fold(task.map { r => cache.put(key, r); r })(Task.now)
     }
 
   /**
-    * Memoize tasks using a cache
+    * Memoize task effects using a cache
     *
     * if this method is called with the same key the previous value will be returned
     */
   def taskMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, A] =
-    interpret.interceptNat[R, TimedTask, A](e)(new (TimedTask ~> TimedTask) {
-      override def apply[X](fa: TimedTask[X]): TimedTask[X] =
-        fa.copy(task = (strat, sched) => memoize(key, cache, fa.task(strat, sched)))
-    })
+    Eff.memoizeEffect(e, cache, key)
 
   /**
     * Memoize task values using a memoization effect

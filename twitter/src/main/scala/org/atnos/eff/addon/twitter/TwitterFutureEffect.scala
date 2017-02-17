@@ -36,8 +36,10 @@ final case class TwitterTimedFuture[A](callback: (FuturePool, ScheduledExecutorS
 object TwitterTimedFuture {
 
   final def ApplicativeTwitterTimedFuture: Applicative[TwitterTimedFuture] = new Applicative[TwitterTimedFuture] {
-    override def pure[A](x: A) = TwitterTimedFuture((_, _) => Future.value(x))
-    override def ap[A, B](ff: TwitterTimedFuture[(A) => B])(fa: TwitterTimedFuture[A]): TwitterTimedFuture[B] = {
+    def pure[A](x: A): TwitterTimedFuture[A] =
+      TwitterTimedFuture((_, _) => Future.value(x))
+
+    def ap[A, B](ff: TwitterTimedFuture[(A) => B])(fa: TwitterTimedFuture[A]): TwitterTimedFuture[B] = {
       val newCallback = { (pool: FuturePool, sexs: ScheduledExecutorService) =>
         val ffRan = ff.runNow(pool, sexs)
         val faRan = fa.runNow(pool, sexs)
@@ -45,14 +47,18 @@ object TwitterTimedFuture {
       }
       TwitterTimedFuture(newCallback)
     }
+
     override def toString = "Applicative[TwitterTimedFuture]"
   }
 
   implicit final def MonadTwitterTimedFuture: Monad[TwitterTimedFuture] = new Monad[TwitterTimedFuture] {
-    override def pure[A](x: A) = TwitterTimedFuture((_, _) => Future.value(x))
-    override def flatMap[A, B](fa: TwitterTimedFuture[A])(f: (A) => TwitterTimedFuture[B]): TwitterTimedFuture[B] =
+    def pure[A](x: A): TwitterTimedFuture[A] =
+      TwitterTimedFuture((_, _) => Future.value(x))
+
+    def flatMap[A, B](fa: TwitterTimedFuture[A])(f: (A) => TwitterTimedFuture[B]): TwitterTimedFuture[B] =
       TwitterTimedFuture[B]((pool, sexs) => fa.runNow(pool, sexs).flatMap(f(_).runNow(pool, sexs)))
-    override def tailRecM[A, B](a: A)(f: (A) => TwitterTimedFuture[Either[A, B]]): TwitterTimedFuture[B] =
+
+    def tailRecM[A, B](a: A)(f: (A) => TwitterTimedFuture[Either[A, B]]): TwitterTimedFuture[B] =
       TwitterTimedFuture[B]({ (pool, sexs) =>
         def loop(va: A): Future[B] = f(va).runNow(pool, sexs).flatMap {
           case Left(na) => loop(na)
@@ -60,8 +66,16 @@ object TwitterTimedFuture {
         }
         loop(a)
       })
+
     override def toString = "Monad[TwitterTimedFuture]"
   }
+
+  implicit val twitterFutureSequenceCached: SequenceCached[TwitterTimedFuture] =
+    new SequenceCached[TwitterTimedFuture] {
+      def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TwitterTimedFuture[X]): TwitterTimedFuture[X] =
+        TwitterTimedFuture((pool, sexs) => cache.memo((key, sequenceKey), tx.runNow(pool, sexs)))
+    }
+
 }
 
 trait TwitterFutureTypes {
@@ -116,32 +130,31 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
     )
   }
 
+  /** memoize future result using a cache */
   final def memoize[A](key: AnyRef, cache: Cache, future: TwitterTimedFuture[A]): TwitterTimedFuture[A] =
     TwitterTimedFuture { (pool, sexs) =>
-      val prom = Promise[A]()
+      val promise = Promise[A]()
+
       cache.get[A](key).fold {
-        future.runNow(pool, sexs).map { v => val _ = cache.put(key, v); v }.proxyTo(prom)
-      } { v => prom.setValue(v) }
-      prom
+        future.runNow(pool, sexs).map { v => val _ = cache.put(key, v); v }.proxyTo(promise)
+      } { v => promise.setValue(v) }
+
+      promise
     }
 
   /**
-    * Memoize future values using a cache
-    *
-    * if this method is called with the same key the previous value will be returned
-    */
+   * Memoize future effects using a cache
+   *
+   * if this method is called with the same key the previous value will be returned
+   */
   final def futureMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, A] =
-    interpret.interceptNat[R, TwitterTimedFuture, A](e)(
-      new (TwitterTimedFuture ~> TwitterTimedFuture) {
-        override def apply[X](fa: TwitterTimedFuture[X]): TwitterTimedFuture[X] = memoize(key, cache, fa)
-      }
-    )
+    Eff.memoizeEffect(e, cache, key)
 
   /**
-    * Memoize Future values using a memoization effect
-    *
-    * if this method is called with the same key the previous value will be returned
-    */
+   * Memoize Future values using a memoization effect
+   *
+   * if this method is called with the same key the previous value will be returned
+   */
   final def futureMemoized[R, A](key: AnyRef, e: Eff[R, A])(implicit future: TwitterTimedFuture /= R, m: Memoized |= R): Eff[R, A] =
     MemoEffect.getCache[R].flatMap(cache => futureMemo(key, cache, e))
 
@@ -154,7 +167,6 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
         }
     })
   }
-
 }
 
 object TwitterFutureInterpretation extends TwitterFutureInterpretation

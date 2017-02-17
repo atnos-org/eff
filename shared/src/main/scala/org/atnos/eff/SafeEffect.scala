@@ -397,9 +397,8 @@ object Safe {
 
   implicit val safeSequenceCached: SequenceCached[Safe] =
     new SequenceCached[Safe] {
-      def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Safe[X]): Safe[X] = {
-        cache.memo((key, sequenceKey), tx.memoize)
-      }
+      def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Safe[X]): Safe[X] =
+        cache.memo((key, sequenceKey),tx.memoize)
     }
 
 }
