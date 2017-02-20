@@ -107,11 +107,11 @@ trait TwitterFutureCreation extends TwitterFutureTypes {
 
 trait TwitterFutureInterpretation extends TwitterFutureTypes {
 
-  def runAsync[A](e: Eff[Fx.fx1[TwitterTimedFuture], A])(implicit pool: FuturePool, sexs: ScheduledExecutorService): Future[A] =
-    Eff.detachA(e)(TwitterTimedFuture.MonadTwitterTimedFuture, TwitterTimedFuture.ApplicativeTwitterTimedFuture).runNow(pool, sexs)
+  def runAsync[R, A](e: Eff[R, A])(implicit pool: FuturePool, sexs: ScheduledExecutorService, m: Member.Aux[TwitterTimedFuture, R, NoFx]): Future[A] =
+    Eff.detachA(e)(TwitterTimedFuture.MonadTwitterTimedFuture, TwitterTimedFuture.ApplicativeTwitterTimedFuture, m).runNow(pool, sexs)
 
-  def runSequential[A](e: Eff[Fx.fx1[TwitterTimedFuture], A])(implicit pool: FuturePool, sexs: ScheduledExecutorService): Future[A] =
-    Eff.detach(e).runNow(pool, sexs)
+  def runSequential[R, A](e: Eff[R, A])(implicit pool: FuturePool, sexs: ScheduledExecutorService, m: Member.Aux[TwitterTimedFuture, R, NoFx]): Future[A] =
+    Eff.detach(e)(Monad[TwitterTimedFuture], m).runNow(pool, sexs)
 
   import interpret.of
 

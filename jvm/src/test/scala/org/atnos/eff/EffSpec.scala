@@ -31,7 +31,11 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
  It is possible to run a pure Eff value $runPureValue
  It is possible to run a Eff value with one effects $runOneEffect
- It is possible to run a Eff value with just one effect and detach it back $detachOneEffect
+ It is possible to run a Eff value with just one effect and detach it back,
+   when the stack is Fx1[M]                                    $detachOneEffect
+   when the stack can be transformed to Fx1[M]                 $detachOneEffectInto
+   when the stack is Fx1[M] and applicative                    $detachOneApplicativeEffect
+   when the stack can be transformed to Fx1[M] and applicative $detachOneApplicativeEffectInto
 
  Eff values can be traversed with an applicative instance $traverseEff
 
@@ -134,6 +138,23 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
   def detachOneEffect =
     delay(1).detach.value === 1
+
+  def detachOneEffectInto = {
+    type S = Fx.append[Fx.fx2[Writer[Int, ?], Either[String, ?]], Fx.fx1[Option]]
+    val e: Eff[S, Int] = OptionEffect.some[S, Int](1)
+
+    e.runWriter.runEither.detach must beSome(Right((1, Nil)))
+  }
+
+  def detachOneApplicativeEffect =
+    delay(1).detachA(Applicative[Eval]).value === 1
+
+  def detachOneApplicativeEffectInto = {
+    type S = Fx.append[Fx.fx2[Writer[Int, ?], Either[String, ?]], Fx.fx1[Option]]
+    val e: Eff[S, Int] = OptionEffect.some[S, Int](1)
+
+    e.runWriter.runEither.detachA(Applicative[Option]) must beSome(Right((1, Nil)))
+  }
 
   def traverseEff = {
     val traversed: Eff[Fx.fx1[Option], List[Int]] =

@@ -132,11 +132,11 @@ object TaskCreation extends TaskCreation
 
 trait TaskInterpretation extends TaskTypes {
 
-  def runAsync[A](e: Eff[Fx.fx1[TimedTask], A])(implicit strat: Strategy, sched: Scheduler): Task[A] =
-    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative).runNow(strat, sched)
+  def runAsync[R, A](e: Eff[R, A])(implicit strat: Strategy, sched: Scheduler, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative, m).runNow(strat, sched)
 
-  def runSequential[A](e: Eff[Fx.fx1[TimedTask], A])(implicit strat: Strategy, sched: Scheduler): Task[A] =
-    Eff.detach(e).runNow(strat, sched)
+  def runSequential[R, A](e: Eff[R, A])(implicit strat: Strategy, sched: Scheduler, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+    Eff.detach(e)(Monad[TimedTask], m).runNow(strat, sched)
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] =
     TimedTask[Throwable Either A](task.runNow(_, _).attempt)

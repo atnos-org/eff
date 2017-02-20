@@ -22,10 +22,10 @@ final class FutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def futureMemo(key: AnyRef, cache: Cache)(implicit future: TimedFuture /= R): Eff[R, A] =
     FutureInterpretation.futureMemo(key, cache, e)
 
-  def runAsync(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedFuture], A]): Future[A] =
+  def runAsync(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     FutureInterpretation.runAsync(e)
 
-  def runSequential(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedFuture], A]): Future[A] =
+  def runSequential(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     FutureInterpretation.runSequential(e)
 }
 

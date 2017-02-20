@@ -25,9 +25,9 @@ final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def taskMemo(key: AnyRef, cache: Cache)(implicit task: TimedTask /= R): Eff[R, A] =
     TaskInterpretation.taskMemo(key, cache, e)
 
-  def runAsync(implicit strat: Strategy, sched: Scheduler, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
+  def runAsync(implicit strat: Strategy, sched: Scheduler, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
     TaskInterpretation.runAsync(e)
 
-  def runSequential(implicit strat: Strategy, sched: Scheduler, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
+  def runSequential(implicit strat: Strategy, sched: Scheduler, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
     TaskInterpretation.runSequential(e)
 }

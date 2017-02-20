@@ -117,11 +117,11 @@ object TaskCreation extends TaskCreation
 
 trait TaskInterpretation extends TaskTypes {
 
-  def runAsync[A](e: Eff[Fx.fx1[TimedTask], A])(implicit sexs: ScheduledExecutorService): Task[A] =
-    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative).runNow(sexs)
+  def runAsync[R, A](e: Eff[R, A])(implicit sexs: ScheduledExecutorService, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative, m).runNow(sexs)
 
-  def runSequential[A](e: Eff[Fx.fx1[TimedTask], A])(implicit sexs: ScheduledExecutorService): Task[A] =
-    Eff.detach(e).runNow(sexs)
+  def runSequential[R, A](e: Eff[R, A])(implicit sexs: ScheduledExecutorService, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+    Eff.detach(e)(Monad[TimedTask], m).runNow(sexs)
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] = {
     TimedTask[Throwable Either A](sexs => task.runNow(sexs).materialize.map(t => Either.cond(t.isSuccess, t.get, t.failed.get)))
