@@ -13,8 +13,9 @@ case class ExecutorServices(executorServiceEval:   Eval[ExecutorService],
 
   /** note: shutdown only shuts down the executor services */
   def shutdown: Eval[Unit] = Eval.later {
-    try     { executorService.shutdownNow; () }
-    finally { scheduledExecutorService.shutdownNow; () }
+    // careful: calling executorService.shutdown or scheduledExecutorService will deadlock!
+    try     executorServiceEval.value.shutdown
+    finally scheduledExecutorEval.value.shutdown
   }
 
   implicit lazy val executorService: ExecutorService =
@@ -41,6 +42,9 @@ object ExecutorServices {
       Eval.later(s),
       Eval.later(createExecutionContext(es))
     )
+
+  def fromExecutorService(es: =>ExecutorService): ExecutorServices =
+    fromExecutorServices(es, scheduledExecutor(threadsNb))
 
   def createExecutionContext(executorService: ExecutorService, logger: String => Unit = println): ExecutionContext =
     ExecutionContext.fromExecutorService(executorService, (t: Throwable) => logger(t.getStackTrace.mkString("\n")))
