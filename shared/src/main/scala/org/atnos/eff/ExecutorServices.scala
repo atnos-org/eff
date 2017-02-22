@@ -27,6 +27,12 @@ case class ExecutorServices(executorServiceEval:   Eval[ExecutorService],
   implicit lazy val executionContext: ExecutionContext =
     executionContextEval.value
 
+  /** convenience method to shutdown the services when the final future has completed */
+  def shutdownOnComplete[A](future: scala.concurrent.Future[A]): ExecutorServices = {
+    future.onComplete(_ => shutdown.value)
+    this
+  }
+
 }
 
 object ExecutorServices {
