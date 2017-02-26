@@ -1,0 +1,10 @@
+Maintenance version
+
+## Improvements
+   
+ * made the `runAsync` methods more generic by accepting any stack which can be translated to `Fx1[M]`
+ * added a convenience method to shutdown the execution services on a future completion
+
+## Fixes
+
+ * fixed a possible deadlock when shutting down `ExecutorServices`
