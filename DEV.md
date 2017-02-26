@@ -6,6 +6,7 @@ sbt> cd coreJVM
 sbt> testOnly *index* -- html.outdir jvm/target/site html.nostats html console
 sbt> testOnly *site* -- html.outdir jvm/target/site html.nostats html console
 sbt> ghpagesPushSite
+sbt> githubRelease EFF-<tag name>
 sbt> cd eff
 sbt> +publishSigned
 sbt> sonatypeReleaseAll

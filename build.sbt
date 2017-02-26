@@ -19,6 +19,7 @@ lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .jsSettings(commonJsSettings:_*)
   .jvmSettings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter):_*)
   .jvmSettings(promulgate.library("org.atnos.eff", "eff"):_*)
+  .jvmSettings(notesSettings:_*)
   .settings(effSettings:_*)
 
 lazy val coreJVM = core.jvm
@@ -199,6 +200,21 @@ lazy val publishSite = ReleaseStep { st: State =>
   val st2 = executeStepTask(makeSite, "Making the site")(st)
   executeStepTask(pushSite, "Publishing the site")(st2)
 }
+
+lazy val notesSettings = Seq(
+  ghreleaseRepoOrg := "atnos-org",
+  ghreleaseRepoName := "eff",
+  ghreleaseTitle := { tagName: TagName => s"eff ${tagName.replace("EFF-", "")}" },
+  ghreleaseIsPrerelease := { tagName: TagName => false },
+  ghreleaseNotes := { tagName: TagName =>
+    // find the corresponding release notes
+    val notesFilePath = s"notes/${tagName.replace("EFF-", "")}.markdown"
+    try io.Source.fromFile(notesFilePath).mkString
+    catch { case t: Throwable => throw new Exception(s"$notesFilePath not found") }
+  },
+  // just upload the notes
+  ghreleaseAssets := Seq()
+)
 
 lazy val generateWebsiteTask = TaskKey[Tests.Output]("generate-website", "generate the website")
 lazy val generateWebsite     = executeStepTask(generateWebsiteTask, "Generating the website", Test)
