@@ -1,7 +1,5 @@
 package org.atnos.eff.addon.fs2
 
-import java.util.concurrent.ScheduledExecutorService
-
 import cats._
 import cats.implicits._
 import fs2._

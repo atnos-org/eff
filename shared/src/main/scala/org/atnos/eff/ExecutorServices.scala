@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import java.util.Collections
+import java.util.{Collections, Date, Timer, TimerTask}
 import java.util.concurrent._
 
 import cats.Eval
@@ -80,6 +80,50 @@ object ExecutorServices {
         override def awaitTermination(length: Long, unit: TimeUnit): Boolean = false
       }
     }
+
+  def timerTaskToRunnable(timerTask: TimerTask): Runnable = new Runnable {
+    override def run(): Unit = {
+      timerTask.run()
+    }
+  }
+
+  def timerFromScheduledExecutorService(ses: ScheduledExecutorService): Timer = new Timer {
+    override def schedule(task: TimerTask, delay: Long): Unit = {
+      val _ = ses.schedule(timerTaskToRunnable(task), delay, TimeUnit.MILLISECONDS)
+    }
+
+    override def schedule(task: TimerTask, time: Date): Unit = {
+      val delay = new Date().getTime - time.getTime
+      schedule(task, delay)
+    }
+
+    override def schedule(task: TimerTask, delay: Long, period: Long): Unit = {
+      val _ = ses.scheduleWithFixedDelay(timerTaskToRunnable(task), delay, period, TimeUnit.MILLISECONDS)
+    }
+
+    override def schedule(task: TimerTask, firstTime: Date, period: Long): Unit = {
+      val delay = new Date().getTime - firstTime.getTime
+      schedule(task, delay, period)
+    }
+
+    override def scheduleAtFixedRate(task: TimerTask, delay: Long, period: Long): Unit = {
+      val _ = ses.scheduleAtFixedRate(timerTaskToRunnable(task), delay, period, TimeUnit.MILLISECONDS)
+    }
+
+    override def scheduleAtFixedRate(task: TimerTask, firstTime: Date,
+                                     period: Long): Unit = {
+      val delay = new Date().getTime - firstTime.getTime
+      scheduleAtFixedRate(task, delay, period)
+    }
+
+    override def cancel(): Unit = {
+    }
+
+    override def purge(): Int = {
+      0
+    }
+
+  }
 
   /** create an ExecutionEnv from Scala global execution context */
   def fromGlobalExecutionContext: ExecutorServices =

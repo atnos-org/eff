@@ -1,6 +1,6 @@
 package org.atnos.site
 
-import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
+import java.util.Timer
 
 import scala.annotation.tailrec
 
@@ -24,7 +24,7 @@ type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, TimedFuture, WriterString]
 
-implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+implicit val timer = new Timer()
 
 def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
@@ -53,7 +53,7 @@ type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, TimedFuture, WriterString]
-val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+val timer = new Timer
 
 def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {

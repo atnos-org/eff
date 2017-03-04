@@ -1,6 +1,7 @@
 package org.atnos.eff.addon.scalaz.concurrent
 
-import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
+import java.util.concurrent.{ExecutorService, TimeUnit}
+import java.util.{Timer, TimerTask}
 
 import org.atnos.eff.syntax.all._
 
@@ -14,16 +15,16 @@ import scala.concurrent.{ExecutionContext, Promise, TimeoutException}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Either, Failure, Success, Try}
 
-case class TimedTask[A](task: (ScheduledExecutorService, ExecutionContext) => Task[A], timeout: Option[FiniteDuration] = None) {
-  @inline def runNow(sexs: ScheduledExecutorService, ec: ExecutionContext): Task[A] = timeout.fold(task(sexs, ec)) { t =>
+case class TimedTask[A](task: (Timer, ExecutionContext) => Task[A], timeout: Option[FiniteDuration] = None) {
+  @inline def runNow(timer: Timer, ec: ExecutionContext): Task[A] = timeout.fold(task(sexs, ec)) { t =>
     Task.async[A] { register =>
       val promise = Promise[A]
-      val onTimeout = new Runnable {
+      val onTimeout = new TimerTask {
         override def run(): Unit = {
           val _ = promise.tryFailure(new TimeoutException)
         }
       }
-      val _ = sexs.schedule(onTimeout, t.length, t.unit)
+      sexs.schedule(onTimeout, TimeUnit.MILLISECONDS.convert(t.length, t.unit))
       task(sexs, ec).unsafePerformAsync { tea =>
         val _ = promise.tryComplete(tea.fold(Failure(_), Success(_)))
       }
@@ -76,7 +77,7 @@ trait TaskTypes {
 
 trait TaskCreation extends TaskTypes {
 
-  final def taskWithExecutors[R :_task, A](c: (ScheduledExecutorService, ExecutionContext) => Task[A],
+  final def taskWithExecutors[R :_task, A](c: (Timer, ExecutionContext) => Task[A],
                                            timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedTask, R, A](TimedTask(c, timeout))
 
@@ -110,10 +111,10 @@ object TaskCreation extends TaskTypes
 
 trait TaskInterpretation extends TaskTypes {
 
-  def runAsync[A](e: Eff[Fx.fx1[TimedTask], A])(implicit sexs: ScheduledExecutorService, ec: ExecutionContext): Task[A] =
+  def runAsync[A](e: Eff[Fx.fx1[TimedTask], A])(implicit timer: Timer, ec: ExecutionContext): Task[A] =
     Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative).runNow(sexs, ec)
 
-  def runSequential[A](e: Eff[Fx.fx1[TimedTask], A])(implicit sexs: ScheduledExecutorService, ec: ExecutionContext): Task[A] =
+  def runSequential[A](e: Eff[Fx.fx1[TimedTask], A])(implicit timer: Timer, ec: ExecutionContext): Task[A] =
     Eff.detach(e).runNow(sexs, ec)
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] = {

@@ -42,7 +42,7 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
   type S = Fx.fx2[TwitterTimedFuture, Option]
   
   implicit val pool = FuturePool(ee.es)
-  implicit val ses = ee.ses
+  implicit val timer = ExecutorServices.timerFromScheduledExecutorService(ee.ses)
 
   def e1 = {
     def action[R :_future :_option]: Eff[R, Int] = for {

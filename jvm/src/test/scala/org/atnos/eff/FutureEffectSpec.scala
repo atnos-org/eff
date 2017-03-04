@@ -1,5 +1,8 @@
 package org.atnos.eff
 
+import java.util.concurrent.{Callable, TimeUnit}
+import java.util.{Date, Timer, TimerTask}
+
 import cats.Eval
 import cats.implicits._
 import org.atnos.eff.all._
@@ -13,7 +16,6 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent._
 import duration._
 import org.scalacheck._
-
 import org.specs2.matcher.ThrownExpectations
 
 import scala.util.control._
@@ -39,7 +41,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
   type S = Fx.fx2[TimedFuture, Option]
 
-  implicit val ses = ee.ses
+  implicit val timer = ExecutorServices.timerFromScheduledExecutorService(ee.ses)
   implicit val ec = ee.ec
 
   def e1 = {

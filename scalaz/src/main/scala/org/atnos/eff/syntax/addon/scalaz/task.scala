@@ -1,6 +1,6 @@
 package org.atnos.eff.syntax.addon.scalaz
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.Timer
 
 import org.atnos.eff.addon.scalaz.concurrent.{TaskEffect, TaskInterpretation, TimedTask}
 import org.atnos.eff.{Fx, _}
@@ -29,9 +29,9 @@ final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def taskMemo(key: AnyRef, cache: Cache)(implicit async: TimedTask /= R): Eff[R, A] =
     TaskInterpretation.taskMemo(key, cache, e)
 
-  def runAsync(implicit sexs: ScheduledExecutorService, ec: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
+  def runAsync(implicit timer: Timer, ec: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
     TaskInterpretation.runAsync(e)
 
-  def runSequential(implicit sexs: ScheduledExecutorService, ec: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
+  def runSequential(implicit timer: Timer, ec: ExecutionContext, ev: Eff[R, A] =:= Eff[Fx.fx1[TimedTask], A]): Task[A] =
     TaskInterpretation.runSequential(e)
 }

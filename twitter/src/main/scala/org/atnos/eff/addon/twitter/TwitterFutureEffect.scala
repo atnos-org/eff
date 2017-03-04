@@ -1,6 +1,7 @@
 package org.atnos.eff.addon.twitter
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+import java.util.{Timer, TimerTask}
 
 import cats._
 import cats.implicits._
@@ -15,18 +16,18 @@ import com.twitter.util._
 
 object TwitterFutureCreation extends TwitterFutureCreation
 
-final case class TwitterTimedFuture[A](callback: (FuturePool, ScheduledExecutorService) => Future[A], timeout: Option[FiniteDuration] = None) {
-  @inline def runNow(pool: FuturePool, sexs: ScheduledExecutorService): Future[A] = {
+final case class TwitterTimedFuture[A](callback: (FuturePool, Timer) => Future[A], timeout: Option[FiniteDuration] = None) {
+  @inline def runNow(pool: FuturePool, timer: Timer): Future[A] = {
     timeout.fold {
       callback(pool, sexs)
     } { t =>
       val promise = Promise[A]
-      val timeout = new Runnable {
+      val timeout = new TimerTask {
         override def run(): Unit = {
           val _ = promise.updateIfEmpty(Throw(new TimeoutException))
         }
       }
-      sexs.schedule(timeout, t.length, t.unit)
+      sexs.schedule(timeout, TimeUnit.MILLISECONDS.convert(t.length, t.unit))
       callback(pool, sexs)
         .onFailure { e => val _ = promise.updateIfEmpty(Throw(e)) }
         .onSuccess { a => val _ = promise.updateIfEmpty(Return(a)) }
@@ -40,7 +41,7 @@ object TwitterTimedFuture {
   final def ApplicativeTwitterTimedFuture: Applicative[TwitterTimedFuture] = new Applicative[TwitterTimedFuture] {
     override def pure[A](x: A) = TwitterTimedFuture((_, _) => Future.value(x))
     override def ap[A, B](ff: TwitterTimedFuture[(A) => B])(fa: TwitterTimedFuture[A]): TwitterTimedFuture[B] = {
-      val newCallback = { (pool: FuturePool, sexs: ScheduledExecutorService) =>
+      val newCallback = { (pool: FuturePool, timer: Timer) =>
         val ffRan = ff.runNow(pool, sexs)
         val faRan = fa.runNow(pool, sexs)
         ffRan.joinWith(faRan)(_(_))
@@ -73,7 +74,7 @@ trait TwitterFutureTypes {
 
 trait TwitterFutureCreation extends TwitterFutureTypes {
 
-  final def fromFutureWithExecutors[R :_future, A](c: (FuturePool, ScheduledExecutorService) => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def fromFutureWithExecutors[R :_future, A](c: (FuturePool, Timer) => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TwitterTimedFuture, R, A](TwitterTimedFuture(c, timeout))
 
   final def fromFuture[R :_future, A](c: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
@@ -95,10 +96,10 @@ trait TwitterFutureCreation extends TwitterFutureTypes {
 
 trait TwitterFutureInterpretation extends TwitterFutureTypes {
 
-  def runAsync[A](e: Eff[Fx.fx1[TwitterTimedFuture], A])(implicit pool: FuturePool, sexs: ScheduledExecutorService): Future[A] =
+  def runAsync[A](e: Eff[Fx.fx1[TwitterTimedFuture], A])(implicit pool: FuturePool, timer: Timer): Future[A] =
     Eff.detachA(e)(TwitterTimedFuture.MonadTwitterTimedFuture, TwitterTimedFuture.ApplicativeTwitterTimedFuture).runNow(pool, sexs)
 
-  def runSequential[A](e: Eff[Fx.fx1[TwitterTimedFuture], A])(implicit pool: FuturePool, sexs: ScheduledExecutorService): Future[A] =
+  def runSequential[A](e: Eff[Fx.fx1[TwitterTimedFuture], A])(implicit pool: FuturePool, timer: Timer): Future[A] =
     Eff.detach(e).runNow(pool, sexs)
 
   import interpret.of

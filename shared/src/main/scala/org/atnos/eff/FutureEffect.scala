@@ -1,6 +1,7 @@
 package org.atnos.eff
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.{Timer, TimerTask}
+import java.util.concurrent.TimeUnit
 
 import cats._
 import cats.implicits._
@@ -12,18 +13,18 @@ import scala.util.{Failure, Success}
 
 object FutureCreation extends FutureCreation
 
-  final case class TimedFuture[A](callback: (ScheduledExecutorService, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None) {
-    @inline def runNow(sexs: ScheduledExecutorService, exc: ExecutionContext): Future[A] = {
+  final case class TimedFuture[A](callback: (Timer, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None) {
+    @inline def runNow(timer: Timer, exc: ExecutionContext): Future[A] = {
       timeout.fold {
         callback(sexs, exc)
       } { t =>
         val promise = Promise[A]
-        val timeout = new Runnable {
+        val timeout = new TimerTask {
           override def run(): Unit = {
             val _ = promise.tryFailure(new TimeoutException)
           }
         }
-        sexs.schedule(timeout, t.length, t.unit)
+        sexs.schedule(timeout, TimeUnit.MILLISECONDS.convert(t.length, t.unit))
         promise.tryCompleteWith(callback(sexs, exc))
         promise.future
       }
@@ -35,7 +36,7 @@ object FutureCreation extends FutureCreation
     final def ApplicativeTimedFuture: Applicative[TimedFuture] = new Applicative[TimedFuture] {
       override def pure[A](x: A) = TimedFuture((_, _) => Future.successful(x))
       override def ap[A, B](ff: TimedFuture[(A) => B])(fa: TimedFuture[A]): TimedFuture[B] = {
-        val newCallback = { (sexs: ScheduledExecutorService, ec: ExecutionContext) =>
+        val newCallback = { (timer: Timer, ec: ExecutionContext) =>
           val ffRan = ff.runNow(sexs, ec)
           val faRan = fa.runNow(sexs, ec)
           faRan.flatMap(a => ffRan.map(f => f(a))(ec))(ec)
@@ -68,7 +69,7 @@ trait FutureTypes {
 
 trait FutureCreation extends FutureTypes {
 
-  final def fromFutureWithExecutors[R :_future, A](c: (ScheduledExecutorService, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def fromFutureWithExecutors[R :_future, A](c: (Timer, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TimedFuture, R, A](TimedFuture(c, timeout))
 
   final def fromFuture[R :_future, A](c: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
@@ -93,10 +94,10 @@ trait FutureCreation extends FutureTypes {
 
 trait FutureInterpretation extends FutureTypes {
 
-  def runAsync[A](e: Eff[Fx.fx1[TimedFuture], A])(implicit sexs: ScheduledExecutorService, exc: ExecutionContext): Future[A] =
+  def runAsync[A](e: Eff[Fx.fx1[TimedFuture], A])(implicit timer: Timer, exc: ExecutionContext): Future[A] =
     Eff.detachA(e)(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(sexs, exc)
 
-  def runSequential[A](e: Eff[Fx.fx1[TimedFuture], A])(implicit sexs: ScheduledExecutorService, exc: ExecutionContext): Future[A] =
+  def runSequential[A](e: Eff[Fx.fx1[TimedFuture], A])(implicit timer: Timer, exc: ExecutionContext): Future[A] =
     Eff.detach(e).runNow(sexs, exc)
 
   import interpret.of

@@ -1,6 +1,6 @@
 package org.atnos.eff.syntax.addon.twitter
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.Timer
 
 import com.twitter.util.{Future, FuturePool}
 import org.atnos.eff.addon.twitter._
@@ -26,9 +26,9 @@ final class TwitterFutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def twitterFutureMemo(key: AnyRef, cache: Cache)(implicit future: TwitterTimedFuture /= R): Eff[R, A] =
     TwitterFutureInterpretation.futureMemo(key, cache, e)
 
-  def runAsync(implicit pool: FuturePool, sexs: ScheduledExecutorService, ev: Eff[R, A] =:= Eff[Fx.fx1[TwitterTimedFuture], A]): Future[A] =
+  def runAsync(implicit pool: FuturePool, timer: Timer, ev: Eff[R, A] =:= Eff[Fx.fx1[TwitterTimedFuture], A]): Future[A] =
     TwitterFutureInterpretation.runAsync(e)
 
-  def runSequential(implicit pool: FuturePool, sexs: ScheduledExecutorService, ev: Eff[R, A] =:= Eff[Fx.fx1[TwitterTimedFuture], A]): Future[A] =
+  def runSequential(implicit pool: FuturePool, timer: Timer, ev: Eff[R, A] =:= Eff[Fx.fx1[TwitterTimedFuture], A]): Future[A] =
     TwitterFutureInterpretation.runSequential(e)
 }
