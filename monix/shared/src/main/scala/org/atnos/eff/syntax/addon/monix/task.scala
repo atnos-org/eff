@@ -1,6 +1,6 @@
 package org.atnos.eff.syntax.addon.monix
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.Timer
 
 import org.atnos.eff.{Fx, _}
 import org.atnos.eff.addon.monix._
@@ -24,10 +24,10 @@ final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def taskMemo(key: AnyRef, cache: Cache)(implicit task: TimedTask /= R): Eff[R, A] =
     TaskInterpretation.taskMemo(key, cache, e)
 
-  def runAsync(implicit sexs: ScheduledExecutorService, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+  def runAsync(implicit timer: Timer, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
     TaskInterpretation.runAsync(e)
 
-  def runSequential(implicit sexs: ScheduledExecutorService, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+  def runSequential(implicit timer: Timer, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
     TaskInterpretation.runSequential(e)
 }
 
