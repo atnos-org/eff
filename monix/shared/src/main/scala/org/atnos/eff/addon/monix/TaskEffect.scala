@@ -1,6 +1,7 @@
 package org.atnos.eff.addon.monix
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+import java.util.{Timer, TimerTask}
 
 import cats._
 import cats.implicits._
@@ -13,17 +14,17 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Promise, TimeoutException}
 import scala.util._
 
-case class TimedTask[A](task: ScheduledExecutorService => Task[A], timeout: Option[FiniteDuration] = None) {
-  def runNow(sexs: ScheduledExecutorService): Task[A] = timeout.fold(task(sexs)) { t =>
+case class TimedTask[A](task: Timer => Task[A], timeout: Option[FiniteDuration] = None) {
+  def runNow(timer: Timer): Task[A] = timeout.fold(task(timer)) { t =>
     Task.unsafeCreate[A] { (context, callback) =>
       val promise = Promise[A]
-      val onTimeout = new Runnable {
+      val onTimeout = new TimerTask {
         override def run(): Unit = {
           val _ = promise.tryFailure(new TimeoutException)
         }
       }
-      sexs.schedule(onTimeout, t.length, t.unit)
-      Task.unsafeStartAsync(task(sexs), context, new Callback[A] {
+      timer.schedule(onTimeout, TimeUnit.MILLISECONDS.convert(t.length, t.unit))
+      Task.unsafeStartAsync(task(timer), context, new Callback[A] {
         def onSuccess(value: A): Unit = {
           val _ = promise.trySuccess(value)
         }
@@ -42,18 +43,18 @@ object TimedTask {
     def pure[A](x: A) = TimedTask(_ => Task.now(x))
 
     def ap[A, B](ff: TimedTask[(A) => B])(fa: TimedTask[A]) =
-      TimedTask(sexs => Task.mapBoth(ff.runNow(sexs), fa.runNow(sexs))(_ (_)))
+      TimedTask(timer => Task.mapBoth(ff.runNow(timer), fa.runNow(timer))(_ (_)))
   }
 
   implicit final def TimedTaskMonad: Monad[TimedTask] = new Monad[TimedTask] {
     def pure[A](x: A) = TimedTask(_ => Task.now(x))
 
     def flatMap[A, B](fa: TimedTask[A])(f: (A) => TimedTask[B]) =
-      TimedTask(sexs => fa.runNow(sexs).flatMap(f(_).runNow(sexs)))
+      TimedTask(timer => fa.runNow(timer).flatMap(f(_).runNow(timer)))
 
     def tailRecM[A, B](a: A)(f: (A) => TimedTask[Either[A, B]]): TimedTask[B] =
-      TimedTask[B]({ sexs =>
-        def loop(na: A): Task[B] = f(na).runNow(sexs).flatMap(_.fold(loop, Task.now))
+      TimedTask[B]({ timer =>
+        def loop(na: A): Task[B] = f(na).runNow(timer).flatMap(_.fold(loop, Task.now))
         loop(a)
       })
   }
@@ -76,7 +77,7 @@ trait TaskTypes {
 
 trait TaskCreation extends TaskTypes {
 
-  final def taskWithContext[R :_task, A](c: ScheduledExecutorService => Task[A],
+  final def taskWithContext[R :_task, A](c: Timer => Task[A],
                                            timeout: Option[FiniteDuration] = None): Eff[R, A] =
     TimedTask(c, timeout).send
 
@@ -117,14 +118,14 @@ object TaskCreation extends TaskCreation
 
 trait TaskInterpretation extends TaskTypes {
 
-  def runAsync[R, A](e: Eff[R, A])(implicit sexs: ScheduledExecutorService, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
-    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative, m).runNow(sexs)
+  def runAsync[R, A](e: Eff[R, A])(implicit timer: Timer, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative, m).runNow(timer)
 
-  def runSequential[R, A](e: Eff[R, A])(implicit sexs: ScheduledExecutorService, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
-    Eff.detach(e)(Monad[TimedTask], m).runNow(sexs)
+  def runSequential[R, A](e: Eff[R, A])(implicit timer: Timer, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+    Eff.detach(e)(Monad[TimedTask], m).runNow(timer)
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] = {
-    TimedTask[Throwable Either A](sexs => task.runNow(sexs).materialize.map(t => Either.cond(t.isSuccess, t.get, t.failed.get)))
+    TimedTask[Throwable Either A](timer => task.runNow(timer).materialize.map(t => Either.cond(t.isSuccess, t.get, t.failed.get)))
   }
 
   import interpret.of
@@ -170,7 +171,7 @@ trait TaskInterpretation extends TaskTypes {
 
   implicit val timedTaskSequenceCached: SequenceCached[TimedTask] = new SequenceCached[TimedTask] {
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] =
-      TimedTask(sexs => cache.memo((key, sequenceKey), tx.runNow(sexs).memoize))
+      TimedTask(timer => cache.memo((key, sequenceKey), tx.runNow(timer).memoize))
   }
 
 }

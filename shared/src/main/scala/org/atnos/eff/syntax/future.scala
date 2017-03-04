@@ -1,6 +1,6 @@
 package org.atnos.eff.syntax
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.Timer
 
 import org.atnos.eff._
 
@@ -22,10 +22,10 @@ final class FutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def futureMemo(key: AnyRef, cache: Cache)(implicit future: TimedFuture /= R): Eff[R, A] =
     FutureInterpretation.futureMemo(key, cache, e)
 
-  def runAsync(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+  def runAsync(implicit timer: Timer, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     FutureInterpretation.runAsync(e)
 
-  def runSequential(implicit sexs: ScheduledExecutorService, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+  def runSequential(implicit timer: Timer, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     FutureInterpretation.runSequential(e)
 }
 

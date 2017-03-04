@@ -1,6 +1,7 @@
 package org.atnos.eff.addon.scalaz.concurrent
 
-import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
+import java.util.concurrent.{ExecutorService, TimeUnit}
+import java.util.{Timer, TimerTask}
 
 import org.atnos.eff.syntax.all._
 
@@ -14,17 +15,17 @@ import scala.concurrent.{ExecutionContext, Promise, TimeoutException}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Either, Failure, Success}
 
-case class TimedTask[A](task: (ScheduledExecutorService, ExecutionContext) => Task[A], timeout: Option[FiniteDuration] = None) {
-  @inline def runNow(sexs: ScheduledExecutorService, ec: ExecutionContext): Task[A] = timeout.fold(task(sexs, ec)) { t =>
+case class TimedTask[A](task: (Timer, ExecutionContext) => Task[A], timeout: Option[FiniteDuration] = None) {
+  @inline def runNow(timer: Timer, ec: ExecutionContext): Task[A] = timeout.fold(task(timer, ec)) { t =>
     Task.async[A] { register =>
       val promise = Promise[A]
-      val onTimeout = new Runnable {
+      val onTimeout = new TimerTask {
         override def run(): Unit = {
           val _ = promise.tryFailure(new TimeoutException)
         }
       }
-      val _ = sexs.schedule(onTimeout, t.length, t.unit)
-      task(sexs, ec).unsafePerformAsync { tea =>
+      timer.schedule(onTimeout, TimeUnit.MILLISECONDS.convert(t.length, t.unit))
+      task(timer, ec).unsafePerformAsync { tea =>
         val _ = promise.tryComplete(tea.fold(Failure(_), Success(_)))
       }
       promise.future.onComplete(t => register(if (t.isSuccess) \/-(t.get) else -\/(t.failed.get)))(ec)
@@ -39,7 +40,7 @@ object TimedTask {
       TimedTask((_, _) => Task.now(x))
 
     def ap[A, B](ff: TimedTask[A => B])(fa: TimedTask[A]): TimedTask[B] =
-      TimedTask[B]((sexs, ec) => Nondeterminism[Task].mapBoth(ff.runNow(sexs, ec), fa.runNow(sexs, ec))(_(_)))
+      TimedTask[B]((timer, ec) => Nondeterminism[Task].mapBoth(ff.runNow(timer, ec), fa.runNow(timer, ec))(_(_)))
 
     override def toString = "Applicative[Task]"
   }
@@ -49,11 +50,11 @@ object TimedTask {
       TimedTask((_, _) => Task.now(x))
 
     def flatMap[A, B](fa: TimedTask[A])(f: A => TimedTask[B]): TimedTask[B] =
-      TimedTask((sexs, ec) => fa.runNow(sexs, ec).flatMap(f(_).runNow(sexs, ec)))
+      TimedTask((timer, ec) => fa.runNow(timer, ec).flatMap(f(_).runNow(timer, ec)))
 
     def tailRecM[A, B](a: A)(f: A => TimedTask[Either[A, B]]): TimedTask[B] =
-      TimedTask({ (sexs, ec) =>
-        def loop(na: A): Task[B] = { f(na).runNow(sexs, ec).flatMap(_.fold(loop, Task.now)) }
+      TimedTask({ (timer, ec) =>
+        def loop(na: A): Task[B] = { f(na).runNow(timer, ec).flatMap(_.fold(loop, Task.now)) }
         loop(a)
       })
 
@@ -69,10 +70,10 @@ object TimedTask {
     TimedTask((_, _) => task, timeout)
 
   implicit val timedTaskSequenceCached: SequenceCached[TimedTask] = new SequenceCached[TimedTask] {
-    def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = TimedTask { (sexs, ec) =>
+    def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = TimedTask { (timer, ec) =>
       implicit val executionContext = ec
       // there is no built-in memoization for Scalaz tasks so we need to memoize future instead
-      lazy val cached = cache.memo((key, sequenceKey), taskToFuture(tx.runNow(sexs, ec)))
+      lazy val cached = cache.memo((key, sequenceKey), taskToFuture(tx.runNow(timer, ec)))
 
       Task async { cb =>
         cached.onComplete {
@@ -112,7 +113,7 @@ trait TaskTypes {
 
 trait TaskCreation extends TaskTypes {
 
-  final def taskWithExecutors[R :_task, A](c: (ScheduledExecutorService, ExecutionContext) => Task[A],
+  final def taskWithExecutors[R :_task, A](c: (Timer, ExecutionContext) => Task[A],
                                            timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedTask, R, A](TimedTask(c, timeout))
 
@@ -146,14 +147,14 @@ object TaskCreation extends TaskTypes
 
 trait TaskInterpretation extends TaskTypes {
 
-  def runAsync[R, A](e: Eff[R, A])(implicit sexs: ScheduledExecutorService, ec: ExecutionContext, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
-    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative, m).runNow(sexs, ec)
+  def runAsync[R, A](e: Eff[R, A])(implicit timer: Timer, ec: ExecutionContext, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+    Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative, m).runNow(timer, ec)
 
-  def runSequential[R, A](e: Eff[R, A])(implicit sexs: ScheduledExecutorService, ec: ExecutionContext, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
-    Eff.detach(e)(Monad[TimedTask], m).runNow(sexs, ec)
+  def runSequential[R, A](e: Eff[R, A])(implicit timer: Timer, ec: ExecutionContext, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
+    Eff.detach(e)(Monad[TimedTask], m).runNow(timer, ec)
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] = {
-    TimedTask(task = (sexs, ec) => task.runNow(sexs, ec).attempt.map(_.toEither))
+    TimedTask(task = (timer, ec) => task.runNow(timer, ec).attempt.map(_.toEither))
   }
 
   import interpret.of
@@ -166,8 +167,8 @@ trait TaskInterpretation extends TaskTypes {
 
   /** memoize the task result */
   def memoize[A](key: AnyRef, cache: Cache, task: TimedTask[A]): TimedTask[A] =
-    TimedTask((sexs, ec) => Task.suspend {
-      cache.get(key).fold(task.runNow(sexs, ec).map { r => cache.put(key, r); r })(Task.now)
+    TimedTask((timer, ec) => Task.suspend {
+      cache.get(key).fold(task.runNow(timer, ec).map { r => cache.put(key, r); r })(Task.now)
     })
 
 
