@@ -1,7 +1,5 @@
 package org.atnos.site
 
-import java.util.concurrent.ScheduledThreadPoolExecutor
-
 import scala.annotation.tailrec
 
 
@@ -24,7 +22,7 @@ type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, TimedFuture, WriterString]
 
-implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
 def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
@@ -53,7 +51,7 @@ type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, TimedFuture, WriterString]
-val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
 def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
@@ -66,8 +64,7 @@ def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
 val action: Eff[S, List[Int]] =
   List(1000, 500, 50).traverseA(execute[S])
 
-Await.result(Eff.detachA(action.runEval.runWriterLog[String])(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(ses, global
-), 2.seconds)
+Await.result(Eff.detachA(action.runEval.runWriterLog[String])(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(scheduler, global), 2.seconds)
 }.eval}
 
 This uses now `traverseA` (instead of `traverse`) to do an applicative traversal and execute futures concurrently and

@@ -392,10 +392,10 @@ val action: Eff[R, Int] =
   } yield b
 
 /*p
-Then we need to pass a `ScheduledExecutorService` and `ExecutionContext` in to begin the computation.
+Then we need to pass a `Scheduler` and an `ExecutionContext` in to begin the computation.
 */
 
-implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 import org.atnos.eff.syntax.future._
 
 Await.result(action.runOption.runSequential, 1 second)
@@ -436,7 +436,7 @@ def expensive[R :_Future :_memo]: Eff[R, Int] =
 
 type S = Fx.fx2[Memoized, TimedFuture]
 
-implicit val ses = new ScheduledThreadPoolExecutor(Runtime.getRuntime.availableProcessors())
+implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
 val futureMemo: Future[Int] =
   (expensive[S] >> expensive[S]).runFutureMemo(ConcurrentHashMapCache()).runSequential

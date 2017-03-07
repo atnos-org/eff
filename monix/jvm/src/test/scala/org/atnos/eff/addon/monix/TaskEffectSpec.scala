@@ -31,9 +31,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
 """
 
-  type S = Fx.fx2[TimedTask, Option]
-
-  implicit val ses = ee.ses
+  type S = Fx.fx2[Task, Option]
 
   def e1 = {
     def action[R :_task :_option]: Eff[R, Int] = for {
@@ -77,7 +75,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   }
 
   def e5 = {
-    type R = Fx.fx1[TimedTask]
+    type R = Fx.fx1[Task]
 
     def loop(i: Int): Task[Eff[R, Int]] =
       if (i == 0) Task.now(Eff.pure(1))
