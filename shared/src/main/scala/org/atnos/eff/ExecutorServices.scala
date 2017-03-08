@@ -5,6 +5,7 @@ import java.util.concurrent._
 
 import cats.Eval
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 case class ExecutorServices(executorServiceEval:   Eval[ExecutorService],
@@ -27,6 +28,9 @@ case class ExecutorServices(executorServiceEval:   Eval[ExecutorService],
   implicit lazy val executionContext: ExecutionContext =
     executionContextEval.value
 
+  implicit lazy val scheduler: Scheduler =
+    ExecutorServices.schedulerFromScheduledExecutorService(scheduledExecutorService)
+
   /** convenience method to shutdown the services when the final future has completed */
   def shutdownOnComplete[A](future: scala.concurrent.Future[A]): ExecutorServices = {
     future.onComplete(_ => shutdown.value)
@@ -35,7 +39,7 @@ case class ExecutorServices(executorServiceEval:   Eval[ExecutorService],
 
 }
 
-object ExecutorServices {
+object ExecutorServices extends Schedulers {
 
   lazy val threadsNb = Runtime.getRuntime.availableProcessors
 
@@ -91,9 +95,23 @@ object ExecutorServices {
       }
     }
 
-  /** create an ExecutionEnv from Scala global execution context */
+  /** create an ExecutorServices from Scala global execution context */
   def fromGlobalExecutionContext: ExecutorServices =
     fromExecutionContext(scala.concurrent.ExecutionContext.global)
+
+  /** create a Scheduler from Scala global execution context */
+  def schedulerFromGlobalExecutionContext: Scheduler =
+    schedulerFromScheduledExecutorService(fromGlobalExecutionContext.scheduledExecutorService)
+
+  def schedulerFromScheduledExecutorService(s: ScheduledExecutorService): Scheduler =
+    new Scheduler {
+      def schedule(timedout: =>Unit, duration: FiniteDuration): () => Unit = {
+        val scheduled = s.schedule(new Runnable { def run(): Unit = timedout }, duration.toNanos, TimeUnit.NANOSECONDS)
+        () => { scheduled.cancel(false); () }
+      }
+
+      override def toString = "Scheduler"
+    }
 
 }
 
