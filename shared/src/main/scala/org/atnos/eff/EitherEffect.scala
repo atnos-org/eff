@@ -112,6 +112,10 @@ trait EitherInterpretation {
     intercept1[R, (E Either ?), A, A]((a: A) => a)(recurse)(r)
   }
 
+  /** run the Either effect, handling E (with effects) and yielding A */
+  def runEitherCatchLeft[R, U, E, A](r: Eff[R, A])(handle: E => Eff[U, A])(implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, A] =
+    runEither(r).flatMap(_.fold(handle, pure))
+
   /** catch and handle a possible left value. The value is the combination of all failures in case of an applicative */
   def catchLeftCombine[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) /= R, s: Semigroup[E]): Eff[R, A] = {
     val recurse = new Recurse[(E Either ?), R, A] {
