@@ -173,12 +173,17 @@ trait EffImplicits {
           ImpureAp(unions, continuation.append(f), last)
       }
 
-    // this is not tail-recursive.
-    // There may be a solution if your output monad is trampolined.
     def tailRecM[A, B](a: A)(f: A => Eff[AnyRef, Either[A, B]]): Eff[AnyRef, B] =
-      flatMap(f(a)) {
-        case Right(b)   => pure(b)
-        case Left(next) => tailRecM(next)(f)
+      f(a) match {
+        case Pure(v, l) => v() match {
+          case Left(a1) => tailRecM(a1)(f)
+          case Right(b) => Pure(b)
+        }
+        case Impure(u, c, l) =>
+          Impure(u, Arrs.singleton((x: u.X) => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
+
+        case ImpureAp(u, c, l) =>
+          ImpureAp(u, Arrs.singleton(x => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
       }
   }
 

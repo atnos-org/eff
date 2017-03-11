@@ -28,6 +28,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  The Eff monad is stack safe with Writer                 $stacksafeWriter
  The Eff monad is stack safe with Reader                 $stacksafeReader
  The Eff monad is stack safe with both Reader and Writer $stacksafeReaderWriter
+ The Eff monad is tail recursive                         $tailrec
 
  It is possible to run a pure Eff value $runPureValue
  It is possible to run a Eff value with one effects $runOneEffect
@@ -127,6 +128,18 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     val action = list.traverse(i => ReaderEffect.ask[S, String] >>= WriterEffect.tell[S, String])
 
     action.runReader("h").runWriter.run ==== ((list.as(()), list.as("h")))
+  }
+
+  def tailrec = {
+    type S = Fx.fx1[Eval]
+
+    val action: Eff[S, Int] =
+      EffMonad[S].tailRecM(1) { i =>
+        if (i >= 5000) Pure(Right(i))
+        else Pure(Left(i + 1))
+      }
+
+    action.runEval.run ==== 5000
   }
 
   def runPureValue =
