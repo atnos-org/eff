@@ -29,7 +29,6 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  The Eff monad is stack safe with Reader                 $stacksafeReader
  The Eff monad is stack safe with both Reader and Writer $stacksafeReaderWriter
  The Eff monad is tail recursive                         $tailrec
- The Eff monad is stack safe with pure flatMaps          $safePureFlatMaps
 
  It is possible to run a pure Eff value $runPureValue
  It is possible to run a Eff value with one effects $runOneEffect
@@ -141,16 +140,6 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       }
 
     action.runEval.run ==== 5000
-  }
-
-  def safePureFlatMaps = {
-    type S = Fx.fx1[Eval]
-
-    def action(e: Eff[S, Int], i: Int = 0): Eff[S, Int] =
-      if (i == 5000) e
-      else action(e.flatMap(j => pure[S, Int](j + 1)), i + 1)
-
-    action(Eff.pure[S, Int](0)).runEval.run ==== 5000
   }
 
   def runPureValue =
