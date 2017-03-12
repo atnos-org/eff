@@ -96,7 +96,7 @@ case class Pure[R, A](value: A, last: Last[R] = Last.none[R]) extends Eff[R, A] 
  *
  * One effect can always be executed last, just for side-effects
  */
-case class Impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A], last: Last[R] = Last.none[R]) extends Eff[R, A] {
+case class Impure[R, X, A](union: Effect[R, X], continuation: Arrs[R, X, A], last: Last[R] = Last.none[R]) extends Eff[R, A] {
   def addLast(l: Last[R]): Eff[R, A] =
     Impure[R, X, A](union, continuation, last <* l)
 }
@@ -164,7 +164,7 @@ trait EffImplicits {
     def flatMap[A, B](fa: Eff[AnyRef, A])(f: A => Eff[AnyRef, B]): Eff[AnyRef, B] =
       fa match {
         case Pure(a, l) =>
-          f(a).addLast(l)
+          Impure[AnyRef, A, B](NoEffect[AnyRef, A](a), Arrs.singleton(x => f(x).addLast(l)))
 
         case Impure(union, continuation, last) =>
           Impure(union, continuation.append(f), last)
@@ -175,7 +175,7 @@ trait EffImplicits {
 
     def tailRecM[A, B](a: A)(f: A => Eff[AnyRef, Either[A, B]]): Eff[AnyRef, B] =
       f(a) match {
-        case Pure(v, l) => v() match {
+        case Pure(v, l) => v match {
           case Left(a1) => tailRecM(a1)(f)
           case Right(b) => Pure(b)
         }
@@ -199,23 +199,29 @@ trait EffImplicits {
       fa match {
         case Pure(a, last) =>
           ff match {
-            case Pure(f, last1)        => Pure(f(a), last1).addLast(last)
-            case Impure(u, c, last1)   => ImpureAp(Unions(u, Vector.empty), c.dimapEff((_:Vector[Any]).head)(_.map(_(a))), last1 *> last)
-            case ImpureAp(u, c, last1) => ImpureAp(u, c.map(_(a)), last1 *> last)
+            case Pure(f, last1)                   => Pure(f(a), last1).addLast(last)
+            case Impure(NoEffect(f), c, l1)       => ap(c(f).addLast(l1))(fa)
+            case Impure(u: Union[_, _], c, last1) => ImpureAp(Unions(u, Vector.empty), c.dimapEff((_:Vector[Any]).head)(_.map(_(a))), last1 *> last)
+            case ImpureAp(u, c, last1)            => ImpureAp(u, c.map(_(a)), last1 *> last)
           }
 
-        case Impure(u, c, last) =>
+        case Impure(NoEffect(a), c, last) =>
+          ap(ff)(c(a).addLast(last))
+
+        case Impure(u: Union[_, _], c, last) =>
           ff match {
-            case Pure(f, last1)          => ImpureAp(Unions(u, Vector.empty), c.contramap((_:Vector[Any]).head).map(f), last1 *> last)
-            case Impure(u1, c1, last1)   => ImpureAp(Unions(u, Vector(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
-            case ImpureAp(u1, c1, last1) => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
+            case Pure(f, last1)                     => ImpureAp(Unions(u, Vector.empty), c.contramap((_:Vector[Any]).head).map(f), last1 *> last)
+            case Impure(NoEffect(f), c1, l1)        => ap(c1(f).addLast(l1))(fa)
+            case Impure(u1: Union[_, _], c1, last1) => ImpureAp(Unions(u, Vector(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
+            case ImpureAp(u1, c1, last1)            => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
           }
           
         case ImpureAp(unions, c, last) =>
           ff match {
-            case Pure(f, last1)         => ImpureAp(unions, c map f, last1 *> last)
-            case Impure(u, c1, last1)   => ImpureAp(Unions(unions.first, unions.rest :+ u), Arrs.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
-            case ImpureAp(u, c1, last1) => ImpureAp(u append unions, Arrs.singleton({ xs =>
+            case Pure(f, last1)                  => ImpureAp(unions, c map f, last1 *> last)
+            case Impure(NoEffect(f), c1, l1)     => ap(c1(f).addLast(l1))(fa)
+            case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Arrs.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
+            case ImpureAp(u, c1, last1)          => ImpureAp(u append unions, Arrs.singleton({ xs =>
               val usize = u.size
               val (taken, dropped) = xs.splitAt(usize)
               ap(c1(taken))(c(dropped))
@@ -301,9 +307,10 @@ trait EffInterpretation {
    */
   def run[A](eff: Eff[NoFx, A]): A =
     eff match {
-      case Pure(a, Last(Some(l))) => l.value; a
-      case Pure(a, Last(None))    => a
-      case other                  => sys.error("impossible: cannot run the effects in "+other)
+      case Pure(a, Last(Some(l)))     => l.value; a
+      case Pure(a, Last(None))        => a
+      case Impure(NoEffect(a), c, l) => run(c(a).addLast(l))
+      case other                      => sys.error("impossible: cannot run the effects in "+other)
     }
 
   /**
@@ -332,7 +339,10 @@ trait EffInterpretation {
       case Pure(a, Last(Some(l))) => monad.pure(Left(l.value.as(a)))
       case Pure(a, Last(None))    => monad.pure(Right(a))
 
-      case Impure(u, continuation, last) =>
+      case Impure(NoEffect(a), continuation, last) =>
+        monad.pure(Left(continuation(a).addLast(last)))
+
+      case Impure(u: Union[_, _], continuation, last) =>
         val ta = u.tagged.valueUnsafe.asInstanceOf[M[A]]
         last match {
           case Last(Some(l)) => ta.map(x => Left(continuation(x).addLast(last)))
@@ -354,9 +364,10 @@ trait EffInterpretation {
    */
   def runPure[R, A](eff: Eff[R, A]): Option[A] =
     eff match {
-      case Pure(a, Last(Some(l))) => l.value; Option(a)
-      case Pure(a, _)             => Option(a)
-      case _                      => None
+      case Pure(a, Last(Some(l)))     => l.value; Option(a)
+      case Pure(a, _)                 => Option(a)
+      case Impure(NoEffect(a), c, l) => runPure(c(a).addLast(l))
+      case _                          => None
     }
 
   /**
@@ -376,7 +387,7 @@ trait EffInterpretation {
    */
   def memoizeEffect[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] =
     cache.get(key).map(Eff.pure[R, A]).getOrElse(memoizeEffectSequence(e, cache, key, 0).map(a => {
-      cache.put(key, a);
+      cache.put(key, a)
       a
     }))
 

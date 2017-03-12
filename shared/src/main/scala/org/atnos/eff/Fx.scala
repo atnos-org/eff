@@ -1,8 +1,5 @@
 package org.atnos.eff
 
-/** one effect, basically a type constructor */
-sealed trait Effect[+F[_]]
-
 /**
  * Base type for a tree of effect types
  */
@@ -39,11 +36,11 @@ object Fx {
 /**
  * Append a tree of effects to another one
  */
-final case class FxAppend[+L, +R](left: L, right: R) extends Fx
+trait FxAppend[+L, +R] extends Fx
 
-final case class Fx1[+F[_]](e: Effect[F]) extends Fx
-final case class Fx2[+L[_], +R[_]](left: Effect[L], right: Effect[R]) extends Fx
-final case class Fx3[+L[_], +M[_], +R[_]](left: Effect[L], middle: Effect[M], right: Effect[R]) extends Fx
+trait Fx1[+F[_]] extends Fx
+trait Fx2[+L[_], +R[_]] extends Fx
+trait Fx3[+L[_], +M[_], +R[_]] extends Fx
 
 /**
  * The "empty" tree of effects

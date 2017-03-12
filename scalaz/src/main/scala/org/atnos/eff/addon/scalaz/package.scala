@@ -64,8 +64,12 @@ package object scalaz {
         case Pure(a, Last(Some(l))) => Monad[M].point(-\/(l.value.as(a)))
         case Pure(a, Last(None))    => Monad[M].point(\/-(a))
 
+        case Impure(NoEffect(a), continuation, last) =>
+          Monad[M].point(-\/(continuation(a).addLast(last)))
+
         case Impure(u, continuation, last) =>
           u match {
+            case NoEffect(a) => Monad[M].point(-\/(continuation(a).addLast(last)))
             case UnionTagged(ta: M[Nothing] @unchecked, _) =>
               last match {
                 case Last(Some(l)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
@@ -82,8 +86,12 @@ package object scalaz {
         case Pure(a, Last(Some(l))) => monad.point(-\/(l.value.as(a)))
         case Pure(a, Last(None))    => monad.point(\/-(a))
 
+        case Impure(NoEffect(a), continuation, last) =>
+          monad.point(-\/(continuation(a).addLast(last)))
+
         case Impure(u, continuation, last) =>
           u match {
+            case NoEffect(a) => Monad[M].point(-\/(continuation(a).addLast(last)))
             case UnionTagged(ta: M[Nothing] @unchecked, _) =>
               last match {
                 case Last(Some(l)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))

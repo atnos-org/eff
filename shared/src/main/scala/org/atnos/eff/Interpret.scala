@@ -152,7 +152,10 @@ trait Interpret {
           l.value match {
             case Pure(u, last) => goLast(s)(last)
 
-            case Impure(union, continuation, last) =>
+            case Impure(NoEffect(a), c, last) =>
+              goLastEff(s)(c(a).addLast(last))
+
+            case Impure(union: Union[_, _], continuation, last) =>
               m.project(union) match {
                 case Right(mx) =>
                   loop.onLastEffect(mx, continuation, s) match {
@@ -186,7 +189,10 @@ trait Interpret {
             case Right(b)       => b.addLast(goLast(s)(last))
           }
 
-        case Impure(union, continuation, last) =>
+        case Impure(NoEffect(a), c, last) =>
+          go(c(a).addLast(last), s)
+
+        case Impure(union: Union[_, _], continuation, last) =>
           m.project(union) match {
             case Right(v) =>
               loop.onEffect(v, continuation, s) match {
@@ -292,7 +298,10 @@ trait Interpret {
           l.value match {
             case Pure(u, last) => goLast(s)(last)
 
-            case Impure(union, continuation, last) =>
+            case Impure(NoEffect(a), c, last) =>
+              goLastEff(s)(c(a).addLast(last))
+
+            case Impure(union: Union[_, _], continuation, last) =>
               m.extract(union) match {
                 case Some(mx) =>
                   loop.onLastEffect(mx, continuation, s) match {
@@ -324,7 +333,10 @@ trait Interpret {
             case Right(b) => b.addLast(goLast(s)(last))
           }
 
-        case Impure(union, continuation, last) =>
+        case Impure(NoEffect(a), c, last) =>
+          go(c(a).addLast(last), s)
+
+        case Impure(union: Union[_, _], continuation, last) =>
           m.extract(union) match {
             case Some(v) =>
               loop.onEffect(v, continuation, s) match {
@@ -386,7 +398,10 @@ trait Interpret {
           l.value match {
             case Pure(u, last) => goLast(last)
 
-            case Impure(union, continuation, last) =>
+            case Impure(NoEffect(a), c, last) =>
+              goLastEff(c(a).addLast(last))
+
+            case Impure(union: Union[_, _], continuation, last) =>
               sr.project(union) match {
                 case Right(small) =>
                   Impure(br.inject(nat(small)), continuation.interpret(r => goLastEff(continuation(r).addLast(last)))(_.interpretEff(goLast)))
@@ -405,7 +420,10 @@ trait Interpret {
       eff match {
         case Pure(a, last) => Pure[BR, A](a).addLast(goLast(last))
 
-        case Impure(u, c, last) =>
+        case Impure(NoEffect(a), c, last) =>
+          go(c(a).addLast(last))
+
+        case Impure(u: Union[_, _], c, last) =>
           sr.project(u) match {
             case Right(small) =>
               Impure(br.inject(nat(small)), c.interpret(r => go(r.addLast(last)))(_.interpretEff(goLast)))
@@ -439,7 +457,10 @@ trait Interpret {
           l.value match {
             case Pure(u, last) => goLast(last)
 
-            case Impure(union, continuation, last) =>
+            case Impure(NoEffect(a), c, last) =>
+              goLastEff(c(a).addLast(last))
+
+            case Impure(union: Union[_, _], continuation, last) =>
               m.project(union) match {
                 case Right(kv) =>
                   val effectsU: Eff[U, union.X] = tr(kv)
@@ -465,7 +486,10 @@ trait Interpret {
       eff match {
         case Pure(a, last) => Pure(a).addLast(goLast(last))
 
-        case Impure(union, continuation, last) =>
+        case Impure(NoEffect(a), c, last) =>
+          go(c(a).addLast(last))
+
+        case Impure(union: Union[_, _], continuation, last) =>
           m.project(union) match {
             case Right(kv) =>
               val effectsU: Eff[U, union.X] = tr(kv)
@@ -512,7 +536,10 @@ trait Interpret {
           l.value match {
             case Pure(u, last) => goLast(last)
 
-            case i @ Impure(union, continuation, last) =>
+            case Impure(NoEffect(a), c, last) =>
+              goLast(Last.eff(c(a).addLast(last)))
+
+            case i @ Impure(union: Union[_, _], continuation, last) =>
               m.extract(union) match {
                 case Some(tx) => translate(tx).flatMap(x => goLast(Last.eff(continuation(x).addLast(last))))
                 case None     => into(i).addLast(goLast(last))
@@ -527,7 +554,10 @@ trait Interpret {
     eff match {
       case Pure(a, last) => into(eff).addLast(goLast(last))
 
-      case Impure(u, c, last) =>
+      case Impure(NoEffect(a), c, last) =>
+        translateInto(c(a).addLast(last))(translate)
+
+      case Impure(u: Union[_, _], c, last) =>
         m.extract(u) match {
           case Some(tx) => translate(tx).flatMap(x => translateInto(c(x).addLast(last))(translate))
           case None     => into(eff).addLast(goLast(last))
@@ -576,7 +606,10 @@ trait Interpret {
           l.value match {
             case Pure(u, last) => goLast(last)
 
-            case Impure(union, continuation, last) =>
+            case Impure(NoEffect(a), c, last) =>
+              goLastEff(c(a).addLast(last))
+
+            case Impure(union: Union[_, _], continuation, last) =>
               m.extract(union) match {
                 case None     => Impure(union, continuation.interpret(r => goLastEff(r.addLast(last)))(_.interpretEff(goLast)))
                 case Some(tx) => Impure(m.inject(nat(tx)), continuation.interpret(r => goLastEff(r.addLast(last)))(_.interpretEff(goLast)))
@@ -590,7 +623,10 @@ trait Interpret {
     effects match {
       case Pure(a, last) => Pure(a).addLast(goLast(last))
 
-      case Impure(union, continuation, last) =>
+      case Impure(NoEffect(a), c, last) =>
+        interceptNat(c(a).addLast(last))(nat)
+
+      case Impure(union: Union[_, _], continuation, last) =>
         m.extract(union) match {
           case None     => Impure(union, continuation.interpret(r => interceptNat(r.addLast(last))(nat))(_.interpretEff(goLast)))
           case Some(tx) => Impure(m.inject(nat(tx)), continuation.interpret(r => interceptNat(r.addLast(last))(nat))(_.interpretEff(goLast)))
@@ -613,7 +649,10 @@ trait Interpret {
       case Pure(a, last) =>
         pure[R, F[A]](FM.pure(a)).addLast(last)
 
-      case Impure(u, c, last) =>
+      case Impure(NoEffect(a), c, last) =>
+        interceptNatM(c(a).addLast(last), nat)
+
+      case Impure(u: Union[_, _], c, last) =>
         m.extract(u) match {
           case Some(tx) =>
             val union = m.inject(nat(tx))
