@@ -23,6 +23,9 @@ final class EitherEffectOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def catchLeft[E](handle: E => Eff[R, A])(implicit member: Member[(E Either ?), R]): Eff[R, A] =
     EitherInterpretation.catchLeft(e)(handle)(member)
 
+  def runEitherCatchLeft[E, U](handle: E => Eff[U, A])(implicit member: Member.Aux[(E Either ?), R, U]): Eff[U, A] =
+    EitherInterpretation.runEitherCatchLeft(e)(handle)(member)
+
   def catchLeftCombine[E](handle: E => Eff[R, A])(implicit member: Member[(E Either ?), R], s: Semigroup[E]): Eff[R, A] =
     EitherInterpretation.catchLeftCombine(e)(handle)(member, s)
 

@@ -1,16 +1,17 @@
 package org.atnos.eff
 
+import cats.Eval
 import org.scalacheck.Gen.posNum
 import org.specs2.{ScalaCheck, Specification}
-
 import cats.data._
 import cats.syntax.all._
 import cats.instances.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.scalacheck.Gen
+import org.specs2.matcher.EitherMatchers
 
-class EitherEffectSpec extends Specification with ScalaCheck { def is = s2"""
+class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers { def is = s2"""
 
  an Either value can be injected in the stack    $EitherCreation
 
@@ -20,6 +21,7 @@ class EitherEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  run is stack safe with Either                   $stacksafeRun
  a left value can be caught and transformed to a right value $leftToRight
+ a left value can be effectfully handled removing it from stack $handleLeft
 
  the left type can be modified with local in a different stack $local
  the left type can be run with local in the same stack         $localRun
@@ -100,30 +102,47 @@ class EitherEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   def leftToRight = prop { i: Int =>
-    case class TooBig(value: Int)
-    type D[A] = TooBig Either A
-    type E = Fx.fx1[D]
+    sealed trait Err
+    case class ValueErr(value: Int) extends Err
+    case class ActionErr(value: Int) extends Err
+    type D[A] = Err Either A
+    type R = Fx1[D]
 
-    val i = 7
+    val value: Eff[R, Int] =
+      if (i > 5) EitherEffect.left[R, Err, Int](ValueErr(i))
+      else       EitherEffect.right[R, Err, Int](i)
 
-    val value: Eff[E, Int] =
-      if (i > 5) EitherEffect.left[E, TooBig, Int](TooBig(i))
-      else       EitherEffect.right[E, TooBig, Int](i)
-
-    val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =>
-      if (k < 10) EitherEffect.right[E, TooBig, Int](k)
-      else        EitherEffect.left[E, TooBig, Int](TooBig(k))
+    val action: Eff[R, Int] = catchLeft[R, Err, Int](value) {
+      case ValueErr(k) =>
+        if (k > 10) EitherEffect.left[R, Err, Int](ActionErr(k))
+        else        EitherEffect.right[R, Err, Int](k)
+      case ActionErr(_) =>
+        sys.error("should not reach here")
     }
 
-    val expected: TooBig Either Int =
-      if (i < 10) Right(i) else Left(TooBig(i))
+    val actual: Err Either Int = action.runEither.run
 
-    val actual: TooBig Either Int =
-      action.runEither.run
+    if (i > 10) actual must beLeft(ActionErr(i))
+    else        actual must beRight(i)
+  }.setGen(Gen.choose(0, 15))
 
-    actual == expected
+  def handleLeft = prop { i: Int =>
+    case class Err(value: Int)
+    type D[A] = Err Either A
+    type R = Fx2[D, Eval]
 
-  }.setGen(Gen.oneOf(14, 12))
+    val value: Eff[R, Int] =
+      if (i > 5) EitherEffect.left[R, Err, Int](Err(i))
+      else       EitherEffect.right[R, Err, Int](i)
+
+    val action = runEitherCatchLeft[R, Fx1[Eval], Err, Int](value) { case Err(k) =>
+      if (k > 10) EvalEffect.delay[Fx1[Eval], Int](k + 100)
+      else        EvalEffect.delay[Fx1[Eval], Int](k)
+    }
+
+    val actual: Int = action.runEval.run
+    actual == (if (i > 10) i + 100 else i)
+  }.setGen(Gen.choose(0, 15))
 
   def local = {
     case class Error1(m: String)
