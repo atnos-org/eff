@@ -260,6 +260,14 @@ trait EffCreation {
   def impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]): Eff[R, A] =
     Impure[R, X, A](union, continuation)
 
+  /** create a delayed impure value */
+  def impure[R, A, B](value: A, continuation: A => Eff[R, B]): Eff[R, B] =
+    Impure(NoEffect(value), Arrs.singleton((a: A) => continuation(a)))
+
+  /** create a delayed impure value */
+  def impure[R, A, B](value: A, continuation: A => Eff[R, B], map: B => B): Eff[R, B] =
+    Impure(NoEffect(value), Arrs.singleton((a: A) => continuation(a)).map(map))
+
   /** apply a function to an Eff value using the applicative instance */
   def ap[R, A, B](a: Eff[R, A])(f: Eff[R, A => B]): Eff[R, B] =
     EffImplicits.EffApplicative[R].ap(f)(a)
@@ -294,6 +302,7 @@ trait EffCreation {
       case Impure(u, c, l)   => Impure(u, Arrs.singleton((x: u.X) => whenStopped[R, A](c(x), action), action), l)
       case ImpureAp(u, c, l) => ImpureAp(u, Arrs.singleton((x: Vector[Any]) => whenStopped[R, A](c(x), action), action), l)
     }
+
 }
 
 object EffCreation extends EffCreation

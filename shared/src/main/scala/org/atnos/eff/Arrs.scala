@@ -72,6 +72,9 @@ case class Arrs[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: Last[R] 
     go(functions, a)
   }
 
+  def applyEval(a: A): Eff[R, B] =
+    Impure(NoEffect(a), Arrs.singleton((x: A) => apply(x)))
+
   def contramap[C](f: C => A): Arrs[R, C, B] =
     Arrs(((c: Any) => Eff.pure[R, Any](f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions, onNone)
 
@@ -103,6 +106,11 @@ object Arrs {
   /** create an Arrs function with no effect, which is similar to using an identity a => EffMonad[R].pure(a) */
   def unit[R, A]: Arrs[R, A, A] =
     Arrs(Vector.empty)
+
+  implicit def ArrsFunctor[R, X]: Functor[Arrs[R, X, ?]] = new Functor[Arrs[R, X, ?]] {
+    def map[A, B](fa: Arrs[R, X, A])(f: A => B): Arrs[R, X, B] =
+      fa.map(f)
+  }
 }
 
 

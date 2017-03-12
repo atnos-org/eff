@@ -704,7 +704,72 @@ trait Interpret {
     }
     interpret1((a: A) => a)(recurse)(effects)(m)
   }
+
+  def interpretGeneric[R, U, T[_], A, B](e: Eff[R, A])
+                                  (interpreter: Interpreter[T, R, U, A, B])
+                                  (implicit m: Member.Aux[T, R, U]): Eff[U, B] = {
+
+    def interpretContinuation[X](c: Arrs[R, X, A]): Arrs[U, X, B] =
+      Arrs.singleton((x: X) => interpretGeneric(c(x))(interpreter))
+
+    def interpretContinuationLast[X](c: Arrs[R, X, A], last: Last[R]): Arrs[U, X, B] =
+      Arrs.singleton((x: X) => interpretGeneric(c(x).addLast(last))(interpreter))
+
+    def interpretLastEff(last: Eff[R, Unit]): Eff[U, Unit] =
+      last match {
+        case Pure(a, last1) =>
+          interpretLast(last1).value.map(_.value).getOrElse(Eff.pure(()))
+
+        case Impure(NoEffect(a), c, last1) =>
+          interpretLastEff(c(a).addLast(last1))
+
+        case Impure(u: Union[_,_], c, last1) =>
+          m.project(u) match {
+            case Right(tu)   => interpreter.onLastEffect(tu, Arrs.singleton((x: u.X) => interpretLastEff(c(x).addLast(last1))))
+            case Left(other) => Impure(other, Arrs.singleton((x: u.X) => interpretLastEff(c(x)), interpretLast(last1)))
+          }
+
+        case ap @ ImpureAp(_, _, _) =>
+          interpretLastEff(ap.toMonadic)
+      }
+
+    def interpretLast(last: Last[R]): Last[U] =
+      last.value match {
+        case None    => Last.none[U]
+        case Some(l) => Last.eff(interpretLastEff(l.value))
+      }
+
+    e match {
+      case Pure(a, last) =>
+        interpreter.onPure(a)
+
+      case Impure(NoEffect(a), c, last) =>
+        interpretGeneric(c(a).addLast(last))(interpreter)
+
+      case Impure(u: Union[_,_], c, last) =>
+        m.project(u) match {
+          case Right(tu)   => interpreter.onEffect(tu, interpretContinuationLast(c, last))
+          case Left(other) => Impure(other, interpretContinuation(c), interpretLast(last))
+        }
+
+      case ap @ ImpureAp(unions, continuation, last) =>
+        val collected = unions.project
+
+        if (collected.effects.isEmpty)
+          collected.othersEff(continuation.interpret(e => interpretGeneric(e)(interpreter))(interpretLast)).addLast(interpretLast(last))
+        else
+          interpreter.onApplicativeEffect(collected.effects, interpretContinuation(continuation)).addLast(interpretLast(last))
+    }
+  }
 }
+
+trait Interpreter[M[_], R, U, A, B] {
+  def onPure(a: A): Eff[U, B]
+  def onEffect[X](x: M[X], continuation: X => Eff[U, B]): Eff[U, B]
+  def onLastEffect[X](x: M[X], continuation: X => Eff[U, Unit]): Eff[U, Unit]
+  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: T[X] => Eff[U, B]): Eff[U, B]
+}
+
 
 object Interpret extends Interpret
 
