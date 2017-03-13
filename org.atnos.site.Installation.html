@@ -40,7 +40,7 @@
 <div id="tipue_search_content"></div>
 
 <p>You add <code class="prettyprint">eff</code> as an sbt dependency:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff&quot;</span> % <span class="st">&quot;3.1.0&quot;</span>
+<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff&quot;</span> % <span class="st">&quot;3.1.0-20170313130612-768a806&quot;</span>
 
 <span class="co">// to write types like Reader[String, ?]</span>
 <span class="fu">addCompilerPlugin</span>(<span class="st">&quot;org.spire-math&quot;</span> %% <span class="st">&quot;kind-projector&quot;</span> % <span class="st">&quot;0.9.3&quot;</span>)
@@ -48,10 +48,10 @@
 <span class="co">// to get types like Reader[String, ?] (with more than one type parameter) correctly inferred</span>
 <span class="fu">addCompilerPlugin</span>(<span class="st">&quot;com.milessabin&quot;</span> % <span class="st">&quot;si2712fix-plugin_2.11.8&quot;</span> % <span class="st">&quot;1.2.0&quot;</span>)</code></pre></div>
 <p>If you want to use <a href="http://github.com/scalaz/scalaz">Scalaz</a> as a library for functional programming you will also need:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff-scalaz&quot;</span> % <span class="st">&quot;3.1.0&quot;</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff-scalaz&quot;</span> % <span class="st">&quot;3.1.0-20170313130612-768a806&quot;</span></code></pre></div>
 <p>This will allows you to use the <code class="prettyprint">Eff</code> monad as a Scalaz <code class="prettyprint">Monad</code> (instead of the cats <code class="prettyprint">Monad</code> which is the default implementation). The <code class="prettyprint">eff-scalaz</code> dependency is also necessary if you want to use scalaz <code class="prettyprint">Task</code> as an effect. (see <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">Out of the box</a></link>).</p>
 <p>On the other hand if you prefer to use <a href="http://monix.io">Monix</a> <code class="prettyprint">Task</code>, you will need a dependency on <code class="prettyprint">eff-monix</code>:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff-monix&quot;</span> % <span class="st">&quot;3.1.0&quot;</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff-monix&quot;</span> % <span class="st">&quot;3.1.0-20170313130612-768a806&quot;</span></code></pre></div>
 <h3 id="imports">Imports</h3>
 <h4 id="main-types">Main types</h4>
 <p>The main <code class="prettyprint">eff</code> types: <code class="prettyprint">Eff</code>, <code class="prettyprint">Member</code>, <code class="prettyprint">Fx</code> are accessible in the <code class="prettyprint">org.atnos.eff</code> package:</p>
