@@ -99,9 +99,12 @@ def get[T, R :_kvstore](key: String): Eff[R, Option[T]] =
 def delete[T, R :_kvstore](key: String): Eff[R, Unit] =
   Eff.send(Delete(key))
 
-/** update composes get and set, and returns nothing. */
+/** update composes get and put, and returns nothing. */
 def update[T, R :_kvstore](key: String, f: T =&gt; T): Eff[R, Unit] =
-  get[T, R](key).map(_.map(f)).void
+  for {
+    vMaybe &lt;- get[T, R](key)
+    _ &lt;- vMaybe.map(v =&gt; put[T, R](key, f(v))).getOrElse(Eff.pure(()))
+  } yield ()
 </code></pre>
 <p>Each method requires the <code class="prettyprint">KVStore</code> effect to be a member of an “effect stack” <code class="prettyprint">R</code>. The return values are of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> is a stack of effects possibly containing other effects than key-value store operations and yielding values of type <code class="prettyprint">A</code>.</p>
 <h3 id="build-a-program">Build a program</h3>
