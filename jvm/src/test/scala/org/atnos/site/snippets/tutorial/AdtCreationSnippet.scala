@@ -25,9 +25,12 @@ def get[T, R :_kvstore](key: String): Eff[R, Option[T]] =
 def delete[T, R :_kvstore](key: String): Eff[R, Unit] =
   Eff.send(Delete(key))
 
-/** update composes get and set, and returns nothing. */
+/** update composes get and put, and returns nothing. */
 def update[T, R :_kvstore](key: String, f: T => T): Eff[R, Unit] =
-  get[T, R](key).map(_.map(f)).void
+  for {
+    ot <- get[T, R](key)
+    _  <- ot.map(t => put[T, R](key, f(t))).getOrElse(Eff.pure(()))
+  } yield ()
 
   // 8<---
 }
