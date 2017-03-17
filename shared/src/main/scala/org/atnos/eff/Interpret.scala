@@ -761,6 +761,11 @@ trait Interpret {
           interpreter.onApplicativeEffect(collected.effects, interpretContinuation(continuation)).addLast(interpretLast(last))
     }
   }
+
+  def recurse[R, U, T[_], A, B](e: Eff[R, A])
+                                        (recurser: Recurser[T, U, A, B])
+                                        (implicit m: Member.Aux[T, R, U]): Eff[U, B] =
+    interpretGeneric(e)(Interpreter.fromRecurser(recurser))
 }
 
 trait Interpreter[M[_], R, U, A, B] {
@@ -768,6 +773,33 @@ trait Interpreter[M[_], R, U, A, B] {
   def onEffect[X](x: M[X], continuation: X => Eff[U, B]): Eff[U, B]
   def onLastEffect[X](x: M[X], continuation: X => Eff[U, Unit]): Eff[U, Unit]
   def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: T[X] => Eff[U, B]): Eff[U, B]
+}
+
+object Interpreter {
+
+  def fromRecurser[M[_], R, U, A, B](recurser: Recurser[M, U, A, B]): Interpreter[M, R, U, A, B] =
+    new Interpreter[M, R, U, A, B] {
+      def onPure(a: A): Eff[U, B] = recurser.onPure(a)
+      def onLastEffect[X](x: M[X], continuation: X => Eff[U, Unit]): Eff[U, Unit] = Eff.pure(())
+
+      def onEffect[X](mx: M[X], continuation: X => Eff[U, B]): Eff[U, B] =
+        recurser.onEffect(mx) match {
+          case Left(x)  => Eff.impure(x, continuation)
+          case Right(b) => b
+        }
+
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: T[X] => Eff[U, B]): Eff[U, B] =
+        recurser.onApplicative(xs) match {
+          case Left(x)   => Eff.impure(x, continuation)
+          case Right(mx) => onEffect(mx, continuation)
+        }
+    }
+}
+
+trait Recurser[M[_], R, A, B] {
+  def onPure(a: A): Eff[R, B]
+  def onEffect[X](m: M[X]): X Either Eff[R, B]
+  def onApplicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]]
 }
 
 

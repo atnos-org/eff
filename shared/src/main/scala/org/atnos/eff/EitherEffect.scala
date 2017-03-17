@@ -50,33 +50,23 @@ object EitherCreation extends EitherCreation
 trait EitherInterpretation {
 
   /** run the Either effect, yielding E Either A */
-  def runEither[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E Either A] = {
-    val recurse = new Recurse[(E Either ?), U, E Either A] {
-      def apply[X](m: E Either X) =
+  def runEither[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E Either A] =
+    Interpret.interpretGeneric(effect)(Interpreter.fromRecurser(new Recurser[E Either ?, U, A, E Either A] {
+      def onPure(a: A): Eff[U, E Either A] =
+        Eff.pure(Right(a))
+
+      def onEffect[X](m: E Either X): X Either Eff[U, E Either A] =
         m match {
-          case Left(e) => Right(EffMonad[U].pure(Left(e)))
+          case Left(e)  => Right(EffMonad[U].pure(Left(e)))
           case Right(a) => Left(a)
         }
 
-      def applicative[X, T[_] : Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) =
-        Right(ms.sequence)
-    }
-
-    interpret1[R, U, (E Either ?), A, E Either A]((a: A) => Right(a): E Either A)(recurse)(r)
-  }
-
-  def EitherApplicative[E](implicit s: Semigroup[E]): Applicative[E Either ?] = new Applicative[E Either ?] {
-    def pure[A](a: A) = Right(a)
-
-    def ap[A, B](ff: E Either (A => B))(fa: E Either A): E Either B =
-      fa match {
-        case Right(a) => ff.map(_(a))
-        case Left(e1) => ff match {
-          case Right(_) => Left(e1)
-          case Left(e2) => Left(s.combine(e1, e2))
+      def onApplicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) =
+        ms.sequence match {
+          case Left(e)       => Right(Left(e))
+          case Right(values) => Left(values)
         }
-      }
-  }
+    }))
 
   /** run the Either effect, yielding E Either A and combine all Es */
   def runEitherCombine[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Either ?), R, U], s: Semigroup[E]): Eff[U, E Either A] = {
@@ -169,6 +159,19 @@ trait EitherInterpretation {
       def apply[X](ex: E Either X): E Either X =
         ex.leftMap(modify)
     })
+
+  def EitherApplicative[E](implicit s: Semigroup[E]): Applicative[E Either ?] = new Applicative[E Either ?] {
+    def pure[A](a: A) = Right(a)
+
+    def ap[A, B](ff: E Either (A => B))(fa: E Either A): E Either B =
+      fa match {
+        case Right(a) => ff.map(_(a))
+        case Left(e1) => ff match {
+          case Right(_) => Left(e1)
+          case Left(e2) => Left(s.combine(e1, e2))
+        }
+      }
+  }
 
 }
 
