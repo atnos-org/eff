@@ -1,7 +1,9 @@
 package org.atnos.eff
 
 import cats._
-import cats.implicits._
+import cats.syntax.traverse._
+import cats.syntax.either._
+import cats.instances.list._
 import Eff._
 import Interpret._
 
@@ -51,78 +53,46 @@ trait EitherInterpretation {
 
   /** run the Either effect, yielding E Either A */
   def runEither[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E Either A] =
-    Interpret.interpretGeneric(effect)(Interpreter.fromRecurser(new Recurser[E Either ?, U, A, E Either A] {
-      def onPure(a: A): Eff[U, E Either A] =
-        Eff.pure(Right(a))
-
-      def onEffect[X](m: E Either X): X Either Eff[U, E Either A] =
-        m match {
-          case Left(e)  => Right(EffMonad[U].pure(Left(e)))
-          case Right(a) => Left(a)
-        }
-
-      def onApplicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) =
-        ms.sequence match {
-          case Left(e)       => Right(Left(e))
-          case Right(values) => Left(values)
-        }
-    }))
+    interpretEither(effect)(cats.instances.either.catsStdInstancesForEither[E])
 
   /** run the Either effect, yielding E Either A and combine all Es */
-  def runEitherCombine[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[(E Either ?), R, U], s: Semigroup[E]): Eff[U, E Either A] = {
-    val recurse = new Recurse[(E Either ?), U, E Either A] {
-      def apply[X](m: E Either X) =
-        m match {
-          case Left(e) => Right(EffMonad[U].pure(Left(e)))
-          case Right(a) => Left(a)
-        }
+  def runEitherCombine[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[(E Either ?), R, U], s: Semigroup[E]): Eff[U, E Either A] =
+    interpretEither(effect)(EitherApplicative[E])
 
-      def applicative[X, T[_] : Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) = {
-        val ap = EitherApplicative[E]
-        Right(ms.sequence(implicitly[Either[E, X] <:< Either[E, X]], ap))
-      }
-    }
-
-    interpret1[R, U, (E Either ?), A, E Either A]((a: A) => Right(a): E Either A)(recurse)(r)
-  }
+  private def interpretEither[R, U, E, A](effect: Eff[R, A])(ap: Applicative[E Either ?])(implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E Either A] =
+    Interpret.interpretGeneric(effect)(Interpreter.fromRecurser(eitherRecurser[U, E, A, E Either A](a => Right(a), e => EffMonad[U].pure(Left(e)))(ap)))
 
   /** catch and handle a possible left value */
-  def catchLeft[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) /= R): Eff[R, A] = {
-    val recurse = new Recurse[(E Either ?), R, A] {
-      def apply[X](m: E Either X) =
-        m match {
-          case Left(e) => Right(handle(e))
-          case Right(a) => Left(a)
-        }
-
-      def applicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) =
-        Right(ms.sequence)
-    }
-
-    intercept1[R, (E Either ?), A, A]((a: A) => a)(recurse)(r)
-  }
+  def catchLeft[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) /= R): Eff[R, A] =
+    catchLeftEither[R, E, A](effect)(handle)(cats.instances.either.catsStdInstancesForEither[E])
 
   /** run the Either effect, handling E (with effects) and yielding A */
   def runEitherCatchLeft[R, U, E, A](r: Eff[R, A])(handle: E => Eff[U, A])(implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, A] =
     runEither(r).flatMap(_.fold(handle, pure))
 
   /** catch and handle a possible left value. The value is the combination of all failures in case of an applicative */
-  def catchLeftCombine[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) /= R, s: Semigroup[E]): Eff[R, A] = {
-    val recurse = new Recurse[(E Either ?), R, A] {
-      def apply[X](m: E Either X) =
+  def catchLeftCombine[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) /= R, s: Semigroup[E]): Eff[R, A] =
+    catchLeftEither[R, E, A](effect)(handle)(EitherApplicative[E])
+
+  private def catchLeftEither[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(ap: Applicative[E Either ?])(implicit member: (E Either ?) /= R): Eff[R, A] =
+    Interpret.interceptGeneric(effect)(Interpreter.fromRecurser(eitherRecurser[R, E, A, A](a => a, handle)(ap)))
+
+  private def eitherRecurser[R, E, A, B](pureValue: A => B, handle: E => Eff[R, B])(ap: Applicative[E Either ?]): Recurser[E Either ?, R, A, B] =
+    new Recurser[E Either ?, R, A, B] {
+      def onPure(a: A): B =
+        pureValue(a)
+
+      def onEffect[X](m: E Either X): X Either Eff[R, B] =
         m match {
-          case Left(e) => Right(handle(e))
+          case Left(e)  => Right(handle(e))
           case Right(a) => Left(a)
         }
 
-      def applicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) = {
-        val ap = EitherApplicative[E]
-        Right(ms.sequence(implicitly[Either[E, X] <:< Either[E, X]], ap))
+      def onApplicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) = {
+        implicit val eitherAp = ap
+        Right(ms.sequence)
       }
     }
-
-    intercept1[R, (E Either ?), A, A]((a: A) => a)(recurse)(r)
-  }
 
   /**
    * Modify the type of the read value

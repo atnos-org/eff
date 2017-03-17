@@ -48,7 +48,7 @@ trait WriterInterpretation {
    */
   def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: RightFold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
     val executed =
-      Interpret.interpretGeneric(w)(new Interpreter[Writer[O, ?], R, U, A, (A, fold.S)] {
+      Interpret.interpretGeneric(w)(new Interpreter[Writer[O, ?], U, A, (A, fold.S)] {
         def onPure(a: A): Eff[U, (A, fold.S)] =
           Eff.pure((a, fold.init))
 
@@ -75,27 +75,6 @@ trait WriterInterpretation {
 
     executed.map { case (a, s) => (a, fold.finalize(s)) }
   }
-
-//  {
-//    val recurse: StateRecurse[Writer[O, ?], A, (A, B)] = new StateRecurse[Writer[O, ?], A, (A, B)] {
-//      type S = fold.S
-//      val init = fold.init
-//      def apply[X](x: Writer[O, X], s: S) = (x.run._2, fold.fold(x.run._1, s))
-//
-//      def applicative[X, T[_] : Traverse](ws: T[Writer[O, X]], s: S): (T[X], S) Either (Writer[O, T[X]], S) =
-//        Left {
-//          val traversed: State[S, T[X]] = ws.traverse { w: Writer[O, X] =>
-//            val (o, x) = w.run
-//            State[S, X](s1 => (fold.fold(o, s1), x))
-//          }
-//          traversed.run(s).value.swap
-//        }
-//
-//      def finalize(a: A, s: S) = (a, fold.finalize(s))
-//    }
-//
-//    interpretState1[R, U, Writer[O, ?], A, (A, B)]((a: A) => (a, fold.finalize(fold.init)))(recurse)(w)
-//  }
 
   /**
    * Run a side-effecting fold

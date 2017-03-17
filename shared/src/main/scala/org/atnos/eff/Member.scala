@@ -86,6 +86,19 @@ trait MemberInOut[T[_], R] extends MemberIn[T, R] { outer =>
 
   final def transformUnion[A](nat: T ~> T)(union: Union[R, A]): Union[R, A] =
     extract(union).map(tx => nat(tx)).fold(union)(tx => inject(tx))
+
+  def toMember: Member.Aux[T, R, R] = new Member[T, R] {
+    type Out = R
+
+    def inject[V](v: T[V]): Union[R, V] =
+      outer.inject(v)
+
+    def accept[V](union: Union[Out, V]): Union[R, V] =
+      union
+
+    def project[V](union: Union[R, V]): Union[Out, V] Either T[V] =
+      outer.extract(union).map(Right.apply).getOrElse(Left(union))
+  }
 }
 
 final case class TaggedMemberInOut[T[_], R](tag: Int) extends MemberInOut[T, R] {
