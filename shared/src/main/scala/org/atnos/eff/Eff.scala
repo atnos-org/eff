@@ -308,19 +308,31 @@ trait EffCreation {
 object EffCreation extends EffCreation
 
 trait EffInterpretation {
+
   /**
    * base runner for an Eff value having no effects at all
-   *
-   * This runner can only return the value in Pure because it doesn't
-   * known how to interpret the effects in Impure
+   * the execution is trampolined using Eval
    */
-  def run[A](eff: Eff[NoFx, A]): A =
-    eff match {
-      case Pure(a, Last(Some(l)))     => l.value; a
-      case Pure(a, Last(None))        => a
-      case Impure(NoEffect(a), c, l) => run(c(a).addLast(l))
-      case other                      => sys.error("impossible: cannot run the effects in "+other)
-    }
+  def run[A](eff: Eff[NoFx, A]): A = {
+    def runEval[X](e: Eff[NoFx, X]): Eval[X] =
+      e match {
+        case Pure(a, Last(None)) =>
+          Eval.now(a)
+
+        case Pure(a, Last(Some(l))) =>
+          runEval(l.value).as(a)
+
+        case Impure(NoEffect(a), c, Last(None)) =>
+          Eval.later(c(a)).flatMap(runEval)
+
+        case Impure(NoEffect(a), c, Last(Some(l))) =>
+          Eval.later(c(a)).flatMap(runEval).flatMap(res => runEval(l.value).as(res))
+
+        case other => sys.error("impossible: cannot run the effects in "+other)
+      }
+
+    runEval(eff).value
+  }
 
   /**
    * peel-off the only present effect

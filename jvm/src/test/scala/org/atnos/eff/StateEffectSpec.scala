@@ -47,10 +47,10 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   def stacksafeState = {
 
-    val list = (1 to 5000).toList
-    val action = list.traverseU(i => StateEffect.put[SI, Int](i).as(i.toString))
+    val list = (1 to 10000).toList
+    val action = list.traverse(i => StateEffect.put[SI, Int](i).as(i.toString))
 
-    action.runState(0).run ==== ((list.map(_.toString), 5000))
+    action.runState(0).run ==== ((list.map(_.toString), list.size))
   }
 
   def applicativeState = {
