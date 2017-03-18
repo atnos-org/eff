@@ -566,8 +566,8 @@ trait Interpret {
     interpretGeneric[R, R, T, A, B](e)(interpreter)(m.toMember)
 
   def recurse[R, U, T[_], A, B](e: Eff[R, A])
-                                        (recurser: Recurser[T, U, A, B])
-                                        (implicit m: Member.Aux[T, R, U]): Eff[U, B] =
+                               (recurser: Recurser[T, U, A, B])
+                               (implicit m: Member.Aux[T, R, U]): Eff[U, B] =
     interpretGeneric(e)(Interpreter.fromRecurser(recurser))
 }
 
