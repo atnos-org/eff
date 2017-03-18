@@ -39,20 +39,20 @@ trait OptionInterpretation {
    *
    * Stop all computations if None is present once
    */
-  def runOption[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Option, R, U]): Eff[U, Option[A]] = {
-    val recurse = new Recurse[Option, U, Option[A]] {
-      def apply[X](m: Option[X]) =
+  def runOption[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Option, R, U]): Eff[U, Option[A]] =
+    interpretGeneric(effect)(Interpreter.fromRecurser(new Recurser[Option, U, A, Option[A]] {
+      def onPure(a: A): Option[A] =
+        Option(a)
+
+      def onEffect[X](m: Option[X]): X Either Eff[U, Option[A]] =
         m match {
-          case None    => Right(EffMonad[U].pure(None))
+          case None    => Right(Eff.pure(None))
           case Some(x) => Left(x)
-        }
+         }
 
-      def applicative[X, T[_]: Traverse](ms: T[Option[X]]): T[X] Either Option[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ms: T[Option[X]]): T[X] Either Option[T[X]] =
         Right(ms.sequence)
-    }
-
-    interpret1[R, U, Option, A, Option[A]]((a: A) => Option(a))(recurse)(r)
-  }
+    }))
 
 }
 
