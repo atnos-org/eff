@@ -88,23 +88,28 @@ trait StateInterpretation {
     runState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value */
-  def runState[R, U, S1, A](initial: S1)(w: Eff[R, A])(implicit m: Member.Aux[State[S1, ?], R, U]): Eff[U, (A, S1)] = {
-    val recurse: StateRecurse[State[S1, ?], A, (A, S1)] = new StateRecurse[State[S1, ?], A, (A, S1)] {
-      type S = S1
-      val init = initial
+  def runState[R, U, S1, A](initial: S1)(w: Eff[R, A])(implicit m: Member.Aux[State[S1, ?], R, U]): Eff[U, (A, S1)] =
+    interpretGeneric[R, U, State[S1, ?], A, (A, S1)](w)(new Interpreter[State[S1, ?], U, A, (A, S1)] {
+      var s: S1 = initial
 
-      def apply[X](x: State[S, X], s: S) =
-        x.run(s).value.swap
+      def onPure(a: A): Eff[U, (A, S1)] =
+        Eff.pure((a, s))
 
-      def applicative[X, T[_] : Traverse](xs: T[State[S, X]], s: S): (T[X], S) Either (State[S, T[X]], S) =
-        Left(xs.sequence.run(s).value.swap)
+      def onEffect[X](state: State[S1, X], continuation: X => Eff[U, (A, S1)]): Eff[U, (A, S1)] = {
+        val (s1, x) = state.run(s).value
+        s = s1
+        Eff.impure(x, continuation)
+      }
 
-      def finalize(a: A, s: S) = (a, s)
+      def onLastEffect[X](x: State[S1, X], continuation: X => Eff[U, Unit]): Eff[U, Unit] =
+        Eff.pure(())
 
-    }
-
-    interpretState1[R, U, State[S1, ?], A, (A, S1)]((a: A) => (a, initial))(recurse)(w)
-  }
+      def onApplicativeEffect[X, T[_]: Traverse](ms: T[State[S1, X]], continuation: T[X] => Eff[U, (A, S1)]): Eff[U, (A, S1)] = {
+        val (s1, x) = ms.sequence.run(s).value
+        s = s1
+        Eff.impure(x, continuation)
+      }
+    })
 
   /**
    * Lift a computation over a "small" state (for a subsystem) into
