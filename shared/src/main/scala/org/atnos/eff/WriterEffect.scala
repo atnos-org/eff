@@ -80,7 +80,16 @@ trait WriterInterpretation {
    * Run a side-effecting fold
    */
   def runWriterUnsafe[R, U, O, A](w: Eff[R, A])(f: O => Unit)(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
-    runWriterFold(w)(UnsafeFold(f)).map(_._1)
+    interpretUnsafe(w)(new SideEffect[Writer[O, ?]] {
+      def apply[X](tx: Writer[O, X]): X = {
+        val (o, x) = tx.run
+        f(o)
+        x
+      }
+
+      def applicative[X, Tr[_] : Traverse](ms: Tr[Writer[O, X]]): Tr[X] =
+        ms.map(apply)
+    })
 
   def runWriterEval[R, U, O, A](w: Eff[R, A])(f: O => Eval[Unit])(implicit m: Member.Aux[Writer[O, ?], R, U], ev: Eval |= U): Eff[U, A] =
     runWriterFold(w)(EvalFold(f)).flatMap { case (a, e) => send[Eval, U, Unit](e).as(a) }
@@ -99,17 +108,10 @@ trait WriterInterpretation {
     def finalize(s: S) = s
   }
 
-  def UnsafeFold[A](f: A => Unit): RightFold[A, Unit] = new RightFold[A, Unit] {
-    type S = Unit
-    val init = ()
-    def fold(a: A, s: S) = f(a)
-    def finalize(s: S) = s
-  }
-
   def EvalFold[A](f: A => Eval[Unit]): RightFold[A, Eval[Unit]] = new RightFold[A, Eval[Unit]] {
     type S = Eval[Unit]
-    val init = Eval.now(())
-    def fold(a: A, s: S) = s >> f(a)
+    val init = Eval.later(())
+    def fold(a: A, s: S) = Eval.later { f(a) >> s }.flatten
     def finalize(s: S) = s
   }
 

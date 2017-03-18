@@ -5,10 +5,11 @@ import cats.Eval
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2.Specification
+import org.specs2.matcher.ThrownExpectations
 
 import scala.collection.mutable.ListBuffer
 
-class WriterEffectSpec extends Specification { def is = s2"""
+class WriterEffectSpec extends Specification with ThrownExpectations { def is = s2"""
 
  A writer effect can use a side-effecting fold to be evaluated $sideEffecting
 
@@ -22,11 +23,11 @@ class WriterEffectSpec extends Specification { def is = s2"""
     val action: Eff[S, String] = for {
       f <- tell[S, String]("hello")
       h <- tell[S, String]("world")
-    } yield f+" "+h
+    } yield "hello world"
 
     val messages: ListBuffer[String] = new ListBuffer[String]
 
-    action.runWriterUnsafe((m: String) => messages.append(m))
+    action.runWriterUnsafe((m: String) => messages.append(m)).run ==== "hello world"
 
     messages.toList ==== List("hello", "world")
 
@@ -38,11 +39,11 @@ class WriterEffectSpec extends Specification { def is = s2"""
     val action: Eff[S, String] = for {
       f <- tell[S, String]("hello")
       h <- tell[S, String]("world")
-    } yield f+" "+h
+    } yield "hello world"
 
     val messages: ListBuffer[String] = new ListBuffer[String]
 
-    action.runWriterEval((m: String) => Eval.later(messages.append(m))).runEval
+    action.runWriterEval((m: String) => Eval.later(messages.append(m))).runEval.run ==== "hello world"
 
     messages.toList ==== List("hello", "world")
 
