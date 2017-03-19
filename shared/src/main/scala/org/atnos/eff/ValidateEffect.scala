@@ -62,7 +62,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** run the validate effect, yielding a list of failures Either A */
   def runMap[R, U, E, L : Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Either A] =
-    interpretGeneric(effect)(new Interpreter[Validate[E, ?], U, A, L Either A] {
+    runInterpreter(effect)(new Interpreter[Validate[E, ?], U, A, L Either A] {
       private var l: Option[L] = None
 
       def onPure(a: A): Eff[U, L Either A] =
@@ -87,7 +87,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** catch and handle possible wrong values */
   def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] =
-    interceptGeneric(effect)(new Interpreter[Validate[E, ?], R, A, A] {
+    intercept(effect)(new Interpreter[Validate[E, ?], R, A, A] {
       def onPure(a: A): Eff[R, A] =
         Eff.pure(a)
 

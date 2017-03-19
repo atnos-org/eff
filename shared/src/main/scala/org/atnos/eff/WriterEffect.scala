@@ -48,7 +48,7 @@ trait WriterInterpretation {
    */
   def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: RightFold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
     val executed =
-      Interpret.interpretGeneric(w)(new Interpreter[Writer[O, ?], U, A, (A, fold.S)] {
+      Interpret.runInterpreter(w)(new Interpreter[Writer[O, ?], U, A, (A, fold.S)] {
         def onPure(a: A): Eff[U, (A, fold.S)] =
           Eff.pure((a, fold.init))
 

@@ -66,7 +66,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    * Stop all computation if there is an exception or a failure.
    */
   def runError[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Error Either A] =
-    interpretGeneric(r)(errorInterpreter[U, A, Error Either A](a => Right(a), e => Eff.pure(Left(e))))
+    runInterpreter(r)(errorInterpreter[U, A, Error Either A](a => Right(a), e => Eff.pure(Left(e))))
 
   /**
    * evaluate 1 action possibly having error effects
@@ -74,7 +74,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    * Execute a second action if the first one is not successful, based on the error
    */
   def catchError[R, A, B](action: Eff[R, A], pure: A => B, onError: Error => Eff[R, B])(implicit m: ErrorOrOk /= R): Eff[R, B] =
-    interceptGeneric(action)(errorInterpreter(pure, onError))
+    intercept(action)(errorInterpreter(pure, onError))
 
   def errorInterpreter[R, A, B](pureValue: A => B, onError: Error => Eff[R, B]): Interpreter[ErrorOrOk, R, A, B] =
     new Interpreter[ErrorOrOk, R, A, B] {
@@ -108,7 +108,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    * Execute a second action whether the first is successful or not
    */
   def andFinally[R, A](action: Eff[R, A], lastAction: Eff[R, Unit])(implicit m: ErrorOrOk /= R): Eff[R, A] =
-     interceptGeneric(action)(new Interpreter[ErrorOrOk, R, A, A] {
+     intercept(action)(new Interpreter[ErrorOrOk, R, A, A] {
        def onPure(a: A): Eff[R, A] =
          lastAction.as(a)
 

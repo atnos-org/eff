@@ -44,7 +44,7 @@ trait ListInterpretation {
   
   /** run an effect stack starting with a list effect */
   def runList[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[List, R, U]): Eff[U, List[A]] =
-    interpretGeneric(effect)(new Interpreter[List, U, A, List[A]] {
+    runInterpreter(effect)(new Interpreter[List, U, A, List[A]] {
       def onPure(a: A): Eff[U, List[A]] =
         Eff.pure(List(a))
 

@@ -75,7 +75,7 @@ trait EitherInterpretation {
     catchLeftEither[R, E, A](effect)(handle)(EitherApplicative[E])
 
   private def catchLeftEither[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(ap: Applicative[E Either ?])(implicit member: (E Either ?) /= R): Eff[R, A] =
-    Interpret.interceptGeneric(effect)(Interpreter.fromRecurser(eitherRecurser[R, E, A, A](a => a, handle)(ap)))
+    Interpret.intercept(effect)(Interpreter.fromRecurser(eitherRecurser[R, E, A, A](a => a, handle)(ap)))
 
   private def eitherRecurser[R, E, A, B](pureValue: A => B, handle: E => Eff[R, B])(ap: Applicative[E Either ?]): Recurser[E Either ?, R, A, B] =
     new Recurser[E Either ?, R, A, B] {

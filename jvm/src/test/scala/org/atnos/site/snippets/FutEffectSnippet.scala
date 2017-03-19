@@ -30,19 +30,17 @@ object FutEffect {
   def fut[R :_fut, A](a: => A): Eff[R, A] =
     send[Fut, R, A](Future(() => a))
 
-  def runFuture[R, U, A, B](atMost: Duration)(effects: Eff[R, A])(
-     implicit m: Member.Aux[Fut, R, U]): Eff[U, A] = {
+  def runFuture[R, U, A, B](atMost: Duration)(effect: Eff[R, A])(implicit m: Member.Aux[Fut, R, U]): Eff[U, A] =
+    recurse(effect)(new Recurser[Fut, U, A, A] {
+      def onPure(a: A) = a
 
-    val recurse = new Recurse[Fut, U, A] {
-      def apply[X](m: Fut[X]): X Either Eff[U, A] =
+      def onEffect[X](m: Fut[X]): X Either Eff[U, A] =
         Left(Await.result(m.map(_ ()), atMost))
 
-      def applicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Either Fut[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Either Fut[T[X]] =
         Right(ApplicativeFut.sequence(ms))
 
-    }
-    interpret1((a: A) => a)(recurse)(effects)
-  }
+    })
 }
 
 // 8<---

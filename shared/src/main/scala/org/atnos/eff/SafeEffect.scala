@@ -5,6 +5,7 @@ import cats.implicits._
 import eff._
 import interpret._
 import EitherEffect._
+import org.atnos.eff.Interpret.runInterpreter
 
 import scala.reflect.ClassTag
 
@@ -45,7 +46,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
    * Collect finalizer exceptions if any
    */
   def runSafe[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, (ThrowableEither[A], List[Throwable])] =
-    interpretGeneric[R, U, Safe, A, Out[A]](effect)(safeInterpreter[U, A])
+    runInterpreter[R, U, Safe, A, Out[A]](effect)(safeInterpreter[U, A])
 
   /** run a safe effect but drop the finalizer errors */
   def execSafe[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, ThrowableEither[A]] =
@@ -55,7 +56,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
    * Attempt to execute a safe action including finalizers
    */
   def attemptSafe[R, A](effect: Eff[R, A])(implicit m: Safe /= R): Eff[R, (ThrowableEither[A], List[Throwable])] =
-    interceptGeneric[R, Safe, A, Out[A]](effect)(safeInterpreter[R, A])
+    intercept[R, Safe, A, Out[A]](effect)(safeInterpreter[R, A])
 
   def safeInterpreter[R, A]: Interpreter[Safe, R, A, Out[A]] =
     safeInterpreter(None)
@@ -179,7 +180,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
    * execute a second action whether the first is successful or not but keep track of finalizer exceptions
    */
   def thenFinally[R, A](effect: Eff[R, A], last: Eff[R, Unit])(implicit m: Safe /= R): Eff[R, A] =
-    interceptGeneric[R, Safe, A, Out[A]](Eff.whenStopped(effect, Last.eff(last)))(safeInterpreter[R, A](Some((last, m)))).flatMap {
+    intercept[R, Safe, A, Out[A]](Eff.whenStopped(effect, Last.eff(last)))(safeInterpreter[R, A](Some((last, m)))).flatMap {
       case (Right(a), vs) => vs.traverse(v => outer.finalizerException(v)).void >> Eff.pure(a)
       case (Left(t), vs) => vs.traverse(v => outer.finalizerException(v)).void >> outer.exception(t)
     }
