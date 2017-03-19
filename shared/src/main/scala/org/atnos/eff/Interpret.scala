@@ -571,6 +571,17 @@ trait Interpret {
     interpretGeneric(e)(Interpreter.fromRecurser(recurser))
 }
 
+/**
+ * Interpret eff values
+ *
+ * For stack-safety reasons, the continuation must *never* be called
+ * with a value directly, but always with Eff.impure:
+ *
+ * Eff.impure(a, continuation)
+ *
+ * * *Note* it is the responsibility of the implementation to call continuation.onNone if
+ * the continuation is not used to create the return value.
+ */
 trait Interpreter[M[_], R, A, B] {
 
   /**
@@ -583,9 +594,6 @@ trait Interpreter[M[_], R, A, B] {
    *
    * if the value X can be extracted call the continuation to get the next Eff[R, B] value
    * otherwise provide a Eff[R, B] value
-   *
-   * *Note* it is the responsibility of the implementation to call continuation.onNone if
-   * the continuation was not called
    */
   def onEffect[X](x: M[X], continuation: Continuation[R, X, B]): Eff[R, B]
 
@@ -594,9 +602,6 @@ trait Interpreter[M[_], R, A, B] {
    *
    * if the value X can be extracted call the continuation to get the next Eff[R, B] value
    * otherwise provide a Eff[R, B] value
-   *
-   * *Note* it is the responsibility of the implementation to call continuation.onNone if
-   * the continuation was not called
    */
   def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit]
 
@@ -605,9 +610,6 @@ trait Interpreter[M[_], R, A, B] {
    *
    * if the value X can be extracted call the continuation to get the next Eff[R, B] value
    * otherwise provide a Eff[R, B] value
-   *
-   * *Note* it is the responsibility of the implementation to call continuation.onNone if
-   * the continuation was not called
    */
   def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B]
 }

@@ -41,69 +41,28 @@ trait ListCreation {
 object ListCreation extends ListCreation
 
 trait ListInterpretation {
+  
   /** run an effect stack starting with a list effect */
-  def runList[R, U, A](effects: Eff[R, A])(implicit m: Member.Aux[List, R, U]): Eff[U, List[A]] = {
-    val loop = new Loop[List, R, A, Eff[U, List[A]], Eff[U, Unit]] {
-      type S = (List[Eff[R, A]], ListBuffer[A])
-      val init = (List[Eff[R, A]](), new ListBuffer[A])
+  def runList[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[List, R, U]): Eff[U, List[A]] =
+    interpretGeneric(effect)(new Interpreter[List, U, A, List[A]] {
+      def onPure(a: A): Eff[U, List[A]] =
+        Eff.pure(List(a))
 
-      def onPure(a: A, s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
-        s match {
-          case (head :: tail, result) => Left((head, (tail, result :+ a)))
-          case (List(), result)       => Right(EffMonad[U].pure((result :+ a).toList))
+      def onEffect[X](xs: List[X], continuation: Continuation[U, X, List[A]]): Eff[U, List[A]] =
+        xs.traverse(continuation).map(_.flatten)
+
+      def onLastEffect[X](x: List[X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
+        Eff.pure(())
+
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Continuation[U, T[X], List[A]]): Eff[U, List[A]] = {
+        val sequenced: List[T[X]] = xs.sequence
+        sequenced match {
+          case Nil => continuation.runOnNone >> Eff.pure(Nil)
+          case tx :: rest  => Eff.impure[U, T[X], List[A]](tx, Continuation.lift((tx1: T[X]) =>
+            continuation(tx1).flatMap(la => rest.map(continuation).sequence.map(ls => la ++ ls.flatten))))
         }
-
-      def onEffect[X](l: List[X], continuation: Continuation[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
-        (l, s) match {
-          case (List(), (head :: tail, result)) =>
-            Left((head, (tail, result)))
-
-          case (List(), (List(), result)) =>
-            Right(EffMonad[U].pure(result.toList))
-
-          case (head :: tail, (unevaluated, result)) =>
-            Left((continuation(head), (tail.map(a => continuation(a)) ++ unevaluated, result)))
-        }
-
-      def onLastEffect[X](l: List[X], continuation: Continuation[R, X, Unit], s: S) =
-        (l, s) match {
-          case (List(), (head :: tail, result)) =>
-            Left((head.void, (tail, result)))
-
-          case (List(), (List(), result)) =>
-            Right(EffMonad[U].pure(()))
-
-          case (head :: tail, (unevaluated, result)) =>
-            Left((continuation(head), (List.empty, result)))
-        }
-
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Continuation[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
-        xs.sequence.map(ls => continuation(ls)) match {
-          case Nil =>
-            s match {
-              case (Nil, as)       => Right(pure(as.toList))
-              case (e :: rest, as) => Left((e, (rest, as)))
-            }
-          case x :: rest =>
-            Left((x, (rest ++ s._1, s._2)))
-        }
-
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Continuation[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
-        xs.sequence.map(ls => continuation(ls)) match {
-          case Nil =>
-            s match {
-              case (Nil, as)       => Right(pure(()))
-              case (e :: rest, as) => Left((e.void, (rest, as)))
-            }
-          case x :: rest =>
-            Left((x.void, (List.empty, s._2)))
-        }
-
-
-    }
-
-    interpretLoop1((a: A) => List(a))(loop)(effects)
-  }
+      }
+    })
 }
 
 object ListInterpretation extends ListInterpretation
