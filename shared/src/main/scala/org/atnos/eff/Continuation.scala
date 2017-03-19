@@ -73,7 +73,7 @@ case class Continuation[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: 
   }
 
   def applyEval(a: A): Eff[R, B] =
-    Impure(NoEffect(a), Continuation.singleton((x: A) => apply(x), onNone))
+    Impure(NoEffect(a), Continuation.lift((x: A) => apply(x), onNone))
 
   def contramap[C](f: C => A): Continuation[R, C, B] =
     Continuation(((c: Any) => Eff.pure[R, Any](f(c.asInstanceOf[C]).asInstanceOf[Any])) +: functions, onNone)
@@ -83,24 +83,27 @@ case class Continuation[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: 
 
   /** adapt the input and output of an Arrs function */
   def dimapEff[C, D](f: C => A)(g: Eff[R, B] => Eff[R, D]): Continuation[R, C, D] =
-    Continuation.singleton((c: C) => g(apply(f(c))), onNone)
+    Continuation.lift((c: C) => g(apply(f(c))), onNone)
 
   /** create an Arrs function from the result of another Arrs function */
   def interpret[U, C](map: Eff[R, B] => Eff[U, C])(mapOnNone: Last[R] => Last[U]): Continuation[U, A, C] =
-    Continuation.singleton((a: A) => map(apply(a)), mapOnNone(onNone))
+    Continuation.lift((a: A) => map(apply(a)), mapOnNone(onNone))
 
   /** create an Arrs function from the result of another Arrs function */
   def interpretEff[U, C](map: Eff[R, B] => Eff[U, C])(mapOnNone: Eff[R, Unit] => Eff[U, Unit]): Continuation[U, A, C] =
-    Continuation.singleton((a: A) => map(apply(a)), onNone.interpret(mapOnNone))
+    Continuation.lift((a: A) => map(apply(a)), onNone.interpret(mapOnNone))
 
   def transform[U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, R, U]): Continuation[R, A, B] =
     Continuation(functions.map(f => (x: Any) => Interpret.transform(f(x): Eff[R, Any], t)(m, n)), onNone)
+
+  def runOnNone: Eff[R, Unit] =
+    onNone.value.map(_.value).getOrElse(Eff.pure(()))
 }
 
 object Continuation {
 
   /** create an Arrs function from a single monadic function */
-  def singleton[R, A, B](f: A => Eff[R, B], otherwise: Last[R] = Last.none[R]): Continuation[R, A, B] =
+  def lift[R, A, B](f: A => Eff[R, B], otherwise: Last[R] = Last.none[R]): Continuation[R, A, B] =
     Continuation(Vector.empty :+ f.asInstanceOf[Any => Eff[R, Any]], otherwise)
 
   /** create an Arrs function with no effect, which is similar to using an identity a => EffMonad[R].pure(a) */

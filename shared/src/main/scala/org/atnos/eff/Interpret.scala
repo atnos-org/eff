@@ -486,14 +486,14 @@ trait Interpret {
         Eff.pure(FM.pure(a))
 
       def onEffect[X](mx: M[X], continuation: Continuation[R, X, F[A]]): Eff[R, F[A]] =
-        Impure(m.inject(nat(mx)), Continuation.singleton((fx: F[X]) => Eff.flatTraverseA(fx)(continuation), continuation.onNone))
+        Impure(m.inject(nat(mx)), Continuation.lift((fx: F[X]) => Eff.flatTraverseA(fx)(continuation), continuation.onNone))
 
       def onLastEffect[X](mx: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
-        Impure(m.inject(nat(mx)), Continuation.singleton((fx: F[X]) => Eff.flatTraverseA(fx)(x => continuation(x).map(FM.pure)).void, continuation.onNone))
+        Impure(m.inject(nat(mx)), Continuation.lift((fx: F[X]) => Eff.flatTraverseA(fx)(x => continuation(x).map(FM.pure)).void, continuation.onNone))
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], F[A]]): Eff[R, F[A]] = {
         val xss = xs.toList.map(mx => nat(mx)).toVector.map(m.inject)
-        ImpureAp(Unions(xss.head, xss.tail.asInstanceOf[Vector[Union[R, Any]]]), Continuation.singleton((tfx: Vector[Any]) =>
+        ImpureAp(Unions(xss.head, xss.tail.asInstanceOf[Vector[Union[R, Any]]]), Continuation.lift((tfx: Vector[Any]) =>
           FT.map(tfx.asInstanceOf[T[F[X]]].sequence)(continuation).sequence.map(_.flatten), continuation.onNone))
       }
 
@@ -508,10 +508,10 @@ trait Interpret {
                                         (implicit m: Member.Aux[T, R, U]): Eff[U, B] = {
 
     def interpretContinuation[X](c: Continuation[R, X, A]): Continuation[U, X, B] =
-      Continuation.singleton((x: X) => interpretGeneric(c(x))(interpreter), interpretLast(c.onNone))
+      Continuation.lift((x: X) => interpretGeneric(c(x))(interpreter), interpretLast(c.onNone))
 
     def interpretContinuationWithLast[X](c: Continuation[R, X, A], last: Last[R]): Continuation[U, X, B] =
-      Continuation.singleton((x: X) => interpretGeneric(c(x).addLast(last))(interpreter), interpretLast(c.onNone))
+      Continuation.lift((x: X) => interpretGeneric(c(x).addLast(last))(interpreter), interpretLast(c.onNone))
 
     def interpretLastEff(last: Eff[R, Unit]): Eff[U, Unit] =
       last match {
@@ -523,8 +523,8 @@ trait Interpret {
 
         case Impure(u: Union[_,_], c, last1) =>
           m.project(u) match {
-            case Right(tu)   => interpreter.onLastEffect(tu, Continuation.singleton((x: u.X) => interpretLastEff(c(x).addLast(last1)), interpretLast(c.onNone)))
-            case Left(other) => Impure(other, Continuation.singleton((x: u.X) => interpretLastEff(c(x)), interpretLast(c.onNone)), interpretLast(last1))
+            case Right(tu)   => interpreter.onLastEffect(tu, Continuation.lift((x: u.X) => interpretLastEff(c(x).addLast(last1)), interpretLast(c.onNone)))
+            case Left(other) => Impure(other, Continuation.lift((x: u.X) => interpretLastEff(c(x)), interpretLast(c.onNone)), interpretLast(last1))
           }
 
         case ap @ ImpureAp(_, _, _) =>
@@ -572,9 +572,43 @@ trait Interpret {
 }
 
 trait Interpreter[M[_], R, A, B] {
+
+  /**
+   * Interpret a pure value
+   */
   def onPure(a: A): Eff[R, B]
+
+  /**
+   * Interpret an effect of type M
+   *
+   * if the value X can be extracted call the continuation to get the next Eff[R, B] value
+   * otherwise provide a Eff[R, B] value
+   *
+   * *Note* it is the responsibility of the implementation to call continuation.onNone if
+   * the continuation was not called
+   */
   def onEffect[X](x: M[X], continuation: Continuation[R, X, B]): Eff[R, B]
+
+  /**
+   * Interpret a side-effect of type M
+   *
+   * if the value X can be extracted call the continuation to get the next Eff[R, B] value
+   * otherwise provide a Eff[R, B] value
+   *
+   * *Note* it is the responsibility of the implementation to call continuation.onNone if
+   * the continuation was not called
+   */
   def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit]
+
+  /**
+   * Interpret a list of effects of type M
+   *
+   * if the value X can be extracted call the continuation to get the next Eff[R, B] value
+   * otherwise provide a Eff[R, B] value
+   *
+   * *Note* it is the responsibility of the implementation to call continuation.onNone if
+   * the continuation was not called
+   */
   def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B]
 }
 
@@ -591,7 +625,7 @@ object Interpreter {
       def onEffect[X](mx: M[X], continuation: Continuation[R, X, B]): Eff[R, B] =
         recurser.onEffect(mx) match {
           case Left(x)  => Eff.impure(x, continuation)
-          case Right(b) => continuation.onNone.value.map(_.value).getOrElse(Eff.pure(())) >> b
+          case Right(b) => continuation.runOnNone >> b
         }
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B] =
@@ -607,13 +641,13 @@ object Interpreter {
         Eff.pure(a)
 
       def onEffect[X](x: M[X], continuation: Continuation[R, X, A]): Eff[R, A] =
-        translate(x).flatMap(continuation)
+        whenStopped(translate(x).flatMap(continuation), continuation.onNone)
 
       def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
-        translate(x).flatMap(continuation)
+        whenStopped(translate(x).flatMap(continuation), continuation.onNone)
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
-        xs.traverse(translate.apply).flatMap(continuation)
+        whenStopped(xs.traverse(translate.apply).flatMap(continuation), continuation.onNone)
     }
 
   def fromNat[M[_], N[_], R, A](nat: M ~> N)(implicit n: N |= R): Interpreter[M, R, A, A] =

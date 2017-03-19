@@ -164,7 +164,7 @@ trait EffImplicits {
     def flatMap[A, B](fa: Eff[AnyRef, A])(f: A => Eff[AnyRef, B]): Eff[AnyRef, B] =
       fa match {
         case Pure(a, l) =>
-          Impure[AnyRef, A, B](NoEffect[AnyRef, A](a), Continuation.singleton(x => f(x).addLast(l)))
+          Impure[AnyRef, A, B](NoEffect[AnyRef, A](a), Continuation.lift(x => f(x).addLast(l)))
 
         case Impure(union, continuation, last) =>
           Impure(union, continuation.append(f), last)
@@ -180,10 +180,10 @@ trait EffImplicits {
           case Right(b) => Pure(b)
         }
         case Impure(u, c, l) =>
-          Impure(u, Continuation.singleton((x: u.X) => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
+          Impure(u, Continuation.lift((x: u.X) => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
 
         case ImpureAp(u, c, l) =>
-          ImpureAp(u, Continuation.singleton(x => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
+          ImpureAp(u, Continuation.lift(x => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
       }
   }
 
@@ -212,16 +212,16 @@ trait EffImplicits {
           ff match {
             case Pure(f, last1)                     => ImpureAp(Unions(u, Vector.empty), c.contramap((_:Vector[Any]).head).map(f), last1 *> last)
             case Impure(NoEffect(f), c1, l1)        => ap(c1(f).addLast(l1))(fa)
-            case Impure(u1: Union[_, _], c1, last1) => ImpureAp(Unions(u, Vector(u1)),  Continuation.singleton(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
-            case ImpureAp(u1, c1, last1)            => ImpureAp(Unions(u, u1.unions), Continuation.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
+            case Impure(u1: Union[_, _], c1, last1) => ImpureAp(Unions(u, Vector(u1)),  Continuation.lift(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
+            case ImpureAp(u1, c1, last1)            => ImpureAp(Unions(u, u1.unions), Continuation.lift(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
           }
           
         case ImpureAp(unions, c, last) =>
           ff match {
             case Pure(f, last1)                  => ImpureAp(unions, c map f, last1 *> last)
             case Impure(NoEffect(f), c1, l1)     => ap(c1(f).addLast(l1))(fa)
-            case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
-            case ImpureAp(u, c1, last1)          => ImpureAp(u append unions, Continuation.singleton({ xs =>
+            case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.lift(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
+            case ImpureAp(u, c1, last1)          => ImpureAp(u append unions, Continuation.lift({ xs =>
               val usize = u.size
               val (taken, dropped) = xs.splitAt(usize)
               ap(c1(taken))(c(dropped))
@@ -242,7 +242,7 @@ object EffImplicits extends EffImplicits
 trait EffCreation {
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
   def send[T[_], R, V](tv: T[V])(implicit member: T |= R): Eff[R, V] =
-    ImpureAp(Unions(member.inject(tv), Vector.empty), Continuation.singleton(xs => pure[R, V](xs.head.asInstanceOf[V])))
+    ImpureAp(Unions(member.inject(tv), Vector.empty), Continuation.lift(xs => pure[R, V](xs.head.asInstanceOf[V])))
 
   /** use the internal effect as one of the stack effects */
   def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: M |= R): Eff[R, A] =
@@ -266,7 +266,7 @@ trait EffCreation {
 
   /** create a delayed impure value */
   def impure[R, A, B](value: A, continuation: Continuation[R, A, B], map: B => B): Eff[R, B] =
-    Impure(NoEffect(value), Continuation.singleton((a: A) => continuation(a), continuation.onNone).map(map))
+    Impure(NoEffect(value), Continuation.lift((a: A) => continuation(a), continuation.onNone).map(map))
 
   /** apply a function to an Eff value using the applicative instance */
   def ap[R, A, B](a: Eff[R, A])(f: Eff[R, A => B]): Eff[R, B] =

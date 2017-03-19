@@ -40,7 +40,7 @@ trait OptionInterpretation {
    * Stop all computations if None is present once
    */
   def runOption[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Option, R, U]): Eff[U, Option[A]] =
-    interpretGeneric(effect)(Interpreter.fromRecurser(new Recurser[Option, U, A, Option[A]] {
+    recurse(effect)(new Recurser[Option, U, A, Option[A]] {
       def onPure(a: A): Option[A] =
         Option(a)
 
@@ -52,7 +52,7 @@ trait OptionInterpretation {
 
       def onApplicative[X, T[_]: Traverse](ms: T[Option[X]]): T[X] Either Option[T[X]] =
         Right(ms.sequence)
-    }))
+    })
 
 }
 

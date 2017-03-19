@@ -78,15 +78,17 @@ trait SafeInterpretation extends SafeCreation { outer =>
         case EvaluateValue(v) =>
           Either.catchNonFatal(v.value) match {
             case Left(e) =>
-              last match {
-                case None =>
-                  Eff.pure((Left(e), errors.toList))
+              continuation.runOnNone >> {
+                last match {
+                  case None =>
+                    Eff.pure((Left(e), errors.toList))
 
-                case Some((l, m)) =>
-                  attempt(l)(m) flatMap {
-                    case Left(t)   => outer.finalizerException[R](t)(m) >> outer.exception[R, Out[A]](e)(m)
-                    case Right(()) => outer.exception[R, Out[A]](e)(m)
-                  }
+                  case Some((l, m)) =>
+                    attempt(l)(m) flatMap {
+                      case Left(t)   => outer.finalizerException[R](t)(m) >> outer.exception[R, Out[A]](e)(m)
+                      case Right(()) => outer.exception[R, Out[A]](e)(m)
+                    }
+                }
               }
 
             case Right(x) =>
@@ -94,11 +96,11 @@ trait SafeInterpretation extends SafeCreation { outer =>
           }
 
         case FailedValue(t) =>
-          Eff.pure((Left(t), errors.toList))
+          continuation.runOnNone >> Eff.pure((Left(t), errors.toList))
 
         case FailedFinalizer(t) =>
           errors = errors :+ t
-          Eff.impure((), continuation)
+          continuation.runOnNone >> Eff.impure((), continuation)
       }
 
     def onLastEffect[X](sx: Safe[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =

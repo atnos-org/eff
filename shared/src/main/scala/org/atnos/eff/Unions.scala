@@ -24,7 +24,7 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
    * if the first effect of this Unions object is interpreted
    */
   def continueWith[B](continuation: Continuation[R, Vector[Any], B]): Continuation[R, A, B] =
-    Continuation.singleton({ x: X =>
+    Continuation.lift({ x: X =>
       rest match {
         case v if v.isEmpty =>
           continuation(x +: Vector.empty)
@@ -94,7 +94,7 @@ case class CollectedUnions[M[_], R, U](effects: Vector[M[Any]], otherEffects: Ve
         continueWith
 
       case o +: rest =>
-        Continuation.singleton[R, Vector[Any], A](ls =>
+        Continuation.lift[R, Vector[Any], A](ls =>
           ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), continueWith.contramap(reorder(ls, _))), continueWith.onNone)
     }
 
@@ -104,7 +104,7 @@ case class CollectedUnions[M[_], R, U](effects: Vector[M[Any]], otherEffects: Ve
         continueWith
 
       case o +: rest =>
-        Continuation.singleton[U, Vector[Any], A](ls =>
+        Continuation.lift[U, Vector[Any], A](ls =>
           ImpureAp[U, Any, A](Unions(o, rest), continueWith.contramap(reorder(ls, _)), continueWith.onNone))
     }
 

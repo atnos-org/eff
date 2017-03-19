@@ -114,10 +114,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
 
        def onEffect[X](ex: ErrorOrOk[X], continuation: Continuation[R, X, A]): Eff[R, A] =
          ex.run match {
-           case Left(e) => lastAction.flatMap(_ => outer.error[R, A](e))
+           case Left(e) => continuation.runOnNone >> lastAction.flatMap(_ => outer.error[R, A](e))
            case Right(x) =>
              try   Eff.impure(x.value, continuation)
-             catch { case NonFatal(t) => lastAction.flatMap(_ => outer.exception[R, A](t)) }
+             catch { case NonFatal(t) => continuation.runOnNone >> lastAction.flatMap(_ => outer.exception[R, A](t)) }
          }
 
        def onLastEffect[X](x: ErrorOrOk[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
@@ -125,10 +125,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
 
        def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
          ms.map(_.run).sequence match {
-           case Left(e)   => lastAction.flatMap(_ => outer.error[R, A](e))
+           case Left(e)   => continuation.runOnNone >> lastAction.flatMap(_ => outer.error[R, A](e))
            case Right(ls) =>
              try Eff.impure(ls.map(_.value), continuation)
-             catch { case NonFatal(t) => lastAction.flatMap(_ => outer.exception[R, A](t)) }
+             catch { case NonFatal(t) => continuation.runOnNone >> lastAction.flatMap(_ => outer.exception[R, A](t)) }
          }
 
      })
