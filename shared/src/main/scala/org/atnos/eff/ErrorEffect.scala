@@ -81,7 +81,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
       def onPure(a: A): Eff[R, B] =
         Eff.pure(pureValue(a))
 
-      def onEffect[X](ex: ErrorOrOk[X], continuation: X => Eff[R, B]): Eff[R, B] =
+      def onEffect[X](ex: ErrorOrOk[X], continuation: Continuation[R, X, B]): Eff[R, B] =
         ex.run match {
           case Left(e) => onError(e)
 
@@ -90,10 +90,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
             catch { case NonFatal(t) => onError(Left(t)) }
         }
 
-      def onLastEffect[X](x: ErrorOrOk[X], continuation: X => Eff[R, Unit]): Eff[R, Unit] =
+      def onLastEffect[X](x: ErrorOrOk[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
         Eff.pure(())
 
-      def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: T[X] => Eff[R, B]): Eff[R, B] =
+      def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: Continuation[R, T[X], B]): Eff[R, B] =
         ms.traverse(_.run) match {
           case Left(e)   => onError(e)
           case Right(ls) =>
@@ -112,7 +112,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
        def onPure(a: A): Eff[R, A] =
          lastAction.as(a)
 
-       def onEffect[X](ex: ErrorOrOk[X], continuation: X => Eff[R, A]): Eff[R, A] =
+       def onEffect[X](ex: ErrorOrOk[X], continuation: Continuation[R, X, A]): Eff[R, A] =
          ex.run match {
            case Left(e) => lastAction.flatMap(_ => outer.error[R, A](e))
            case Right(x) =>
@@ -120,10 +120,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
              catch { case NonFatal(t) => lastAction.flatMap(_ => outer.exception[R, A](t)) }
          }
 
-       def onLastEffect[X](x: ErrorOrOk[X], continuation: X => Eff[R, Unit]): Eff[R, Unit] =
+       def onLastEffect[X](x: ErrorOrOk[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
          Eff.pure(())
 
-       def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: T[X] => Eff[R, A]): Eff[R, A] =
+       def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
          ms.map(_.run).sequence match {
            case Left(e)   => lastAction.flatMap(_ => outer.error[R, A](e))
            case Right(ls) =>

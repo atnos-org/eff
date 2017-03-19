@@ -92,7 +92,7 @@ trait ChooseInterpretation {
                   choose match {
                     case ChooseZero() => go(rest, result)
                     case _ =>
-                      val continuation = c.asInstanceOf[Arrs[R, Boolean, A]]
+                      val continuation = c.asInstanceOf[Continuation[R, Boolean, A]]
                       go(continuation(false) :: continuation(true) :: rest, result)
                   }
               }

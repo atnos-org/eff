@@ -94,19 +94,19 @@ trait ValidateInterpretation extends ValidateCreation {
       def onPure(a: A): Eff[R, A] Either Eff[R, A] =
         Right(pure(a))
 
-      def onEffect[X](m: Validate[E, X], continuation: Arrs[R, X, A]): Eff[R, A] Either Eff[R, A] =
+      def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] Either Eff[R, A] =
         m match {
           case Correct() => Left(continuation(()))
           case Wrong(e)  => Left(handle(e))
         }
 
-      def onLastEffect[X](m: Validate[E, X], continuation: Arrs[R, X, Unit]): Eff[R, Unit] Either Eff[R, Unit] =
+      def onLastEffect[X](m: Validate[E, X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] Either Eff[R, Unit] =
         m match {
           case Correct() => Left(continuation(()))
           case Wrong(e)  => Left(handle(e).void)
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either Eff[R, A] =
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] Either Eff[R, A] =
         Left {
           val traversed: State[Option[E], T[X]] = xs.traverse {
             case Correct() => State[Option[E], X](state => (None, ()))
@@ -119,7 +119,7 @@ trait ValidateInterpretation extends ValidateCreation {
           }
         }
 
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], Unit]): Eff[R, Unit] Either Eff[R, Unit] =
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], Unit]): Eff[R, Unit] Either Eff[R, Unit] =
         Left {
           val traversed: State[Option[E], T[X]] = xs.traverse {
             case Correct() => State[Option[E], X](state => (None, ()))

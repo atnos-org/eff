@@ -95,16 +95,16 @@ trait StateInterpretation {
       def onPure(a: A): Eff[U, (A, S1)] =
         Eff.pure((a, s))
 
-      def onEffect[X](state: State[S1, X], continuation: X => Eff[U, (A, S1)]): Eff[U, (A, S1)] = {
+      def onEffect[X](state: State[S1, X], continuation: Continuation[U, X, (A, S1)]): Eff[U, (A, S1)] = {
         val (s1, x) = state.run(s).value
         s = s1
         Eff.impure(x, continuation)
       }
 
-      def onLastEffect[X](x: State[S1, X], continuation: X => Eff[U, Unit]): Eff[U, Unit] =
+      def onLastEffect[X](x: State[S1, X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
         Eff.pure(())
 
-      def onApplicativeEffect[X, T[_]: Traverse](ms: T[State[S1, X]], continuation: T[X] => Eff[U, (A, S1)]): Eff[U, (A, S1)] = {
+      def onApplicativeEffect[X, T[_]: Traverse](ms: T[State[S1, X]], continuation: Continuation[U, T[X], (A, S1)]): Eff[U, (A, S1)] = {
         val (s1, x) = ms.sequence.run(s).value
         s = s1
         Eff.impure(x, continuation)

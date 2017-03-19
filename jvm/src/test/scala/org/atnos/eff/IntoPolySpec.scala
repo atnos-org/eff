@@ -91,7 +91,7 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
       case Impure(u: Union[_,_], c, _) =>
         m.project(u) match {
           case Right(oa) => runOption(c(oa.a))
-          case Left(u1) => Impure[U, u1.X, Int](u1, Arrs.singleton(x => runOption(c(x))))
+          case Left(u1) => Impure[U, u1.X, Int](u1, Continuation.singleton(x => runOption(c(x))))
         }
       case a@ImpureAp(_,_,_) => runOption(a.toMonadic)
     }

@@ -52,15 +52,15 @@ trait WriterInterpretation {
         def onPure(a: A): Eff[U, (A, fold.S)] =
           Eff.pure((a, fold.init))
 
-        def onEffect[X](ox: Writer[O, X], continuation: X => Eff[U, (A, fold.S)]): Eff[U, (A, fold.S)] = {
+        def onEffect[X](ox: Writer[O, X], continuation: Continuation[U, X, (A, fold.S)]): Eff[U, (A, fold.S)] = {
           val (o, x) = ox.run
           Eff.impure(x, continuation, { case (a, s) => (a, fold.fold(o, s)) })
         }
 
-        def onLastEffect[X](x: Writer[O, X], continuation: X => Eff[U, Unit]): Eff[U, Unit] =
+        def onLastEffect[X](x: Writer[O, X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
           Eff.pure(())
 
-        def onApplicativeEffect[X, T[_] : Traverse](xs: T[Writer[O, X]], continuation: T[X] => Eff[U, (A, fold.S)]): Eff[U, (A, fold.S)] = {
+        def onApplicativeEffect[X, T[_] : Traverse](xs: T[Writer[O, X]], continuation: Continuation[U, T[X], (A, fold.S)]): Eff[U, (A, fold.S)] = {
           val os = new collection.mutable.ListBuffer[O]
           val values = xs.map { w: Writer[O, X] =>
             val (o, x) = w.run

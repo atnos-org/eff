@@ -50,19 +50,19 @@ trait Interpret {
       def onPure(a: A, s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
         Right(pure(a))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
+      def onEffect[X](mx: M[X], continuation: Continuation[R, X, A], s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity)
 
-      def onLastEffect[X](mx: M[X], continuation: Arrs[R, X, Unit], s: Unit): (Eff[R, Unit], Unit) Either Eff[U, Unit] =
+      def onLastEffect[X](mx: M[X], continuation: Continuation[R, X, Unit], s: Unit): (Eff[R, Unit], Unit) Either Eff[U, Unit] =
         recurse(mx).map(_.void).bimap(x => (continuation(x), ()), identity)
 
-      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Continuation[R, T[X], A], s: Unit): (Eff[R, A], Unit) Either Eff[U, B] =
         recurse.applicative(mx) match {
           case Left(xs) => Left((continuation(xs), s))
           case Right(mlx) => onEffect(mlx, continuation, s)
         }
 
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
         recurse.applicative(xs) match {
           case Left(xs1) => Left((continuation(xs1), s))
           case Right(mlx) => onLastEffect(mlx, continuation, s)
@@ -107,19 +107,19 @@ trait Interpret {
       def onPure(a: A, s: S): (Eff[R, A], S) Either Eff[U, B] =
         Right(EffMonad[U].pure(recurse.finalize(a, s)))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, B] =
+      def onEffect[X](mx: M[X], continuation: Continuation[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, B] =
         Left { recurse(mx, s) match { case (a, b) => (continuation(a), b)} }
 
-      def onLastEffect[X](mx: M[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
+      def onLastEffect[X](mx: M[X], continuation: Continuation[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
         Left { recurse(mx, s) match { case (a, b) => (continuation(a), b)} }
 
-      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](mx: T[M[X]], continuation: Continuation[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, B] =
         recurse.applicative(mx, s) match {
           case Left((ls, s1))   => Left((continuation(ls), s1))
           case Right((mlx, s1)) => onEffect(mlx, continuation, s1)
         }
 
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
         recurse.applicative(xs, s) match {
           case Left((ls, s1))   => Left((continuation(ls), s1))
           case Right((mlx, s1)) => onLastEffect(mlx, continuation, s1)
@@ -234,10 +234,10 @@ trait Interpret {
       type S = Unit
       val init: S = ()
       def onPure(a: A, s: S) = loop.onPure(a).leftMap((_, init))
-      def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, init))
-      def onLastEffect[X](x: M[X], continuation: Arrs[R, X, Unit], s: S) = loop.onLastEffect(x, continuation).leftMap((_, init))
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, init))
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S) = loop.onLastApplicativeEffect(xs, continuation).leftMap((_, init))
+      def onEffect[X](x: M[X], continuation: Continuation[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, init))
+      def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit], s: S) = loop.onLastEffect(x, continuation).leftMap((_, init))
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, init))
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit], s: S) = loop.onLastApplicativeEffect(xs, continuation).leftMap((_, init))
     })(effects)(m)
 
   def interpretStatelessLoop1[R, U, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[U, B], Eff[U, Unit]])(effects: Eff[R, A])(implicit m: Member.Aux[M, R, U]): Eff[U, B] =
@@ -254,19 +254,19 @@ trait Interpret {
       def onPure(a: A, s: Unit): (Eff[R, A], Unit) Either Eff[R, B] =
         Right(pure(a))
 
-      def onEffect[X](mx: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], Unit) Either Eff[R, B] =
+      def onEffect[X](mx: M[X], continuation: Continuation[R, X, A], s: S): (Eff[R, A], Unit) Either Eff[R, B] =
         recurse(mx).bimap(x => (continuation(x), ()), identity)
 
-      def onLastEffect[X](mx: M[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[R, Unit] =
+      def onLastEffect[X](mx: M[X], continuation: Continuation[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[R, Unit] =
         recurse(mx).map(_.void).bimap(x => (continuation(x), ()), identity)
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[R, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[R, B] =
         recurse.applicative(xs) match {
           case Left(ls)   => Left((continuation(ls), s))
           case Right(mlx) => onEffect(mlx, continuation, s)
         }
 
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[R, Unit] =
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[R, Unit] =
         recurse.applicative(xs) match {
           case Left(ls)   => Left((continuation(ls), s))
           case Right(mlx) => onLastEffect(mlx, continuation, s)
@@ -372,10 +372,10 @@ trait Interpret {
       type S = Unit
       val init: S = ()
       def onPure(a: A, s: S) = loop.onPure(a).leftMap((_, ()))
-      def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, ()))
-      def onLastEffect[X](x: M[X], continuation: Arrs[R, X, Unit], s: S) = loop.onLastEffect(x, continuation).leftMap((_, ()))
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, ()))
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S) = loop.onLastApplicativeEffect(xs, continuation).leftMap((_, ()))
+      def onEffect[X](x: M[X], continuation: Continuation[R, X, A], s: S) = loop.onEffect(x, continuation).leftMap((_, ()))
+      def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit], s: S) = loop.onLastEffect(x, continuation).leftMap((_, ()))
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A], s: S) = loop.onApplicativeEffect(xs, continuation).leftMap((_, ()))
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit], s: S) = loop.onLastApplicativeEffect(xs, continuation).leftMap((_, ()))
     })(effects)(m)
 
   def interceptStatelessLoop1[R, M[_], A, B](pure: A => B)(loop: StatelessLoop[M, R, A, Eff[R, B], Eff[R, Unit]])(effects: Eff[R, A])(implicit m: M /= R): Eff[R, B] =
@@ -485,16 +485,16 @@ trait Interpret {
       def onPure(a: A): Eff[R, F[A]] =
         Eff.pure(FM.pure(a))
 
-      def onEffect[X](mx: M[X], continuation: X => Eff[R, F[A]]): Eff[R, F[A]] =
-        Impure(m.inject(nat(mx)), Arrs.singleton((fx: F[X]) => Eff.flatTraverseA(fx)(continuation)))
+      def onEffect[X](mx: M[X], continuation: Continuation[R, X, F[A]]): Eff[R, F[A]] =
+        Impure(m.inject(nat(mx)), Continuation.singleton((fx: F[X]) => Eff.flatTraverseA(fx)(continuation), continuation.onNone))
 
-      def onLastEffect[X](mx: M[X], continuation: X => Eff[R, Unit]): Eff[R, Unit] =
-        Impure(m.inject(nat(mx)), Arrs.singleton((fx: F[X]) => Eff.flatTraverseA(fx)(x => continuation(x).map(FM.pure)).void))
+      def onLastEffect[X](mx: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
+        Impure(m.inject(nat(mx)), Continuation.singleton((fx: F[X]) => Eff.flatTraverseA(fx)(x => continuation(x).map(FM.pure)).void, continuation.onNone))
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: T[X] => Eff[R, F[A]]): Eff[R, F[A]] = {
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], F[A]]): Eff[R, F[A]] = {
         val xss = xs.toList.map(mx => nat(mx)).toVector.map(m.inject)
-        ImpureAp(Unions(xss.head, xss.tail.asInstanceOf[Vector[Union[R, Any]]]), Arrs.singleton((tfx: Vector[Any]) =>
-          FT.map(tfx.asInstanceOf[T[F[X]]].sequence)(continuation).sequence.map(_.flatten)))
+        ImpureAp(Unions(xss.head, xss.tail.asInstanceOf[Vector[Union[R, Any]]]), Continuation.singleton((tfx: Vector[Any]) =>
+          FT.map(tfx.asInstanceOf[T[F[X]]].sequence)(continuation).sequence.map(_.flatten), continuation.onNone))
       }
 
     })
@@ -507,11 +507,11 @@ trait Interpret {
   def interpretGeneric[R, U, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, U, A, B])
                                         (implicit m: Member.Aux[T, R, U]): Eff[U, B] = {
 
-    def interpretContinuation[X](c: Arrs[R, X, A]): Arrs[U, X, B] =
-      Arrs.singleton((x: X) => interpretGeneric(c(x))(interpreter))
+    def interpretContinuation[X](c: Continuation[R, X, A]): Continuation[U, X, B] =
+      Continuation.singleton((x: X) => interpretGeneric(c(x))(interpreter), interpretLast(c.onNone))
 
-    def interpretContinuationLast[X](c: Arrs[R, X, A], last: Last[R]): Arrs[U, X, B] =
-      Arrs.singleton((x: X) => interpretGeneric(c(x).addLast(last))(interpreter))
+    def interpretContinuationWithLast[X](c: Continuation[R, X, A], last: Last[R]): Continuation[U, X, B] =
+      Continuation.singleton((x: X) => interpretGeneric(c(x).addLast(last))(interpreter), interpretLast(c.onNone))
 
     def interpretLastEff(last: Eff[R, Unit]): Eff[U, Unit] =
       last match {
@@ -523,8 +523,8 @@ trait Interpret {
 
         case Impure(u: Union[_,_], c, last1) =>
           m.project(u) match {
-            case Right(tu)   => interpreter.onLastEffect(tu, Arrs.singleton((x: u.X) => interpretLastEff(c(x).addLast(last1))))
-            case Left(other) => Impure(other, Arrs.singleton((x: u.X) => interpretLastEff(c(x)), interpretLast(last1)))
+            case Right(tu)   => interpreter.onLastEffect(tu, Continuation.singleton((x: u.X) => interpretLastEff(c(x).addLast(last1)), interpretLast(c.onNone)))
+            case Left(other) => Impure(other, Continuation.singleton((x: u.X) => interpretLastEff(c(x)), interpretLast(c.onNone)), interpretLast(last1))
           }
 
         case ap @ ImpureAp(_, _, _) =>
@@ -546,7 +546,7 @@ trait Interpret {
 
       case Impure(u: Union[_,_], c, last) =>
         m.project(u) match {
-          case Right(tu)   => interpreter.onEffect(tu, interpretContinuationLast(c, last))
+          case Right(tu)   => interpreter.onEffect(tu, interpretContinuationWithLast(c, last))
           case Left(other) => Impure(other, interpretContinuation(c), interpretLast(last))
         }
 
@@ -573,9 +573,9 @@ trait Interpret {
 
 trait Interpreter[M[_], R, A, B] {
   def onPure(a: A): Eff[R, B]
-  def onEffect[X](x: M[X], continuation: X => Eff[R, B]): Eff[R, B]
-  def onLastEffect[X](x: M[X], continuation: X => Eff[R, Unit]): Eff[R, Unit]
-  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: T[X] => Eff[R, B]): Eff[R, B]
+  def onEffect[X](x: M[X], continuation: Continuation[R, X, B]): Eff[R, B]
+  def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit]
+  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B]
 }
 
 object Interpreter {
@@ -585,16 +585,16 @@ object Interpreter {
       def onPure(a: A): Eff[R, B] =
         Eff.pure(recurser.onPure(a))
 
-      def onLastEffect[X](x: M[X], continuation: X => Eff[R, Unit]): Eff[R, Unit] =
+      def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
         Eff.pure(())
 
-      def onEffect[X](mx: M[X], continuation: X => Eff[R, B]): Eff[R, B] =
+      def onEffect[X](mx: M[X], continuation: Continuation[R, X, B]): Eff[R, B] =
         recurser.onEffect(mx) match {
           case Left(x)  => Eff.impure(x, continuation)
-          case Right(b) => b
+          case Right(b) => continuation.onNone.value.map(_.value).getOrElse(Eff.pure(())) >> b
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: T[X] => Eff[R, B]): Eff[R, B] =
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B] =
         recurser.onApplicative(xs) match {
           case Left(x)   => Eff.impure(x, continuation)
           case Right(mx) => onEffect(mx, continuation)
@@ -606,13 +606,13 @@ object Interpreter {
       def onPure(a: A): Eff[R, A] =
         Eff.pure(a)
 
-      def onEffect[X](x: M[X], continuation: X => Eff[R, A]): Eff[R, A] =
+      def onEffect[X](x: M[X], continuation: Continuation[R, X, A]): Eff[R, A] =
         translate(x).flatMap(continuation)
 
-      def onLastEffect[X](x: M[X], continuation: X => Eff[R, Unit]): Eff[R, Unit] =
+      def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
         translate(x).flatMap(continuation)
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: T[X] => Eff[R, A]): Eff[R, A] =
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
         xs.traverse(translate.apply).flatMap(continuation)
     }
 
@@ -692,11 +692,11 @@ trait Loop[M[_], R, A, B, C] {
 
   def onPure(a: A, s: S): (Eff[R, A], S) Either B
 
-  def onEffect[X](x: M[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either B
-  def onLastEffect[X](x: M[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either C
+  def onEffect[X](x: M[X], continuation: Continuation[R, X, A], s: S): (Eff[R, A], S) Either B
+  def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit], s: S): (Eff[R, Unit], S) Either C
 
-  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either B
-  def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either C
+  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A], s: S): (Eff[R, A], S) Either B
+  def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either C
 }
 
 /**
@@ -705,11 +705,11 @@ trait Loop[M[_], R, A, B, C] {
 trait StatelessLoop[M[_], R, A, B, C] {
   def onPure(a: A): Eff[R, A] Either B
 
-  def onEffect[X](x: M[X], continuation: Arrs[R, X, A]): Eff[R, A] Either B
-  def onLastEffect[X](x: M[X], continuation: Arrs[R, X, Unit]): Eff[R, Unit] Either C
+  def onEffect[X](x: M[X], continuation: Continuation[R, X, A]): Eff[R, A] Either B
+  def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] Either C
 
-  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either B
-  def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Arrs[R, T[X], Unit]): Eff[R, Unit] Either C
+  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] Either B
+  def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit]): Eff[R, Unit] Either C
 }
 
 /**

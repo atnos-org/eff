@@ -53,7 +53,7 @@ trait ListInterpretation {
           case (List(), result)       => Right(EffMonad[U].pure((result :+ a).toList))
         }
 
-      def onEffect[X](l: List[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
+      def onEffect[X](l: List[X], continuation: Continuation[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
         (l, s) match {
           case (List(), (head :: tail, result)) =>
             Left((head, (tail, result)))
@@ -65,7 +65,7 @@ trait ListInterpretation {
             Left((continuation(head), (tail.map(a => continuation(a)) ++ unevaluated, result)))
         }
 
-      def onLastEffect[X](l: List[X], continuation: Arrs[R, X, Unit], s: S) =
+      def onLastEffect[X](l: List[X], continuation: Continuation[R, X, Unit], s: S) =
         (l, s) match {
           case (List(), (head :: tail, result)) =>
             Left((head.void, (tail, result)))
@@ -77,7 +77,7 @@ trait ListInterpretation {
             Left((continuation(head), (List.empty, result)))
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Continuation[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, List[A]] =
         xs.sequence.map(ls => continuation(ls)) match {
           case Nil =>
             s match {
@@ -88,7 +88,7 @@ trait ListInterpretation {
             Left((x, (rest ++ s._1, s._2)))
         }
 
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
+      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[List[X]], continuation: Continuation[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
         xs.sequence.map(ls => continuation(ls)) match {
           case Nil =>
             s match {
