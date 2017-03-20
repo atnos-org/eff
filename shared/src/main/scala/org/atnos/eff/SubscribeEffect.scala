@@ -100,7 +100,10 @@ object SubscribeEffect {
       case Pure(a, last) =>
         Pure(a, last)
 
-      case Impure(u, c, last) =>
+      case Impure(NoEffect(a), c, last) =>
+        memoizeSubsequence(key, sequenceKey, subSequenceKey, cache, c(a).addLast(last))
+
+      case Impure(u: Union[_,_], c, last) =>
         Impure(materialize(u), c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r)), last)
 
       case ImpureAp(unions, continuation, last) =>

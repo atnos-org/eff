@@ -26,8 +26,9 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
     new IntoPoly[NoFx, R] {
       def apply[A](e: Eff[NoFx, A]) =
         e match {
-          case Pure(_, _) => e.asInstanceOf[Eff[R, A]]
-          case _ => sys.error("impossible NoFx into R is only for pure values")
+          case Pure(_, _)                => e.asInstanceOf[Eff[R, A]]
+          case Impure(NoEffect(a), c, l) => e.asInstanceOf[Eff[R, A]]
+          case _                         => sys.error("impossible NoFx into R is only for pure values")
         }
     }
 
@@ -56,7 +57,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
       def apply[A](e: Eff[FxAppend[Fx1[T1], R], A]): Eff[FxAppend[Fx2[T1, T2], R], A] =
         new UnionInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] {
           def apply[X](union: Union[FxAppend[Fx1[T1], R], X]) = union match {
-            case UnionAppendL(l)   => UnionAppendL(l.tagged.forget)
+            case UnionAppendL(l)   => UnionAppendL(l.forget)
             case UnionAppendR(r)   => UnionAppendR(r)
             case UnionTagged(_, _) => sys.error("impossible")
           }
@@ -94,7 +95,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
       def apply[A](e: Eff[FxAppend[Fx2[T1, T2], R], A]): Eff[FxAppend[Fx3[T1, T2, T3], R], A] =
         new UnionInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] {
           def apply[X](union: Union[FxAppend[Fx2[T1, T2], R], X]) = union match {
-            case UnionAppendL(l) => UnionAppendL(l.tagged.forget)
+            case UnionAppendL(l)   => UnionAppendL(l.forget)
             case UnionAppendR(r)   => UnionAppendR(r)
             case UnionTagged(_, _) => sys.error("impossible")
           }
@@ -109,7 +110,7 @@ trait IntoPolyLower3 extends IntoPolyLower4 {
         new UnionInto[R, FxAppend[Fx1[T], R]] {
           def apply[X](union: Union[R, X]): Union[FxAppend[Fx1[T], R], X] =
             UnionAppendR(union)
-          }.into(e)
+        }.into(e)
     }
 }
 
@@ -125,7 +126,10 @@ trait IntoPolyLower4 extends IntoPolyLower5 {
           case Pure(a, last) =>
             pure(a).addLast(last.interpret(apply))
 
-          case Impure(u, c, l) =>
+          case Impure(NoEffect(a), c, l) =>
+            apply(c(a).addLast(l))
+            
+          case Impure(u: Union[_, _], c, l) =>
             t.project(u) match {
               case Right(tx) => Impure[U, u.X, A](m.inject(tx), c.interpretEff(apply)(apply), l.interpret(apply))
               case Left(s)   => recurse(Impure[S, s.X, s.X](s, Arrs.unit)).flatMap((x: Any) => apply(c(x))).addLast(l.interpret(apply))
@@ -156,7 +160,10 @@ trait IntoPolyLower5 {
         case Pure(a, last) =>
           pure(a).addLast(last.interpret(apply))
 
-        case Impure(u, c, l) =>
+        case Impure(NoEffect(a), c, l) =>
+          apply(c(a).addLast(l))
+
+        case Impure(u: Union[_, _], c, l) =>
           Impure(m.accept(u), c.interpretEff(apply)(apply), l.interpret(apply))
 
         case ImpureAp(unions, c, l) =>

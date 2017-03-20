@@ -87,7 +87,8 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
   def runOption[T[_] <: OptionLike[_], R, U](e: Eff[R, Int])(implicit m: Member.Aux[T, R, U]): Eff[U, Int] =
     e match {
       case Pure(a, _) => Eff.pure(a)
-      case Impure(u, c, _) =>
+      case Impure(NoEffect(a), c, _) => runOption(c(a))
+      case Impure(u: Union[_,_], c, _) =>
         m.project(u) match {
           case Right(oa) => runOption(c(oa.a))
           case Left(u1) => Impure[U, u1.X, Int](u1, Arrs.singleton(x => runOption(c(x))))
