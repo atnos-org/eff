@@ -38,27 +38,31 @@ trait EvalCreation extends EvalTypes {
 }
 
 trait EvalInterpretation extends EvalTypes {
-  def runEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] = {
-    val recurse = new Recurse[Eval, U, A] {
-      def apply[X](m: Eval[X]): X Either Eff[U, A] = Either.left(m.value)
-      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] = Right(Eval.later(ms.map(_.value)))
-    }
 
-    interpret1((a: A) => a)(recurse)(r)
-  }
+  def runEval[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] =
+    recurse(effect)(new Recurser[Eval, U, A, A] {
+      def onPure(a: A): A =
+        a
 
-  def attemptEval[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Throwable Either A] = {
-    val recurse = new Recurse[Eval, U, Throwable Either A] {
-      def apply[X](m: Eval[X]) =
-        try { Left(m.value) }
-        catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
+      def onEffect[X](e: Eval[X]): X Either Eff[U, A] =
+        Left(e.value)
 
-      def applicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] =
         Right(Eval.later(ms.map(_.value)))
-    }
+    })
 
-    interpret1((a: A) => Right(a): Throwable Either A)(recurse)(r)
-  }
+  def attemptEval[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Throwable Either A] =
+   recurse(effect)(new Recurser[Eval, U, A, Throwable Either A] {
+     def onPure(a: A): Throwable Either A =
+       Right(a)
+
+     def onEffect[X](e: Eval[X]): X Either Eff[U, Throwable Either A] =
+       try { Left(e.value) }
+       catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
+
+     def onApplicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] =
+       Right(ms.sequence)
+    })
 }
 
 object EvalInterpretation extends EvalInterpretation

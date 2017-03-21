@@ -263,11 +263,11 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   def release[R :_Safe]: Int => Eff[R, Int] = (_: Int) => protect[R, Int] { i -= 1; i }
 
   def checkRelease(use: Eff[U, Int]) = {
-    eff(use).execSafe.flatMap(either => fromEither(either.leftMap(_.getMessage))).runEither.run
+    bracketAction(use).execSafe.flatMap(either => fromEither(either.leftMap(_.getMessage))).runEither.run
     i ==== 0
   }
 
-  def eff[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
+  def bracketAction[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
     bracket(acquire[R])(_ => use)(release[R])
 
   type U = Fx.fx2[Safe, Either[String, ?]]

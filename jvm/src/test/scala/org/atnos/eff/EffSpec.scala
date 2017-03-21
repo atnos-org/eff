@@ -110,9 +110,9 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
   def stacksafeWriter = {
     val list = (1 to 5000).toList
-    val action = list.traverseU(i => WriterEffect.tell[WriterStringFx, String](i.toString))
+    val action = list.traverse(i => WriterEffect.tell[WriterStringFx, String](i.toString))
 
-    action.runWriter.run ==== ((list.as(()), list.map(_.toString)))
+    runWriter(action).run ==== ((list.as(()), list.map(_.toString)))
   }
 
   def stacksafeReader = {

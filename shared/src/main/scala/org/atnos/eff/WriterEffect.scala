@@ -46,68 +46,79 @@ trait WriterInterpretation {
   /**
    * More general fold of runWriter where we can use a fold to accumulate values in a mutable buffer
    */
-  def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: LeftFold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
-    val recurse: StateRecurse[Writer[O, ?], A, (A, B)] = new StateRecurse[Writer[O, ?], A, (A, B)] {
-      type S = fold.S
-      val init = fold.init
-      def apply[X](x: Writer[O, X], s: S) = (x.run._2, fold.fold(x.run._1, s))
+  def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: RightFold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
+    val executed =
+      Interpret.runInterpreter(w)(new Interpreter[Writer[O, ?], U, A, (A, fold.S)] {
+        def onPure(a: A): Eff[U, (A, fold.S)] =
+          Eff.pure((a, fold.init))
 
-      def applicative[X, T[_] : Traverse](ws: T[Writer[O, X]], s: S): (T[X], S) Either (Writer[O, T[X]], S) =
-        Left {
-          val traversed: State[S, T[X]] = ws.traverse { w: Writer[O, X] =>
-            val (o, x) = w.run
-            State[S, X](s1 => (fold.fold(o, s1), x))
-          }
-          traversed.run(s).value.swap
+        def onEffect[X](ox: Writer[O, X], continuation: Continuation[U, X, (A, fold.S)]): Eff[U, (A, fold.S)] = {
+          val (o, x) = ox.run
+          Eff.impure(x, continuation, { case (a, s) => (a, fold.fold(o, s)) })
         }
 
-      def finalize(a: A, s: S) = (a, fold.finalize(s))
-    }
+        def onLastEffect[X](x: Writer[O, X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
+          Eff.pure(())
 
-    interpretState1[R, U, Writer[O, ?], A, (A, B)]((a: A) => (a, fold.finalize(fold.init)))(recurse)(w)
+        def onApplicativeEffect[X, T[_] : Traverse](xs: T[Writer[O, X]], continuation: Continuation[U, T[X], (A, fold.S)]): Eff[U, (A, fold.S)] = {
+          val os = new collection.mutable.ListBuffer[O]
+          val values = xs.map { w: Writer[O, X] =>
+            val (o, x) = w.run
+            os.append(o)
+            x
+          }
+
+          Eff.impure(values, continuation, { case (a, s) => (a, os.toList.foldLeft(s) { (res, o) => fold.fold(o, res) }) })
+        }
+
+      })
+
+    executed.map { case (a, s) => (a, fold.finalize(s)) }
   }
 
   /**
    * Run a side-effecting fold
    */
   def runWriterUnsafe[R, U, O, A](w: Eff[R, A])(f: O => Unit)(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
-    runWriterFold(w)(UnsafeFold(f)).map(_._1)
+    interpretUnsafe(w)(new SideEffect[Writer[O, ?]] {
+      def apply[X](tx: Writer[O, X]): X = {
+        val (o, x) = tx.run
+        f(o)
+        x
+      }
+
+      def applicative[X, Tr[_] : Traverse](ms: Tr[Writer[O, X]]): Tr[X] =
+        ms.map(apply)
+    })
 
   def runWriterEval[R, U, O, A](w: Eff[R, A])(f: O => Eval[Unit])(implicit m: Member.Aux[Writer[O, ?], R, U], ev: Eval |= U): Eff[U, A] =
     runWriterFold(w)(EvalFold(f)).flatMap { case (a, e) => send[Eval, U, Unit](e).as(a) }
 
-  implicit def ListFold[A]: LeftFold[A, List[A]] = new LeftFold[A, List[A]] {
-    type S = ListBuffer[A]
-    val init = new ListBuffer[A]
-    def fold(a: A, s: S) = { s.append(a); s }
-    def finalize(s: S) = s.toList
+  implicit def ListFold[A]: RightFold[A, List[A]] = new RightFold[A, List[A]] {
+    type S = List[A]
+    val init = List[A]()
+    def fold(a: A, s: S) = a :: s
+    def finalize(s: S) = s
   }
 
-  def MonoidFold[A : Monoid]: LeftFold[A, A] = new LeftFold[A, A] {
+  def MonoidFold[A : Monoid]: RightFold[A, A] = new RightFold[A, A] {
     type S = A
     val init = Monoid[A].empty
     def fold(a: A, s: S) = a |+| s
     def finalize(s: S) = s
   }
 
-  def UnsafeFold[A](f: A => Unit): LeftFold[A, Unit] = new LeftFold[A, Unit] {
-    type S = Unit
-    val init = ()
-    def fold(a: A, s: S) = f(a)
-    def finalize(s: S) = s
-  }
-
-  def EvalFold[A](f: A => Eval[Unit]): LeftFold[A, Eval[Unit]] = new LeftFold[A, Eval[Unit]] {
+  def EvalFold[A](f: A => Eval[Unit]): RightFold[A, Eval[Unit]] = new RightFold[A, Eval[Unit]] {
     type S = Eval[Unit]
-    val init = Eval.now(())
-    def fold(a: A, s: S) = s >> f(a)
+    val init = Eval.later(())
+    def fold(a: A, s: S) = Eval.later { f(a) >> s }.flatten
     def finalize(s: S) = s
   }
 
 }
 
 /** support trait for folding values while possibly keeping some internal state */
-trait LeftFold[A, B] {
+trait RightFold[A, B] {
   type S
   val init: S
   def fold(a: A, s: S): S

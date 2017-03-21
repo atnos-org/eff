@@ -96,7 +96,7 @@ case class Pure[R, A](value: A, last: Last[R] = Last.none[R]) extends Eff[R, A] 
  *
  * One effect can always be executed last, just for side-effects
  */
-case class Impure[R, X, A](union: Effect[R, X], continuation: Arrs[R, X, A], last: Last[R] = Last.none[R]) extends Eff[R, A] {
+case class Impure[R, X, A](union: Effect[R, X], continuation: Continuation[R, X, A], last: Last[R] = Last.none[R]) extends Eff[R, A] {
   def addLast(l: Last[R]): Eff[R, A] =
     Impure[R, X, A](union, continuation, last <* l)
 }
@@ -123,7 +123,7 @@ case class Impure[R, X, A](union: Effect[R, X], continuation: Arrs[R, X, A], las
  *  - the types of the elements in the list argument to 'map' must be the exact types of each effect in unions.unions
  *
  */
-case class ImpureAp[R, X, A](unions: Unions[R, X], continuation: Arrs[R, Vector[Any], A], last: Last[R] = Last.none[R]) extends Eff[R, A] {
+case class ImpureAp[R, X, A](unions: Unions[R, X], continuation: Continuation[R, Vector[Any], A], last: Last[R] = Last.none[R]) extends Eff[R, A] {
   def toMonadic: Eff[R, A] =
     Impure[R, unions.X, A](unions.first, unions.continueWith(continuation), last)
 
@@ -164,7 +164,7 @@ trait EffImplicits {
     def flatMap[A, B](fa: Eff[AnyRef, A])(f: A => Eff[AnyRef, B]): Eff[AnyRef, B] =
       fa match {
         case Pure(a, l) =>
-          Impure[AnyRef, A, B](NoEffect[AnyRef, A](a), Arrs.singleton(x => f(x).addLast(l)))
+          Impure[AnyRef, A, B](NoEffect[AnyRef, A](a), Continuation.lift(x => f(x).addLast(l)))
 
         case Impure(union, continuation, last) =>
           Impure(union, continuation.append(f), last)
@@ -180,10 +180,10 @@ trait EffImplicits {
           case Right(b) => Pure(b)
         }
         case Impure(u, c, l) =>
-          Impure(u, Arrs.singleton((x: u.X) => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
+          Impure(u, Continuation.lift((x: u.X) => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
 
         case ImpureAp(u, c, l) =>
-          ImpureAp(u, Arrs.singleton(x => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
+          ImpureAp(u, Continuation.lift(x => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
       }
   }
 
@@ -212,16 +212,16 @@ trait EffImplicits {
           ff match {
             case Pure(f, last1)                     => ImpureAp(Unions(u, Vector.empty), c.contramap((_:Vector[Any]).head).map(f), last1 *> last)
             case Impure(NoEffect(f), c1, l1)        => ap(c1(f).addLast(l1))(fa)
-            case Impure(u1: Union[_, _], c1, last1) => ImpureAp(Unions(u, Vector(u1)),  Arrs.singleton(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
-            case ImpureAp(u1, c1, last1)            => ImpureAp(Unions(u, u1.unions), Arrs.singleton(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
+            case Impure(u1: Union[_, _], c1, last1) => ImpureAp(Unions(u, Vector(u1)),  Continuation.lift(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
+            case ImpureAp(u1, c1, last1)            => ImpureAp(Unions(u, u1.unions), Continuation.lift(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
           }
           
         case ImpureAp(unions, c, last) =>
           ff match {
             case Pure(f, last1)                  => ImpureAp(unions, c map f, last1 *> last)
             case Impure(NoEffect(f), c1, l1)     => ap(c1(f).addLast(l1))(fa)
-            case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Arrs.singleton(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
-            case ImpureAp(u, c1, last1)          => ImpureAp(u append unions, Arrs.singleton({ xs =>
+            case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.lift(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
+            case ImpureAp(u, c1, last1)          => ImpureAp(u append unions, Continuation.lift({ xs =>
               val usize = u.size
               val (taken, dropped) = xs.splitAt(usize)
               ap(c1(taken))(c(dropped))
@@ -242,7 +242,7 @@ object EffImplicits extends EffImplicits
 trait EffCreation {
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
   def send[T[_], R, V](tv: T[V])(implicit member: T |= R): Eff[R, V] =
-    ImpureAp(Unions(member.inject(tv), Vector.empty), Arrs.singleton(xs => pure[R, V](xs.head.asInstanceOf[V])))
+    ImpureAp(Unions(member.inject(tv), Vector.empty), Continuation.lift(xs => pure[R, V](xs.head.asInstanceOf[V])))
 
   /** use the internal effect as one of the stack effects */
   def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: M |= R): Eff[R, A] =
@@ -257,8 +257,16 @@ trait EffCreation {
     Pure(a)
 
   /** create a impure value from an union of effects and a continuation */
-  def impure[R, X, A](union: Union[R, X], continuation: Arrs[R, X, A]): Eff[R, A] =
+  def impure[R, X, A](union: Union[R, X], continuation: Continuation[R, X, A]): Eff[R, A] =
     Impure[R, X, A](union, continuation)
+
+  /** create a delayed impure value */
+  def impure[R, A, B](value: A, continuation: Continuation[R, A, B]): Eff[R, B] =
+    Impure(NoEffect(value), continuation)
+
+  /** create a delayed impure value */
+  def impure[R, A, B](value: A, continuation: Continuation[R, A, B], map: B => B): Eff[R, B] =
+    Impure(NoEffect(value), Continuation.lift((a: A) => continuation(a), continuation.onNone).map(map))
 
   /** apply a function to an Eff value using the applicative instance */
   def ap[R, A, B](a: Eff[R, A])(f: Eff[R, A => B]): Eff[R, B] =
@@ -291,27 +299,40 @@ trait EffCreation {
   def whenStopped[R, A](e: Eff[R, A], action: Last[R]): Eff[R, A] =
     e match {
       case Pure(a, l)        => Pure(a, l)
-      case Impure(u, c, l)   => Impure(u, Arrs.singleton((x: u.X) => whenStopped[R, A](c(x), action), action), l)
-      case ImpureAp(u, c, l) => ImpureAp(u, Arrs.singleton((x: Vector[Any]) => whenStopped[R, A](c(x), action), action), l)
+      case Impure(u, c, l)   => Impure(u,   c.copy(onNone = c.onNone <* action), l)
+      case ImpureAp(u, c, l) => ImpureAp(u, c.copy(onNone = c.onNone <* action), l)
     }
+
 }
 
 object EffCreation extends EffCreation
 
 trait EffInterpretation {
+
   /**
    * base runner for an Eff value having no effects at all
-   *
-   * This runner can only return the value in Pure because it doesn't
-   * known how to interpret the effects in Impure
+   * the execution is trampolined using Eval
    */
-  def run[A](eff: Eff[NoFx, A]): A =
-    eff match {
-      case Pure(a, Last(Some(l)))     => l.value; a
-      case Pure(a, Last(None))        => a
-      case Impure(NoEffect(a), c, l) => run(c(a).addLast(l))
-      case other                      => sys.error("impossible: cannot run the effects in "+other)
-    }
+  def run[A](eff: Eff[NoFx, A]): A = {
+    def runEval[X](e: Eff[NoFx, X]): Eval[X] =
+      e match {
+        case Pure(a, Last(None)) =>
+          Eval.now(a)
+
+        case Pure(a, Last(Some(l))) =>
+          runEval(l.value).as(a)
+
+        case Impure(NoEffect(a), c, Last(None)) =>
+          Eval.later(c(a)).flatMap(runEval)
+
+        case Impure(NoEffect(a), c, Last(Some(l))) =>
+          Eval.later(c(a)).flatMap(runEval).flatMap(res => runEval(l.value).as(res))
+
+        case other => sys.error("impossible: cannot run the effects in "+other)
+      }
+
+    runEval(eff).value
+  }
 
   /**
    * peel-off the only present effect

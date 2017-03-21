@@ -65,51 +65,73 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    *
    * Stop all computation if there is an exception or a failure.
    */
-  def runError[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Error Either A] = {
-    val recurse = new Recurse[ErrorOrOk, U, Error Either A] {
-      def apply[X](m: ErrorOrOk[X]) =
-        m.run match {
-          case Left(e) =>
-            Right(EffMonad[U].pure(Left(e)))
+  def runError[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Error Either A] =
+    runInterpreter(r)(errorInterpreter[U, A, Error Either A](a => Right(a), e => Eff.pure(Left(e))))
+
+  /**
+   * evaluate 1 action possibly having error effects
+   *
+   * Execute a second action if the first one is not successful, based on the error
+   */
+  def catchError[R, A, B](action: Eff[R, A], pure: A => B, onError: Error => Eff[R, B])(implicit m: ErrorOrOk /= R): Eff[R, B] =
+    intercept(action)(errorInterpreter(pure, onError))
+
+  def errorInterpreter[R, A, B](pureValue: A => B, onError: Error => Eff[R, B]): Interpreter[ErrorOrOk, R, A, B] =
+    new Interpreter[ErrorOrOk, R, A, B] {
+      def onPure(a: A): Eff[R, B] =
+        Eff.pure(pureValue(a))
+
+      def onEffect[X](ex: ErrorOrOk[X], continuation: Continuation[R, X, B]): Eff[R, B] =
+        ex.run match {
+          case Left(e) => onError(e)
 
           case Right(a) =>
-            try Left(a.value)
-            catch { case NonFatal(t) => Right(EffMonad[U].pure(Left(Left(t)))) }
+            try Eff.impure(a.value, continuation)
+            catch { case NonFatal(t) => onError(Left(t)) }
         }
 
-      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Either ErrorOrOk[T[X]] =
-        ms.map(_.run).sequence match {
-          case Left(e)   => Right(Evaluate.error[F, T[X]](e))
-          case Right(ls) => Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
+      def onLastEffect[X](x: ErrorOrOk[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
+        Eff.pure(())
+
+      def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: Continuation[R, T[X], B]): Eff[R, B] =
+        ms.traverse(_.run) match {
+          case Left(e)   => onError(e)
+          case Right(ls) =>
+            try Eff.impure(ls.map(_.value), continuation)
+            catch { case NonFatal(t) => onError(Left(t)) }
         }
     }
-
-    interpret1[R, U, ErrorOrOk, A, Error Either A]((a: A) => Right(a): Error Either A)(recurse)(r)
-  }
 
   /**
    * evaluate 1 action possibly having error effects
    *
    * Execute a second action whether the first is successful or not
    */
-  def andFinally[R, A](action: Eff[R, A], lastAction: Eff[R, Unit])(implicit m: ErrorOrOk /= R): Eff[R, A] = {
-    val recurse = new Recurse[ErrorOrOk, R, A] {
-      def apply[X](current: ErrorOrOk[X]): X Either Eff[R, A] =
-        current.run match {
-          case Left(e) => Right(lastAction.flatMap(_ => outer.error[R, A](e)))
-          case Right(x) =>
-            try Left(x.value)
-            catch { case NonFatal(t) => Right(lastAction.flatMap(_ => outer.exception[R, A](t))) }
-        }
+  def andFinally[R, A](action: Eff[R, A], lastAction: Eff[R, Unit])(implicit m: ErrorOrOk /= R): Eff[R, A] =
+     intercept(action)(new Interpreter[ErrorOrOk, R, A, A] {
+       def onPure(a: A): Eff[R, A] =
+         lastAction.as(a)
 
-      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Either ErrorOrOk[T[X]] =
-        ms.map(_.run).sequence match {
-          case Left(e)   => Right(Evaluate.error[F, T[X]](e))
-          case Right(ls) => Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
-        }
-    }
-    intercept[R, ErrorOrOk, A, A]((a: A) => lastAction.as(a), recurse)(action)
-  }
+       def onEffect[X](ex: ErrorOrOk[X], continuation: Continuation[R, X, A]): Eff[R, A] =
+         ex.run match {
+           case Left(e) => continuation.runOnNone >> lastAction.flatMap(_ => outer.error[R, A](e))
+           case Right(x) =>
+             try   Eff.impure(x.value, continuation)
+             catch { case NonFatal(t) => continuation.runOnNone >> lastAction.flatMap(_ => outer.exception[R, A](t)) }
+         }
+
+       def onLastEffect[X](x: ErrorOrOk[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
+         Eff.pure(())
+
+       def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
+         ms.map(_.run).sequence match {
+           case Left(e)   => continuation.runOnNone >> lastAction.flatMap(_ => outer.error[R, A](e))
+           case Right(ls) =>
+             try Eff.impure(ls.map(_.value), continuation)
+             catch { case NonFatal(t) => continuation.runOnNone >> lastAction.flatMap(_ => outer.exception[R, A](t)) }
+         }
+
+     })
 
   /**
    * evaluate 1 action possibly having error effects
@@ -118,30 +140,6 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    */
   def orElse[R, A](action: Eff[R, A], onError: Eff[R, A])(implicit m: ErrorOrOk /= R): Eff[R, A] =
     whenFailed(action, _ => onError)
-
-  /**
-   * evaluate 1 action possibly having error effects
-   *
-   * Execute a second action if the first one is not successful, based on the error
-   */
-  def catchError[R, A, B](action: Eff[R, A], pure: A => B, onError: Error => Eff[R, B])(implicit m: ErrorOrOk /= R): Eff[R, B] = {
-    val recurse = new Recurse[ErrorOrOk, R, B] {
-      def apply[X](current: ErrorOrOk[X]): X Either Eff[R, B] =
-        current.run match {
-          case Left(e) => Right(onError(e))
-          case Right(x) =>
-            try Left(x.value)
-            catch { case NonFatal(t) => Right(onError(Left(t))) }
-        }
-
-      def applicative[X, T[_]: Traverse](ms: T[ErrorOrOk[X]]): T[X] Either ErrorOrOk[T[X]] =
-        ms.map(_.run).sequence match {
-          case Left(e)   => Right(Evaluate.error[F, T[X]](e))
-          case Right(ls) => Right(Evaluate.ok[F, T[X]](ls.map(_.value)))
-        }
-    }
-    intercept1[R, ErrorOrOk, A, B](pure)(recurse)(action)
-  }
 
   /**
    * evaluate 1 action possibly having error effects

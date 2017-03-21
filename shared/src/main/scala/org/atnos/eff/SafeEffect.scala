@@ -5,6 +5,7 @@ import cats.implicits._
 import eff._
 import interpret._
 import EitherEffect._
+import org.atnos.eff.Interpret.runInterpreter
 
 import scala.reflect.ClassTag
 
@@ -37,15 +38,15 @@ trait SafeCreation extends SafeTypes {
 
 trait SafeInterpretation extends SafeCreation { outer =>
 
+  type Out[A] = (ThrowableEither[A], List[Throwable])
+
   /**
    * Run a safe effect
    *
    * Collect finalizer exceptions if any
    */
-  def runSafe[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, (ThrowableEither[A], List[Throwable])] = {
-    type Out = (ThrowableEither[A], Vector[Throwable])
-    interpretLoop1[R, U, Safe, A, Out]((a: A) => (Right(a), Vector.empty): Out)(safeLoop[R, U, A])(r).map { case (a, vs) => (a, vs.toList) }
-  }
+  def runSafe[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, (ThrowableEither[A], List[Throwable])] =
+    runInterpreter[R, U, Safe, A, Out[A]](effect)(safeInterpreter[U, A])
 
   /** run a safe effect but drop the finalizer errors */
   def execSafe[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Safe, R, U]): Eff[U, ThrowableEither[A]] =
@@ -54,240 +55,135 @@ trait SafeInterpretation extends SafeCreation { outer =>
   /**
    * Attempt to execute a safe action including finalizers
    */
-  def attemptSafe[R, A](r: Eff[R, A])(implicit m: Safe /= R): Eff[R, (ThrowableEither[A], List[Throwable])] = {
-    type Out = (ThrowableEither[A], Vector[Throwable])
-    interceptLoop1[R, Safe, A, Out]((a: A) => (Right(a), Vector.empty): Out)(safeLoop[R, R, A])(r).map { case (a, vs) => (a, vs.toList) }
-  }
+  def attemptSafe[R, A](effect: Eff[R, A])(implicit m: Safe /= R): Eff[R, (ThrowableEither[A], List[Throwable])] =
+    intercept[R, Safe, A, Out[A]](effect)(safeInterpreter[R, A])
 
-  def safeLoop[R, U, A]: Loop[Safe, R, A, Eff[U, (Throwable Either A, Vector[Throwable])], Eff[U, Unit]] = {
-    type Out = (ThrowableEither[A], Vector[Throwable])
+  def safeInterpreter[R, A]: Interpreter[Safe, R, A, Out[A]] =
+    safeInterpreter(None)
 
-    new Loop[Safe, R, A, Eff[U, Out], Eff[U, Unit]] {
-      type S = Vector[Throwable]
-      val init: S = Vector.empty[Throwable]
+  def safeInterpreter[R, A](last: Option[(Eff[R, Unit], Safe /= R)]): Interpreter[Safe, R, A, Out[A]] = new Interpreter[Safe, R, A, Out[A]] {
+    var errors: Vector[Throwable] = Vector()
 
-      def onPure(a: A, s: S): (Eff[R, A], S) Either Eff[U, Out] =
-        Right(pure((Right(a), s)))
-
-      def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A], s: S): (Eff[R, A], S) Either Eff[U, Out] =
-        sx match {
-          case EvaluateValue(v) =>
-            Either.catchNonFatal(v.value) match {
-              case Left(e) =>
-                Right(pure((Left(e), s)))
-
-              case Right(x) =>
-                Either.catchNonFatal(continuation(x)) match {
-                  case Left(e) => Right(pure((Left(e), s)))
-                  case Right(c) =>  Left((c, s))
-                }
-            }
-
-          case FailedValue(t) =>
-            Right(pure((Left(t), s)))
-
-          case FailedFinalizer(t) =>
-            Either.catchNonFatal(continuation(())) match {
-              case Left(e) => Right(pure((Left(e), s :+ t)))
-              case Right(c) =>  Left((c, s :+ t))
-            }
-        }
-
-      def onLastEffect[X](sx: Safe[X], continuation: Arrs[R, X, Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] =
-        sx match {
-          case EvaluateValue(v) =>
-            Either.catchNonFatal(v.value) match {
-              case Left(_) =>
-                Right(pure(()))
-
-              case Right(x) =>
-                Either.catchNonFatal(continuation(x)) match {
-                  case Left(_) => Right(pure(()))
-                  case Right(c) =>  Left((c, s))
-                }
-            }
-
-          case FailedValue(_) =>
-            Right(pure(()))
-
-          case FailedFinalizer(t) =>
-            Either.catchNonFatal(continuation(())) match {
-              case Left(_) => Right(pure(()))
-              case Right(c) =>  Left((c, s :+ t))
-            }
-        }
-
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], A], s: S): (Eff[R, A], S) Either Eff[U, Out] = {
-        val failedFinalizers = new collection.mutable.ListBuffer[Throwable]
-        var error: Option[Throwable] = None
-
-        val traversed: T[X] = xs.map {
-          case FailedFinalizer(t) => { failedFinalizers.append(t); ().asInstanceOf[X] }
-          case FailedValue(t)     => { error = Some(t); ().asInstanceOf[X] }
-          case EvaluateValue(v)   =>
-            error match {
-              case None =>
-                Either.catchNonFatal(v.value) match {
-                  case Right(a) => a
-                  case Left(t)  => error = Some(t); ().asInstanceOf[X]
-                }
-              case Some(_) => ().asInstanceOf[X]
-            }
-        }
-
-        error match {
-          case Some(t) => Right(pure((Left(t), s ++ failedFinalizers.toVector)))
-          case None    => Left((continuation(traversed), s ++ failedFinalizers.toVector))
-        }
+    def onPure(a: A): Eff[R, Out[A]] =
+      last match {
+        case None => Eff.pure((Right(a), errors.toList))
+        case Some((l, m)) =>
+          attempt(l)(m) flatMap {
+            case Left(t)   => outer.finalizerException[R](t)(m) >> pure((Right(a), errors.toList))
+            case Right(()) => pure((Right(a), errors.toList))
+          }
       }
 
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either Eff[U, Unit] = {
-        type F = (Vector[Throwable], Option[Throwable])
-        val failedFinalizers = new collection.mutable.ListBuffer[Throwable]
-        var error: Option[Throwable] = None
+    def onEffect[X](sx: Safe[X], continuation: Continuation[R, X, Out[A]]): Eff[R, Out[A]] =
+      sx match {
+        case EvaluateValue(v) =>
+          Either.catchNonFatal(v.value) match {
+            case Left(e) =>
+              continuation.runOnNone >> {
+                last match {
+                  case None =>
+                    Eff.pure((Left(e), errors.toList))
 
-        val traversed: T[X] = xs.map {
-          case FailedFinalizer(t) => { failedFinalizers.append(t); ().asInstanceOf[X] }
-          case FailedValue(t)     => { error = Some(t); ().asInstanceOf[X] }
-          case EvaluateValue(v)   =>
-            error match {
-              case None =>
-                Either.catchNonFatal(v.value) match {
-                  case Right(a) => a
-                  case Left(t)  => error = Some(t); ().asInstanceOf[X]
+                  case Some((l, m)) =>
+                    attempt(l)(m) flatMap {
+                      case Left(t)   => outer.finalizerException[R](t)(m) >> outer.exception[R, Out[A]](e)(m)
+                      case Right(()) => outer.exception[R, Out[A]](e)(m)
+                    }
                 }
-              case Some(_) => ().asInstanceOf[X]
-            }
-        }
+              }
 
-        error match {
-          case Some(_) => Right(pure(()))
-          case None    => Left((continuation(traversed), s ++ failedFinalizers.toVector))
-        }
+            case Right(x) =>
+              Eff.impure(x, continuation)
+          }
+
+        case FailedValue(t) =>
+          continuation.runOnNone >> Eff.pure((Left(t), errors.toList))
+
+        case FailedFinalizer(t) =>
+          errors = errors :+ t
+          continuation.runOnNone >> Eff.impure((), continuation)
       }
 
+    def onLastEffect[X](sx: Safe[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
+      sx match {
+        case EvaluateValue(v) =>
+          Either.catchNonFatal(v.value) match {
+            case Left(e) =>
+              last match {
+                case None => Eff.pure(())
+                case Some((l, m)) =>
+                  attempt(l)(m) flatMap {
+                    case Left(t)   => outer.finalizerException[R](t)(m) >> outer.exception[R, Unit](e)(m)
+                    case Right(()) => outer.exception[R, Unit](e)(m)
+                  }
+              }
+
+            case Right(x) =>
+              last match {
+                case None => Eff.impure(x, continuation)
+                case Some((l, m)) =>
+                  attempt(l)(m) flatMap {
+                    case Left(t)   => outer.finalizerException[R](t)(m) >> Eff.impure(x, continuation)
+                    case Right(()) => Eff.impure(x, continuation)
+                  }
+              }
+          }
+
+        case FailedValue(t) =>
+          Eff.pure(())
+
+        case FailedFinalizer(t) =>
+          errors = errors :+ t
+          Eff.impure((), continuation)
+      }
+
+    def onApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Continuation[R, T[X], Out[A]]): Eff[R, Out[A]] = {
+      val failedFinalizers = new collection.mutable.ListBuffer[Throwable]
+      var error: Option[Throwable] = None
+
+      val traversed: T[X] = xs.map {
+        case FailedFinalizer(t) => failedFinalizers.append(t); ().asInstanceOf[X]
+        case FailedValue(t)     => error = Some(t); ().asInstanceOf[X]
+        case EvaluateValue(v)   =>
+          error match {
+            case None =>
+              Either.catchNonFatal(v.value) match {
+                case Right(a) => a
+                case Left(t)  => error = Some(t); ().asInstanceOf[X]
+              }
+            case Some(_) => ().asInstanceOf[X]
+          }
+      }
+
+      errors = errors ++ failedFinalizers.toVector
+      error match {
+        case None =>
+          Eff.impure(traversed, continuation)
+
+        case Some(t) =>
+          last match {
+            case None =>
+              Eff.pure((Left(t), errors.toList))
+
+            case Some((l, m)) =>
+              attempt(l)(m) flatMap {
+                case Left(t1)  => outer.finalizerException[R](t1)(m) >> outer.exception[R, Out[A]](t)(m)
+                case Right(()) => exception[R, Out[A]](t)(m)
+              }
+          }
+      }
     }
   }
-
 
   /**
    * evaluate first action possibly having error effects
    * execute a second action whether the first is successful or not but keep track of finalizer exceptions
    */
-  def thenFinally[R, A](action: Eff[R, A], last: Eff[R, Unit])(implicit m: Safe /= R): Eff[R, A] = {
-    val loop = new StatelessLoop[Safe, R, A, Eff[R, A], Eff[R, Unit]] {
-      def onPure(a: A): Eff[R, A] Either Eff[R, A] =
-        Right(attempt(last) flatMap {
-          case Left(t)   => outer.finalizerException[R](t) >> pure(a)
-          case Right(()) => pure(a)
-        })
-
-      def onEffect[X](sx: Safe[X], continuation: Arrs[R, X, A]): Eff[R, A] Either Eff[R, A] =
-        sx match {
-          case EvaluateValue(v) =>
-            Either.catchNonFatal(v.value) match {
-              case Left(e) =>
-                Right(attempt(last) flatMap {
-                  case Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, A](e)
-                  case Right(()) => outer.exception[R, A](e)
-                })
-
-              case Right(x) =>
-                Left(attempt(last) flatMap {
-                  case Left(t)   => outer.finalizerException[R](t) >> continuation(x)
-                  case Right(()) => continuation(x)
-                })
-            }
-
-          case FailedValue(t) =>
-            Right(outer.exception(t))
-
-          case FailedFinalizer(t) =>
-            Right(outer.finalizerException(t) >> continuation(()))
-        }
-
-      def onLastEffect[X](sx: Safe[X], continuation: Arrs[R, X, Unit]): Eff[R, Unit] Either Eff[R, Unit] =
-        sx match {
-          case EvaluateValue(v) =>
-            Either.catchNonFatal(v.value) match {
-              case Left(e) =>
-                Right(attempt(last) flatMap {
-                  case Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, Unit](e)
-                  case Right(()) => outer.exception[R, Unit](e)
-                })
-
-              case Right(x) =>
-                Left(attempt(last) flatMap {
-                  case Left(t)   => outer.finalizerException[R](t) >> continuation(x)
-                  case Right(()) => continuation(x)
-                })
-            }
-
-          case FailedValue(t) =>
-            Right(outer.exception(t).void)
-
-          case FailedFinalizer(t) =>
-            Right(outer.finalizerException(t) >> continuation(()))
-        }
-
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either Eff[R, A] = {
-        // all the values are executed because they are considered to be independent in the applicative case
-        val failedValues = new collection.mutable.ListBuffer[FailedValue[X]]
-
-        val traversed: T[X] = xs.map {
-          case FailedFinalizer(t) => ().asInstanceOf[X]
-          case FailedValue(t)     => ().asInstanceOf[X]
-          case EvaluateValue(v)   =>
-            Either.catchNonFatal(v.value) match {
-              case Right(a) => a
-              case Left(t)  => failedValues.append(FailedValue(t)); ().asInstanceOf[X]
-            }
-        }
-
-        failedValues.toList match {
-          case Nil =>
-            Left(continuation(traversed))
-
-          case FailedValue(throwable) :: rest =>
-            // we just return the first failed value as an exception
-            Right(attempt(last) flatMap {
-              case Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, A](throwable)
-              case Right(()) => exception[R, A](throwable)
-            })
-        }
-      }
-
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Arrs[R, T[X], Unit]): Eff[R, Unit] Either Eff[R, Unit] = {
-        // all the values are executed because they are considered to be independent in the applicative case
-        val failedValues = new collection.mutable.ListBuffer[FailedValue[X]]
-
-        val traversed: T[X] = xs.map {
-          case FailedFinalizer(t) => ().asInstanceOf[X]
-          case FailedValue(t)     => ().asInstanceOf[X]
-          case EvaluateValue(v)   =>
-            Either.catchNonFatal(v.value) match {
-              case Right(a) => a
-              case Left(t)  => failedValues.append(FailedValue(t)); ().asInstanceOf[X]
-            }
-        }
-
-        failedValues.toList match {
-          case Nil =>
-            Left(continuation(traversed))
-
-          case FailedValue(throwable) :: rest =>
-            // we just return the first failed value as an exception
-            Right(attempt(last) flatMap {
-              case Left(t)   => outer.finalizerException[R](t) >> outer.exception[R, Unit](throwable)
-              case Right(()) => exception[R, Unit](throwable)
-            })
-        }
-      }
-
+  def thenFinally[R, A](effect: Eff[R, A], last: Eff[R, Unit])(implicit m: Safe /= R): Eff[R, A] =
+    intercept[R, Safe, A, Out[A]](Eff.whenStopped(effect, Last.eff(last)))(safeInterpreter[R, A](Some((last, m)))).flatMap {
+      case (Right(a), vs) => vs.traverse(v => outer.finalizerException(v)).void >> Eff.pure(a)
+      case (Left(t), vs) => vs.traverse(v => outer.finalizerException(v)).void >> outer.exception(t)
     }
-
-    interceptStatelessLoop1[R, Safe, A, A]((a: A) => a)(loop)(Eff.whenStopped(action, Last.eff(last)))
-  }
 
   /**
    * get a resource A and use it.

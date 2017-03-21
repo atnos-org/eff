@@ -61,81 +61,58 @@ trait ValidateInterpretation extends ValidateCreation {
     runMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.of(e))
 
   /** run the validate effect, yielding a list of failures Either A */
-  def runMap[R, U, E, L : Semigroup, A](r: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Either A] = {
-    val recurse: StateRecurse[Validate[E, ?], A, L Either A] = new StateRecurse[Validate[E, ?], A, L Either A] {
-      type S = Option[L]
-      val init: Option[L] = None
+  def runMap[R, U, E, L : Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Either A] =
+    runInterpreter(effect)(new Interpreter[Validate[E, ?], U, A, L Either A] {
+      private var l: Option[L] = None
 
-      def apply[X](x: Validate[E, X], s: Option[L]): (X, Option[L]) =
-        x match {
-          case Wrong(e) => ((), s.fold(Option(map(e)))(l => Option(l |+| map(e))))
-          case Correct() => ((), s)
+      def onPure(a: A): Eff[U, L Either A] =
+        Eff.pure(l.map(Left.apply).getOrElse(Right(a)))
+
+      def onEffect[X](v: Validate[E, X], continuation: Continuation[U, X, L Either A]): Eff[U, L Either A] = {
+        l = v match {
+          case Correct() => l
+          case Wrong(e) => l.map(_ |+| map(e))
         }
+        Eff.impure(().asInstanceOf[X], continuation)
+      }
 
-      def applicative[X, T[_] : Traverse](xs: T[Validate[E, X]], s: S): (T[X], S) Either (Validate[E, T[X]], S) =
-        Left {
-          val traversed: State[S, T[X]] = xs.traverse {
-            case Correct() => State[S, X](state => (state, ()))
-            case Wrong(e)  => State[S, X](state => (state.fold(Option(map(e)))(l => Option(l |+| map(e))), ()))
-          }
-          traversed.run(s).value.swap
-        }
+      def onLastEffect[X](x: Validate[E, X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
+        Eff.pure(())
 
-      def finalize(a: A, s: S): L Either A =
-        s.fold[Either[L, A]](Right[L, A](a))(Left[L, A])
-    }
-
-    interpretState1[R, U, Validate[E, ?], A, L Either A]((a: A) => Right[L, A](a))(recurse)(r)
-  }
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L Either A]): Eff[U, L Either A] = {
+        l = l |+| xs.map { case Wrong(e) => Some(map(e)); case Correct() => None }.fold
+        Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
+      }
+    })
 
   /** catch and handle possible wrong values */
-  def catchWrong[R, E, A](r: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] = {
-    val loop = new StatelessLoop[Validate[E,?], R, A, Eff[R, A], Eff[R, Unit]] {
-      def onPure(a: A): Eff[R, A] Either Eff[R, A] =
-        Right(pure(a))
+  def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] =
+    intercept(effect)(new Interpreter[Validate[E, ?], R, A, A] {
+      def onPure(a: A): Eff[R, A] =
+        Eff.pure(a)
 
-      def onEffect[X](m: Validate[E, X], continuation: Arrs[R, X, A]): Eff[R, A] Either Eff[R, A] =
+      def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
         m match {
-          case Correct() => Left(continuation(()))
-          case Wrong(e)  => Left(handle(e))
+          case Correct() => Eff.impure((), continuation)
+          case Wrong(e)  => handle(e)
         }
 
-      def onLastEffect[X](m: Validate[E, X], continuation: Arrs[R, X, Unit]): Eff[R, Unit] Either Eff[R, Unit] =
-        m match {
-          case Correct() => Left(continuation(()))
-          case Wrong(e)  => Left(handle(e).void)
+      def onLastEffect[X](x: Validate[E, X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
+        continuation.runOnNone >> Eff.pure(())
+
+      def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
+        val traversed: State[Option[E], T[X]] = xs.traverse {
+          case Correct() => State[Option[E], X](state => (None, ()))
+          case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], A]): Eff[R, A] Either Eff[R, A] =
-        Left {
-          val traversed: State[Option[E], T[X]] = xs.traverse {
-            case Correct() => State[Option[E], X](state => (None, ()))
-            case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
-          }
-
-          traversed.run(None).value match {
-            case (None, tx)    => continuation(tx)
-            case (Some(e), tx) => handle(e)
-          }
+        traversed.run(None).value match {
+          case (None, tx)    => Eff.impure(tx, continuation)
+          case (Some(e), tx) => handle(e)
         }
+      }
 
-      def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Arrs[R, T[X], Unit]): Eff[R, Unit] Either Eff[R, Unit] =
-        Left {
-          val traversed: State[Option[E], T[X]] = xs.traverse {
-            case Correct() => State[Option[E], X](state => (None, ()))
-            case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
-          }
-
-          traversed.run(None).value match {
-            case (None, tx)    => continuation(tx)
-            case (Some(e), tx) => handle(e).void
-          }
-        }
-
-    }
-
-    interceptStatelessLoop[R, Validate[E,?], A, A]((a: A) => pure(a), loop)(r)
-  }
+    })
 }
 
 object ValidateInterpretation extends ValidateInterpretation

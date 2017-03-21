@@ -36,15 +36,17 @@ trait ReaderInterpretation {
   /**
    * interpret the Reader effect by providing an environment when required
    */
-  def runReader[R, U, A, B](env: A)(r: Eff[R, B])(implicit m: Member.Aux[Reader[A, ?], R, U]): Eff[U, B] = {
-    val recurse = new Recurse[Reader[A, ?], U, B] {
-      def apply[X](m: Reader[A, X]): X Either Eff[U, B] = Left(m.run(env))
-      def applicative[X, T[_]: Traverse](ms: T[Reader[A, X]]): T[X] Either Reader[A, T[X]] =
-        Left(ms.map(_.run(env)))
-    }
+  def runReader[R, U, A, B](env: A)(effect: Eff[R, B])(implicit m: Member.Aux[Reader[A, ?], R, U]): Eff[U, B] =
+    recurse(effect)(new Recurser[Reader[A, ?], U, B, B] {
+      def onPure(b: B): B =
+        b
 
-    interpret1[R, U, Reader[A, ?], B, B]((b: B) => b)(recurse)(r)
-  }
+      def onEffect[X](r: Reader[A, X]): X Either Eff[U, B] =
+        Left(r.run(env))
+
+      def onApplicative[X, T[_]: Traverse](ms: T[Reader[A, X]]): T[X] Either Reader[A, T[X]] =
+        Left(ms.map(_.run(env)))
+    })
 
   /**
    * Interpret a Reader effect by using another Reader effect in the same stack

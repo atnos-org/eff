@@ -36,24 +36,22 @@ object ConsoleEffect {
   /**
    * This interpreter prints messages to a printing function
    */
-  def runConsoleToPrinter[R, U, A](printer: String => Unit)(w: Eff[R, A])(implicit m : Member.Aux[Console, R, U]) = {
-    val recurse = new Recurse[Console, U, A] {
-      def apply[X](cx: Console[X]): X Either Eff[U, A] =
+  def runConsoleToPrinter[R, U, A](printer: String => Unit)(w: Eff[R, A])(implicit m : Member.Aux[Console, R, U]) =
+    recurse(w)(new Recurser[Console, U, A, A] {
+      def onPure(a: A) = a
+      def onEffect[X](cx: Console[X]): X Either Eff[U, A] =
         cx.run match {
           case (c, x) =>
             printer(c.message)
             Left(x)
         }
 
-      def applicative[X, T[_]: Traverse](ws: T[Console[X]]): T[X] Either Console[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ws: T[Console[X]]): T[X] Either Console[T[X]] =
         Left(ws.map { w =>
           val (c, x) = w.run
           printer(c.message)
           x
         })
-    }
-
-    interpret1((a: A) => a)(recurse)(w)(m)
-  }
+    })
 
 }
