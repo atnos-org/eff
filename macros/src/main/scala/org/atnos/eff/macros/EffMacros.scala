@@ -64,6 +64,15 @@ class EffMacros(val c: blackbox.Context) {
           case _ => false
         }
 
+        def nonStackParams(paramss: List[List[ValDef]]) = {
+          paramss.map { params =>
+            params.filter {
+              case ValDef(_, _, AppliedTypeTree(Ident(name), _), _) => name != typeAlias.name
+              case _ => true
+            }
+          }.filterNot(_.isEmpty)
+        }
+
         // check some constraints that will result in a compiler error
         stats.foreach {
           case x:ValOrDefDef if x.mods.hasFlag(Flag.PRIVATE|Flag.PROTECTED) => c.abort(x.pos, "try using access modifier: package-private")
@@ -89,8 +98,8 @@ class EffMacros(val c: blackbox.Context) {
         val liftedOps:Seq[DefDef] = absValsDefsOps.map {
           case DefDef(_, name, tparams, paramss, ExpectedReturnType(EffType(effectType, returnType)), _) =>
             val op = {
-              val args = paramssToArgs(paramss).dropRight(1)
-              val rhs = q"Eff.send[${sealedTrait.name}, $effectType, $returnType](${adt(sealedTrait, name)}(...$args))"
+              val args = paramssToArgs(nonStackParams(paramss)).flatten
+              val rhs = q"Eff.send[${sealedTrait.name}, $effectType, $returnType](${adt(sealedTrait, name)}(..$args))"
               val params = (if (paramss.isEmpty) List.empty else paramss)
               q"def $name[..$tparams](...$params): Eff[$effectType, $returnType] = $rhs".asInstanceOf[DefDef]
             }
@@ -136,7 +145,7 @@ class EffMacros(val c: blackbox.Context) {
 
         val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
           case DefDef(mods, name, tparams, paramss, ExpectedReturnType(EffType(_, returnType)), _) =>
-            DefDef(mods, name, tparams.dropRight(1), paramss.take(1), returnType, EmptyTree)
+            DefDef(mods, name, tparams.dropRight(1), nonStackParams(paramss), returnType, EmptyTree)
           case ValDef(mods, name, rt, _) =>
             DefDef(mods, name, List.empty, List.empty, replaceContainerType(rt, TypeName("M")), EmptyTree)
         }
@@ -156,13 +165,7 @@ class EffMacros(val c: blackbox.Context) {
                 case TypeDef(_, name, _, _) if implicitParams.contains(name) => false
                 case _ => true
               }
-              val nonStackParams = fixedParams.map { params =>
-                params.filter {
-                  case ValDef(_, _, AppliedTypeTree(Ident(name), _), _) => name != typeAlias.name
-                  case _ => true
-                }
-              }.filterNot(_.isEmpty)
-              q"case class ${TypeName(tname.toString.capitalize)}[..$nonStackTypeParams](...$nonStackParams) extends ${sealedTrait.name}[..$nonStackReturnTypes]"
+              q"case class ${TypeName(tname.toString.capitalize)}[..$nonStackTypeParams](..${nonStackParams(fixedParams).flatten}) extends ${sealedTrait.name}[..$nonStackReturnTypes]"
             case ValDef(_, name, AppliedTypeTree(_, returnType), _) =>
               q"case object ${TermName(name.toString.capitalize)} extends ${sealedTrait.name}[..$returnType]"
           }
@@ -182,9 +185,9 @@ class EffMacros(val c: blackbox.Context) {
                 def apply[A](fa: ${sealedTrait.name}[A]): A = fa match {
                   case ..${absValsDefsOps.map {
                     case DefDef(_, name, _, paramss, rt, _) =>
-                      val binds = paramss.dropRight(1).flatMap(_.collect { case t:ValDef => Bind (t.name, Ident(termNames.WILDCARD))})
-                      val args = paramss.map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
-                      val rhs = if (args.isEmpty) q"$name" else q"$name(...${args.dropRight(1)})"
+                      val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind (t.name, Ident(termNames.WILDCARD))})
+                      val args = nonStackParams(paramss).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
+                      val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
                       cq"${adt(sealedTrait, name)}(..$binds) => $rhs"
                     case ValDef(_, name, _, _) =>
                       cq"${adt(sealedTrait, name)} => $name"
