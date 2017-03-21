@@ -15,6 +15,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
  generates boilerplate code for custom effects $generatesBoilerplate
  generates a SideEffect sub-class with boilerplate-free methods $generatesSideEffectInterpreter
  generates a Translate sub-trait with boilerplate-free methods $generatesTranslateInterpreter
+ generates a FunctionK sub-trait with boilerplate-free methods $generatesNaturalTransformationInterpreter
 """
   @eff trait KVStoreDsl {
     type _kvstore[R] = KVStore MemberIn R
@@ -120,5 +121,19 @@ class EffMacrosSpec extends Specification { def is = s2"""
       runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
 
     result ==== Right(Some(14))
+  }
+
+  def generatesNaturalTransformationInterpreter = {
+    import KVStore._
+    import org.atnos.eff._, all._
+    import org.atnos.eff.syntax.all._
+
+    val optionInterp = new KVStoreDsl.FunctionK[Option] {
+      def put[T](key: String, value: T)(implicit ordering: Ordering[T]): Option[Unit] = Some(())
+      def get[T](key: String): Option[Option[T]] = Some(None)
+      def delete[T](key: String): Option[Unit] = Some(())
+    }
+
+    runOption(theProgram.transform(optionInterp)).run ==== Some(None)
   }
 }

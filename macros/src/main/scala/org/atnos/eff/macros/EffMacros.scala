@@ -207,6 +207,29 @@ class EffMacros(val c: blackbox.Context) {
         """
         }
 
+        val functionKTrait =  {
+          val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
+            case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
+              DefDef(mods, name, tparams.dropRight(1), nonStackParams(paramss), tq"M[$returnType]", EmptyTree)
+          }
+
+          q"""
+              trait FunctionK[M[_]] extends cats.~>[${sealedTrait.name}, M] {
+                def apply[X](fa: ${sealedTrait.name}[X]): M[X] = fa match {
+                  case ..${absValsDefsOps.map {
+                    case DefDef(_, name, _, paramss, rt, _) =>
+                      val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind (t.name, Ident(termNames.WILDCARD))})
+                      val args = nonStackParams(paramss).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
+                      val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
+                      cq"${adt(sealedTrait, name)}(..$binds) => $rhs.asInstanceOf[M[X]]"
+                    case ValDef(_, name, _, _) =>
+                      cq"${adt(sealedTrait, name)} => $name.asInstanceOf[M[X]]"
+                  }}
+                }
+                ..$methodsToBeImpl
+              }
+        """
+        }
         val genCompanionObj =
           q"""
             object ${tpname.toTermName} {
@@ -218,6 +241,7 @@ class EffMacros(val c: blackbox.Context) {
               ..$injectOpsObj
               $sideEffectTrait
               $translateTrait
+              $functionKTrait
             }
            """
 
