@@ -86,14 +86,13 @@ class EffMacros(val c: blackbox.Context) {
         // vals name with op(s) means having return type matching the defined typeAlias.
         // And vise versa, nonOp(s) means having different return type than the typeAlias.
         // --------------------------------------------------------------------------------
-
         val liftedOps:Seq[DefDef] = absValsDefsOps.map {
           case DefDef(_, name, tparams, paramss, ExpectedReturnType(EffType(effectType, returnType)), _) =>
             val op = {
               val args = paramssToArgs(paramss).dropRight(1)
               val rhs = q"Eff.send[${sealedTrait.name}, $effectType, $returnType](${adt(sealedTrait, name)}(...$args))"
               val params = (if (paramss.isEmpty) List.empty else paramss)
-              q"def $name[..${tparams}](...$params): Eff[$effectType, $returnType] = $rhs".asInstanceOf[DefDef]
+              q"def $name[..$tparams](...$params): Eff[$effectType, $returnType] = $rhs".asInstanceOf[DefDef]
             }
             op
           case ValDef(_, name, rt@AppliedTypeTree(_, innerType), rhs) =>
@@ -113,11 +112,10 @@ class EffMacros(val c: blackbox.Context) {
             case _ => false
           }
 
-
           // defs that contain the real implementation
           val injectOps: Seq[DefDef] = ops.map {
             case DefDef(mods, tname, tp, paramss, AppliedTypeTree(_, innerType), rhs) =>
-              q"$mods def $tname[..$tp](...${paramss}): Eff[..$innerType] = ${rhs}".asInstanceOf[DefDef]
+              q"$mods def $tname[..$tp](...$paramss): Eff[..$innerType] = ${rhs}".asInstanceOf[DefDef]
             case ValDef(mods, tname, AppliedTypeTree(_, innerType), rhs) =>
               q"$mods def $tname: Eff[..$innerType] = ${rhs}".asInstanceOf[DefDef]
           }
@@ -145,7 +143,7 @@ class EffMacros(val c: blackbox.Context) {
 
         val genCaseClassesAndObjADT = {
           val caseClasses = absValsDefsOps.collect {
-            case q"$_ def $tname[..$tparams](...$paramss): ${AppliedTypeTree(_, returnType)} = $expr" =>
+            case q"..$_ def $tname[..$tparams](...$paramss): ${AppliedTypeTree(_, returnType)} = $expr" =>
               val fixedParams = fixSI88771(paramss)
               val implicitParams = fixedParams(1).collect {
                 case ValDef(_, _, AppliedTypeTree(Ident(name), Seq(Ident(stackTypeName))), _) if name == typeAlias.name => stackTypeName
@@ -160,7 +158,7 @@ class EffMacros(val c: blackbox.Context) {
               }
               val nonStackParams = fixedParams.map { params =>
                 params.filter {
-                  case ValDef(_, _, AppliedTypeTree(Ident(name), _), _) => implicitParams.contains(name)
+                  case ValDef(_, _, AppliedTypeTree(Ident(name), _), _) => name != typeAlias.name
                   case _ => true
                 }
               }.filterNot(_.isEmpty)
