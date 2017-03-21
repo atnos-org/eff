@@ -155,15 +155,13 @@ class EffMacros(val c: blackbox.Context) {
           q"object ${sealedTrait.name.toTermName} { ..$caseClasses }"
         }
 
-        val genCompanionObj =
+        val sideEffectTrait = {
+          val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
+            case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
+              DefDef(mods, name, tparams.dropRight(1), nonStackParams(paramss), returnType, EmptyTree)
+          }
+
           q"""
-            object ${tpname.toTermName} {
-              ..$imports
-              import scala.language.higherKinds
-              $sealedTrait
-              $typeAlias
-              $genCaseClassesAndObjADT
-              ..$injectOpsObj
               trait SideEffect extends org.atnos.eff.SideEffect[${sealedTrait.name}] {
                 def apply[A](fa: ${sealedTrait.name}[A]): A = fa match {
                   case ..${absValsDefsOps.map {
@@ -182,6 +180,44 @@ class EffMacros(val c: blackbox.Context) {
                   org.atnos.eff.interpret.interpretUnsafe(effects)(this)(m)
                 ..$methodsToBeImpl
               }
+        """
+        }
+
+        val translateTrait =  {
+          val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
+            case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
+              DefDef(mods, name, tparams.dropRight(1), nonStackParams(paramss), tq"Eff[U, $returnType]", EmptyTree)
+          }
+
+          q"""
+              trait Translate[R, U] extends org.atnos.eff.Translate[${sealedTrait.name}, U] {
+                def apply[X](fa: ${sealedTrait.name}[X]): Eff[U, X] = fa match {
+                  case ..${absValsDefsOps.map {
+                    case DefDef(_, name, _, paramss, rt, _) =>
+                      val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind (t.name, Ident(termNames.WILDCARD))})
+                      val args = nonStackParams(paramss).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
+                      val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
+                      cq"${adt(sealedTrait, name)}(..$binds) => $rhs.asInstanceOf[Eff[U, X]]"
+                    case ValDef(_, name, _, _) =>
+                      cq"${adt(sealedTrait, name)} => $name.asInstanceOf[Eff[U, X]]"
+                  }}
+                }
+                ..$methodsToBeImpl
+              }
+        """
+        }
+
+        val genCompanionObj =
+          q"""
+            object ${tpname.toTermName} {
+              ..$imports
+              import scala.language.higherKinds
+              $sealedTrait
+              $typeAlias
+              $genCaseClassesAndObjADT
+              ..$injectOpsObj
+              $sideEffectTrait
+              $translateTrait
             }
            """
 
