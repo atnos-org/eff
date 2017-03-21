@@ -1,50 +1,55 @@
 // 8<---
 package org.atnos.site.snippets
 
-import cats.{Applicative, Traverse}
+trait MaybeEffectSnippet {
+
+// 8<---
+
+import cats._, implicits._
 import org.atnos.eff._
 import all._
 import org.atnos.eff.interpret._
 
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration.Duration
+sealed trait Maybe[A]
+case class Just[A](a: A) extends Maybe[A]
+case class Nothing[A]() extends Maybe[A]
 
-trait FutEffectSnippet {
+object MaybeEffect {
+  type _maybe[R] = Maybe |= R
 
-// 8<---
+  def just[R :_maybe, A](a: A): Eff[R, A] =
+    send[Maybe, R, A](Just(a))
 
-object FutEffect {
-  type Fut[A] = Future[() => A]
-  type _fut[R] = Fut |= R
+  def nothing[R :_maybe, A]: Eff[R, A] =
+    send[Maybe, R, A](Nothing())
 
-  def ApplicativeFut(implicit ec: ExecutionContext): Applicative[Fut] = new Applicative[Fut] {
-    def pure[A](x: A): Fut[A] =
-      Future.successful(() => x)
+  def runMaybe[R, U, A, B](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
+    recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
+      def onPure(a: A) = Some(a)
 
-    def ap[A, B](ff: Fut[A => B])(fa: Fut[A]): Fut[B] =
-      fa.zip(ff).map { case (a, f) => () => f()(a()) }
-  }
+      def onEffect[X](m: Maybe[X]): X Either Eff[U, Option[A]] =
+        m match {
+          case Just(x)   => Left(x)
+          case Nothing() => Right(Eff.pure(None))
+        }
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  def fut[R :_fut, A](a: => A): Eff[R, A] =
-    send[Fut, R, A](Future(() => a))
-
-  def runFuture[R, U, A, B](atMost: Duration)(effect: Eff[R, A])(implicit m: Member.Aux[Fut, R, U]): Eff[U, A] =
-    recurse(effect)(new Recurser[Fut, U, A, A] {
-      def onPure(a: A) = a
-
-      def onEffect[X](m: Fut[X]): X Either Eff[U, A] =
-        Left(Await.result(m.map(_ ()), atMost))
-
-      def onApplicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Either Fut[T[X]] =
-        Right(ApplicativeFut.sequence(ms))
-
+      def onApplicative[X, T[_]: Traverse](ms: T[Maybe[X]]): T[X] Either Maybe[T[X]] =
+        Right(ms.sequence)
     })
+
+  implicit val applicativeMaybe: Applicative[Maybe] = new Applicative[Maybe] {
+    def pure[A](a: A): Maybe[A] = Just(a)
+
+    def ap[A, B](ff: Maybe[A => B])(fa: Maybe[A]): Maybe[B] =
+      (fa, ff) match {
+        case (Just(a), Just(f)) => Just(f(a))
+        case _                  => Nothing()
+      }
+  }
 }
 
 // 8<---
 }
 
-object FutEffectSnippet extends FutEffectSnippet
+object MaybeEffectSnippet extends MaybeEffectSnippet
 

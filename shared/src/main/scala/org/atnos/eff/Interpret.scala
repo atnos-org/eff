@@ -6,8 +6,33 @@ import cats.implicits._
 import Eff._
 
 /**
- * Support methods to create interpreters (or "effect handlers") for a given effect M and a value Eff[R, A]
- * when M is a member of R.
+ * The Interpret trait provides method to interpret (or "handle") effects.
+ *
+ * An interpreter generally handles a given effect M and a value Eff[R, A]
+ * where M is a member of R.
+ *
+ * The most general way of interpreting an effect is to implement the Interpreter trait for that effect and
+ * use the runInterpreter method. With the `Interpreter` trait you need to define:
+ *
+ *  - what to do with pure values
+ *  - what to do with an effect
+ *  - what to do with a list of effects (the "applicative" case)
+ *  - what to do with a "last" effect, in case of having side-effects to finalize resources (see the SafeEffect)
+ *
+ * For each of those methods you get access to a continuation which you may or may not invoke to create the next
+ * effect in a sequence of effects. For example with the EitherEffect once you arrive on a Left value you don't trigger
+ * the continuation because there is no value to trigger it with.
+ *
+ * There are also easier ways to define interpreters. The `recurse` method and the `Recurser` trait define:
+ *
+ *  - onPure(a: A): B: how to map a pure value A to the result B
+ *  - onEffect[X](mx: M[X]): X Either Eff[R, B]: either extract a value from the effect or return another effect
+ *  - onApplicative[X](tx: T[M[X]]): T[X] Either M[T[X]]: either extract individual values from each effect or "sequence" the effect
+ *
+ * Even simpler, the `Translate` trait does a translation from an effect `M[X]` to other effects in the stack.
+ *
+ * There are also a few `intercept` methods to use an effect but still leave it in the stack
+ *
  */
 trait Interpret {
 
@@ -67,6 +92,9 @@ trait Interpret {
     }
   }
 
+  /**
+   * Interpret an effect with a Recurser
+   */
   def recurse[R, U, T[_], A, B](e: Eff[R, A])
                                (recurser: Recurser[T, U, A, B])
                                (implicit m: Member.Aux[T, R, U]): Eff[U, B] =
@@ -136,23 +164,10 @@ trait Interpret {
     translate[R, U, T, A](effect)(tr)(m)
   }
 
-  def augment[R, T[_], O[_], A](eff: Eff[R, A])(w: Augment[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[O, R], A] =  {
-    type U = Fx.prepend[O, R]
-    implicit val mw = MemberIn.MemberInAppendAnyL
-
-    translateInto(eff)(new Translate[T, U] {
-      def apply[X](tx: T[X]): Eff[U, X] = send[O, U, Unit](w(tx)) >> send[T, U, X](tx)
-    })
-  }
-
-  def write[R, T[_], O, A](eff: Eff[R, A])(w: Write[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[Writer[O, ?], R], A] =  {
-    type U = Fx.prepend[Writer[O, ?], R]
-    implicit val mw = MemberIn.MemberInAppendAnyL
-
-    augment[R, T, Writer[O, ?], A](eff)(new Augment[T, Writer[O, ?]]{
-      def apply[X](tx: T[X]) = Writer.tell[O](w(tx))
-    })
-  }
+  /** interpret an effect by running side-effects */
+  def interpretUnsafe[R, U, T[_], A](effect: Eff[R, A])(sideEffect: SideEffect[T])
+                                    (implicit m: Member.Aux[T, R, U]): Eff[U, A] =
+    runInterpreter[R, U, T, A, A](effect)(Interpreter.fromSideEffect(sideEffect))
 
   def intercept[R, T[_], A, B](e: Eff[R, A])
                               (interpreter: Interpreter[T, R, A, B])
@@ -194,13 +209,34 @@ trait Interpret {
 
     })
 
-  /** interpret an effect by running side-effects */
-  def interpretUnsafe[R, U, T[_], A](effect: Eff[R, A])(sideEffect: SideEffect[T])
-                                    (implicit m: Member.Aux[T, R, U]): Eff[U, A] =
-    runInterpreter[R, U, T, A, A](effect)(Interpreter.fromSideEffect(sideEffect))
+  /**
+   * Interpret the effect T with a side-effect O (see the write method below)
+   */
+  def augment[R, T[_], O[_], A](eff: Eff[R, A])(w: Augment[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[O, R], A] =  {
+    type U = Fx.prepend[O, R]
+    implicit val mw = MemberIn.MemberInAppendAnyL
+
+    translateInto(eff)(new Translate[T, U] {
+      def apply[X](tx: T[X]): Eff[U, X] = send[O, U, Unit](w(tx)) >> send[T, U, X](tx)
+    })
+  }
+
+  /**
+   * For each effect T add some "log statements" O using the Writer effect
+   */
+  def write[R, T[_], O, A](eff: Eff[R, A])(w: Write[T, O])(implicit m: MemberInOut[T, R]): Eff[Fx.prepend[Writer[O, ?], R], A] =  {
+    type U = Fx.prepend[Writer[O, ?], R]
+    implicit val mw = MemberIn.MemberInAppendAnyL
+
+    augment[R, T, Writer[O, ?], A](eff)(new Augment[T, Writer[O, ?]]{
+      def apply[X](tx: T[X]) = Writer.tell[O](w(tx))
+    })
+  }
 
 
 }
+
+object Interpret extends Interpret
 
 /**
  * Interpret eff values
@@ -302,14 +338,6 @@ object Interpreter {
     })
 }
 
-trait Recurser[M[_], R, A, B] {
-  def onPure(a: A): B
-  def onEffect[X](m: M[X]): X Either Eff[R, B]
-  def onApplicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]]
-}
-
-
-object Interpret extends Interpret
 
 /**
  * Helper trait for computations
@@ -321,62 +349,10 @@ object Interpret extends Interpret
  * of effects and return an effect of a list of results OR
  * completely consume the effect and return a pure list of values
  */
-trait Recurse[M[_], R, A] {
-  def apply[X](m: M[X]): X Either Eff[R, A]
-  def applicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]]
-}
-
-/**
- * Generalisation of Recurse and StateRecurse
- *
- * The loop defines some state with an initial value which is maintained at
- * each step of the interpretation.
- *
- * A is the type of Eff values to interpret, and B is the result of the
- * interpretation (generally an other Eff value)
- *
- * C is the type of result for "last" actions.
- *
- * - the interpretation of a Pure value either returns the final result or possibly
- *   one more Eff value to interpret
- *
- * - onEffect interprets one effect and possibly uses the continuation to produce the next
- *   value to interpret. If no X can be used to run the continuation we might just
- *   output one final B value
- *
- *  - onLastEffect interprets the last effect of an Eff value. The only difference with onEffect
- *    is the fact that last actions return Unit values (and not A values)
- *
- *  - onApplicativeEff interprets a list of effects and possibly uses the continuation to
- *    get to the next value to interpret. If no interpretation can be done, a B value might be returned
- *
- *  - onLastApplicativeEffect does the same thing for last actions
- *
- */
-trait Loop[M[_], R, A, B, C] {
-  type S
-  val init: S
-
-  def onPure(a: A, s: S): (Eff[R, A], S) Either B
-
-  def onEffect[X](x: M[X], continuation: Continuation[R, X, A], s: S): (Eff[R, A], S) Either B
-  def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit], s: S): (Eff[R, Unit], S) Either C
-
-  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A], s: S): (Eff[R, A], S) Either B
-  def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit], s: S): (Eff[R, Unit], S) Either C
-}
-
-/**
- * Generalisation of Recurse
- */
-trait StatelessLoop[M[_], R, A, B, C] {
-  def onPure(a: A): Eff[R, A] Either B
-
-  def onEffect[X](x: M[X], continuation: Continuation[R, X, A]): Eff[R, A] Either B
-  def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] Either C
-
-  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] Either B
-  def onLastApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], Unit]): Eff[R, Unit] Either C
+trait Recurser[M[_], R, A, B] {
+  def onPure(a: A): B
+  def onEffect[X](m: M[X]): X Either Eff[R, B]
+  def onApplicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]]
 }
 
 /**
