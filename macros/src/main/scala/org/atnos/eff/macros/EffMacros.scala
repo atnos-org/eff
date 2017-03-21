@@ -88,7 +88,6 @@ class EffMacros(val c: blackbox.Context) {
 
         val absValsDefsOps: Seq[ValOrDefDef] = stats.collect {
           case m @ DefDef(_, _, _, _, ExpectedReturnType(_), EmptyTree) => m
-          case v @ ValDef(_, _, ExpectedReturnType(_), EmptyTree) => v
         }
 
         // --------------------------------------------------------------------------------
@@ -104,20 +103,15 @@ class EffMacros(val c: blackbox.Context) {
               q"def $name[..$tparams](...$params): Eff[$effectType, $returnType] = $rhs".asInstanceOf[DefDef]
             }
             op
-          case ValDef(_, name, rt@AppliedTypeTree(_, innerType), rhs) =>
-            val rhs = q"Eff.send(${adt(sealedTrait, name)})"
-            q"def $name: Eff[..$innerType] = $rhs".asInstanceOf[DefDef]
         }
 
         val concreteValsDefs: Seq[ValOrDefDef] = stats.collect {
           case m @ DefDef(_, _, _, _, _, rhs) if rhs.nonEmpty => m
-          case v @ ValDef(_, _, _, rhs)       if rhs.nonEmpty => v
         }
 
         val (concreteOps: Seq[DefDef], concreteNonOps: Seq[ValOrDefDef]) = {
           val (ops, nonOps) = concreteValsDefs.partition {
             case DefDef(_, _, _, _, AppliedTypeTree(Ident(outerType), _), _) => outerType == typeAlias.name
-            case ValDef(_, _, AppliedTypeTree(Ident(outerType), _), _)       => outerType == typeAlias.name
             case _ => false
           }
 
@@ -125,8 +119,6 @@ class EffMacros(val c: blackbox.Context) {
           val injectOps: Seq[DefDef] = ops.map {
             case DefDef(mods, tname, tp, paramss, AppliedTypeTree(_, innerType), rhs) =>
               q"$mods def $tname[..$tp](...$paramss): Eff[..$innerType] = ${rhs}".asInstanceOf[DefDef]
-            case ValDef(mods, tname, AppliedTypeTree(_, innerType), rhs) =>
-              q"$mods def $tname: Eff[..$innerType] = ${rhs}".asInstanceOf[DefDef]
           }
 
           (injectOps, nonOps)
@@ -142,13 +134,6 @@ class EffMacros(val c: blackbox.Context) {
            """
         }
 
-
-        val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
-          case DefDef(mods, name, tparams, paramss, ExpectedReturnType(EffType(_, returnType)), _) =>
-            DefDef(mods, name, tparams.dropRight(1), nonStackParams(paramss), returnType, EmptyTree)
-          case ValDef(mods, name, rt, _) =>
-            DefDef(mods, name, List.empty, List.empty, replaceContainerType(rt, TypeName("M")), EmptyTree)
-        }
 
         val genCaseClassesAndObjADT = {
           val caseClasses = absValsDefsOps.collect {
@@ -166,8 +151,6 @@ class EffMacros(val c: blackbox.Context) {
                 case _ => true
               }
               q"case class ${TypeName(tname.toString.capitalize)}[..$nonStackTypeParams](..${nonStackParams(fixedParams).flatten}) extends ${sealedTrait.name}[..$nonStackReturnTypes]"
-            case ValDef(_, name, AppliedTypeTree(_, returnType), _) =>
-              q"case object ${TermName(name.toString.capitalize)} extends ${sealedTrait.name}[..$returnType]"
           }
           q"object ${sealedTrait.name.toTermName} { ..$caseClasses }"
         }
