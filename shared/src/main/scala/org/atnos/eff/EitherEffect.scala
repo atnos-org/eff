@@ -62,6 +62,10 @@ trait EitherInterpretation {
   private def interpretEither[R, U, E, A](effect: Eff[R, A])(ap: Applicative[E Either ?])(implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E Either A] =
     Interpret.recurse(effect)(eitherRecurser[U, E, A, E Either A](a => Right(a), e => EffMonad[U].pure(Left(e)))(ap))
 
+  /** catch possible left values */
+  def attemptEither[R, E, A](effect: Eff[R, A])(implicit member: (E Either ?) /= R): Eff[R, E Either A] =
+    catchLeft[R, E, E Either A](effect.map(a => Either.right(a)))(e => pure(Either.left(e)))
+
   /** catch and handle a possible left value */
   def catchLeft[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either ?) /= R): Eff[R, A] =
     catchLeftEither[R, E, A](effect)(handle)(cats.instances.either.catsStdInstancesForEither[E])
