@@ -1,0 +1,31 @@
+New interpreters!
+
+This version provides a generic interpreter "loop" to interpret `Eff` values. You just need to provide an `Interpreter`
+trait with appropriate definitions for:
+
+ *  interpreting pure values
+ *  interpreting an effect of type `M[X]`
+ *  interpreting a list of effects `T[M[X]]`(the "applicative" case) where `T` has a `Traverse` instance
+ *  interpreting a "last" effect, in case of having side-effects to finalize resources (see `SafeEffect.thenFinally`)
+
+This new `org.atnos.eff.interpret.interpret` method is stack-safe provided that you never call continuations directly
+but always with `Eff.impure(x, continuation)` (see the various effects interpreters for examples).
+
+There are also simpler traits like `Recurser` or `Translate`, please read the scaladoc for the Interpret trait.
+
+## Changes
+
+There are only low-level API changes
+   
+ * many of the `Interpret` trait method have changed (`interpret`, `intercept`,...) or been removed. Please use
+ the [gitter channel](https://gitter.im/atnos-org/eff) if you have any questions
+ 
+ * the "continuation" type inside an `Eff` value has been renamed `Continuation` to help newcomers understand the library better
+ 
+## Improvements
+
+ * `Eff.tailRecM` is now stack-safe
+ * the `catbird` and `twitter-util` dependencies have been updated (thanks to Chris Vale)
+ * `EitherEffect.attemptEither` will attempt an `Either` effect and return `E Either A`
+ * `EitherEffect.runEitherCatchLeft` will run an `Either` effect and handle the resulting `E Either A` value in case of a
+  failure
