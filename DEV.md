@@ -1,10 +1,10 @@
 # Release Process
 
 ```
-sbt> set every version := "3.0.0"
+sbt> set every version := "4.0.0"
 sbt> cd coreJVM
-sbt> testOnly *index* -- html.outdir jvm/target/site html.nostats html console
-sbt> testOnly *site* -- html.outdir jvm/target/site html.nostats html console
+sbt> testOnly *index* -- html.outdir jvm/target/specs2-reports/site html.nostats html console
+sbt> testOnly *site* -- html.outdir jvm/target/specs2-reports/site html.nostats html console
 sbt> ghpagesPushSite
 sbt> githubRelease EFF-<tag name>
 sbt> cd eff
