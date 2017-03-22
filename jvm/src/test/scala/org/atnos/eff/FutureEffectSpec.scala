@@ -33,7 +33,8 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
  Simple Future calls with timeout can be memoized    $e11
  Attempted Future calls with timeout can be memoized $e12
 
- TimedFuture calls can be memoized with a memo effect $e10
+ TimedFuture calls can be memoized with a memo effect $e13
+ addLast can be used to make sure an action executes when a future fails $e11
 
 
 """
@@ -156,6 +157,26 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
     (makeRequest >> makeRequest).runFutureMemo(cache).runSequential must be_==(1).await
     invocationsNumber must be_==(1)
+  }
+
+  def e14 = {
+    type S = Fx2[TimedFuture, Option]
+    var lastActionDone = false
+
+    val action: Eff[S, Int] =
+      for {
+        i <- futureDelay[S, Int] { sleepFor(10.millis); 1 }
+        _ <- futureFail[S, Int](new Exception("boom"))
+        j =  i + 1
+      } yield j
+
+    val execute: Eff[S, Throwable Either Int] =
+      action.
+        addLast(futureDelay[S, Unit](lastActionDone = true)).
+        futureAttempt
+
+    execute.runOption.runSequential must beSome(beLeft[Throwable]).awaitFor(20.seconds)
+    lastActionDone must beTrue
   }
 
   /**
