@@ -259,7 +259,7 @@ val action: Eff[S, Int] = for {
 } yield a + b
 
 // define a fold to output values
-def fileFold(path: String) = new LeftFold[String, Unit] {
+def fileFold(path: String) = new RightFold[String, Unit] {
   type S = PrintWriter
   val init: S = new PrintWriter(path)
 
@@ -272,7 +272,7 @@ def fileFold(path: String) = new LeftFold[String, Unit] {
 
 action.runWriterFold(fileFold(&quot;target/log&quot;)).run
 io.Source.fromFile(&quot;target/log&quot;).getLines.toList</code></pre>
-<p><code class="prettyprint">&gt; List(first value 1, second value 2)</code></p>
+<p><code class="prettyprint">&gt; List(second value 2, first value 1)</code></p>
 <h3 id="state">State</h3>
 <p>A <code class="prettyprint">State</code> effect can be seen as the combination of both a <code class="prettyprint">Reader</code> and a <code class="prettyprint">Writer</code> with these operations:</p>
 <ul>

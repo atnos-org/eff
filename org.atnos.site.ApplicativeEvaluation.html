@@ -73,7 +73,7 @@ Await.result(action.runEval.runWriterLog.runSequential, 2.seconds)</code></pre>
   List(1000, 500, 50).traverseA(execute[S])
 
 Await.result(Eff.detachA(action.runEval.runWriterLog[String])(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(scheduler, global), 2.seconds)</code></pre>
-<p><code class="prettyprint">&gt; List(50, 500, 1000)</code></p>
+<p><code class="prettyprint">&gt; List(1000, 500, 50)</code></p>
 <p>This uses now <code class="prettyprint">traverseA</code> (instead of <code class="prettyprint">traverse</code>) to do an applicative traversal and execute futures concurrently and the fastest actions finish first.</p>
 <h3 id="batching">Batching</h3>
 <p>Another advantage of applicative effects is that we can intercept them individual requests and “batch” them into one single request. For example:</p>

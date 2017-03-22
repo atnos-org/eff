@@ -40,49 +40,60 @@
 <div id="tipue_search_content"></div>
 
 <h3 id="creation">Creation</h3>
-<p>New effects can be added to the library pretty easily. Let’s create an Effect for <code class="prettyprint">scala.concurrent.Future</code> for example.</p>
+<p>New effects can be added to the library pretty easily. Let’s create an Effect for a new “optional” type.</p>
 <p>We need:</p>
 <ul>
-<li><p>a base type. We select <code class="prettyprint">Future[() =&gt; A]</code> (instead of <code class="prettyprint">Future[A]</code> in order to avoid values to be evaluated straight away)</p></li>
+<li><p>a base type. We use a <code class="prettyprint">Maybe</code> data type with 2 cases <code class="prettyprint">Just</code> and <code class="prettyprint">Nothing</code></p></li>
 <li><p>a method to send values of type <code class="prettyprint">A</code> into <code class="prettyprint">Eff[R, A]</code></p></li>
 <li><p>an interpreter</p></li>
 </ul>
-<pre><code class="prettyprint">object FutEffect {
-  type Fut[A] = Future[() =&gt; A]
-  type _fut[R] = Fut |= R
+<pre><code class="prettyprint">import cats._, implicits._
+import org.atnos.eff._
+import all._
+import org.atnos.eff.interpret._
 
-  def ApplicativeFut(implicit ec: ExecutionContext): Applicative[Fut] = new Applicative[Fut] {
-    def pure[A](x: A): Fut[A] =
-      Future.successful(() =&gt; x)
+sealed trait Maybe[A]
+case class Just[A](a: A) extends Maybe[A]
+case class Nothing[A]() extends Maybe[A]
 
-    def ap[A, B](ff: Fut[A =&gt; B])(fa: Fut[A]): Fut[B] =
-      fa.zip(ff).map { case (a, f) =&gt; () =&gt; f()(a()) }
-  }
+object MaybeEffect {
+  type _maybe[R] = Maybe |= R
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+  def just[R :_maybe, A](a: A): Eff[R, A] =
+    send[Maybe, R, A](Just(a))
 
-  def fut[R :_fut, A](a: =&gt; A): Eff[R, A] =
-    send[Fut, R, A](Future(() =&gt; a))
+  def nothing[R :_maybe, A]: Eff[R, A] =
+    send[Maybe, R, A](Nothing())
 
-  def runFuture[R, U, A, B](atMost: Duration)(effects: Eff[R, A])(
-     implicit m: Member.Aux[Fut, R, U]): Eff[U, A] = {
+  def runMaybe[R, U, A, B](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
+    recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
+      def onPure(a: A) = Some(a)
 
-    val recurse = new Recurse[Fut, U, A] {
-      def apply[X](m: Fut[X]): X Either Eff[U, A] =
-        Left(Await.result(m.map(_ ()), atMost))
+      def onEffect[X](m: Maybe[X]): X Either Eff[U, Option[A]] =
+        m match {
+          case Just(x)   =&gt; Left(x)
+          case Nothing() =&gt; Right(Eff.pure(None))
+        }
 
-      def applicative[X, T[_]: Traverse](ms: T[Fut[X]]): T[X] Either Fut[T[X]] =
-        Right(ApplicativeFut.sequence(ms))
+      def onApplicative[X, T[_]: Traverse](ms: T[Maybe[X]]): T[X] Either Maybe[T[X]] =
+        Right(ms.sequence)
+    })
 
-    }
-    interpret1((a: A) =&gt; a)(recurse)(effects)
+  implicit val applicativeMaybe: Applicative[Maybe] = new Applicative[Maybe] {
+    def pure[A](a: A): Maybe[A] = Just(a)
+
+    def ap[A, B](ff: Maybe[A =&gt; B])(fa: Maybe[A]): Maybe[B] =
+      (fa, ff) match {
+        case (Just(a), Just(f)) =&gt; Just(f(a))
+        case _                  =&gt; Nothing()
+      }
   }
 }
 </code></pre>
 <p>In the code above:</p>
 <ul>
-<li><p>the <code class="prettyprint">fut</code> method uses <code class="prettyprint">Eff.send</code> to “send” values of a given effect into a larger sum of effects <code class="prettyprint">Eff[R, A]</code></p></li>
-<li><p><code class="prettyprint">runFuture</code> runs the <code class="prettyprint">Future</code> by using the <code class="prettyprint">interpret.interpret1</code> method</p></li>
+<li><p>the <code class="prettyprint">just</code> and <code class="prettyprint">nothing</code> methods use <code class="prettyprint">Eff.send</code> to “send” values into a larger sum of effects <code class="prettyprint">Eff[R, A]</code></p></li>
+<li><p><code class="prettyprint">runMaybe</code> runs the <code class="prettyprint">Maybe</code> effect by using the <code class="prettyprint">interpret.recurse</code> and a <code class="prettyprint">Recurser</code> to translate <code class="prettyprint">Maybe</code> values into <code class="prettyprint">Option</code> values</p></li>
 </ul>
 <h3 id="compiler-limitation">Compiler limitation</h3>
 <p>When you create an effect you can define a sealed trait and case classes to represent different possibilities for that effect. For example for interacting with a database you might create:</p>
@@ -96,21 +107,22 @@
 }</code></pre>
 <p>It is recommended to create the <code class="prettyprint">Db</code> types <strong>outside</strong> of the <code class="prettyprint">DatabaseEffect</code> trait. Indeed, during <code class="prettyprint">Member</code> implicit resolution, depending on how you import the <code class="prettyprint">Db</code> effect type (if it is inherited from an object or not) you could experience compiler crashes :-(.</p>
 <h3 id="interpreter">Interpreter</h3>
-<p>Writing interpreters can be a bit tricky, especially to keep them stack-safe. There is no method at the moment for writing generic stack-safe interpreters but the <code class="prettyprint">org.atnos.eff.interpret</code> object offers several support traits and functions to write some of them. In this case, the interpretation doesn’t need to pass state around so we can use the <code class="prettyprint">Recurse</code> trait. This kind of implementation is shared by many different monads, like <code class="prettyprint">Reader</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Option</code> but not <code class="prettyprint">Writer</code>, <code class="prettyprint">State</code> or <code class="prettyprint">List</code> for example.</p>
-<p>The <code class="prettyprint">runFuture</code> method needs an implicit <code class="prettyprint">Member.Aux[Fut, R, U]</code>. This must be read in the following way:</p>
+<p>Interpreting a given effect generally means knowing what to do with a value of type <code class="prettyprint">M[X]</code> where <code class="prettyprint">M</code> is the effect. If the interpreter can “execute” the effect: produce logs (<code class="prettyprint">Writer</code>), execute asynchronously (<code class="prettyprint">Future</code>), check the value (<code class="prettyprint">Either</code>),… then extract a value <code class="prettyprint">X</code>, then we can call a continuation to get the next effect and interpret it as well.</p>
+<p>The <code class="prettyprint">org.atnos.eff.interpret</code> object offers several support traits and functions to write interpreters. In this example we use a <code class="prettyprint">Recurser</code> which will be used to “extract” a value <code class="prettyprint">X</code> from <code class="prettyprint">Maybe[X]</code> or just give up with <code class="prettyprint">Eff.pure(None)</code></p>
+<p>The <code class="prettyprint">runMaybe</code> method needs an implicit <code class="prettyprint">Member.Aux[Maybe, R, U]</code>. This must be read in the following way:</p>
 <ul>
-<li><code class="prettyprint">Fut</code> must be member of the effect stack <code class="prettyprint">R</code> and its removal from <code class="prettyprint">R</code> should be the effect stack <code class="prettyprint">U</code></li>
+<li><code class="prettyprint">Maybe</code> must be member of the effect stack <code class="prettyprint">R</code> and its removal from <code class="prettyprint">R</code> should be the effect stack <code class="prettyprint">U</code></li>
 </ul>
 <p><br/></p>
 <p>Then we can use this effect in a computation:</p>
-<pre><code class="prettyprint">val action: Eff[Fx.fx1[Fut], Int] =
+<pre><code class="prettyprint">val action: Eff[Fx.fx1[Maybe], Int] =
   for {
-    a &lt;- fut(2)
-    b &lt;- fut(3)
+    a &lt;- just(2)
+    b &lt;- just(3)
   } yield a + b
 
-run(runFuture(3.seconds)(action))</code></pre>
-<p><code class="prettyprint">&gt; 5</code></p>
+run(runMaybe(action))</code></pre>
+<p><code class="prettyprint">&gt; Some(5)</code></p>
 <hr />
 </div>
 
