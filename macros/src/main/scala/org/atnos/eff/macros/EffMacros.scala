@@ -166,7 +166,7 @@ class EffMacros(val c: blackbox.Context) {
                       cq"${adt(name)} => $name"
                   }}
                 }
-                def applicative[X, Tr[_] : Traverse](ms: Tr[${sealedTrait.name}[X]]): Tr[X] =
+                def applicative[X, Tr[_] : cats.Traverse](ms: Tr[${sealedTrait.name}[X]]): Tr[X] =
                   ms.map(apply)
                 def run[R, A](effects: Eff[R, A])(implicit m: ${sealedTrait.name} <= R): Eff[m.Out, A] =
                   org.atnos.eff.interpret.interpretUnsafe(effects)(this)(m)
