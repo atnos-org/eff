@@ -92,41 +92,17 @@ class EffMacros(val c: blackbox.Context) {
         // --------------------------------------------------------------------------------
         val liftedOps:Seq[DefDef] = absValsDefsOps.map {
           case DefDef(_, name, tparams, paramss, ExpectedReturnType(EffType(effectType, returnType)), _) =>
-            val op = {
-              val args = paramssToArgs(nonStackParams(paramss)).flatten
-              val rhs = q"Eff.send[${sealedTrait.name}, $effectType, $returnType](${adt(name)}(..$args))"
-              val params = (if (paramss.isEmpty) List.empty else paramss)
-              q"def $name[..$tparams](...$params): Eff[$effectType, $returnType] = $rhs".asInstanceOf[DefDef]
-            }
-            op
+            val args = paramssToArgs(nonStackParams(paramss)).flatten
+            val rhs = q"Eff.send[${sealedTrait.name}, $effectType, $returnType](${adt(name)}(..$args))"
+            val params = (if (paramss.isEmpty) List.empty else paramss)
+            q"def $name[..$tparams](...$params): Eff[$effectType, $returnType] = $rhs".asInstanceOf[DefDef]
         }
 
         val concreteValsDefs: Seq[ValOrDefDef] = stats.collect {
           case m @ DefDef(_, _, _, _, _, rhs) if rhs.nonEmpty => m
         }
 
-        val (concreteOps: Seq[DefDef], concreteNonOps: Seq[ValOrDefDef]) = {
-          val (ops, nonOps) = concreteValsDefs.partition {
-            case DefDef(_, _, _, _, AppliedTypeTree(Ident(outerType), _), _) => outerType == typeAlias.name
-            case _ => false
-          }
-
-          // defs that contain the real implementation
-          val injectOps: Seq[DefDef] = ops.map {
-            case DefDef(mods, tname, tp, paramss, AppliedTypeTree(_, innerType), rhs) =>
-              q"$mods def $tname[..$tp](...$paramss): Eff[..$innerType] = ${rhs}".asInstanceOf[DefDef]
-          }
-
-          (injectOps, nonOps)
-        }
-
-        val injectOpsObj = {
-          q"""
-            ..$concreteNonOps
-            ..$liftedOps
-            ..$concreteOps
-           """
-        }
+        val injectOpsObj = liftedOps
 
 
         val genCaseClassesAndObjADT =
@@ -224,9 +200,8 @@ class EffMacros(val c: blackbox.Context) {
         }
         val genTrait =
           q"""
-            trait ${tpname.toTypeName} {
-              $sealedTrait
-              $typeAlias
+            trait ${tpname.toTypeName} { $self =>
+              ..${stats.diff(absValsDefsOps)}
               ..$genCaseClassesAndObjADT
               ..$injectOpsObj
               $sideEffectTrait

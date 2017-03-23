@@ -20,15 +20,18 @@ class EffMacrosSpec extends Specification { def is = s2"""
   @eff trait KVStoreDsl {
     type _kvstore[R] = KVStore MemberIn R
 
+    case class GetResult[T](result: Option[T])
+    def unpackResult[T](getResult: GetResult[T]): Option[T] = getResult.result
+
     sealed trait KVStore[+A]
 
     def put[T : Ordering, R :_kvstore](key: String, value: T): Eff[R, Unit]
-    def get[T, R :_kvstore](key: String): Eff[R, Option[T]]
+    def get[T, R :_kvstore](key: String): Eff[R, GetResult[T]]
     def delete[T, R :_kvstore](key: String): Eff[R, Unit]
     def update[T : Ordering, R :_kvstore](key: String, f: T => T): Eff[R, Unit] =
       for {
         vMaybe <- get[T, R](key)
-        _ <- vMaybe.map(v => put[T, R](key, f(v))).getOrElse(Eff.pure(()))
+        _ <- vMaybe.result.map(v => put[T, R](key, f(v))).getOrElse(Eff.pure(()))
       } yield ()
   }
 
@@ -42,7 +45,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
       _ <- put("tame-cats", 5)
       n <- get[Int, R]("wild-cats")
       _ <- delete("tame-cats")
-    } yield n
+    } yield unpackResult(n)
   lazy val theProgram = program[Fx.fx1[KVStore]]
 
   def generatesBoilerplate = {
@@ -60,8 +63,8 @@ class EffMacrosSpec extends Specification { def is = s2"""
         kvs.put(key, value)
         ()
       }
-      def get[T](key: String): Option[T] = {
-        kvs.get(key).asInstanceOf[Option[T]]
+      def get[T](key: String): GetResult[T] = {
+        GetResult(kvs.get(key).asInstanceOf[Option[T]])
       }
       def delete[T](key: String): Unit = {
         kvs.remove(key)
@@ -96,11 +99,11 @@ class EffMacrosSpec extends Specification { def is = s2"""
           _ <- modify((map: Map[String, Any]) => map.updated(key, value))
           r <- fromEither(Either.catchNonFatal(()))
         } yield r
-        def get[T](key: String): Eff[U, Option[T]] = for {
+        def get[T](key: String): Eff[U, GetResult[T]] = for {
           _ <- tell(s"get($key)")
           m <- StateEffect.get[U, Map[String, Any]]
           r <- fromEither(Either.catchNonFatal(m.get(key).map(_.asInstanceOf[T])))
-        } yield r
+        } yield GetResult(r)
         def delete[T](key: String): Eff[U, Unit] = for {
           _ <- tell(s"delete($key)")
           u <- modify((map: Map[String, Any]) => map - key)
@@ -128,7 +131,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
 
     val optionInterp = new KVStoreDsl.FunctionK[Option] {
       def put[T](key: String, value: T)(implicit ordering: Ordering[T]): Option[Unit] = Some(())
-      def get[T](key: String): Option[Option[T]] = Some(None)
+      def get[T](key: String): Option[GetResult[T]] = Some(GetResult(None))
       def delete[T](key: String): Option[Unit] = Some(())
     }
 
