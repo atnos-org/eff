@@ -5,6 +5,7 @@ import ErrorEffect.{ok => OK, ErrorOrOk}
 
 import scala.collection.mutable.ListBuffer
 import cats.data._
+import cats.implicits._
 import cats.Eval
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
@@ -24,6 +25,8 @@ class ErrorEffectSpec extends Specification { def is = s2"""
  A thrown exception can be ignored $ignored
 
  An action with a given failure type can be translated to an action with another failure type $local
+
+ The error effect is stack-safe $stackSafety
 """
 
   type R = Fx.fx1[ErrorOrOk]
@@ -136,6 +139,13 @@ class ErrorEffectSpec extends Specification { def is = s2"""
     }
 
     ErrorEffect2.runError(action2[Fx.fx1[ErrorOrOk2]]).run ==== Left(Right(Error2(Error1("boom"))))
+  }
+
+  def stackSafety = {
+    val list = (1 to 5000).toList
+    val action = list.traverse(i => ErrorEffect.ok(i.toString))
+
+    ErrorEffect.runError(action).run ==== Right(list.map(_.toString))
   }
 
 }

@@ -74,7 +74,7 @@ trait Interpret {
         interpreter.onPure(a).addLast(interpretLast(last))
 
       case Impure(NoEffect(a), c, last) =>
-        runInterpreter(c(a).addLast(last))(interpreter)
+        Impure(NoEffect(a), interpretContinuation(c), interpretLast(last))
 
       case Impure(u: Union[_,_], c, last) =>
         m.project(u) match {

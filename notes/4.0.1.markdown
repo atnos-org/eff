@@ -1,0 +1,6 @@
+Stack-safety fixes.
+
+The stack-safety sage continues.
+
+ * fixed a stack-safety issue when running a interpreting pure values
+ * fixed a stack-safety issue when injecting an effect into a larger stack with `into`

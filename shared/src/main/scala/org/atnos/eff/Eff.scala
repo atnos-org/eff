@@ -149,7 +149,7 @@ trait EffImplicits {
     override def map[A, B](fa: Eff[AnyRef, A])(f: A => B): Eff[AnyRef, B] =
       fa match {
         case Pure(a, l) =>
-          pure(f(a)).addLast(l)
+          Impure(NoEffect(a), Continuation.unit.map(f), l)
 
         case Impure(union, continuation, last) =>
           Impure(union, continuation map f, last)
@@ -366,8 +366,8 @@ trait EffInterpretation {
       case Impure(u: Union[_, _], continuation, last) =>
         val ta = u.tagged.valueUnsafe.asInstanceOf[M[A]]
         last match {
-          case Last(Some(l)) => ta.map(x => Left(continuation(x).addLast(last)))
-          case Last(None)    => ta.map(x => Left(continuation(x)))
+          case Last(Some(l)) => ta.map(x => Left(Impure(NoEffect(x.asInstanceOf[Any]), continuation, last)))
+          case Last(None)    => ta.map(x => Left(Impure(NoEffect(x.asInstanceOf[Any]), continuation)))
         }
 
       case ap @ ImpureAp(unions, continuation, last) =>
@@ -375,8 +375,8 @@ trait EffInterpretation {
         val sequenced = applicative.sequence(effects)
 
         last match {
-          case Last(Some(_)) => sequenced.map(x => Left(continuation(x).addLast(last)))
-          case Last(None)    => sequenced.map(x => Left(continuation(x)))
+          case Last(Some(_)) => sequenced.map(xs => Left(Impure(NoEffect(xs), continuation, last)))
+          case Last(None)    => sequenced.map(xs => Left(Impure(NoEffect(xs), continuation)))
         }
     }
 
@@ -387,7 +387,7 @@ trait EffInterpretation {
     eff match {
       case Pure(a, Last(Some(l)))     => l.value; Option(a)
       case Pure(a, _)                 => Option(a)
-      case Impure(NoEffect(a), c, l) => runPure(c(a).addLast(l))
+      case Impure(NoEffect(a), c, l)  => runPure(c(a).addLast(l))
       case _                          => None
     }
 

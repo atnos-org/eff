@@ -34,8 +34,9 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
  Attempted Future calls with timeout can be memoized $e12
 
  TimedFuture calls can be memoized with a memo effect $e13
- addLast can be used to make sure an action executes when a future fails $e11
+ addLast can be used to make sure an action executes when a future fails $e14
 
+ Future effects can be detached safely with detachA $e15
 
 """
 
@@ -177,6 +178,12 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
     execute.runOption.runSequential must beSome(beLeft[Throwable]).awaitFor(20.seconds)
     lastActionDone must beTrue
+  }
+
+  def e15 = {
+    val list = (1 to 5000).toList
+    val action = list.traverse(i => futureDelay(i)).detach
+    action.runNow(scheduler, ee.executionContext) must be_===(list).awaitFor(1 second)
   }
 
   /**
