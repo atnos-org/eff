@@ -32,7 +32,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
       } yield ()
   }
 
-  import KVStoreDsl._, ops._
+  import KVStoreDsl._
   import org.atnos.eff._
 
   def program[R :_kvstore]: Eff[R, Option[Int]] =
@@ -80,7 +80,6 @@ class EffMacrosSpec extends Specification { def is = s2"""
     import org.atnos.eff._, all._, interpret._
     import cats.implicits._
     import cats.data._
-    import KVStore._
 
     type _writerString[R] = Writer[String, ?] |= R
     type _stateMap[R]     = State[Map[String, Any], ?] |= R
@@ -124,7 +123,6 @@ class EffMacrosSpec extends Specification { def is = s2"""
   }
 
   def generatesNaturalTransformationInterpreter = {
-    import KVStore._
     import org.atnos.eff._, all._
     import org.atnos.eff.syntax.all._
 

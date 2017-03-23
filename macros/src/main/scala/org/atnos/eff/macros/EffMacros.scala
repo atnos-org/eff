@@ -25,7 +25,7 @@ class EffMacros(val c: blackbox.Context) {
     case other => abort(s"Not an AppliedTypeTree: ${showRaw(other)}")
   }
 
-  def adt(sealedTrait: ClassDef, name: Name) = q"${sealedTrait.name.toTermName}.${TermName(name.toString.capitalize)}"
+  def adt(name: Name) = q"${TermName(name.toString.capitalize)}"
 
   type Paramss = List[List[ValDef]]
   def paramssToArgs(paramss: Paramss): List[List[TermName]] =
@@ -94,7 +94,7 @@ class EffMacros(val c: blackbox.Context) {
           case DefDef(_, name, tparams, paramss, ExpectedReturnType(EffType(effectType, returnType)), _) =>
             val op = {
               val args = paramssToArgs(nonStackParams(paramss)).flatten
-              val rhs = q"Eff.send[${sealedTrait.name}, $effectType, $returnType](${adt(sealedTrait, name)}(..$args))"
+              val rhs = q"Eff.send[${sealedTrait.name}, $effectType, $returnType](${adt(name)}(..$args))"
               val params = (if (paramss.isEmpty) List.empty else paramss)
               q"def $name[..$tparams](...$params): Eff[$effectType, $returnType] = $rhs".asInstanceOf[DefDef]
             }
@@ -122,17 +122,15 @@ class EffMacros(val c: blackbox.Context) {
 
         val injectOpsObj = {
           q"""
-            object ops {
-              ..$concreteNonOps
-              ..$liftedOps
-              ..$concreteOps
-            }
+            ..$concreteNonOps
+            ..$liftedOps
+            ..$concreteOps
            """
         }
 
 
-        val genCaseClassesAndObjADT = {
-          val caseClasses = absValsDefsOps.collect {
+        val genCaseClassesAndObjADT =
+          absValsDefsOps.collect {
             case q"..$_ def $tname[..$tparams](...$paramss): ${AppliedTypeTree(_, returnType)} = $expr" =>
               val fixedParams = fixSI88771(paramss)
               val implicitParams = fixedParams(1).collect {
@@ -148,8 +146,6 @@ class EffMacros(val c: blackbox.Context) {
               }
               q"case class ${TypeName(tname.toString.capitalize)}[..$nonStackTypeParams](..${nonStackParams(fixedParams).flatten}) extends ${sealedTrait.name}[..$nonStackReturnTypes]"
           }
-          q"object ${sealedTrait.name.toTermName} { ..$caseClasses }"
-        }
 
         val sideEffectTrait = {
           val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
@@ -165,9 +161,9 @@ class EffMacros(val c: blackbox.Context) {
                       val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind (t.name, Ident(termNames.WILDCARD))})
                       val args = nonStackParams(paramss).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
                       val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
-                      cq"${adt(sealedTrait, name)}(..$binds) => $rhs"
+                      cq"${adt(name)}(..$binds) => $rhs"
                     case ValDef(_, name, _, _) =>
-                      cq"${adt(sealedTrait, name)} => $name"
+                      cq"${adt(name)} => $name"
                   }}
                 }
                 def applicative[X, Tr[_] : Traverse](ms: Tr[${sealedTrait.name}[X]]): Tr[X] =
@@ -193,9 +189,9 @@ class EffMacros(val c: blackbox.Context) {
                       val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind (t.name, Ident(termNames.WILDCARD))})
                       val args = nonStackParams(paramss).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
                       val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
-                      cq"${adt(sealedTrait, name)}(..$binds) => $rhs.asInstanceOf[Eff[U, X]]"
+                      cq"${adt(name)}(..$binds) => $rhs.asInstanceOf[Eff[U, X]]"
                     case ValDef(_, name, _, _) =>
-                      cq"${adt(sealedTrait, name)} => $name.asInstanceOf[Eff[U, X]]"
+                      cq"${adt(name)} => $name.asInstanceOf[Eff[U, X]]"
                   }}
                 }
                 ..$methodsToBeImpl
@@ -217,29 +213,36 @@ class EffMacros(val c: blackbox.Context) {
                       val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind (t.name, Ident(termNames.WILDCARD))})
                       val args = nonStackParams(paramss).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
                       val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
-                      cq"${adt(sealedTrait, name)}(..$binds) => $rhs.asInstanceOf[M[X]]"
+                      cq"${adt(name)}(..$binds) => $rhs.asInstanceOf[M[X]]"
                     case ValDef(_, name, _, _) =>
-                      cq"${adt(sealedTrait, name)} => $name.asInstanceOf[M[X]]"
+                      cq"${adt(name)} => $name.asInstanceOf[M[X]]"
                   }}
                 }
                 ..$methodsToBeImpl
               }
         """
         }
-        val genCompanionObj =
+        val genTrait =
           q"""
-            object ${tpname.toTermName} {
+            trait ${tpname.toTypeName} {
               $sealedTrait
               $typeAlias
-              $genCaseClassesAndObjADT
+              ..$genCaseClassesAndObjADT
               ..$injectOpsObj
               $sideEffectTrait
               $translateTrait
               $functionKTrait
             }
-           """
+        """
+        val genCompanionObj =
+          q"""
+            object ${tpname.toTermName} extends ${tpname.toTypeName}
+          """
 
-        val gen = q"..${List(q"trait $tpname", genCompanionObj)}"
+        val gen = q"""
+          $genTrait
+          $genCompanionObj
+        """
         println(showCode(gen))
         c.Expr[Any](gen)
 
