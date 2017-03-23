@@ -88,7 +88,7 @@ trait Interpret {
         if (collected.effects.isEmpty)
           collected.othersEff(continuation.interpret(e => runInterpreter(e)(interpreter))(interpretLast)).addLast(interpretLast(last))
         else
-          interpreter.onApplicativeEffect(collected.effects, interpretContinuation(continuation)).addLast(interpretLast(last))
+          interpreter.onApplicativeEffect(collected.effects, interpretContinuation(collected.continuation(continuation, m))).addLast(interpretLast(last))
     }
   }
 

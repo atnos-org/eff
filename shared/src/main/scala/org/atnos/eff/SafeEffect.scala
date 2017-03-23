@@ -70,7 +70,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
         case Some((l, m)) =>
           attempt(l)(m) flatMap {
             case Left(t)   => outer.finalizerException[R](t)(m) >> pure((Right(a), errors.toList))
-            case Right(()) => pure((Right(a), errors.toList))
+            case Right(_) => pure((Right(a), errors.toList))
           }
       }
 
@@ -87,7 +87,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
                   case Some((l, m)) =>
                     attempt(l)(m) flatMap {
                       case Left(t)   => outer.finalizerException[R](t)(m) >> outer.exception[R, Out[A]](e)(m)
-                      case Right(()) => outer.exception[R, Out[A]](e)(m)
+                      case Right(_) => outer.exception[R, Out[A]](e)(m)
                     }
                 }
               }
@@ -114,7 +114,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
                 case Some((l, m)) =>
                   attempt(l)(m) flatMap {
                     case Left(t)   => outer.finalizerException[R](t)(m) >> outer.exception[R, Unit](e)(m)
-                    case Right(()) => outer.exception[R, Unit](e)(m)
+                    case Right(_) => outer.exception[R, Unit](e)(m)
                   }
               }
 
@@ -124,7 +124,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
                 case Some((l, m)) =>
                   attempt(l)(m) flatMap {
                     case Left(t)   => outer.finalizerException[R](t)(m) >> Eff.impure(x, continuation)
-                    case Right(()) => Eff.impure(x, continuation)
+                    case Right(_) => Eff.impure(x, continuation)
                   }
               }
           }
@@ -168,7 +168,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
             case Some((l, m)) =>
               attempt(l)(m) flatMap {
                 case Left(t1)  => outer.finalizerException[R](t1)(m) >> outer.exception[R, Out[A]](t)(m)
-                case Right(()) => exception[R, Out[A]](t)(m)
+                case Right(_) => exception[R, Out[A]](t)(m)
               }
           }
       }

@@ -51,6 +51,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  An effect can be translated into other effects of the same stack                  $translateIntoEffect
 
  Applicative calls can be optimised by "batching" requests $optimiseRequests
+ Interleaved applicative calls can be interpreted properly $interleavedApplicative (see release notes for 4.0.2)
 
 """
 
@@ -409,6 +410,14 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     result ==== optimisedResult
   }
 
+  def interleavedApplicative = {
+    type S = Fx2[Option, String Either ?]
+    val action = (1 to 4).toList.traverseA(i =>
+      if (i % 2 == 0) OptionEffect.some[S, Int](i) else EitherEffect.right[S, String, Int](i))
+
+    action.runOption.runEither.run ==== Right(Some(List(1, 2, 3, 4)))
+
+  }
 
   /**
    * Helpers

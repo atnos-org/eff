@@ -1,0 +1,4 @@
+Correctness fix.
+
+The new incarnation of the generic interpret had an embarrassing bug for applicative calls.
+It is fixed now.
