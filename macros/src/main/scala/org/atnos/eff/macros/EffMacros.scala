@@ -15,10 +15,6 @@ class eff extends StaticAnnotation {
 class EffMacros(val c: blackbox.Context) {
   import c.universe._
 
-  val imports: Tree =
-    q"""
-       import cats._
-     """
   def abort(msg: String) = c.abort(c.enclosingPosition, msg)
 
   // https://issues.scala-lang.org/browse/SI-8771
@@ -233,8 +229,6 @@ class EffMacros(val c: blackbox.Context) {
         val genCompanionObj =
           q"""
             object ${tpname.toTermName} {
-              ..$imports
-              import scala.language.higherKinds
               $sealedTrait
               $typeAlias
               $genCaseClassesAndObjADT
