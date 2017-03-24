@@ -1,0 +1,11 @@
+Tasks fixes (and slight API changes).
+
+ * fixed the forking of scalaz `Task` effects, they should not use an implicit global `ExecutorService`
+
+ * removed the `taskForkStrategy` method to create scalaz `Task` effect with a specific `ExecutorService` (and not a `Strategy` as the name was implying)
+   now all methods for forking are `taskFork` but with different possible arguments, with or without `ExecutorServices`, with or
+   without `Timeout`
+
+ * the `run` methods for scalaz `TimedTasks` now take an implicit `eff.ExecutorServices`
+
+ * remove the use of an implicit `Strategy` to create forked `fs2` task effects

@@ -33,8 +33,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
   type S = Fx.fx2[TimedTask, Option]
 
-  implicit val scheduler = ExecutorServices.schedulerFromScheduledExecutorService(ee.ses)
-  implicit val ec = ee.ec
+  implicit val executorService = ExecutorServices.fromExecutorService(ee.es)
 
   def e1 = {
     def action[R :_task :_option]: Eff[R, Int] = for {

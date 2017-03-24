@@ -46,6 +46,7 @@ package object scalaz {
   }
 
   object EffScalaz {
+
     def traverseA[R, F[_] : Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
       Traverse[F].traverse(fs)(f)(EffScalazApplicative[R])
 

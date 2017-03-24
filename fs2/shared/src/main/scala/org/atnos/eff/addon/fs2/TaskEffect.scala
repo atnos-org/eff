@@ -105,17 +105,29 @@ trait TaskCreation extends TaskTypes {
   final def taskFailed[R :_task, A](t: Throwable): Eff[R, A] =
     fromTask[R, A](Task.fail(t))
 
-  final def taskSuspend[R :_task, A](tisk: => TimedTask[Eff[R, A]]): Eff[R, A] =
-    TimedTask((strategy, scheduler) => Task.suspend(tisk.runNow(strategy, scheduler))).send.flatten
+  final def taskSuspend[R :_task, A](task: =>TimedTask[Eff[R, A]]): Eff[R, A] =
+    TimedTask((strategy, scheduler) => Task.suspend(task.runNow(strategy, scheduler))).send.flatten
 
-  final def taskDelay[R :_task, A](call: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def taskDelay[R :_task, A](call: =>A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     fromTask[R, A](Task.delay(call), timeout)
 
-  final def taskForkStrategy[R :_task, A](call: TimedTask[A])(implicit strategy: Strategy): Eff[R, A] =
-    TimedTask[A]((_, scheduler) => Task.start(call.runNow(strategy, scheduler)).flatMap(identity)).send
+  final def taskFork[R :_task, A](call: TimedTask[A], strategy: Strategy): Eff[R, A] =
+    taskForkWithStrategyAndTimeout(call, strategy, None)
+
+  final def taskFork[R :_task, A](call: TimedTask[A], strategy: Strategy, timeout: FiniteDuration): Eff[R, A] =
+    taskForkWithStrategyAndTimeout(call, strategy, Some(timeout))
 
   final def taskFork[R :_task, A](call: TimedTask[A]): Eff[R, A] =
-    TimedTask[A]((strategy, scheduler) => Task.start(call.runNow(strategy, scheduler))(strategy).flatMap(identity)).send[R]
+    taskForkWithTimeout(call, None)
+
+  final def taskFork[R :_task, A](call: TimedTask[A], timeout: FiniteDuration): Eff[R, A] =
+    taskForkWithTimeout(call, Some(timeout))
+
+  final def taskForkWithTimeout[R :_task, A](call: TimedTask[A], timeout: Option[FiniteDuration]): Eff[R, A] =
+    TimedTask[A]((strategy, scheduler) => Task.start(call.runNow(strategy, scheduler))(strategy).flatMap(identity), timeout).send[R]
+
+  final def taskForkWithStrategyAndTimeout[R :_task, A](call: TimedTask[A], strategy: Strategy, timeout: Option[FiniteDuration]): Eff[R, A] =
+    TimedTask[A]((_, scheduler) => Task.start(call.runNow(strategy, scheduler))(strategy).flatMap(identity), timeout).send[R]
 
   final def taskAsync[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                    timeout: Option[FiniteDuration] = None): Eff[R, A] =
