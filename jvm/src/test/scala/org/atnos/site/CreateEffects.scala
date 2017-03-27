@@ -1,8 +1,7 @@
 package org.atnos.site
 
-import scala.concurrent.duration, duration._
-import org.atnos.eff._, all._
-import snippets._, MaybeEffectSnippet._, MaybeEffect._
+import org.atnos.site.snippets.MaybeEffectSnippet
+import MaybeEffectSnippet._
 
 object CreateEffects extends UserGuidePage { def is = "Creating effects".title ^ s2"""
 
@@ -60,6 +59,9 @@ The `runMaybe` method needs an implicit `Member.Aux[Maybe, R, U]`. This must be 
 <br/>
 
 Then we can use this effect in a computation:${snippet{
+import org.atnos.eff._
+import org.atnos.eff.eff._
+import MaybeEffect._
 
 val action: Eff[Fx.fx1[Maybe], Int] =
   for {
