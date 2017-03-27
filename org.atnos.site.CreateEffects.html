@@ -115,7 +115,11 @@ object MaybeEffect {
 </ul>
 <p><br/></p>
 <p>Then we can use this effect in a computation:</p>
-<pre><code class="prettyprint">val action: Eff[Fx.fx1[Maybe], Int] =
+<pre><code class="prettyprint">import org.atnos.eff._
+import org.atnos.eff.eff._
+import MaybeEffect._
+
+val action: Eff[Fx.fx1[Maybe], Int] =
   for {
     a &lt;- just(2)
     b &lt;- just(3)
