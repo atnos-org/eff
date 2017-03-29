@@ -67,6 +67,9 @@ sealed trait Eff[R, A] {
   def <<[B](fb: Eff[R, B]): Eff[R, A] =
     flatMap(a => fb.map(_ => a))
 
+  def >>=[B](f: A => Eff[R, B]): Eff[R, B] =
+    flatMap(f)
+
   def flatMap[B](f: A => Eff[R, B]): Eff[R, B] =
     EffMonad[R].flatMap(this)(f)
 
