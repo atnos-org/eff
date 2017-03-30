@@ -60,6 +60,17 @@ class EffMacros(val c: blackbox.Context) {
           case _ => false
         }
 
+        def findImplicitBracket(paramss: List[List[ValDef]]): Option[Int] = {
+          paramss.zipWithIndex.find { case (params, idx) => params.exists(_.mods.hasFlag(Flag.IMPLICIT))}.map(_._2)
+        }
+        def addImplicit(newImplicit: ValDef, paramss: List[List[ValDef]]) = {
+          findImplicitBracket(paramss).map { idx =>
+            paramss.updated(idx, paramss(idx) :+ newImplicit)
+          }.getOrElse {
+            paramss :+ List(newImplicit)
+          }
+        }
+
         def nonStackParams(paramss: List[List[ValDef]]) = {
           paramss.map { params =>
             params.filter {
@@ -175,6 +186,64 @@ class EffMacros(val c: blackbox.Context) {
         """
         }
 
+        val translatorFactoryTrait =  {
+          val typeU = TypeDef(Modifiers(Flag.PARAM), TypeName("U"), List(), TypeBoundsTree(tq"scala.Nothing", tq"scala.Any"))
+          val replacementMemberInU = ValDef(Modifiers(Flag.IMPLICIT), TermName("_replacement"), tq"Replacement MemberIn U", EmptyTree)
+          val delegatorMethods: Seq[DefDef] = absValsDefsOps.map {
+            case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
+              val args = addImplicit(replacementMemberInU, nonStackParams(paramss)).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
+              DefDef(mods, name, tparams.dropRight(1), nonStackParams(paramss), tq"Eff[U, $returnType]", q"TranslatorFactory1.this.$name(...$args)")
+          }
+
+          val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
+            case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
+              DefDef(mods, name, tparams.dropRight(1) :+ typeU, addImplicit(replacementMemberInU, nonStackParams(paramss)), tq"Eff[U, $returnType]", EmptyTree)
+          }
+          val runMethod = TermName("run" + sealedTrait.name)
+          val cases = absValsDefsOps.map {
+            case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
+              val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind(t.name, Ident(termNames.WILDCARD))})
+              val args = addImplicit(replacementMemberInU, nonStackParams(paramss)).map(_.collect { case t:ValDef => t.name })
+              val callTypeParams = (tparams.dropRight(1) :+ typeU).map(t => t.name)
+              val rhs = q"$name(...$args)"
+              cq"${adt(name)}(..$binds) => $rhs.asInstanceOf[Eff[U, X]]"
+            case ValDef(_, name, _, _) =>
+              cq"${adt(name)} => $name.asInstanceOf[Eff[U, X]]"
+          }
+          q"""
+              trait TranslatorFactory1[Replacement[_]] {
+                implicit class ${TypeName("Rich" + sealedTrait.name)}[R, A](val effects: Eff[R, A]) {
+                  def $runMethod[U](
+                    implicit m: Member.Aux[${sealedTrait.name}, R, U],
+                    _replacement: Replacement MemberIn U
+                  ): Eff[U, A] = {
+                    TranslatorFactory1.this.$runMethod(effects)(m, _replacement)
+                  }
+                }
+
+                def $runMethod[R, U, A](effects: Eff[R, A])(
+                  implicit m: Member.Aux[${sealedTrait.name}, R, U],
+                  _replacement: Replacement MemberIn U
+                ): Eff[U, A] = {
+                  val tr = translator[R, U](m, _replacement)
+                  org.atnos.eff.interpret.translate(effects)(tr)
+                }
+
+                def translator[R, U](
+                  implicit m: Member.Aux[${sealedTrait.name}, R, U],
+                  _replacement: Replacement MemberIn U
+                ): org.atnos.eff.Translate[${sealedTrait.name}, U] = new org.atnos.eff.Translate[${sealedTrait.name}, U] {
+                    def apply[X](fa: ${sealedTrait.name}[X]): Eff[U, X] = fa match {
+                      case ..$cases
+                    }
+                  }
+
+                ..$methodsToBeImpl
+              }
+
+        """
+        }
+
         val functionKTrait =  {
           val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
             case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
@@ -206,6 +275,7 @@ class EffMacros(val c: blackbox.Context) {
               ..$injectOpsObj
               $sideEffectTrait
               $translateTrait
+              $translatorFactoryTrait
               $functionKTrait
             }
         """

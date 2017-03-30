@@ -15,6 +15,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
  generates boilerplate code for custom effects $generatesBoilerplate
  generates a SideEffect sub-class with boilerplate-free methods $generatesSideEffectInterpreter
  generates a Translate sub-trait with boilerplate-free methods $generatesTranslateInterpreter
+ generates a TranslatorFactory sub-trait with boilerplate-free methods $generatesTranslatorFactory
  generates a FunctionK sub-trait with boilerplate-free methods $generatesNaturalTransformationInterpreter
 """
   @eff trait KVStoreDsl {
@@ -54,7 +55,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
 
   def generatesSideEffectInterpreter = {
 
-    import org.atnos.eff._, interpret._
+    import org.atnos.eff._, interpret._, syntax.all._
     import scala.collection.mutable._
 
     val sideEffect = new KVStoreDsl.SideEffect {
@@ -72,15 +73,13 @@ class EffMacrosSpec extends Specification { def is = s2"""
       }
     }
 
-    import org.atnos.eff._, syntax.all._
-
     // run the program with the unsafe interpreter
     val result = sideEffect.run(theProgram).run
     result ==== Some(14)
   }
 
   def generatesTranslateInterpreter = {
-    import org.atnos.eff._, all._, interpret._
+    import org.atnos.eff._, all._, interpret._, syntax.all._
     import cats.implicits._
     import cats.data._
 
@@ -113,8 +112,6 @@ class EffMacrosSpec extends Specification { def is = s2"""
       }
       translate(effects)(tr)
     }
-    import org.atnos.eff._, syntax.all._
-    import cats._, data._
 
     // run the program with the safe interpreter
     type Stack = Fx.fx4[KVStore, Throwable Either ?, State[Map[String, Any], ?], Writer[String, ?]]
@@ -123,6 +120,33 @@ class EffMacrosSpec extends Specification { def is = s2"""
       runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
 
     result ==== Right(Some(14))
+  }
+
+  def generatesTranslatorFactory = {
+    import org.atnos.eff._, all._, interpret._, syntax.all._
+    import cats.implicits._
+    import cats.data._
+
+    type _stateMap[R]     = State[Map[String, Any], ?] |= R
+
+    val tr = new KVStoreDsl.TranslatorFactory1[State[Map[String, Any], ?]] {
+      def put[T, U](key: String, value: T)(implicit ordering: Ordering[T], _replacement: MemberIn[State[Map[String, Any], ?], U]): Eff[U, Unit] =
+        modify((map: Map[String, Any]) => map.updated(key, value))
+      def get[T, U](key: String)(implicit _replacement: MemberIn[State[Map[String, Any], ?], U]): Eff[U, GetResult[T]] = for {
+        m <- StateEffect.get[U, Map[String, Any]]
+      } yield GetResult(m.get(key).map(_.asInstanceOf[T]))
+      def delete[T, U](key: String)(implicit _replacement: MemberIn[State[Map[String, Any], ?], U]): Eff[U, Unit] =
+        modify((map: Map[String, Any]) => map - key)
+    }
+
+    // run the program with the safe interpreter
+    type Stack = Fx.fx2[KVStore, State[Map[String, Any], ?]]
+
+    import tr._
+    val result =
+      program[Stack].runKVStore.evalState(Map.empty[String, Any]).run
+
+    result ==== Some(14)
   }
 
   def generatesNaturalTransformationInterpreter = {
