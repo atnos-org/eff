@@ -87,12 +87,12 @@ case class Delete(key: String) extends KVStore[Unit]
 // It is also equivalent to MemberIn[KVStore, R]
 type _kvstore[R] = KVStore |= R
 
-/** put returns nothing (i.e. Unit) */
-def put[T, R :_kvstore](key: String, value: T): Eff[R, Unit] =
+/** store returns nothing (i.e. Unit) */
+def store[T, R :_kvstore](key: String, value: T): Eff[R, Unit] =
   Eff.send[KVStore, R, Unit](Put(key, value))
 
-/** get returns a T value if the key exists */
-def get[T, R :_kvstore](key: String): Eff[R, Option[T]] =
+/** find returns a T value if the key exists */
+def find[T, R :_kvstore](key: String): Eff[R, Option[T]] =
   Eff.send[KVStore, R, Option[T]](Get(key))
 
 /** delete returns nothing (i.e. Unit) */
@@ -102,8 +102,8 @@ def delete[T, R :_kvstore](key: String): Eff[R, Unit] =
 /** update composes get and put, and returns nothing. */
 def update[T, R :_kvstore](key: String, f: T =&gt; T): Eff[R, Unit] =
   for {
-    ot &lt;- get[T, R](key)
-    _  &lt;- ot.map(t =&gt; put[T, R](key, f(t))).getOrElse(Eff.pure(()))
+    ot &lt;- find[T, R](key)
+    _  &lt;- ot.map(t =&gt; store[T, R](key, f(t))).getOrElse(Eff.pure(()))
   } yield ()
 </code></pre>
 <p>Each method requires the <code class="prettyprint">KVStore</code> effect to be a member of an “effect stack” <code class="prettyprint">R</code>. The return values are of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> is a stack of effects possibly containing other effects than key-value store operations and yielding values of type <code class="prettyprint">A</code>.</p>
@@ -113,10 +113,10 @@ def update[T, R :_kvstore](key: String, f: T =&gt; T): Eff[R, Unit] =
 
 def program[R :_kvstore]: Eff[R, Option[Int]] =
   for {
-    _ &lt;- put(&quot;wild-cats&quot;, 2)
+    _ &lt;- store(&quot;wild-cats&quot;, 2)
     _ &lt;- update[Int, R](&quot;wild-cats&quot;, _ + 12)
-    _ &lt;- put(&quot;tame-cats&quot;, 5)
-    n &lt;- get[Int, R](&quot;wild-cats&quot;)
+    _ &lt;- store(&quot;tame-cats&quot;, 5)
+    n &lt;- find[Int, R](&quot;wild-cats&quot;)
     _ &lt;- delete(&quot;tame-cats&quot;)
   } yield n
 </code></pre>
@@ -185,7 +185,11 @@ def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff
 <li><code class="prettyprint">E Either ?</code> for type errors
 <p/></li>
 </ul>
-<pre><code class="prettyprint">import org.atnos.eff._, all._, interpret._
+<pre><code class="prettyprint">import org.atnos.eff._
+import org.atnos.eff.either._
+import org.atnos.eff.writer._
+import org.atnos.eff.state._
+import org.atnos.eff.interpret._
 import cats.implicits._
 import cats.data._
 
@@ -212,8 +216,6 @@ type _stateMap[R]     = State[Map[String, Any], ?] |= R
  *
  * NOTE:
  * - It is really important for type inference that the effects for U are listed after those for R!
- * - There&#39;s a name conflict in the `State Monad` in the pattern match for `Get(key)`
- *   ;hence, remember to rename your smart constructor defined earlier to something else.
  *
  * Implicit member definitions will NOT be found with the following definition:
  *
