@@ -2,11 +2,16 @@
 package org.atnos.site.snippets.tutorial
 
 import AdtSnippet._
+import AdtCreationSnippet._
 
 trait AdtInterpreterSafeSnippet {
 // 8<---
 
-import org.atnos.eff._, all._, interpret._
+import org.atnos.eff._
+import org.atnos.eff.either._
+import org.atnos.eff.writer._
+import org.atnos.eff.state._
+import org.atnos.eff.interpret._
 import cats.implicits._
 import cats.data._
 
@@ -33,8 +38,6 @@ type _stateMap[R]     = State[Map[String, Any], ?] |= R
  *
  * NOTE:
  * - It is really important for type inference that the effects for U are listed after those for R!
- * - There's a name conflict in the `State Monad` in the pattern match for `Get(key)`
- *   ;hence, remember to rename your smart constructor defined earlier to something else.
  *
  * Implicit member definitions will NOT be found with the following definition:
  *

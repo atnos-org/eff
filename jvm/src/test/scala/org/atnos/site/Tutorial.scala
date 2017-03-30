@@ -1,4 +1,5 @@
 package org.atnos.site
+
 import org.atnos.site.snippets._
 import tutorial._
 

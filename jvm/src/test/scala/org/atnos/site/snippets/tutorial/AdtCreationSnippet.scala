@@ -13,12 +13,12 @@ import cats.implicits._
 // It is also equivalent to MemberIn[KVStore, R]
 type _kvstore[R] = KVStore |= R
 
-/** put returns nothing (i.e. Unit) */
-def put[T, R :_kvstore](key: String, value: T): Eff[R, Unit] =
+/** store returns nothing (i.e. Unit) */
+def store[T, R :_kvstore](key: String, value: T): Eff[R, Unit] =
   Eff.send[KVStore, R, Unit](Put(key, value))
 
-/** get returns a T value if the key exists */
-def get[T, R :_kvstore](key: String): Eff[R, Option[T]] =
+/** find returns a T value if the key exists */
+def find[T, R :_kvstore](key: String): Eff[R, Option[T]] =
   Eff.send[KVStore, R, Option[T]](Get(key))
 
 /** delete returns nothing (i.e. Unit) */
@@ -28,8 +28,8 @@ def delete[T, R :_kvstore](key: String): Eff[R, Unit] =
 /** update composes get and put, and returns nothing. */
 def update[T, R :_kvstore](key: String, f: T => T): Eff[R, Unit] =
   for {
-    ot <- get[T, R](key)
-    _  <- ot.map(t => put[T, R](key, f(t))).getOrElse(Eff.pure(()))
+    ot <- find[T, R](key)
+    _  <- ot.map(t => store[T, R](key, f(t))).getOrElse(Eff.pure(()))
   } yield ()
 
   // 8<---
