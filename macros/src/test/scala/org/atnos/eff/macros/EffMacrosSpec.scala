@@ -83,6 +83,50 @@ class EffMacrosSpec extends Specification { def is = s2"""
     import cats.implicits._
     import cats.data._
 
+    type _writerString[R] = Writer[String, ?] |= R
+    type _stateMap[R]     = State[Map[String, Any], ?] |= R
+
+    def runKVStore[R, U, A](effects: Eff[R, A])
+      (implicit m: Member.Aux[KVStore, R, U],
+        throwable:_throwableEither[U],
+        writer:_writerString[U],
+        state:_stateMap[U]): Eff[U, A] = {
+
+      val tr = new KVStoreDsl.Translate[R, U] {
+        def put[T](key: String, value: T)(implicit ordering: Ordering[T]): Eff[U, Unit] = for {
+          _ <- tell(s"put($key, $value)")
+          _ <- modify((map: Map[String, Any]) => map.updated(key, value))
+          r <- fromEither(Either.catchNonFatal(()))
+        } yield r
+        def get[T](key: String): Eff[U, GetResult[T]] = for {
+          _ <- tell(s"get($key)")
+          m <- StateEffect.get[U, Map[String, Any]]
+          r <- fromEither(Either.catchNonFatal(m.get(key).map(_.asInstanceOf[T])))
+        } yield GetResult(r)
+        def delete[T](key: String): Eff[U, Unit] = for {
+          _ <- tell(s"delete($key)")
+          u <- modify((map: Map[String, Any]) => map - key)
+          r <- fromEither(Either.catchNonFatal(()))
+        } yield r
+
+      }
+      translate(effects)(tr)
+    }
+
+    // run the program with the safe interpreter
+    type Stack = Fx.fx4[KVStore, Throwable Either ?, State[Map[String, Any], ?], Writer[String, ?]]
+
+    val (result, logs) =
+      runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
+
+    result ==== Right(Some(14))
+  }
+
+  def generatesTranslatorFactory = {
+    import org.atnos.eff._, all._, interpret._, syntax.all._
+    import cats.implicits._
+    import cats.data._
+
     type WriterString[A] = Writer[String, A]
     type StateMap[A]     = State[Map[String, Any], A]
     type _writerString[R] = WriterString |= R
@@ -117,34 +161,6 @@ class EffMacrosSpec extends Specification { def is = s2"""
       program[Stack].runKVStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
 
     result ==== Right(Some(14))
-  }
-
-  def generatesTranslatorFactory = {
-    import org.atnos.eff._, all._, interpret._, syntax.all._
-    import cats.implicits._
-    import cats.data._
-
-    type StateMap[A]     = State[Map[String, Any], A]
-    type _stateMap[R]    = StateMap |= R
-
-    val tr = new KVStoreDsl.TranslatorFactory1[State[Map[String, Any], ?]] {
-      def put[T : Ordering, U : _stateMap](key: String, value: T): Eff[U, Unit] =
-        modify((map: Map[String, Any]) => map.updated(key, value))
-      def get[T, U : _stateMap](key: String): Eff[U, GetResult[T]] = for {
-        m <- StateEffect.get[U, Map[String, Any]]
-      } yield GetResult(m.get(key).map(_.asInstanceOf[T]))
-      def delete[T, U : _stateMap](key: String): Eff[U, Unit] =
-        modify((map: Map[String, Any]) => map - key)
-    }
-
-    // run the program with the safe interpreter
-    type Stack = Fx.fx2[KVStore, StateMap]
-
-    import tr._
-    val result =
-      program[Stack].runKVStore.evalState(Map.empty[String, Any]).run
-
-    result ==== Some(14)
   }
 
   def generatesNaturalTransformationInterpreter = {
