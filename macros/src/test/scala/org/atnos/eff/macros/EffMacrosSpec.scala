@@ -124,20 +124,21 @@ class EffMacrosSpec extends Specification { def is = s2"""
     import cats.implicits._
     import cats.data._
 
-    type _stateMap[R]     = State[Map[String, Any], ?] |= R
+    type StateMap[A]     = State[Map[String, Any], A]
+    type _stateMap[R]    = StateMap |= R
 
     val tr = new KVStoreDsl.TranslatorFactory1[State[Map[String, Any], ?]] {
-      def put[T, U](key: String, value: T)(implicit ordering: Ordering[T], _replacement: MemberIn[State[Map[String, Any], ?], U]): Eff[U, Unit] =
+      def put[T : Ordering, U : _stateMap](key: String, value: T): Eff[U, Unit] =
         modify((map: Map[String, Any]) => map.updated(key, value))
-      def get[T, U](key: String)(implicit _replacement: MemberIn[State[Map[String, Any], ?], U]): Eff[U, GetResult[T]] = for {
+      def get[T, U : _stateMap](key: String): Eff[U, GetResult[T]] = for {
         m <- StateEffect.get[U, Map[String, Any]]
       } yield GetResult(m.get(key).map(_.asInstanceOf[T]))
-      def delete[T, U](key: String)(implicit _replacement: MemberIn[State[Map[String, Any], ?], U]): Eff[U, Unit] =
+      def delete[T, U : _stateMap](key: String): Eff[U, Unit] =
         modify((map: Map[String, Any]) => map - key)
     }
 
     // run the program with the safe interpreter
-    type Stack = Fx.fx2[KVStore, State[Map[String, Any], ?]]
+    type Stack = Fx.fx2[KVStore, StateMap]
 
     import tr._
     val result =
