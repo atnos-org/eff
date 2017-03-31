@@ -63,11 +63,11 @@ class EffMacros(val c: blackbox.Context) {
         def findImplicitBracket(paramss: List[List[ValDef]]): Option[Int] = {
           paramss.zipWithIndex.find { case (params, idx) => params.exists(_.mods.hasFlag(Flag.IMPLICIT))}.map(_._2)
         }
-        def addImplicit(newImplicit: ValDef, paramss: List[List[ValDef]]) = {
+        def addImplicits(newImplicits: List[ValDef], paramss: List[List[ValDef]]) = {
           findImplicitBracket(paramss).map { idx =>
-            paramss.updated(idx, paramss(idx) :+ newImplicit)
+            paramss.updated(idx, paramss(idx) ++ newImplicits)
           }.getOrElse {
-            paramss :+ List(newImplicit)
+            paramss :+ newImplicits
           }
         }
 
@@ -186,24 +186,27 @@ class EffMacros(val c: blackbox.Context) {
         """
         }
 
-        val translatorFactoryTrait =  {
+        val translatorFactoryTraits = (1 until 10).map  { numOutEffects =>
+          def replacementParamName(i: Int) = TermName(s"__replacement$i")
+          val factoryTrait = TypeName(s"TranslatorFactory$numOutEffects")
+          val effectImplicitParams = (1 to numOutEffects).map(i => ValDef(Modifiers(Flag.IMPLICIT), replacementParamName(i), tq"${TypeName(s"R$i")} MemberIn U", EmptyTree)).toList
+          val effectImplicitArgs = (1 to numOutEffects).map(replacementParamName)
           val typeU = TypeDef(Modifiers(Flag.PARAM), TypeName("U"), List(), TypeBoundsTree(tq"scala.Nothing", tq"scala.Any"))
-          val replacementMemberInU = ValDef(Modifiers(Flag.IMPLICIT), TermName("_replacement"), tq"Replacement MemberIn U", EmptyTree)
           val delegatorMethods: Seq[DefDef] = absValsDefsOps.map {
             case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
-              val args = addImplicit(replacementMemberInU, nonStackParams(paramss)).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
+              val args = addImplicits(effectImplicitParams, nonStackParams(paramss)).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
               DefDef(mods, name, tparams.dropRight(1), nonStackParams(paramss), tq"Eff[U, $returnType]", q"TranslatorFactory1.this.$name(...$args)")
           }
 
           val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
             case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
-              DefDef(mods, name, tparams.dropRight(1) :+ typeU, addImplicit(replacementMemberInU, nonStackParams(paramss)), tq"Eff[U, $returnType]", EmptyTree)
+              DefDef(mods, name, tparams.dropRight(1) :+ typeU, addImplicits(effectImplicitParams, nonStackParams(paramss)), tq"Eff[U, $returnType]", EmptyTree)
           }
           val runMethod = TermName("run" + sealedTrait.name)
           val cases = absValsDefsOps.map {
             case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
               val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind(t.name, Ident(termNames.WILDCARD))})
-              val args = addImplicit(replacementMemberInU, nonStackParams(paramss)).map(_.collect { case t:ValDef => t.name })
+              val args = addImplicits(effectImplicitParams, nonStackParams(paramss)).map(_.collect { case t:ValDef => t.name })
               val callTypeParams = (tparams.dropRight(1) :+ typeU).map(t => t.name)
               val rhs = q"$name(...$args)"
               cq"${adt(name)}(..$binds) => $rhs.asInstanceOf[Eff[U, X]]"
@@ -211,27 +214,29 @@ class EffMacros(val c: blackbox.Context) {
               cq"${adt(name)} => $name.asInstanceOf[Eff[U, X]]"
           }
           q"""
-              trait TranslatorFactory1[Replacement[_]] {
+              trait $factoryTrait[..${(1 to numOutEffects).map(i => TypeDef(Modifiers(Flag.PARAM), TypeName(s"R$i"), List(TypeDef(Modifiers(Flag.PARAM), typeNames.WILDCARD, List(), TypeBoundsTree(TypeTree(), TypeTree()))), TypeBoundsTree(TypeTree(), TypeTree()))
+)}] {
+
                 implicit class ${TypeName("Rich" + sealedTrait.name)}[R, A](val effects: Eff[R, A]) {
                   def $runMethod[U](
                     implicit m: Member.Aux[${sealedTrait.name}, R, U],
-                    _replacement: Replacement MemberIn U
+                    ..$effectImplicitParams
                   ): Eff[U, A] = {
-                    TranslatorFactory1.this.$runMethod(effects)(m, _replacement)
+                    $factoryTrait.this.$runMethod(effects)(m, ..$effectImplicitArgs)
                   }
                 }
 
                 def $runMethod[R, U, A](effects: Eff[R, A])(
                   implicit m: Member.Aux[${sealedTrait.name}, R, U],
-                  _replacement: Replacement MemberIn U
+                    ..$effectImplicitParams
                 ): Eff[U, A] = {
-                  val tr = translator[R, U](m, _replacement)
+                  val tr = translator[R, U](m, ..$effectImplicitArgs)
                   org.atnos.eff.interpret.translate(effects)(tr)
                 }
 
                 def translator[R, U](
                   implicit m: Member.Aux[${sealedTrait.name}, R, U],
-                  _replacement: Replacement MemberIn U
+                    ..$effectImplicitParams
                 ): org.atnos.eff.Translate[${sealedTrait.name}, U] = new org.atnos.eff.Translate[${sealedTrait.name}, U] {
                     def apply[X](fa: ${sealedTrait.name}[X]): Eff[U, X] = fa match {
                       case ..$cases
@@ -275,7 +280,7 @@ class EffMacros(val c: blackbox.Context) {
               ..$injectOpsObj
               $sideEffectTrait
               $translateTrait
-              $translatorFactoryTrait
+              ..$translatorFactoryTraits
               $functionKTrait
             }
         """
