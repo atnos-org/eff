@@ -40,29 +40,36 @@ trait EvalCreation extends EvalTypes {
 trait EvalInterpretation extends EvalTypes {
 
   def runEval[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] =
-    recurse(effect)(new Recurser[Eval, U, A, A] {
-      def onPure(a: A): A =
-        a
+    interpret.runInterpreter(effect)(new Interpreter[Eval, U, A, A] {
+      def onPure(a: A): Eff[U, A] =
+        pure(a)
 
-      def onEffect[X](e: Eval[X]): X Either Eff[U, A] =
-        Left(e.value)
+      def onEffect[X](x: Eval[X], continuation: Continuation[U, X, A]): Eff[U, A] =
+        Eff.impure(x.value, continuation)
 
-      def onApplicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] =
-        Right(Eval.later(ms.map(_.value)))
+      def onLastEffect[X](x: Eval[X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
+        Eff.impure(x.value, continuation)
+
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Eval[X]], continuation: Continuation[U, T[X], A]): Eff[U, A] =
+        Eff.impure(xs.map(_.value), continuation)
     })
 
   def attemptEval[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Throwable Either A] =
-   recurse(effect)(new Recurser[Eval, U, A, Throwable Either A] {
-     def onPure(a: A): Throwable Either A =
-       Right(a)
+    interpret.runInterpreter(effect)(new Interpreter[Eval, U, A, Throwable Either A] {
+      def onPure(a: A): Eff[U, Throwable Either A] =
+        pure(Right(a))
 
-     def onEffect[X](e: Eval[X]): X Either Eff[U, Throwable Either A] =
-       try { Left(e.value) }
-       catch { case NonFatal(t) => Right(Eff.pure(Left(t))) }
+      def onEffect[X](x: Eval[X], continuation: Continuation[U, X, Throwable Either A]): Eff[U, Throwable Either A] =
+        try { Eff.impure(x.value, continuation) }
+        catch { case NonFatal(t) => Eff.pure(Left(t)) }
 
-     def onApplicative[X, T[_]: Traverse](ms: T[Eval[X]]): T[X] Either Eval[T[X]] =
-       Right(ms.sequence)
+      def onLastEffect[X](x: Eval[X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
+        Eff.impure(x.value, continuation)
+
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Eval[X]], continuation: Continuation[U, T[X], Throwable Either A]): Eff[U, Throwable Either A] =
+        Eff.impure(xs.map(_.value), continuation)
     })
+
 }
 
 object EvalInterpretation extends EvalInterpretation
