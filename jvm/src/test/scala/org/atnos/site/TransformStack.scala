@@ -122,13 +122,13 @@ There are also specialized versions of `transform` for `Reader` and `State`:
  - `ReaderEffect.localReader` takes a "getter" `B => A` to transform a stack with a `Reader[A, ?]` into a stack with a `Reader[B, ?]`
  - `StateEffect.lensState` takes a "getter" `S => T` and a "setter" `(S, T) => S` to to transform a stack with a `State[T, ?]` into a stack with a `State[S, ?]`
 
-### Effects translation
+### Translate an effect into multiple others
 
-A common thing to do is to translate "high-level" effects (a webservice DSL for example) into low-level ones (`TimedFuture`, `Eval`, `Either`, etc...).
+A common thing to do is to translate effects (a webservice DSL for example) into multiple others (`TimedFuture`, `Eval`, `Either`, etc...).
 
 For example you might have this stack:
-  ```
-type S = Fx.fx3[Authenticated, TimedFuture, ThrowableEither]
+```
+type S = Fx.fx3[Authenticated, TimedFuture, AuthError Either ?]
 ```
 
 And you want to write an interpreter which will translate authentication actions into `TimedFuture` and `Either`:${snippet{
@@ -136,6 +136,7 @@ import org.atnos.eff.eff._
 import org.atnos.eff.syntax.eff._
 import org.atnos.eff.future._
 import org.atnos.eff.interpret._
+import scala.concurrent.Future
 
 // list of access rights for a valid token
 case class AccessRights(rights: List[String])
@@ -146,6 +147,7 @@ case class AuthError(message: String)
 // DSL for authenticating users
 sealed trait Authenticated[A]
 case class Authenticate(token: String) extends Authenticated[AccessRights]
+type _authenticate[R] = Authenticated |= R
 
 type AuthErroEither[A] = AuthError Either A
 type _error[R] = AuthErroEither |= R
@@ -164,19 +166,22 @@ def runAuth[R, U, A](e: Eff[R, A])(implicit
        ax match {
          case Authenticate(token) =>
            // send the TimedFuture effect in the stack U
-           send(authenticate(token)).
+           fromFuture(authenticateImpl(token)).
            // send the Either value in the stack U
            collapse
        }
     })
 
 // call to a service to authenticate tokens
-def authenticate(token: String): TimedFuture[AuthError Either AccessRights] = ???
+def authenticateImpl(token: String): Future[AuthError Either AccessRights] =
+  Future.successful[AuthError Either AccessRights] { Left(AuthError("token invalid!")) }
+
+def authenticate[S :_authenticate](token: String) = Authenticate(token).send
 
 type S = Fx.fx3[Authenticated, AuthError Either ?, TimedFuture]
-def auth: Eff[S, Int] = ???
+type R = Fx.fx2[AuthError Either ?, TimedFuture]
 
-runAuth(auth)
+val result: Eff[R, AccessRights] = runAuth(authenticate[S]("faketoken"))
 
 }}
 
