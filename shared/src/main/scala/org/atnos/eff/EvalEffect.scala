@@ -70,6 +70,30 @@ trait EvalInterpretation extends EvalTypes {
         Eff.impure(xs.map(_.value), continuation)
     })
 
+  /** the monad error instance for Eval is useful for using detach on Eff[Fx1[Eval], A] */
+  implicit final val monadErrorEval: MonadError[Eval, Throwable] = new MonadError[Eval, Throwable] {
+    private val m: Monad[Eval] = Eval.catsBimonadForEval
+    
+    def pure[A](x: A): Eval[A] =
+      m.pure(x)
+
+    def flatMap[A, B](fa: Eval[A])(f: (A) => Eval[B]) =
+      m.flatMap(fa)(f)
+
+    def tailRecM[A, B](a: A)(f: (A) => Eval[Either[A, B]]): Eval[B] =
+      m.tailRecM(a)(f)
+
+    def raiseError[A](e: Throwable): Eval[A] =
+      Eval.later(throw e)
+
+    def handleErrorWith[A](fa: Eval[A])(f: Throwable => Eval[A]): Eval[A] =
+      Eval.later {
+        try Eval.now(fa.value)
+        catch { case t: Throwable => f(t)}
+      }.flatten
+
+  }
+
 }
 
 object EvalInterpretation extends EvalInterpretation

@@ -44,7 +44,7 @@ object TwitterTimedFuture {
     override def toString = "Applicative[TwitterTimedFuture]"
   }
 
-  implicit final def MonadTwitterTimedFuture: Monad[TwitterTimedFuture] = new Monad[TwitterTimedFuture] {
+  implicit final val MonadTwitterTimedFuture: MonadError[TwitterTimedFuture, Throwable] = new MonadError[TwitterTimedFuture, Throwable] {
     def pure[A](x: A): TwitterTimedFuture[A] =
       TwitterTimedFuture((_, _) => Future.value(x))
 
@@ -60,7 +60,13 @@ object TwitterTimedFuture {
         loop(a)
       })
 
-    override def toString = "Monad[TwitterTimedFuture]"
+    def raiseError[A](e: Throwable): TwitterTimedFuture[A] =
+      TwitterTimedFuture((p, s) => Future.exception(e))
+
+    def handleErrorWith[A](fa: TwitterTimedFuture[A])(f: Throwable => TwitterTimedFuture[A]): TwitterTimedFuture[A] =
+      TwitterTimedFuture((p, s) => fa.runNow(p, s).rescue[A] { case t => f(t).runNow(p, s) })
+
+    override def toString = "MonadError[TwitterTimedFuture, Throwable]"
   }
 
   implicit val twitterFutureSequenceCached: SequenceCached[TwitterTimedFuture] =
@@ -104,7 +110,7 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
     Eff.detachA(e)(TwitterTimedFuture.MonadTwitterTimedFuture, TwitterTimedFuture.ApplicativeTwitterTimedFuture, m).runNow(pool, scheduler)
 
   def runSequential[R, A](e: Eff[R, A])(implicit pool: FuturePool, scheduler: Scheduler, m: Member.Aux[TwitterTimedFuture, R, NoFx]): Future[A] =
-    Eff.detach(e)(Monad[TwitterTimedFuture], m).runNow(pool, scheduler)
+    Eff.detach(e)(TwitterTimedFuture.MonadTwitterTimedFuture, m).runNow(pool, scheduler)
 
   import interpret.of
 

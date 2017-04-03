@@ -162,7 +162,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
   def e14 = {
     type S = Fx2[TimedFuture, Option]
-    var lastActionDone = false
+    var lastActionDone = 0
 
     val action: Eff[S, Int] =
       for {
@@ -173,11 +173,11 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
     val execute: Eff[S, Throwable Either Int] =
       action.
-        addLast(futureDelay[S, Unit](lastActionDone = true)).
+        addLast(futureDelay[S, Unit](lastActionDone += 1)).
         futureAttempt
 
     execute.runOption.runSequential must beSome(beLeft[Throwable]).awaitFor(20.seconds)
-    lastActionDone must beTrue
+    lastActionDone must beEqualTo(1)
   }
 
   def e15 = {

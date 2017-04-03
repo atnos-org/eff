@@ -41,7 +41,7 @@ object TimedTask {
       )
   }
 
-  implicit final def TimedTaskMonad: Monad[TimedTask] = new Monad[TimedTask] {
+  implicit final val TimedTaskMonad: MonadError[TimedTask, Throwable] = new MonadError[TimedTask, Throwable] {
     def pure[A](x: A): TimedTask[A] =
       TimedTask((_, _) => Task.now(x))
 
@@ -54,6 +54,13 @@ object TimedTask {
         def loop(na: A): Task[B] = f(na).runNow(strategy, scheduler).flatMap(_.fold(loop, Task.now))
         loop(a)
       })
+
+    def raiseError[A](e: Throwable): TimedTask[A] =
+      TimedTask((strategy, scheduler) => Task.fail(e))
+
+    def handleErrorWith[A](fa: TimedTask[A])(f: Throwable => TimedTask[A]): TimedTask[A] =
+      TimedTask((strategy, scheduler) => fa.runNow(strategy, scheduler).handleWith[A] { case t => f(t).runNow(strategy, scheduler) })
+
   }
 
   final def now[A](value: A): TimedTask[A] = TimedTask((_, _) => Task.now(value))
@@ -148,7 +155,7 @@ trait TaskInterpretation extends TaskTypes {
     Eff.detachA(e)(TimedTask.TimedTaskMonad, TimedTask.TimedTaskApplicative, m).runNow(strat, sched)
 
   def runSequential[R, A](e: Eff[R, A])(implicit strat: Strategy, sched: Scheduler, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
-    Eff.detach(e)(Monad[TimedTask], m).runNow(strat, sched)
+    Eff.detach(e)(TimedTask.TimedTaskMonad, m).runNow(strat, sched)
 
   def attempt[A](task: TimedTask[A]): TimedTask[Throwable Either A] =
     TimedTask[Throwable Either A](task.runNow(_, _).attempt)

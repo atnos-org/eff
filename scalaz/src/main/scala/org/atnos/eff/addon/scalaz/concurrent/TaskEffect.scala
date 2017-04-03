@@ -44,7 +44,7 @@ object TimedTask {
     override def toString = "Applicative[Task]"
   }
 
-  implicit def TimedTaskMonad: Monad[TimedTask] = new Monad[TimedTask] {
+  implicit final val TimedTaskMonad: MonadError[TimedTask, Throwable] = new MonadError[TimedTask, Throwable] {
     def pure[A](x: A): TimedTask[A] =
       TimedTask(_ => Task.now(x))
 
@@ -57,7 +57,13 @@ object TimedTask {
         loop(a)
       }
 
-    override def toString = "Monad[Task]"
+    def raiseError[A](e: Throwable): TimedTask[A] =
+      TimedTask(ess => Task.fail(e))
+
+    def handleErrorWith[A](fa: TimedTask[A])(f: Throwable => TimedTask[A]): TimedTask[A] =
+      TimedTask(ess => fa.runNow(ess).handleWith[A] { case t => f(t).runNow(ess) })
+
+    override def toString = "MonadError[Task, Throwable]"
 
   }
 

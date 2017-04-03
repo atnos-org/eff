@@ -14,9 +14,11 @@ import org.atnos.eff.syntax.addon.scalaz.task._
 import scala.concurrent._
 import duration._
 import org.specs2.matcher.TaskMatchers._
+import org.specs2.matcher.ThrownExpectations
+
 import scalaz.concurrent.Task
 
-class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "scalaz task".title ^ sequential ^ s2"""
+class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = "scalaz task".title ^ sequential ^ s2"""
 
  Task effects can be used as normal values                 $e1
  Task effects can be attempted                             $e2
@@ -28,6 +30,8 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
  Attempted Task calls can be memoized              $e8
  Simple Task calls with timeout can be memoized    $e9
  Attempted Task calls with timeout can be memoized $e10
+
+ Last actions must be triggered in case of a failure $e11
 
 """
 
@@ -130,6 +134,25 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     invocationsNumber must be_==(1)
   }
 
+  def e11 = {
+    type S = Fx2[TimedTask, Option]
+    var lastActionDone = 0
+
+    val action: Eff[S, Int] =
+      for {
+        i <- taskDelay[S, Int] { sleepFor(10.millis); 1 }
+        _ <- taskFailed[S, Int](new Exception("boom"))
+        j =  i + 1
+      } yield j
+
+    val execute: Eff[S, Int] =
+      action.
+        addLast(taskDelay[S, Unit](lastActionDone += 1))
+
+    execute.runOption.runAsync must failWith[Exception]
+    lastActionDone must beEqualTo(1)
+  }
+
 
   /**
    * HELPERS
@@ -139,6 +162,5 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
   def sleepFor(duration: FiniteDuration) =
     try Thread.sleep(duration.toMillis) catch { case t: Throwable => () }
-
 }
 

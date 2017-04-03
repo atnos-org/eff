@@ -40,7 +40,7 @@ object TimedFuture {
     override def toString = "Applicative[TimedFuture]"
   }
 
-  implicit final def MonadTimedFuture: Monad[TimedFuture] = new Monad[TimedFuture] {
+  implicit final def MonadTimedFuture: MonadError[TimedFuture, Throwable] = new MonadError[TimedFuture, Throwable] {
     def pure[A](x: A): TimedFuture[A] =
       TimedFuture((_, _) => Future.successful(x))
 
@@ -56,7 +56,13 @@ object TimedFuture {
         loop(a)
       })
 
-    override def toString = "Monad[TimedFuture]"
+    def raiseError[A](e: Throwable): TimedFuture[A] =
+      TimedFuture((s, ec) => Future.failed(e))
+
+    def handleErrorWith[A](fa: TimedFuture[A])(f: Throwable => TimedFuture[A]): TimedFuture[A] =
+      TimedFuture((s, ec) => fa.runNow(s, ec).recoverWith[A] { case t => f(t).runNow(s, ec) }(ec))
+
+    override def toString = "MonadError[TimedFuture, Throwable]"
   }
 }
 

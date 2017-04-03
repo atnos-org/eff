@@ -49,8 +49,8 @@ object TaskCreation extends TaskCreation
 
 trait TaskInterpretation extends TaskTypes {
 
-  private val monixTaskMonad: Monad[Task] =
-    Monad[Task]
+  private val monixTaskMonad: MonadError[Task, Throwable] =
+    monix.cats.monixToCatsMonadError(Task.typeClassInstances.monadError)
 
   private val monixTaskApplicative : Applicative[Task] =
     monixToCatsApplicative(Task.nondeterminism.applicative)

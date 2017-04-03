@@ -39,7 +39,7 @@ class EvalEffectSpec extends Specification { def is = s2"""
         Eval.now(eval.defer(loop(i - 1)).map(_  + 1))
       }
 
-    loop(100000).value.detach.value ==== 100001
+    loop(100000).value.runEval.run ==== 100001
   }
 }
 
