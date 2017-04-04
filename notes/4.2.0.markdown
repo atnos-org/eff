@@ -1,0 +1,10 @@
+API change
+
+ * the `Eff.detach` method now requires a `MonadError` instance to properly trigger with "last" actions
+
+Documentation improvements
+
+ * bring `Translate` docs closer to `Transform` docs
+ * changed the smart constructor names for the `KVStore` effect in the tutorial
+ * moved imports in the "create effects" section so they appear on the user guide
+
