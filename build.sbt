@@ -281,7 +281,7 @@ lazy val catsVersion   = "0.9.0"
 lazy val monixVersion  = "2.1.0"
 lazy val scalazVersion = "7.2.7"
 lazy val fs2Version    = "0.9.2"
-lazy val specs2Version = "3.8.7"
+lazy val specs2Version = "3.8.9"
 lazy val twitterUtilVersion = "6.42.0"
 lazy val catbirdVersion = "0.13.0"
 

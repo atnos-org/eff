@@ -178,7 +178,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     type S = Fx.append[Fx.fx2[Writer[Int, ?], Either[String, ?]], Fx.fx1[Option]]
     val e: Eff[S, Int] = OptionEffect.some[S, Int](1)
 
-    e.runWriter.runEither.detachA(Applicative[Option]) must beSome(Right((1, Nil)))
+    e.runWriter.runEither.detachA(Applicative[Option]) must beSome(Right[String, (Int, List[Int])]((1, Nil)))
   }
 
   def traverseEff = {

@@ -337,25 +337,25 @@ trait EffInterpretation {
   /**
    * peel-off the only present effect
    */
-  def detach[M[_] : Monad, R, A](eff: Eff[R, A])(implicit m: Member.Aux[M, R, NoFx]): M[A] =
+  def detach[M[_], R, A, E](eff: Eff[R, A])(implicit monad: MonadError[M, E], m: Member.Aux[M, R, NoFx]): M[A] =
     detachA(Eff.effInto[R, Fx1[M], A](eff))
 
   /**
    * peel-off the only present effect
    */
-  def detach[M[_] : Monad, A](eff: Eff[Fx1[M], A]): M[A] =
+  def detach[M[_], A, E](eff: Eff[Fx1[M], A])(implicit monad: MonadError[M, E]): M[A] =
     detachA(eff)
 
   /**
    * peel-off the only present effect, using an Applicative instance where possible
    */
-  def detachA[M[_], R, A](eff: Eff[R, A])(implicit monad: Monad[M], applicative: Applicative[M], member: Member.Aux[M, R, NoFx]): M[A] =
+  def detachA[M[_], R, A, E](eff: Eff[R, A])(implicit monad: MonadError[M, E], applicative: Applicative[M], member: Member.Aux[M, R, NoFx]): M[A] =
     detachA(Eff.effInto[R, Fx1[M], A](eff))(monad, applicative)
 
   /**
    * peel-off the only present effect, using an Applicative instance where possible
    */
-  def detachA[M[_], A](eff: Eff[Fx1[M], A])(implicit monad: Monad[M], applicative: Applicative[M]): M[A] =
+  def detachA[M[_], A, E](eff: Eff[Fx1[M], A])(implicit monad: MonadError[M, E], applicative: Applicative[M]): M[A] =
     Monad[M].tailRecM[Eff[Fx1[M], A], A](eff) {
       case Pure(a, Last(Some(l))) => monad.pure(Left(l.value.as(a)))
       case Pure(a, Last(None))    => monad.pure(Right(a))
@@ -365,18 +365,30 @@ trait EffInterpretation {
 
       case Impure(u: Union[_, _], continuation, last) =>
         val ta = u.tagged.valueUnsafe.asInstanceOf[M[A]]
+        val result: M[Either[Eff[Fx1[M], A], A]] =
+          ta.map(x => Left(Impure(NoEffect(x.asInstanceOf[Any]), continuation, last)))
+
         last match {
-          case Last(Some(l)) => ta.map(x => Left(Impure(NoEffect(x.asInstanceOf[Any]), continuation, last)))
-          case Last(None)    => ta.map(x => Left(Impure(NoEffect(x.asInstanceOf[Any]), continuation)))
+          case Last(Some(l)) =>
+            monad.handleErrorWith(result)(t => detachA(l.value) >> monad.raiseError(t))
+
+          case Last(None) =>
+            result
         }
 
       case ap @ ImpureAp(unions, continuation, last) =>
         val effects = unions.unions.map(_.tagged.valueUnsafe.asInstanceOf[M[Any]])
         val sequenced = applicative.sequence(effects)
 
+        val result: M[Either[Eff[Fx1[M], A], A]] =
+          sequenced.map(xs => Left(Impure(NoEffect(xs), continuation, last)))
+
         last match {
-          case Last(Some(_)) => sequenced.map(xs => Left(Impure(NoEffect(xs), continuation, last)))
-          case Last(None)    => sequenced.map(xs => Left(Impure(NoEffect(xs), continuation)))
+          case Last(Some(l)) =>
+            monad.handleErrorWith(result)(t => detachA(l.value) >> monad.raiseError(t))
+
+          case Last(None) =>
+            result
         }
     }
 

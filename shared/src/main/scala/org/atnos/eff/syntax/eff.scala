@@ -66,10 +66,10 @@ final class EffPureOps[A](val a: A) extends AnyVal {
 }
 
 final class EffOneEffectOps[M[_], A](val e: Eff[Fx1[M], A]) extends AnyVal {
-  def detach(implicit M: Monad[M]): M[A] =
+  def detach[E](implicit M: MonadError[M, E]): M[A] =
     Eff.detach(e)
 
-  def detachA(applicative: Applicative[M])(implicit monad: Monad[M]): M[A] =
+  def detachA[E](applicative: Applicative[M])(implicit monad: MonadError[M, E]): M[A] =
     Eff.detachA(e)(monad, applicative)
 }
 
