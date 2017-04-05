@@ -275,6 +275,8 @@ class EffMacros(val c: blackbox.Context) {
         val genTrait =
           q"""
             trait ${tpname.toTypeName} { $self =>
+              import scala.language.higherKinds
+
               ..${stats.diff(absValsDefsOps)}
               ..$genCaseClassesAndObjADT
               ..$injectOpsObj
