@@ -60,10 +60,10 @@ case class Continuation[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: 
                 go(rest, a1, last *> l1)
 
               case Impure(u, q, l) =>
-                Impure[R, u.X, B](u, q.copy(q.functions ++ rest, onNone = onNone), last *> l)
+                Impure[R, u.X, B](u, q.copy(q.functions ++ rest, onNone = q.onNone *> onNone), last *> l)
 
               case ImpureAp(unions, q, l) =>
-                ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest, onNone = onNone), last *> l)
+                ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest, onNone = q.onNone *> onNone), last *> l)
             }
           }
       }
