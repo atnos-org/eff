@@ -42,7 +42,7 @@ trait OptionInterpretation {
   def runOption[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Option, R, U]): Eff[U, Option[A]] =
     recurse(effect)(new Recurser[Option, U, A, Option[A]] {
       def onPure(a: A): Option[A] =
-        Option(a)
+        Some(a)
 
       def onEffect[X](m: Option[X]): X Either Eff[U, Option[A]] =
         m match {
