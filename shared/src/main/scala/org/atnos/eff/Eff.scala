@@ -397,8 +397,8 @@ trait EffInterpretation {
    */
   def runPure[R, A](eff: Eff[R, A]): Option[A] =
     eff match {
-      case Pure(a, Last(Some(l)))     => l.value; Option(a)
-      case Pure(a, _)                 => Option(a)
+      case Pure(a, Last(Some(l)))     => l.value; Some(a)
+      case Pure(a, _)                 => Some(a)
       case Impure(NoEffect(a), c, l)  => runPure(c(a).addLast(l))
       case _                          => None
     }
