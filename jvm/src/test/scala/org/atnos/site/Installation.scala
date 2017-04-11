@@ -64,10 +64,18 @@ import:
 import org.atnos.eff.eval._
 ```
 
-You can also import all effects at once:
+You can also import most of the effects at once with:
 ```scala
 import org.atnos.eff.all._
 ```
+
+The only effects not included in the previous import are:
+
+ - the `Error` effect. This effect requires a type parameter representing the "failure" type and must be provided by the user of the library
+
+ - the `Future` effect. This effect shares some operations like `runAsync` with other "async" effects like monix's `TaskEffect`
+    and the import could clash with `import org.atnos.eff.addon.monix.task._`
+
 
 #### Interpreting effects
 
