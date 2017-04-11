@@ -6,7 +6,7 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import cats.implicits._
 import org.scalacheck.Gen
-
+import EitherEffect.{left => leftE, right => rightE}
 import scala.collection.mutable.ListBuffer
 
 class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2"""
@@ -14,13 +14,14 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
   An action can run completely at the end, regardless of the number of flatmaps $runLast
     now with one very last action which fails, there should be no exception     $runLastFail
 
-
   bracket last triggers the last action regardless of the effects at play
     either right + ok $e1
     either right + protect exception $e2
 
     either left + ok $e3
     either left + protect exception $e4
+
+  An expression must still be protected with `thenFinally` if there are further flatMaps $e5
 
 """
 
@@ -61,19 +62,31 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
   var i = 0
 
   def e1 = checkRelease {
-    EitherEffect.right[S, String, Int](1) >>= (v => protect[S, Int](v))
+    rightE[S, String, Int](1) >>= (v => protect[S, Int](v))
   }
 
   def e2 = checkRelease {
-    EitherEffect.right[S, String, Int](1) >>= (v => protect[S, Int] { sys.error("ouch"); v })
+    rightE[S, String, Int](1) >>= (v => protect[S, Int] { sys.error("ouch"); v })
   }
 
   def e3 = checkRelease {
-    EitherEffect.left[S, String, Int]("Error") >>= (v => protect[S, Int](v))
+    leftE[S, String, Int]("Error") >>= (v => protect[S, Int](v))
   }
 
   def e4 = checkRelease {
-    EitherEffect.left[S, String, Int]("Error") >>= (v => protect[S, Int] { sys.error("ouch"); v })
+    leftE[S, String, Int]("Error") >>= (v => protect[S, Int] { sys.error("ouch"); v })
+  }
+
+  def e5 = {
+    var i = 0
+
+    val action =
+      (protect[S, Int](1) >>
+       thenFinally(leftE[S, String, Int]("Error"), protect[S, Unit](i = 1))).
+        map(i => i)
+
+    action.execSafe.runEither.run
+    i ==== 1
   }
 
   /**
