@@ -233,6 +233,13 @@ trait Interpret {
     })
   }
 
+  /**
+   * For a single effect T log every value of that effect
+   */
+  def trace[R, F[_], A](eff: Eff[R, A])(implicit m: MemberInOut[F, R]): Eff[Fx.prepend[Writer[F[_], ?], R], A] =
+    write[R, F, F[_], A](eff)(new Write[F, F[_]] {
+      def apply[X](tx: F[X]): F[_] = tx
+    })
 
 }
 
