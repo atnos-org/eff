@@ -1,0 +1,12 @@
+Maintenance version
+
+Improvements
+
+ * do not memoize failed values for tasks, futures and safe effects
+ * added a note in the user guide about effects not covered by the `all._` import [#90](https://github.com/atnos-org/eff/issues/90)
+
+Fixes
+
+ * always pass `onNone` action when executing a continuation to make sure `Safe.thenFinally` always executes
+ * changed some `Option()` calls to `Some` to preserve user nulls [#91](https://github.com/atnos-org/eff/issues/91)
+
