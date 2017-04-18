@@ -321,12 +321,10 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       def apply[X](tx: Stored[X]) = pure[U, X](().asInstanceOf[X])
     })
 
-  type R1 = Fx.fx1[Stored]
-
-  val action: Eff[R1, Unit] =
-    send[Stored, R1, Unit](Update("a", 1)) >>
-    send[Stored, R1, Unit](Get("b"))       >>
-    send[Stored, R1, Unit](Remove("c"))
+  def action[R: MemberIn[Stored, ?]]: Eff[R, Unit] =
+    send[Stored, R, Unit](Update("a", 1)) >>
+    send[Stored, R, Unit](Get("b"))       >>
+    send[Stored, R, Unit](Remove("c"))
 
   def augmentEffect = {
     val wAugment =
@@ -338,7 +336,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
         }
       }
 
-      runStored(action.augment(wAugment)).runWriterLog.run ==== List("a", "b", "c")
+      runStored(action[Fx.fx2[Writer[String, ?], Stored]].augment(wAugment)).runWriterLog.run ==== List("a", "b", "c")
   }
 
   def writeEffect = {
@@ -351,12 +349,12 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
         }
       }
 
-    runStored(action.write(w)).runWriterLog.run ==== List("a", "b", "c")
+    runStored(action[Fx.fx2[Writer[String, ?], Stored]].write(w)).runWriterLog.run ==== List("a", "b", "c")
 
   }
 
   def traceEffect = {
-    runStored(action.trace).runWriterLog.run ====
+    runStored(action[Fx.fx2[Writer[Stored[_], ?], Stored]].trace[Stored]).runWriterLog.run ====
       List[Stored[_]](Update("a", 1), Get("b"), Remove("c"))
   }
 
