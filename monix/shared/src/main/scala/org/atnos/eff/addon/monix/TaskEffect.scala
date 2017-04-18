@@ -1,12 +1,16 @@
 package org.atnos.eff.addon.monix
 
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
+
 import cats._
 import cats.implicits._
 import monix.eval._
 import monix.cats._
 import monix.execution._
-import org.atnos.eff.{Scheduler =>_, _}
+import org.atnos.eff.{Scheduler => _, _}
 import org.atnos.eff.syntax.all._
+
 import scala.concurrent.duration.FiniteDuration
 import scala.util._
 
@@ -70,6 +74,13 @@ trait TaskInterpretation extends TaskTypes {
           fa.attempt
       })
 
+  def taskFork[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, A] =
+    interpret.interceptNat[R, Task, A](e)(
+      new (Task ~> Task) {
+        def apply[X](fa: Task[X]): Task[X] =
+          Task.fork(fa)
+      })
+
   /** memoize the task result using a cache */
   def memoize[A](key: AnyRef, cache: Cache, task: Task[A]): Task[A] =
     Task.suspend {
@@ -82,7 +93,10 @@ trait TaskInterpretation extends TaskTypes {
     * if this method is called with the same key the previous value will be returned
     */
   def taskMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: Task /= R): Eff[R, A] =
-    Eff.memoizeEffect(e, cache, key)
+    taskAttempt(Eff.memoizeEffect(e, cache, key)).flatMap {
+      case Left(t)  => Eff.send(taskSequenceCached.reset(cache, key)) >> TaskEffect.taskFailed(t)
+      case Right(a) => Eff.pure(a)
+    }
 
   /**
     * Memoize task values using a memoization effect
@@ -105,6 +119,16 @@ trait TaskInterpretation extends TaskTypes {
   implicit val taskSequenceCached: SequenceCached[Task] = new SequenceCached[Task] {
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Task[X]): Task[X] =
       cache.memo((key, sequenceKey), tx.memoize)
+
+    def reset(cache: Cache, key: AnyRef): Task[Unit] =
+      Task.delay {
+        cache.reset(key)
+        var i = 0
+        while (cache.get((key, i)).isDefined) {
+          cache.reset((key, i))
+          i += 1
+        }
+      }
   }
 
 }

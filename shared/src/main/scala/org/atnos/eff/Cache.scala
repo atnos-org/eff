@@ -39,6 +39,7 @@ trait Cache {
  */
 trait SequenceCached[M[_]] {
   def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>M[X]): M[X]
+  def reset(cache: Cache, key: AnyRef): M[Unit]
 }
 
 case class ConcurrentHashMapCache(map: ConcurrentHashMap[AnyRef, Eval[Any]] = new ConcurrentHashMap[AnyRef, Eval[Any]]) extends Cache {

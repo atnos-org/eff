@@ -31,8 +31,9 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
  Attempted Future calls can be memoized              $e10
  Simple Future calls with timeout can be memoized    $e11
  Attempted Future calls with timeout can be memoized $e12
+ Failed futures must not be memoized                 $e13
 
- TwitterTimedFuture calls can be memoized with a memo effect $e10
+ TwitterTimedFuture calls can be memoized with a memo effect $e14
 
 
 """
@@ -147,6 +148,24 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
   }
 
   def e13 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    var firstTime = true
+
+    def makeRequest =
+      if (firstTime)
+        futureMemo("only once", cache, futureDelay { firstTime = false; throw new Exception("") } >> futureDelay({ invocationsNumber += 1; 1 }))
+      else
+        futureMemo("only once", cache, futureDelay { invocationsNumber += 1; 1 })
+
+    Await.result(makeRequest.twitterFutureAttempt.runSequential) must beLeft[Throwable]
+    Await.result(makeRequest.twitterFutureAttempt.runSequential) must beRight(1)
+
+    invocationsNumber must be_==(1)
+  }
+
+  def e14 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 

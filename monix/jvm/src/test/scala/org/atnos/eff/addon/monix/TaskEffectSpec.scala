@@ -28,6 +28,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
  Attempted Task calls can be memoized              $e8
  Simple Task calls with timeout can be memoized    $e9
  Attempted Task calls with timeout can be memoized $e10
+ Failed tasks must not be memoized                 $e11
 
 """
 
@@ -121,6 +122,24 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
     def makeRequest = taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)).taskMemo("only once", cache)
       (makeRequest >> makeRequest).taskAttempt.runSequential.runAsync must beRight(1).await
+
+    invocationsNumber must be_==(1)
+  }
+
+  def e11 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    var firstTime = true
+
+    def makeRequest =
+      if (firstTime)
+        taskMemo("only once", cache, taskDelay { firstTime = false; throw new Exception("") } >> taskDelay({ invocationsNumber += 1; 1 }))
+      else
+        taskMemo("only once", cache, taskDelay { invocationsNumber += 1; 1 })
+
+    makeRequest.taskAttempt.runSequential.runAsync must beLeft[Throwable].await
+    makeRequest.taskAttempt.runSequential.runAsync must beRight(1).await
 
     invocationsNumber must be_==(1)
   }

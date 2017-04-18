@@ -37,6 +37,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   Safe effect can be mixed with other effects $mixedWithOtherEffects1
 
   The Safe effect can be memoized $memoizeSafe
+  Failed safe effects must not be memoized $dontMemoizeFailedSafe
 
   Finalization will happen even if other effects are involved
     either right + ok $bracket1
@@ -198,9 +199,9 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     type S = Fx.fx1[Safe]
 
     val intSafe: Eff[S, Int] =
-      protect[S, String]("a").flatMap(_ => protect[S, Int] {invocationsNumber += 1; 1})
+      protect[S, String]("a").flatMap(_ => protect[S, Int] { invocationsNumber += 1; 1 })
 
-    def makeRequest: Eff[S, Int] = memoizeEffect(intSafe, cache, "safe")
+    def makeRequest: Eff[S, Int] = safeMemo("safe", cache, intSafe)
 
     Eff.sequenceA(List.fill(5)(makeRequest)).execSafe.run must beRight(List.fill(5)(1))
 
@@ -208,7 +209,29 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     makeRequest.execSafe.run must beRight(1)
 
     invocationsNumber must be_==(1)
+  }
 
+  def dontMemoizeFailedSafe = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    type S = Fx.fx1[Safe]
+
+    val intSafe: Eff[S, Int] =
+      protect[S, String]("a").flatMap(_ => protect[S, Int] { invocationsNumber += 1; 1 })
+
+    var firstTime = true
+
+    def makeRequest: Eff[S, Int] =
+      if (firstTime)
+        safeMemo("safe", cache, SafeEffect.protect { firstTime = false; throw new Exception("boom") } >> intSafe)
+      else
+        safeMemo("safe", cache, intSafe)
+
+    Eff.sequenceA(List.fill(5)(makeRequest)).execSafe.run must beLeft
+    Eff.sequenceA(List.fill(5)(makeRequest)).execSafe.run must beRight(List.fill(5)(1))
+
+    invocationsNumber must be_==(1)
   }
 
   var i = 0

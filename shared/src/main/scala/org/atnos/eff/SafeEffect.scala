@@ -1,5 +1,8 @@
 package org.atnos.eff
 
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
+
 import cats._
 import cats.implicits._
 import eff._
@@ -262,6 +265,18 @@ trait SafeInterpretation extends SafeCreation { outer =>
       case t if implicitly[ClassTag[E]].runtimeClass.isInstance(t) => pure(())
     })
 
+  /**
+   * Memoize safe effects using a cache
+   *
+   * if this method is called with the same key the previous value will be returned
+   */
+  def safeMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit safe: Safe /= R): Eff[R, A] =
+    attempt(Eff.memoizeEffect(e, cache, key)).flatMap {
+      case Left(t)  => Eff.send(Safe.safeSequenceCached.reset(cache, key)) >> SafeEffect.exception(t)
+      case Right(a) => Eff.pure(a)
+    }
+
+
 }
 
 object SafeInterpretation extends SafeInterpretation
@@ -293,8 +308,19 @@ object Safe {
 
   implicit val safeSequenceCached: SequenceCached[Safe] =
     new SequenceCached[Safe] {
-      def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Safe[X]): Safe[X] =
-        cache.memo((key, sequenceKey),tx.memoize)
+      def apply[X](cache: Cache, key: AnyRef, subKey: Int, tx: =>Safe[X]): Safe[X] =
+        cache.memo((key, subKey), tx.memoize)
+
+      def reset(cache: Cache, key: AnyRef): Safe[Unit] =
+        EvaluateValue(Eval.later {
+          cache.reset(key)
+          var i = 0
+          while (cache.get((key, i)).isDefined) {
+            cache.reset((key, i))
+            i += 1
+          }
+        })
+
     }
 
 }

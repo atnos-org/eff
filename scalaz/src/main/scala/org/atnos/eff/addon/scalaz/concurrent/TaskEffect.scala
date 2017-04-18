@@ -1,6 +1,7 @@
 package org.atnos.eff.addon.scalaz.concurrent
 
 import java.util.concurrent._
+import java.util.concurrent.atomic.AtomicInteger
 
 import org.atnos.eff.syntax.all._
 
@@ -77,18 +78,30 @@ object TimedTask {
     TimedTask(_ => task, timeout)
 
   implicit val timedTaskSequenceCached: SequenceCached[TimedTask] = new SequenceCached[TimedTask] {
-    def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = TimedTask { es =>
-      implicit val executionContext = es.executionContext
-      // there is no built-in memoization for Scalaz tasks so we need to memoize future instead
-      lazy val cached = cache.memo((key, sequenceKey), taskToFuture(tx.runNow(es)))
+    def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = {
+      TimedTask { es =>
+        implicit val executionContext = es.executionContext
+        // there is no built-in memoization for Scalaz tasks so we need to memoize future instead
+        lazy val cached = cache.memo((key, sequenceKey), taskToFuture(tx.runNow(es)))
 
-      Task async { cb =>
-        cached.onComplete {
-          case Success(a) => cb(\/-(a))
-          case Failure(t) => cb(-\/(t))
+        Task async { cb =>
+          cached.onComplete {
+            case Success(a) => cb(\/-(a))
+            case Failure(t) => cb(-\/(t))
+          }
         }
       }
     }
+
+    def reset(cache: Cache, key: AnyRef): TimedTask[Unit] =
+      TimedTask(_ => Task.now {
+        cache.reset(key)
+        var i = 0
+        while (cache.get((key, i)).isDefined) {
+          cache.reset((key, i))
+          i += 1
+        }
+      })
   }
 
   private[concurrent] def futureToTask[A](future: =>scala.concurrent.Future[A])(implicit ec: ExecutionContext, S: Strategy): Task[A] =
@@ -200,7 +213,10 @@ trait TaskInterpretation extends TaskTypes {
     * if this method is called with the same key the previous value will be returned
     */
   def taskMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, A] =
-    Eff.memoizeEffect(e, cache, key)
+    taskAttempt(Eff.memoizeEffect(e, cache, key)).flatMap {
+      case Left(t)  => Eff.send(TimedTask.timedTaskSequenceCached.reset(cache, key)) >> TaskEffect.taskFailed(t)
+      case Right(a) => Eff.pure(a)
+    }
 
   def runTaskMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], task: TimedTask |= U): Eff[U, A] =
     interpret.translate(effect)(new Translate[Memoized, U] {

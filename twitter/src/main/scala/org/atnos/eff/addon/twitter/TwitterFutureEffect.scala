@@ -1,5 +1,8 @@
 package org.atnos.eff.addon.twitter
 
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
+
 import cats._
 import cats.implicits._
 import org.atnos.eff.all._
@@ -73,6 +76,17 @@ object TwitterTimedFuture {
     new SequenceCached[TwitterTimedFuture] {
       def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TwitterTimedFuture[X]): TwitterTimedFuture[X] =
         TwitterTimedFuture((pool, scheduler) => cache.memo((key, sequenceKey), tx.runNow(pool, scheduler)))
+
+      def reset(cache: Cache, key: AnyRef): TwitterTimedFuture[Unit] =
+        TwitterTimedFuture((_,_) => Future.value {
+          cache.reset(key)
+          var i = 0
+          while (cache.get((key, i)).isDefined) {
+            cache.reset((key, i))
+            i += 1
+          }
+        })
+
     }
 
 }
@@ -147,7 +161,10 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
    * if this method is called with the same key the previous value will be returned
    */
   final def futureMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, A] =
-    Eff.memoizeEffect(e, cache, key)
+    futureAttempt(Eff.memoizeEffect(e, cache, key)).flatMap {
+      case Left(t)  => Eff.send(TwitterTimedFuture.twitterFutureSequenceCached.reset(cache, key)) >> TwitterFutureEffect.futureFail(t)
+      case Right(a) => Eff.pure(a)
+    }
 
   /**
    * Memoize Future values using a memoization effect

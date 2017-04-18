@@ -1,9 +1,12 @@
 package org.atnos.eff.addon.fs2
 
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
+
 import cats._
 import cats.implicits._
 import fs2._
-import org.atnos.eff.{ Scheduler => _, _}
+import org.atnos.eff.{Scheduler => _, _}
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
@@ -63,7 +66,11 @@ object TimedTask {
 
   }
 
-  final def now[A](value: A): TimedTask[A] = TimedTask((_, _) => Task.now(value))
+  final def now[A](value: A): TimedTask[A] =
+    TimedTask((_, _) => Task.now(value))
+
+  final def delay[A](value: =>A): TimedTask[A] =
+    TimedTask((_, _) => Task.now(value))
 
   implicit final def fromTask[A](task: Task[A]): TimedTask[A] =
     TimedTask((_, _) => task)
@@ -76,7 +83,7 @@ object TimedTask {
       implicit val s = strategy
       implicit val ec = strategyToExecutionContext(s)
       // there is no built-in memoization for fs2 tasks so we need to memoize future instead
-      lazy val cached = cache.memo(key + "-" + sequenceKey, tx.runNow(strategy, scheduler).unsafeRunAsyncFuture)
+      lazy val cached = cache.memo((key, sequenceKey), tx.runNow(strategy, scheduler).unsafeRunAsyncFuture)
 
       Task async { cb =>
         cached.onComplete {
@@ -85,6 +92,17 @@ object TimedTask {
         }
       }
     }
+
+    def reset(cache: Cache, key: AnyRef): TimedTask[Unit] =
+      TimedTask.delay {
+        cache.reset(key)
+        var i = 0
+        while (cache.get((key, i)).isDefined) {
+          cache.reset((key, i))
+          i += 1
+        }
+      }
+
   }
 
   def strategyToExecutionContext(strategy: Strategy): ExecutionContext =
@@ -180,7 +198,10 @@ trait TaskInterpretation extends TaskTypes {
     * if this method is called with the same key the previous value will be returned
     */
   def taskMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: TimedTask /= R): Eff[R, A] =
-    Eff.memoizeEffect(e, cache, key)
+    taskAttempt(Eff.memoizeEffect(e, cache, key)).flatMap {
+      case Left(t)  => Eff.send(TimedTask.timedTaskSequenceCached.reset(cache, key)) >> TaskEffect.taskFailed(t)
+      case Right(a) => Eff.pure(a)
+    }
 
   /**
     * Memoize task values using a memoization effect
