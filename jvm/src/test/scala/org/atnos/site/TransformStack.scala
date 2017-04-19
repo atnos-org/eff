@@ -8,7 +8,7 @@ import cats.data.Writer
 import cats.~>
 import org.atnos.eff._
 
-object TransformStack extends UserGuidePage { def is = "Transforming stacks".title ^ s2"""
+object TransformStack extends UserGuidePage { def is = "Transform stacks".title ^ s2"""
 
 ### What is an "effect stack"?
 

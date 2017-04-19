@@ -11,9 +11,10 @@ You can learn more in the following sections:
  - ${"installation and imports" ~ Installation}
  - ${"your first effects" ~ Introduction}
  - ${"standard effects in eff" ~ OutOfTheBox}: `Reader`, `Writer`, `Eval`, `State`,...
- - ${"create your own effects" ~/ CreateEffects}
+ - ${"tutorial" ~ Tutorial}
+ - ${"create your own effects" ~ CreateEffects}
  - ${"interpret and manipulate effect stacks" ~ TransformStack}
- - ${"use Member implicits" ~/ MemberImplicits }
+ - ${"use Member implicits" ~ MemberImplicits }
  - ${"use an applicative evaluation" ~ ApplicativeEvaluation}
  - ${"tips and tricks" ~ Cookbook}
 

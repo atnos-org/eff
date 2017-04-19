@@ -1,0 +1,8 @@
+Maintenance version
+
+Improvements
+
+ * added a search box and a table of contents to the user guide [#91](https://github.com/atnos-org/eff/issues/91)
+ * added a `trace` method to output the successive values of an effect [#90](https://github.com/atnos-org/eff/issues/90)
+
+
