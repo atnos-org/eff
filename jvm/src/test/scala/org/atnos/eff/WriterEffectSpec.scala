@@ -43,9 +43,12 @@ class WriterEffectSpec extends Specification with ThrownExpectations { def is = 
 
     val messages: ListBuffer[String] = new ListBuffer[String]
 
-    action.runWriterEval((m: String) => Eval.later(messages.append(m))).runEval.run ==== "hello world"
+    val ranWriterAction = action.runWriterEval((m: String) => Eval.later(messages.append(m)))
 
-    messages.toList ==== List("hello", "world")
+    ranWriterAction.runEval.run ==== "hello world"
+    ranWriterAction.runEval.run ==== "hello world"
+
+    messages.toList ==== List("hello", "world", "hello", "world")
 
   }
 

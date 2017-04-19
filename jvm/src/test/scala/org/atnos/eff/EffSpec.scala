@@ -48,7 +48,9 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
  An effect of the stack can be translated into other effects on that stack         $translateEffect
  An effect of the stack can be locally translated into other effects on that stack $translateEffectLocal
  An effect can be intercepted and transformed to other values for the same effect  $interceptEffectNat
- An effect can be translated into other effects of the same stack                  $translateIntoEffect
+ An effect can be augmented with other effects                                     $augmentEffect
+ An effect can be logged using a custom logger                                     $writeEffect
+ An effect can be logged using its execution trace                                 $traceEffect
 
  Applicative calls can be optimised by "batching" requests $optimiseRequests
  Interleaved applicative calls can be interpreted properly $interleavedApplicative (see release notes for 4.0.2)
@@ -309,29 +311,22 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
   }.setGens(Gen.choose(3, 3), Gen.oneOf("abc", "dce", "xyz")).set(minTestsOk = 1)
 
-  def translateIntoEffect = prop { n: Int =>
-    sealed trait Stored[A]
-    case class Get(k: String)            extends Stored[Unit]
-    case class Update(k: String, i: Int) extends Stored[Unit]
-    case class Remove(k: String)         extends Stored[Unit]
+  sealed trait Stored[A]
+  case class Get(k: String)            extends Stored[Unit]
+  case class Update(k: String, i: Int) extends Stored[Unit]
+  case class Remove(k: String)         extends Stored[Unit]
 
-    type WriterString[A] = Writer[String, A]
+  def runStored[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[Stored, R, U]): Eff[U, A] =
+    interpret.translate[R, U, Stored, A](e)(new Translate[Stored, U] {
+      def apply[X](tx: Stored[X]) = pure[U, X](().asInstanceOf[X])
+    })
 
-    def runStored[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[Stored, R, U]): Eff[U, A] =
-      interpret.translate[R, U, Stored, A](e)(new Translate[Stored, U] {
-        def apply[X](tx: Stored[X]) = pure[U, X](().asInstanceOf[X])
-      })
+  def action[R: MemberIn[Stored, ?]]: Eff[R, Unit] =
+    send[Stored, R, Unit](Update("a", 1)) >>
+    send[Stored, R, Unit](Get("b"))       >>
+    send[Stored, R, Unit](Remove("c"))
 
-
-    val w =
-      new Write[Stored, String] {
-        def apply[X](tx: Stored[X]) = tx match {
-          case Get(k)       => k
-          case Update(k, _) => k
-          case Remove(k)    => k
-        }
-      }
-
+  def augmentEffect = {
     val wAugment =
       new Augment[Stored, Writer[String, ?]] {
         def apply[X](tx: Stored[X]) = tx match {
@@ -341,16 +336,26 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
         }
       }
 
-    type R1 = Fx.fx1[Stored]
-    type R2 = Fx.fx2[WriterString, Stored]
+      runStored(action[Fx.fx2[Writer[String, ?], Stored]].augment(wAugment)).runWriterLog.run ==== List("a", "b", "c")
+  }
 
-    val action: Eff[R1, Unit] =
-      send[Stored, R1, Unit](Update("a", 1)) >>
-      send[Stored, R1, Unit](Get("b"))       >>
-      send[Stored, R1, Unit](Remove("c"))
+  def writeEffect = {
+    val w =
+      new Write[Stored, String] {
+        def apply[X](tx: Stored[X]) = tx match {
+          case Get(k)       => k
+          case Update(k, _) => k
+          case Remove(k)    => k
+        }
+      }
 
-    (runStored(action.write(w)).runWriterLog.run ==== List("a", "b", "c")) &&
-      (runStored(action.augment(wAugment)).runWriterLog.run ==== List("a", "b", "c"))
+    runStored(action[Fx.fx2[Writer[String, ?], Stored]].write(w)).runWriterLog.run ==== List("a", "b", "c")
+
+  }
+
+  def traceEffect = {
+    runStored(action[Fx.fx2[Writer[Stored[_], ?], Stored]].trace[Stored]).runWriterLog.run ====
+      List[Stored[_]](Update("a", 1), Get("b"), Remove("c"))
   }
 
   def optimiseRequests = {

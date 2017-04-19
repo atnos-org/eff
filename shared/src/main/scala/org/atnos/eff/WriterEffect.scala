@@ -94,6 +94,12 @@ trait WriterInterpretation {
   def runWriterEval[R, U, O, A](w: Eff[R, A])(f: O => Eval[Unit])(implicit m: Member.Aux[Writer[O, ?], R, U], ev: Eval |= U): Eff[U, A] =
     runWriterFold(w)(EvalFold(f)).flatMap { case (a, e) => send[Eval, U, Unit](e).as(a) }
 
+  def runWriterMonoid[R, U, O, A](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, ?], R, U], O: Monoid[O]): Eff[U, (A, O)] =
+    runWriterFold(w)(MonoidFold[O])
+
+  def runWriterIntoMonoid[R, U, O, M, A](w: Eff[R, A])(f: O => M)(implicit m: Member.Aux[Writer[O, ?], R, U], M: Monoid[M]): Eff[U, (A, M)] =
+    runWriterFold(w)(IntoMonoidFold[M, O](f))
+
   implicit def ListFold[A]: RightFold[A, List[A]] = new RightFold[A, List[A]] {
     type S = List[A]
     val init = List[A]()
@@ -101,17 +107,22 @@ trait WriterInterpretation {
     def finalize(s: S) = s
   }
 
-  def MonoidFold[A : Monoid]: RightFold[A, A] = new RightFold[A, A] {
-    type S = A
-    val init = Monoid[A].empty
-    def fold(a: A, s: S) = a |+| s
-    def finalize(s: S) = s
+  def IntoMonoidFold[M: Monoid, A](f: A => M): RightFold[A, M] = new RightFold[A, M] {
+    type S = M
+    val init: M = Monoid[M].empty
+    def fold(a: A, s: M): M = f(a) |+| s
+    def finalize(s: M): M = s
   }
+
+  def MonoidFold[A : Monoid]: RightFold[A, A] =
+    IntoMonoidFold(identity)
 
   def EvalFold[A](f: A => Eval[Unit]): RightFold[A, Eval[Unit]] = new RightFold[A, Eval[Unit]] {
     type S = Eval[Unit]
-    val init = Eval.later(())
-    def fold(a: A, s: S) = Eval.later { f(a) >> s }.flatten
+    val init = Eval.Unit
+    // should this be Eval.defer rather than later {}.flatten?
+    // are we in danger of accidentally memoizing user side-effects?
+    def fold(a: A, s: S) = Eval.defer { f(a) >> s }
     def finalize(s: S) = s
   }
 

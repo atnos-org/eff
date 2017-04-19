@@ -1,6 +1,6 @@
 package org.atnos.eff.syntax
 
-import cats.Eval
+import cats.{Eval, Monoid}
 import cats.data.Writer
 import org.atnos.eff._
 
@@ -24,6 +24,12 @@ trait writer {
 
     def runWriterFold[O, B](fold: RightFold[O, B])(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, (A, B)] =
       WriterInterpretation.runWriterFold(e)(fold)(member.aux)
+
+    def runWriterMonoid[B](implicit member: Member[Writer[B, ?], R], B: Monoid[B]): Eff[member.Out, (A, B)] =
+      WriterInterpretation.runWriterMonoid(e)(member.aux, B)
+
+    def runWriterIntoMonoid[O, M](f: O => M)(implicit member: Member[Writer[O, ?], R], M: Monoid[M]): Eff[member.Out, (A, M)] =
+      WriterInterpretation.runWriterIntoMonoid(e)(f)(member.aux, M)
 
     def runWriterUnsafe[O](f: O => Unit)(implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =
       WriterInterpretation.runWriterUnsafe(e)(f)(member.aux)
