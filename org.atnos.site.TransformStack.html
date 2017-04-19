@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Transforming stacks</title>
+    <title>Transform stacks</title>
     <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
     <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
@@ -28,15 +28,187 @@
 
 <div class="container">
 
-<div class="col-md-1"></div>
+<div class="col-md-2 col-sm-3 col-xs-3 sidebar-outer">
+<div class="col-md-2 fixed">
 
-<div class="col-md-1"></div>
+<!-- search box -->
+<div class="search-box">
+  <form action="search.html">
+    <input type="text" name="q" id="tipue_search_input" autocomplete="off" required>
+  </form>
+</div>
 
+<!-- table of contents -->
+<div id="tree"><ul>
+                <li id="index"><a href="index.html" title="eff">eff</a>
+      <ul><ul><li><a href="index.html#contributing" title="Contributing">Contributing</a>
+          
+        </li></ul></ul>
+      <ul>
+                    <ul>
+                <li id="org-atnos-site-installation"><a href="org.atnos.site.Installation.html" title="Installation">Installation</a>
+      <ul><ul><li><a href="org.atnos.site.Installation.html#imports" title="Imports">Imports</a>
+          <ul><li><a href="org.atnos.site.Installation.html#main-types" title="Main types">Main types</a>
+          
+        </li><li><a href="org.atnos.site.Installation.html#creating-effects" title="Creating effects">Creating effects</a>
+          
+        </li><li><a href="org.atnos.site.Installation.html#interpreting-effects" title="Interpreting effects">Interpreting ef...</a>
+          
+        </li><li><a href="org.atnos.site.Installation.html#intellij-support" title="Intellij support">Intellij support</a>
+          
+        </li><li><a href="org.atnos.site.Installation.html#with-scalaz" title="With Scalaz">With Scalaz</a>
+          
+        </li></ul>
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-introduction"><a href="org.atnos.site.Introduction.html" title="Introduction">Introduction</a>
+      <ul><ul><li><a href="org.atnos.site.Introduction.html#first-example" title="First example">First example</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-outofthebox"><a href="org.atnos.site.OutOfTheBox.html" title="Out of the box">Out of the box</a>
+      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#eval" title="Eval">Eval</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#option" title="Option">Option</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#either" title="Either">Either</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#validate" title="Validate">Validate</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#error" title="Error">Error</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#reader" title="Reader">Reader</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#writer" title="Writer">Writer</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#state" title="State">State</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#list" title="List">List</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#choose" title="Choose">Choose</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#memo" title="Memo">Memo</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#timedfuture" title="TimedFuture">TimedFuture</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#safe" title="Safe">Safe</a>
+          
+        </li><li><a href="org.atnos.site.OutOfTheBox.html#what’s-next?" title="What’s next?">What’s next?</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
+      <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-createeffects"><a href="org.atnos.site.CreateEffects.html" title="Creating effects">Creating effects</a>
+      <ul><ul><li><a href="org.atnos.site.CreateEffects.html#creation" title="Creation">Creation</a>
+          
+        </li><li><a href="org.atnos.site.CreateEffects.html#compiler-limitation" title="Compiler limitation">Compiler limita...</a>
+          
+        </li><li><a href="org.atnos.site.CreateEffects.html#interpreter" title="Interpreter">Interpreter</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
+      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
+          
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+          <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
+          
+        </li></ul>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+          
+        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
+          
+        </li><li><a href="org.atnos.site.TransformStack.html#merge-stacks" title="Merge stacks">Merge stacks</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+          
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+          
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
+      <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
+          
+        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-cookbook"><a href="org.atnos.site.Cookbook.html" title="Cookbook">Cookbook</a>
+      <ul><ul><li><a href="org.atnos.site.Cookbook.html#partial-interpretation" title="Partial Interpretation">Partial Interpr...</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul>
+                  </ul>
+    </li>
+              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['index','org-atnos-site-transformstack'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
 
+</div>
+</div>
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
-<h1>Transforming stacks</h1>
+<h1>Transform stacks</h1>
 <div id="tipue_search_content"></div>
 
 <h3 id="what-is-an-effect-stack">What is an “effect stack”?</h3>
@@ -60,7 +232,9 @@ FxAppend[
   //val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]] =
   //  implicitly[Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]]]</code></pre>
 <p>Unfortunately the compiler has some difficulties with it, so you can either get the member value by using the implicit definitions “manually” or you can just summon the member instance without the <code class="prettyprint">Aux</code> part:</p>
-<pre><code class="prettyprint">// so you need to explicitly define the implicit
+<pre><code class="prettyprint">import org.atnos.eff._
+
+// so you need to explicitly define the implicit
 val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]] =
   Member.MemberAppendR(Member.Member3M)
 
@@ -68,7 +242,9 @@ val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1
 val member: Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]] =
   implicitly[Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]]]</code></pre>
 <p>More importantly the compiler is still able to track the right types resulting of the interpretation of a given effect so the following compiles ok:</p>
-<pre><code class="prettyprint">def runT3[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T3, R, U]): Eff[U, A] = ???
+<pre><code class="prettyprint">import org.atnos.eff._
+
+def runT3[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T3, R, U]): Eff[U, A] = ???
 def runT2[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T2, R, U]): Eff[U, A] = ???
 def runT1[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T1, R, U]): Eff[U, A] = ???
 def runT4[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T4, R, U]): Eff[U, A] = ???
@@ -81,6 +257,7 @@ runT1(runT4(runT2(runT3(Eff.send[T3, S, Int](???)))))</code></pre>
 <p>A typical use case for this is to transform a stack having a <code class="prettyprint">Reader[S, ?]</code> effect to a stack having a <code class="prettyprint">Reader[B, ?]</code> effect where <code class="prettyprint">S</code> is “contained” in <code class="prettyprint">B</code> (meaning that there is a mapping from <code class="prettyprint">B</code>, “big”, to <code class="prettyprint">S</code>, “small”). Here is an example:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._
 import org.atnos.eff.syntax.all._
+import cats._
 import cats.data._
 
 case class Conf(host: String, port: Int)
@@ -128,7 +305,7 @@ action.runReader(Conf(&quot;www.me.com&quot;, 8080)).runOption.run</code></pre>
 <p>For example you might have this stack:</p>
 <pre><code class="prettyprint">type S = Fx.fx3[Authenticated, TimedFuture, AuthError Either ?]</code></pre>
 <p>And you want to write an interpreter which will translate authentication actions into <code class="prettyprint">TimedFuture</code> and <code class="prettyprint">Either</code>:</p>
-<pre><code class="prettyprint">import org.atnos.eff.eff._
+<pre><code class="prettyprint">import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
 import org.atnos.eff.future._
 import org.atnos.eff.interpret._
@@ -143,10 +320,10 @@ case class AuthError(message: String)
 // DSL for authenticating users
 sealed trait Authenticated[A]
 case class Authenticate(token: String) extends Authenticated[AccessRights]
-type _authenticate[R] = Authenticated |= R
+type _authenticate[U] = Authenticated |= U
 
 type AuthErroEither[A] = AuthError Either A
-type _error[R] = AuthErroEither |= R
+type _error[U] = AuthErroEither |= U
 
 /**
  * The order of implicit parameters is really important for type inference!
@@ -174,10 +351,10 @@ def authenticateImpl(token: String): Future[AuthError Either AccessRights] =
 
 def authenticate[S :_authenticate](token: String) = Authenticate(token).send
 
-type S = Fx.fx3[Authenticated, AuthError Either ?, TimedFuture]
-type R = Fx.fx2[AuthError Either ?, TimedFuture]
+type S1 = Fx.fx3[Authenticated, AuthError Either ?, TimedFuture]
+type R1 = Fx.fx2[AuthError Either ?, TimedFuture]
 
-val result: Eff[R, AccessRights] = runAuth(authenticate[S](&quot;faketoken&quot;))</code></pre>
+val result: Eff[R1, AccessRights] = runAuth(authenticate[S1](&quot;faketoken&quot;))</code></pre>
 <p>The call to <code class="prettyprint">send</code> above needs to send an <code class="prettyprint">TimedFuture</code> value in the stack <code class="prettyprint">U</code>. This is possible because <code class="prettyprint">TimedFuture</code> is an effect in <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">future</code>.</p>
 <p>Furthermore, <code class="prettyprint">authenticate</code> returns an <code class="prettyprint">AuthError Either ?</code> value. We can “collapse” it into <code class="prettyprint">U</code> because <code class="prettyprint">AuthError Either ?</code> is an effect of <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">either</code>.</p>
 <p>You might wonder why we don’t use a more direct type signature like:</p>
@@ -191,7 +368,9 @@ val result: Eff[R, AccessRights] = runAuth(authenticate[S](&quot;faketoken&quot;
 <p>And then <code class="prettyprint">authenticated</code> is last in the list of implicits parameters and can not be used to guide type inference.</p>
 <h3 id="interpret-an-effect-locally">Interpret an effect “locally”</h3>
 <p>Let’s say you have a method to run database queries</p>
-<pre><code class="prettyprint">import org.atnos.eff.all._
+<pre><code class="prettyprint">import org.atnos.eff._
+import org.atnos.eff.all._
+import cats.data._
 
 trait Db[A]
 type _writerString[R] = Writer[String, ?] |= R
@@ -207,13 +386,14 @@ def runDb[R, U, A](queries: Eff[R, A])(
   implicit db:   Member.Aux[Db, R, U],
            eval: _eval[U]): Eff[U, A] = ???</code></pre>
 <p>How can you implement <code class="prettyprint">executeOnDb</code> with <code class="prettyprint">runDb</code>?</p>
-<pre><code class="prettyprint">import org.atnos.eff.all._, syntax.all._
+<pre><code class="prettyprint">import org.atnos.eff.all._
+import org.atnos.eff.syntax.all._
 
 def executeOnDb[R, U, A](queries: Eff[R, A])(
   implicit db:   Member.Aux[Db, R, U],
            eval: _eval[U]): Eff[U, A] = {
 
-  type S = Fx.prepend[WriterString, R]
+type S = Fx.prepend[WriterString, R]
   runDb(queries.into[S]).runWriterNoLog[String]
 
 }</code></pre>
@@ -223,6 +403,7 @@ def executeOnDb[R, U, A](queries: Eff[R, A])(
 <pre><code class="prettyprint">import org.atnos.eff._, all._
 import cats.data._
 import cats.Eval
+import HadoopStack._
 
 object HadoopStack {
 
@@ -244,6 +425,7 @@ object HadoopStack {
 }
 
 object S3Stack {
+  import S3Stack.{WriterString=&gt;_,_}
 
   case class S3Conf(bucket: String)
 
@@ -270,10 +452,15 @@ object S3Stack {
 
   type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]</code></pre>
 <p>Then we can use the <code class="prettyprint">into</code> method to inject effects from each stack into this common stack:</p>
-<pre><code class="prettyprint">// this imports the `into` and runXXX syntax
-  import org.atnos.eff.syntax.all._
+<pre><code class="prettyprint">import S3Stack._
+import HadoopStack._
+import org.atnos.eff._
 
-  val action = for {
+// this imports the `into` and runXXX syntax
+import org.atnos.eff.syntax.all._
+import cats.Eval
+
+val action = for {
   // read a file from hadoop
   s &lt;- readFile(&quot;/tmp/data&quot;).into[HadoopS3]
 
@@ -287,6 +474,13 @@ object S3Stack {
 <p>You can find a fully working example of this approach in <code class="prettyprint">src/test/org/atnos/example/StacksSpec</code>.</p>
 </div>
 
+<script>
+$(document).ready(function() {
+  $('#tipue_search_input').tipuesearch({
+    'show': 6
+  });
+});
+</script>
 </div>
 
 </body>

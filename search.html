@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Website</title>
+    <title>Search</title>
     <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
     <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
@@ -28,20 +28,48 @@
 
 <div class="container">
 
-<div class="col-md-1"></div>
 
-<div class="col-md-1"></div>
+<div class="col-md-2 col-sm-3 col-xs-3 sidebar-outer">
+<div class="col-md-2 fixed">
 
+
+
+<!-- search box -->
+<div class="search-box">
+  <form action="search.html">
+    <input type="text" name="q" id="tipue_search_input" autocomplete="off" required>
+  </form>
+</div>
+
+
+
+<!-- table of contents -->
+<toc/>
+
+
+
+</div>
+</div>
 
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
-<h1>Website</h1>
+
+<h1>Search</h1>
 <div id="tipue_search_content"></div>
 
-Generate the website
-<ul><li class="example success ok"><text>the user guide</text></li></ul>
+
+
 </div>
+
+
+<script>
+$(document).ready(function() {
+  $('#tipue_search_input').tipuesearch({
+    'show': 6
+  });
+});
+</script>
 
 </div>
 
