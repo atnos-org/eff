@@ -2,7 +2,6 @@
 package org.atnos.site.snippets.tutorial
 
 import AdtSnippet._
-import AdtCreationSnippet._
 
 trait AdtInterpreterSafeSnippet {
 // 8<---

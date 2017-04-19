@@ -2,13 +2,15 @@
 package org.atnos.site.snippets.tutorial
 
 import UserInteractionSnippet._
-import cats._
-import cats.implicits._
 
 trait UserInteractionInterpretersSnippet {
-def readLine(): String = "snuggles"
 // 8<---
+import cats._
+import cats.implicits._
 import org.atnos.eff._, interpret._
+
+def readLine(): String =
+  "snuggles"
 
 def runInteract[R, A](effect: Eff[R, A])(implicit m: Interact <= R): Eff[m.Out, A] =
   recurse(effect)(new Recurser[Interact, m.Out, A, A] {

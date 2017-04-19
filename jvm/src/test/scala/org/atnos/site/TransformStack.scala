@@ -2,11 +2,8 @@ package org.atnos.site
 
 import snippets._
 import HadoopS3Snippet._
-import HadoopStack._
-import S3Stack.{WriterString => _, _}
-import cats.data.Writer
-import cats.~>
-import org.atnos.eff._
+import cats.Eval
+import org.atnos.eff.Fx
 
 object TransformStack extends UserGuidePage { def is = "Transform stacks".title ^ s2"""
 
@@ -46,6 +43,8 @@ ${snippet {
 Unfortunately the compiler has some difficulties with it, so you can either get the member value by using the
   implicit definitions "manually" or you can just summon the member instance without the `Aux` part:
 ${snippet {
+import org.atnos.eff._
+
 // so you need to explicitly define the implicit
 val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]] =
   Member.MemberAppendR(Member.Member3M)
@@ -59,6 +58,7 @@ More importantly the compiler is still able to track the right types resulting o
 so the following compiles ok:
 
 ${snippet {
+import org.atnos.eff._
 
 def runT3[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T3, R, U]): Eff[U, A] = ???
 def runT2[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T2, R, U]): Eff[U, A] = ???
@@ -79,6 +79,7 @@ A typical use case for this is to transform a stack having a `Reader[S, ?]` effe
  where `S` is "contained" in `B` (meaning that there is a mapping from `B`, "big", to `S`, "small"). Here is an example:${snippet{
 import org.atnos.eff._, all._
 import org.atnos.eff.syntax.all._
+import cats._
 import cats.data._
 
 case class Conf(host: String, port: Int)
@@ -132,7 +133,7 @@ type S = Fx.fx3[Authenticated, TimedFuture, AuthError Either ?]
 ```
 
 And you want to write an interpreter which will translate authentication actions into `TimedFuture` and `Either`:${snippet{
-import org.atnos.eff.eff._
+import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
 import org.atnos.eff.future._
 import org.atnos.eff.interpret._
@@ -147,10 +148,10 @@ case class AuthError(message: String)
 // DSL for authenticating users
 sealed trait Authenticated[A]
 case class Authenticate(token: String) extends Authenticated[AccessRights]
-type _authenticate[R] = Authenticated |= R
+type _authenticate[U] = Authenticated |= U
 
 type AuthErroEither[A] = AuthError Either A
-type _error[R] = AuthErroEither |= R
+type _error[U] = AuthErroEither |= U
 
 /**
  * The order of implicit parameters is really important for type inference!
@@ -178,10 +179,10 @@ def authenticateImpl(token: String): Future[AuthError Either AccessRights] =
 
 def authenticate[S :_authenticate](token: String) = Authenticate(token).send
 
-type S = Fx.fx3[Authenticated, AuthError Either ?, TimedFuture]
-type R = Fx.fx2[AuthError Either ?, TimedFuture]
+type S1 = Fx.fx3[Authenticated, AuthError Either ?, TimedFuture]
+type R1 = Fx.fx2[AuthError Either ?, TimedFuture]
 
-val result: Eff[R, AccessRights] = runAuth(authenticate[S]("faketoken"))
+val result: Eff[R1, AccessRights] = runAuth(authenticate[S1]("faketoken"))
 
 }}
 
@@ -212,7 +213,9 @@ And then `authenticated` is last in the list of implicits parameters and can not
 
 Let's say you have a method to run database queries
 ${snippet {
+import org.atnos.eff._
 import org.atnos.eff.all._
+import cats.data._
 
 trait Db[A]
 type _writerString[R] = Writer[String, ?] |= R
@@ -232,10 +235,13 @@ However you know that some clients of your component don't care about the logs a
 So you'd like to provide this additional method:
 ${snippet{
 // 8<--
-  import org.atnos.eff.all._
+import org.atnos.eff._
+import org.atnos.eff.all._
+import cats.data._
 
-  trait Db[A]
-  type _writerString[R] = Writer[String, ?] |= R
+trait Db[A]
+type WriterString[A] = Writer[String, A]
+type _writerString[R] = WriterString |= R
 // 8<--
 
 def executeOnDb[R, U, A](queries: Eff[R, A])(
@@ -246,19 +252,24 @@ def executeOnDb[R, U, A](queries: Eff[R, A])(
 How can you implement `executeOnDb` with `runDb`?
 ${snippet {
   // 8<--
-import org.atnos.eff.all._, syntax.all._
+import org.atnos.eff._
+import org.atnos.eff.all._
+import cats.data._
+
 trait Db[A]
-type _writerString[R] = Writer[String, ?] |= R
+type WriterString[A] = Writer[String, A]
+type _writerString[R] = WriterString |= R
 
 def runDb[R, U, A](queries: Eff[R, A])(implicit m: Member.Aux[Db, R, U], e: _eval[U], w: _writerString[U]): Eff[U, A] = ???
 // 8<--
-import org.atnos.eff.all._, syntax.all._
+import org.atnos.eff.all._
+import org.atnos.eff.syntax.all._
 
 def executeOnDb[R, U, A](queries: Eff[R, A])(
   implicit db:   Member.Aux[Db, R, U],
            eval: _eval[U]): Eff[U, A] = {
 
-  type S = Fx.prepend[WriterString, R]
+type S = Fx.prepend[WriterString, R]
   runDb(queries.into[S]).runWriterNoLog[String]
 
 }
@@ -284,11 +295,18 @@ some common effects, so the resulting stack we want to work with is:${snippet{
 }}
 
 Then we can use the `into` method to inject effects from each stack into this common stack:${snippet{
+// 8<--
+type HadoopS3 = Fx.fx4[S3Stack.S3Reader, HadoopStack.HadoopReader, cats.data.Writer[String, ?], Eval]
+// 8<--
+import S3Stack._
+import HadoopStack._
+import org.atnos.eff._
 
-  // this imports the `into` and runXXX syntax
-  import org.atnos.eff.syntax.all._
+// this imports the `into` and runXXX syntax
+import org.atnos.eff.syntax.all._
+import cats.Eval
 
-  val action = for {
+val action = for {
   // read a file from hadoop
   s <- readFile("/tmp/data").into[HadoopS3]
 

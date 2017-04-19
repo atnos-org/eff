@@ -2,14 +2,15 @@
 package org.atnos.site.snippets.tutorial
 
 import AdtSnippet._
-import cats.Traverse
 
 trait AdtInterpreterSnippet {
 // 8<---
 
 import org.atnos.eff._, interpret._
+import cats.Traverse
 import cats.implicits._
 import scala.collection.mutable._
+
 
 /**
  * Unsafe interpreter for KVStore effects

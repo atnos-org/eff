@@ -1,11 +1,11 @@
 // 8<---
 package org.atnos.site.snippets.tutorial
 import AdtSnippet._
-import org.atnos.eff._
 
 trait AdtCreationSnippet {
 // 8<---
 
+import org.atnos.eff._
 import cats.implicits._
 
 // T |= R is an alias for MemberIn[T, R]

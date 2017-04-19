@@ -2,8 +2,6 @@
 package org.atnos.site.snippets
 
 import HadoopS3Snippet._
-import HadoopStack._
-import S3Stack.{WriterString=>_,_}
 
 trait HadoopS3Snippet {
 // 8<---
@@ -11,6 +9,7 @@ trait HadoopS3Snippet {
 import org.atnos.eff._, all._
 import cats.data._
 import cats.Eval
+import HadoopStack._
 
 object HadoopStack {
 
@@ -32,6 +31,7 @@ object HadoopStack {
 }
 
 object S3Stack {
+  import S3Stack.{WriterString=>_,_}
 
   case class S3Conf(bucket: String)
 
@@ -51,8 +51,6 @@ object S3Stack {
 }
 
 // 8<---
-
-  type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 
 }
 
