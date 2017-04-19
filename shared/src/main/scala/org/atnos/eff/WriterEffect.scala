@@ -120,8 +120,6 @@ trait WriterInterpretation {
   def EvalFold[A](f: A => Eval[Unit]): RightFold[A, Eval[Unit]] = new RightFold[A, Eval[Unit]] {
     type S = Eval[Unit]
     val init = Eval.Unit
-    // should this be Eval.defer rather than later {}.flatten?
-    // are we in danger of accidentally memoizing user side-effects?
     def fold(a: A, s: S) = Eval.defer { f(a) >> s }
     def finalize(s: S) = s
   }
