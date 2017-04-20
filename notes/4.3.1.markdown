@@ -2,7 +2,12 @@ Maintenance version
 
 Improvements
 
- * added a search box and a table of contents to the user guide [#91](https://github.com/atnos-org/eff/issues/91)
- * added a `trace` method to output the successive values of an effect [#90](https://github.com/atnos-org/eff/issues/90)
+ * added a search box and a table of contents to the user guide [#91](https://github.com/atnos-org/eff/issues/89)
+ * added a `trace` method to output the successive values of an effect [#90](https://github.com/atnos-org/eff/issues/92)
+ * added an `@eff` macro to generate boilerplace for a given effect [#83](https://github.com/atnos-org/eff/pull/83) thanks to @nightscape
+
+Fixes
+
+ * made `Eff.traverseA` stacksafe [#95](https://github.com/atnos-org/eff/pull/95)
 
 
