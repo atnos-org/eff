@@ -40,6 +40,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
    when the stack can be transformed to Fx1[M] and applicative $detachOneApplicativeEffectInto
 
  Eff values can be traversed with an applicative instance $traverseEff
+ Eff.traverseA is stacksafe                               $traverseStacksafe
 
  A stack can be added a new effect when the effect is not in stack $notInStack
  A stack can be added a new effect when the effect is in stack     $inStack
@@ -170,7 +171,7 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     type S = Fx.append[Fx.fx2[Writer[Int, ?], Either[String, ?]], Fx.fx1[Option]]
     val e: Eff[S, Int] = OptionEffect.some[S, Int](1)
 
-    e.runWriter.runEither.detach must beSome(Right((1, Nil)))
+    e.runWriter.runEither.detach must beSome[String Either (Int, List[Int])](Right((1, Nil)))
   }
 
   def detachOneApplicativeEffect =
@@ -191,6 +192,15 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
 
     traversed.runOption.run === Option(List(1, 2, 3)) &&
       flatTraversed.runOption.run === Option(List(1, 2, 2, 3, 3, 4))
+  }
+
+  def traverseStacksafe = {
+    val list = (1 to 5000).toList
+
+    val traversed: Eff[Fx.fx1[Option], List[Int]] =
+      list.traverseA(i => OptionEffect.some(i))
+
+    traversed.runOption.run === Option(list)
   }
 
   def functionReader[R, U, A, B](f: A => Eff[R, B])(implicit into: IntoPoly[R, U],
@@ -396,10 +406,11 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     def runDsl[A](eff: Eff[Fx1[UserDsl], A]): A =
       eff match {
         case Pure(a, _) => a
+        case Impure(NoEffect(a), c, _)                  => runDsl(c(a))
         case Impure(UnionTagged(GetUser(i), _), c, _)   => runDsl(c(getWebUser(i)))
         case Impure(UnionTagged(GetUsers(is), _), c, _) => runDsl(c(getWebUsers(is)))
         case ap @ ImpureAp(u, m, _)                     => runDsl(ap.toMonadic)
-        case Impure(_, _, _)                            => sys.error("this should not happen with just one effect")
+        case Impure(_, _, _)                            => sys.error("this should not happen with just one effect. Got "+eff)
       }
 
     def action1[R :_userDsl] =
