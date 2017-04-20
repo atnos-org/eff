@@ -11,8 +11,8 @@ lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
   .settings(effSettings)
   .settings(noPublishSettings)
-  .aggregate(coreJVM, coreJS, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
-  .dependsOn(coreJVM, coreJS, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
+  .aggregate(coreJVM, coreJS, macros, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
+  .dependsOn(coreJVM, coreJS, macros, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
 
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff")
@@ -24,6 +24,14 @@ lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
+
+lazy val macros = project.in(file("macros"))
+  .settings(moduleName := "eff-macros")
+  .dependsOn(coreJVM)
+  .settings(libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value)
+  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
+  .settings(commonJvmSettings)
+  .settings(effSettings:_*)
 
 lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
   .settings(moduleName := "eff-monix")
