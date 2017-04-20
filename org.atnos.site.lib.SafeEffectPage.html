@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Installation</title>
+    <title>Safe</title>
     <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
     <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
@@ -266,74 +266,78 @@
               </ul>
                   </ul>
     </li>
-              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['index','org-atnos-site-installation'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
+              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['org-atnos-site-outofthebox','index','org-atnos-site-lib-safeeffectpage'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
 
 </div>
 </div>
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
-<h1>Installation</h1>
+<h1>Safe</h1>
 <div id="tipue_search_content"></div>
 
-<p>You add <code class="prettyprint">eff</code> as an sbt dependency:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff&quot;</span> % <span class="st">&quot;4.3.1-20170420160654-e65dd5a&quot;</span>
-
-<span class="co">// to write types like Reader[String, ?]</span>
-<span class="fu">addCompilerPlugin</span>(<span class="st">&quot;org.spire-math&quot;</span> %% <span class="st">&quot;kind-projector&quot;</span> % <span class="st">&quot;0.9.3&quot;</span>)</code></pre></div>
-<p>To get types like Reader[String, ?] (with more than one type parameter) correctly inferred, you’ll need scala 2.12.1 with</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></code></pre></div>
-<p>for 2.10.6 and 2.11.8, there’s a compiler plugin instead, use the full scala version as <code class="prettyprint">VERSION</code>:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="fu">addCompilerPlugin</span>(<span class="st">&quot;com.milessabin&quot;</span> % <span class="st">&quot;si2712fix-plugin_VERSION&quot;</span> % <span class="st">&quot;1.2.0&quot;</span>)</code></pre></div>
-<p>or you could use</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">scalaOrganization := <span class="st">&quot;org.typelevel&quot;</span></code></pre></div>
-<p>to get the <code class="prettyprint">-Ypartial-unification</code> flag for scala 2.11.8</p>
-<p>If you want to use <a href="http://github.com/scalaz/scalaz">Scalaz</a> as a library for functional programming you will also need:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff-scalaz&quot;</span> % <span class="st">&quot;4.3.1-20170420160654-e65dd5a&quot;</span></code></pre></div>
-<p>This will allows you to use the <code class="prettyprint">Eff</code> monad as a Scalaz <code class="prettyprint">Monad</code> (instead of the cats <code class="prettyprint">Monad</code> which is the default implementation). The <code class="prettyprint">eff-scalaz</code> dependency is also necessary if you want to use scalaz <code class="prettyprint">Task</code> as an effect. (see <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">Out of the box</a></link>).</p>
-<p>On the other hand if you prefer to use <a href="http://monix.io">Monix</a> <code class="prettyprint">Task</code>, you will need a dependency on <code class="prettyprint">eff-monix</code>:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff-monix&quot;</span> % <span class="st">&quot;4.3.1-20170420160654-e65dd5a&quot;</span></code></pre></div>
-<h3 id="imports">Imports</h3>
-<h4 id="main-types">Main types</h4>
-<p>The main <code class="prettyprint">eff</code> types: <code class="prettyprint">Eff</code>, <code class="prettyprint">Member</code>, <code class="prettyprint">Fx</code> are accessible in the <code class="prettyprint">org.atnos.eff</code> package:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">_</span></code></pre></div>
-<h4 id="creating-effects">Creating effects</h4>
-<p>The functions used to create effects are grouped under different objects named after the effect type. For example if you want to create the <code class="prettyprint">Eval</code> effect you need to import:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">eval</span>.<span class="fu">_</span></code></pre></div>
-<p>You can also import most of the effects at once with:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">all</span>.<span class="fu">_</span></code></pre></div>
-<p>The only effects not included in the previous import are:</p>
+<p>The Safe effect is useful to handle resources which must be closed even in the presence of exceptions. The main operations are</p>
 <ul>
-<li><p>the <code class="prettyprint">Error</code> effect. This effect requires a type parameter representing the “failure” type and must be provided by the user of the library</p></li>
-<li><p>the <code class="prettyprint">Future</code> effect. This effect shares some operations like <code class="prettyprint">runAsync</code> with other “async” effects like monix’s <code class="prettyprint">TaskEffect</code> and the import could clash with <code class="prettyprint">import org.atnos.eff.addon.monix.task._</code></p></li>
+<li><code class="prettyprint">finally</code> to create an action which must always be executed after another one, even if the first one fails</li>
+<li><code class="prettyprint">catchThrowable</code> to handle a thrown exception</li>
+<li><code class="prettyprint">bracket(open)(step)(close)</code> to open a resource, use it and then close it safely. The <code class="prettyprint">close</code> part is a “finalizer”
+<p/></li>
 </ul>
-<h4 id="interpreting-effects">Interpreting effects</h4>
-<p>Interpreting effects usually requires some syntax to “run” a given effect. For example to “run” the <code class="prettyprint">Option</code> effect you will import:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="co">// to create the effect</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">option</span>.<span class="fu">_</span>
+<p>Let’s see an example for the protection of a resource:</p>
+<pre><code class="prettyprint">import org.atnos.eff.syntax.all._
+import org.atnos.eff._, all._
 
-<span class="co">// to access the runOption method</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">syntax</span>.<span class="fu">option</span>.<span class="fu">_</span>
+// let&#39;s represent a resource which can be in use
+case class Resource(values: List[Int] = (1 to 10).toList, inUse: Boolean = false) {
+  def isClosed = !inUse
+}
 
-<span class="fu">fromOption</span>(Option(<span class="dv">1</span>)).<span class="fu">runOption</span></code></pre></div>
-<p>You can also access all the syntax imports at once with:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">syntax</span>.<span class="fu">all</span>.<span class="fu">_</span></code></pre></div>
-<h4 id="intellij-support">Intellij support</h4>
-<p>Intellij error highlighting doesn’t support implicit-directed type inference yet, check https://youtrack.jetbrains.com/issue/SCL-11140 or https://youtrack.jetbrains.com/issue/SCL-10753 for progress.</p>
-<h4 id="with-scalaz">With Scalaz</h4>
-<p>If you use Scalaz as your functional programming library you might need additional imports in order to use some creation methods specific to Scalaz. For example:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">either</span>.<span class="fu">_</span>
+var resource = Resource()
 
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>))</code></pre></div>
-<p>There is also an <code class="prettyprint">all</code> object importing all those methods at once:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">all</span>.<span class="fu">_</span>
+// our stack of effects, with safe evaluation
+type S = Fx.fx1[Safe]
 
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>))</code></pre></div>
-<p>And you can already guess, there are some syntax imports following the same pattern:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">either</span>.<span class="fu">_</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">syntax</span>.<span class="fu">either</span>.<span class="fu">_</span>
+def openResource: Eff[S, Resource] =
+  protect { resource = resource.copy(inUse = true); resource }
 
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>)).<span class="fu">runDisjunction</span></code></pre></div>
+def closeResource(r: Resource): Eff[S, Unit] =
+  protect(resource = r.copy(inUse = false))
+
+def useResource(ok: Boolean) = (r: Resource) =&gt;
+  protect[S, Int](if (ok) r.values.sum else throw new Exception(&quot;boo&quot;))
+
+// this program uses the resource safely even if there is an exception
+def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
+  bracket(openResource)(useResource(ok))(closeResource).
+    runSafe.run</code></pre>
+<pre><code class="prettyprint">&gt; Results
+Without exception: Right(55), finalizers exceptions: no exceptions, resource is closed: true
+With exception   : Left(boo), finalizers exceptions: no exceptions, resource is closed: true</code></pre>
+<p>As you can see in the signature of <code class="prettyprint">program</code> the return value of <code class="prettyprint">runSafe</code> is <code class="prettyprint">(Throwable Either A, List[Throwable])</code>. The first part is the result of your program, which may end with an exception, and the second part is the list of possible exceptions thrown by the finalizers which can themselves fail.</p>
+<p>A simpler version of <code class="prettyprint">bracket</code> is <code class="prettyprint">finally</code>.</p>
+<p>This example show how to use <code class="prettyprint">finally</code> but also what happens if a finalizer fails:</p>
+<pre><code class="prettyprint">import org.atnos.eff.syntax.all._
+import org.atnos.eff._, all._
+
+// our stack of effects, with safe evaluation
+type S = Fx.fx1[Safe]
+
+var sumDone: Boolean = false
+
+def setDone(ok: Boolean): Eff[S, Unit] =
+  protect[S, Unit](if (ok) sumDone = true else throw new Exception(&quot;failed!!&quot;))
+
+// this program tries to set sumDone to true when the computation is done
+def program(ok: Boolean, finalizeOk: Boolean): (Throwable Either Int, List[Throwable]) =
+  (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception(&quot;boo&quot;)) `finally` setDone(finalizeOk)).
+    runSafe.run
+</code></pre>
+<pre><code class="prettyprint">&gt; Results
+Computation ok, finalizer ok: Right(55), finalizers exceptions: no exceptions
+Computation ok, finalizer ko: Right(55), finalizers exceptions: List(failed!!)
+Computation ko, finalizer ok: Left(boo), finalizers exceptions: no exceptions
+Computation ko, finalizer ko: Left(boo), finalizers exceptions: List(failed!!)</code></pre>
+<p>Finally (no pun intended!) note that you can use <code class="prettyprint">execSafe</code> if you are not interested in the result of the finalizers.</p>
 </div>
 
 <script>

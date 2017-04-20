@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Installation</title>
+    <title>TimedFuture</title>
     <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
     <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
@@ -266,74 +266,87 @@
               </ul>
                   </ul>
     </li>
-              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['index','org-atnos-site-installation'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
+              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['org-atnos-site-outofthebox','index','org-atnos-site-lib-timedfutureeffectpage'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
 
 </div>
 </div>
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
-<h1>Installation</h1>
+<h1>TimedFuture</h1>
 <div id="tipue_search_content"></div>
 
-<p>You add <code class="prettyprint">eff</code> as an sbt dependency:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff&quot;</span> % <span class="st">&quot;4.3.1-20170420160654-e65dd5a&quot;</span>
+<p>The <code class="prettyprint">TimedFuture</code> effect is a thin shim on top of Scala’s <code class="prettyprint">Future</code>. The only extra capability it has built-in is timeouts, which are supported by passing in a <code class="prettyprint">ScheduledExecutionContext</code>. Note that because <code class="prettyprint">Future</code> represents a computation already taking place, <code class="prettyprint">TimedFuture</code> is a function that returns a <code class="prettyprint">Future</code>. This means if you start a computation before passing the <code class="prettyprint">Future</code> into Eff, the <code class="prettyprint">Future</code> will begin less predictably.</p>
+<p>Now, let’s create some <code class="prettyprint">TimedFuture</code> effects:</p>
+<pre><code class="prettyprint">import org.atnos.eff._
+import org.atnos.eff.future._
+import org.atnos.eff.syntax.all._
 
-<span class="co">// to write types like Reader[String, ?]</span>
-<span class="fu">addCompilerPlugin</span>(<span class="st">&quot;org.spire-math&quot;</span> %% <span class="st">&quot;kind-projector&quot;</span> % <span class="st">&quot;0.9.3&quot;</span>)</code></pre></div>
-<p>To get types like Reader[String, ?] (with more than one type parameter) correctly inferred, you’ll need scala 2.12.1 with</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></code></pre></div>
-<p>for 2.10.6 and 2.11.8, there’s a compiler plugin instead, use the full scala version as <code class="prettyprint">VERSION</code>:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="fu">addCompilerPlugin</span>(<span class="st">&quot;com.milessabin&quot;</span> % <span class="st">&quot;si2712fix-plugin_VERSION&quot;</span> % <span class="st">&quot;1.2.0&quot;</span>)</code></pre></div>
-<p>or you could use</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">scalaOrganization := <span class="st">&quot;org.typelevel&quot;</span></code></pre></div>
-<p>to get the <code class="prettyprint">-Ypartial-unification</code> flag for scala 2.11.8</p>
-<p>If you want to use <a href="http://github.com/scalaz/scalaz">Scalaz</a> as a library for functional programming you will also need:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff-scalaz&quot;</span> % <span class="st">&quot;4.3.1-20170420160654-e65dd5a&quot;</span></code></pre></div>
-<p>This will allows you to use the <code class="prettyprint">Eff</code> monad as a Scalaz <code class="prettyprint">Monad</code> (instead of the cats <code class="prettyprint">Monad</code> which is the default implementation). The <code class="prettyprint">eff-scalaz</code> dependency is also necessary if you want to use scalaz <code class="prettyprint">Task</code> as an effect. (see <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">Out of the box</a></link>).</p>
-<p>On the other hand if you prefer to use <a href="http://monix.io">Monix</a> <code class="prettyprint">Task</code>, you will need a dependency on <code class="prettyprint">eff-monix</code>:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff-monix&quot;</span> % <span class="st">&quot;4.3.1-20170420160654-e65dd5a&quot;</span></code></pre></div>
-<h3 id="imports">Imports</h3>
-<h4 id="main-types">Main types</h4>
-<p>The main <code class="prettyprint">eff</code> types: <code class="prettyprint">Eff</code>, <code class="prettyprint">Member</code>, <code class="prettyprint">Fx</code> are accessible in the <code class="prettyprint">org.atnos.eff</code> package:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">_</span></code></pre></div>
-<h4 id="creating-effects">Creating effects</h4>
-<p>The functions used to create effects are grouped under different objects named after the effect type. For example if you want to create the <code class="prettyprint">Eval</code> effect you need to import:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">eval</span>.<span class="fu">_</span></code></pre></div>
-<p>You can also import most of the effects at once with:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">all</span>.<span class="fu">_</span></code></pre></div>
-<p>The only effects not included in the previous import are:</p>
+import scala.concurrent._, duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+
+type R = Fx.fx2[TimedFuture, Option]
+
+val action: Eff[R, Int] =
+  for {
+  // create a value now
+    a &lt;- Eff.pure[R, Int](1)
+
+    // evaluate a value later, on some other thread pool, and continue when it&#39;s finished
+    b &lt;- futureDelay[R, Int](1)
+  } yield b
+
+</code></pre>
+<p>Then we need to pass a <code class="prettyprint">Scheduler</code> and an <code class="prettyprint">ExecutionContext</code> in to begin the computation.</p>
+<pre><code class="prettyprint">
+implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+import org.atnos.eff.syntax.future._
+
+Await.result(action.runOption.runSequential, 1 second)</code></pre>
+<p><code class="prettyprint">&gt; Some(1)</code></p>
+<p>You can also use other <code class="prettyprint">Future</code> or <code class="prettyprint">Task</code> effects:</p>
 <ul>
-<li><p>the <code class="prettyprint">Error</code> effect. This effect requires a type parameter representing the “failure” type and must be provided by the user of the library</p></li>
-<li><p>the <code class="prettyprint">Future</code> effect. This effect shares some operations like <code class="prettyprint">runAsync</code> with other “async” effects like monix’s <code class="prettyprint">TaskEffect</code> and the import could clash with <code class="prettyprint">import org.atnos.eff.addon.monix.task._</code></p></li>
+<li><code class="prettyprint">twitter</code>: depend on <code class="prettyprint">eff-twitter</code> and import <code class="prettyprint">org.atnos.eff.addon.twitter.future._</code></li>
+<li><code class="prettyprint">scalaz</code>: depend on <code class="prettyprint">eff-scalaz</code> and import <code class="prettyprint">org.atnos.eff.addon.scalaz.task._</code></li>
+<li><code class="prettyprint">monix</code>: depend on <code class="prettyprint">eff-monix</code> and import <code class="prettyprint">org.atnos.eff.addon.monix.task._</code></li>
+<li><code class="prettyprint">fs2</code>: depend on <code class="prettyprint">eff-fs2</code> and import <code class="prettyprint">org.atnos.eff.addon.fs2.task._</code></li>
 </ul>
-<h4 id="interpreting-effects">Interpreting effects</h4>
-<p>Interpreting effects usually requires some syntax to “run” a given effect. For example to “run” the <code class="prettyprint">Option</code> effect you will import:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="co">// to create the effect</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">option</span>.<span class="fu">_</span>
+<p>There are corresponding syntax import to be able to call <code class="prettyprint">runAsync</code> methods in:</p>
+<ul>
+<li><code class="prettyprint">twitter</code>: <code class="prettyprint">org.atnos.eff.syntax.addon.twitter.future._</code></li>
+<li><code class="prettyprint">scalaz</code>: <code class="prettyprint">org.atnos.eff.syntax.addon.scalaz.task._</code></li>
+<li><code class="prettyprint">monix</code>: <code class="prettyprint">org.atnos.eff.syntax.addon.monix.task._</code></li>
+<li><code class="prettyprint">fs2</code>: <code class="prettyprint">org.atnos.eff.syntax.addon.fs2.task._</code></li>
+</ul>
+<p><code class="prettyprint">Future</code> and <code class="prettyprint">Task</code> computations can also be memoized to avoid expensive computations to be done several times. You can either</p>
+<ul>
+<li>use the <code class="prettyprint">futureMemo/taskMemo</code> operator with a (mutable) cache</li>
+<li>use the <code class="prettyprint">futureMemoized/taskMemoized</code> operator with the <code class="prettyprint">Memoized</code> effect (you will need to provide the cache later)
+<p/></li>
+</ul>
+<pre><code class="prettyprint">import cats.implicits._
+import org.atnos.eff._, future._, all._
+import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.future._
+import scala.concurrent._, duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
-<span class="co">// to access the runOption method</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">syntax</span>.<span class="fu">option</span>.<span class="fu">_</span>
+var i = 0
 
-<span class="fu">fromOption</span>(Option(<span class="dv">1</span>)).<span class="fu">runOption</span></code></pre></div>
-<p>You can also access all the syntax imports at once with:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">syntax</span>.<span class="fu">all</span>.<span class="fu">_</span></code></pre></div>
-<h4 id="intellij-support">Intellij support</h4>
-<p>Intellij error highlighting doesn’t support implicit-directed type inference yet, check https://youtrack.jetbrains.com/issue/SCL-11140 or https://youtrack.jetbrains.com/issue/SCL-10753 for progress.</p>
-<h4 id="with-scalaz">With Scalaz</h4>
-<p>If you use Scalaz as your functional programming library you might need additional imports in order to use some creation methods specific to Scalaz. For example:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">either</span>.<span class="fu">_</span>
+def expensive[R :_Future :_memo]: Eff[R, Int] =
+  futureMemoized[R, Int](&quot;key&quot;, futureDelay[R, Int] { i += 1; 10 * 10})
 
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>))</code></pre></div>
-<p>There is also an <code class="prettyprint">all</code> object importing all those methods at once:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">all</span>.<span class="fu">_</span>
+type S = Fx.fx2[Memoized, TimedFuture]
 
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>))</code></pre></div>
-<p>And you can already guess, there are some syntax imports following the same pattern:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">either</span>.<span class="fu">_</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">syntax</span>.<span class="fu">either</span>.<span class="fu">_</span>
+implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>)).<span class="fu">runDisjunction</span></code></pre></div>
+val futureMemo: Future[Int] =
+  (expensive[S] &gt;&gt; expensive[S]).runFutureMemo(ConcurrentHashMapCache()).runSequential
+
+Await.result(futureMemo, 1.second)
+
+&quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
+<p><code class="prettyprint">&gt; there is only one invocation &lt;=&gt; true</code></p>
 </div>
 
 <script>
