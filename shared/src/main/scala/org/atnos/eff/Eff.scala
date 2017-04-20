@@ -199,8 +199,8 @@ trait EffImplicits {
       fa match {
         case Pure(a, last) =>
           ff match {
-            case Pure(f, last1)                   => Pure(f(a), last1).addLast(last)
-            case Impure(NoEffect(f), c, l1)       => ap(c(f).addLast(l1))(fa)
+            case Pure(f, last1)                   => Pure(f(a), last1 *> last)
+            case Impure(NoEffect(f), c, last1)    => Eff.impure(a, Continuation.lift((x: A) => ap(c(f))(pure(x)), c.onNone)).addLast(last1 *> last)
             case Impure(u: Union[_, _], c, last1) => ImpureAp(Unions(u, Vector.empty), c.dimapEff((_:Vector[Any]).head)(_.map(_(a))), last1 *> last)
             case ImpureAp(u, c, last1)            => ImpureAp(u, c.map(_(a)), last1 *> last)
           }
@@ -211,20 +211,20 @@ trait EffImplicits {
         case Impure(u: Union[_, _], c, last) =>
           ff match {
             case Pure(f, last1)                     => ImpureAp(Unions(u, Vector.empty), c.contramap((_:Vector[Any]).head).map(f), last1 *> last)
-            case Impure(NoEffect(f), c1, l1)        => ap(c1(f).addLast(l1))(fa)
+            case Impure(NoEffect(f), c1, last1)     => Impure(u, c.append(x => c1(f).map(_(x)))).addLast(last1 *> last)
             case Impure(u1: Union[_, _], c1, last1) => ImpureAp(Unions(u, Vector(u1)),  Continuation.lift(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
             case ImpureAp(u1, c1, last1)            => ImpureAp(Unions(u, u1.unions), Continuation.lift(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
           }
           
         case ImpureAp(unions, c, last) =>
           ff match {
-            case Pure(f, last1)                  => ImpureAp(unions, c map f, last1 *> last)
-            case Impure(NoEffect(f), c1, l1)     => ap(c1(f).addLast(l1))(fa)
+            case Pure(f, last1)                    => ImpureAp(unions, c map f, last1 *> last)
+            case Impure(NoEffect(f), c1, last1)    => ImpureAp(unions, c.append(x => c1(f).map(_(x)))).addLast(last1 *> last)
             case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.lift(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
-            case ImpureAp(u, c1, last1)          => ImpureAp(u append unions, Continuation.lift({ xs =>
+            case ImpureAp(u, c1, last1)            => ImpureAp(u append unions, Continuation.lift({ xs =>
               val usize = u.size
               val (taken, dropped) = xs.splitAt(usize)
-              ap(c1(taken))(c(dropped))
+              Eff.impure(taken, Continuation.lift((xs: Vector[Any]) => ap(c1(xs))(c(dropped)), c1.onNone))
             }, c.onNone), last1 *> last)
           }
 
