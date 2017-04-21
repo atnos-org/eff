@@ -300,11 +300,8 @@ type HadoopS3 = Fx.fx4[S3Stack.S3Reader, HadoopStack.HadoopReader, cats.data.Wri
 // 8<--
 import S3Stack._
 import HadoopStack._
-import org.atnos.eff._
-
 // this imports the `into` and runXXX syntax
 import org.atnos.eff.syntax.all._
-import cats.Eval
 
 val action = for {
   // read a file from hadoop

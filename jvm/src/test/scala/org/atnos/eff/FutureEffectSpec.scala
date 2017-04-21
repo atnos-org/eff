@@ -1,9 +1,5 @@
 package org.atnos.eff
 
-import java.util.concurrent.{Callable, TimeUnit}
-import java.util.Date
-
-import cats.Eval
 import cats.implicits._
 import org.atnos.eff.all._
 import org.atnos.eff.future._

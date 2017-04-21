@@ -6,7 +6,6 @@ trait AdtCreationSnippet {
 // 8<---
 
 import org.atnos.eff._
-import cats.implicits._
 
 // T |= R is an alias for MemberIn[T, R]
 // stating that effects of type T[_] can be injected in the effect stack R

@@ -4,7 +4,6 @@ import scala.util.control.NonFatal
 import cats._
 import cats.implicits._
 import Eff._
-import Interpret._
 
 /**
  * Effect for delayed computations

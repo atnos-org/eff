@@ -40,8 +40,6 @@ class ChooseEffectSpec extends Specification { def is = s2"""
   }
 
   def stacksafeRun = {
-    type E = Fx.fx1[Choose]
-
     val list = (1 to 5000).toList
     val action = list.traverse(i => ChooseEffect.chooseFrom(List(i)))
 

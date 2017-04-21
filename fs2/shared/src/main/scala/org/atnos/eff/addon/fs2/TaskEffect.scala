@@ -1,8 +1,5 @@
 package org.atnos.eff.addon.fs2
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
-
 import cats._
 import cats.implicits._
 import fs2._
@@ -10,7 +7,7 @@ import org.atnos.eff.{Scheduler => _, _}
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Promise, TimeoutException}
+import scala.concurrent.{ExecutionContext, TimeoutException}
 import scala.util._
 
 case class TimedTask[A](task: (Strategy, Scheduler) =>Task[A], timeout: Option[FiniteDuration] = None) {

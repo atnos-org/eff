@@ -2,7 +2,7 @@ package org.atnos.eff.syntax.addon.fs2
 
 import fs2.{Scheduler, Strategy, Task}
 import org.atnos.eff.addon.fs2.{TaskEffect, TaskInterpretation, TimedTask}
-import org.atnos.eff.{Cache, Eff, Fx, Member, Memoized, _}
+import org.atnos.eff.{Cache, Eff, Member, Memoized, _}
 
 import scala.util.Either
 

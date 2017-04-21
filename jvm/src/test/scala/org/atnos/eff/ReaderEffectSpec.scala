@@ -69,9 +69,6 @@ class ReaderEffectSpec extends Specification { def is = s2"""
       v <- OptionEffect.fromOption[Comp, Int](e.get(x))
     } yield v
 
-    def runLocal[A](f: Env => Env, c: Eff[Comp, A]): Eff[Comp, A] =
-      c.zoomReader(f)
-
     // the lookup should work on the modified environment
     // but this should not change subsequent calls to the environment
     def program: Eff[Comp, String] = for {

@@ -89,9 +89,6 @@ type _userDsl[R] = UserDsl /= R
 def getUser[R :_userDsl](i: Int): Eff[R, User] =
   send[UserDsl, R, User](GetUser(i))
 
-def getUsers[R :_userDsl](is: List[Int]): Eff[R, List[User]] =
-  send[UserDsl, R, List[User]](GetUsers(is))
-
 /*p
 Let's create an interpreter for this DSL:
 */

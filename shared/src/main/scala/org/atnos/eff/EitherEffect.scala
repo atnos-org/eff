@@ -3,7 +3,6 @@ package org.atnos.eff
 import cats._
 import cats.syntax.traverse._
 import cats.syntax.either._
-import cats.instances.list._
 import Eff._
 import Interpret._
 

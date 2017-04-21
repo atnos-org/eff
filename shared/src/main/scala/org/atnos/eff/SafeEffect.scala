@@ -1,8 +1,5 @@
 package org.atnos.eff
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
-
 import cats._
 import cats.implicits._
 import eff._

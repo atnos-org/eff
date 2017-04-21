@@ -397,9 +397,6 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     def getUser[R :_userDsl](i: Int): Eff[R, User] =
       send[UserDsl, R, User](GetUser(i))
 
-    def getUsers[R :_userDsl](is: List[Int]): Eff[R, List[User]] =
-      send[UserDsl, R, List[User]](GetUsers(is))
-
     def getWebUser(i: Int): User = User(i)
     def getWebUsers(is: List[Int]): List[User] = is.map(i => User(i))
 

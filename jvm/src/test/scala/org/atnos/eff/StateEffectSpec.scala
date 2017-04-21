@@ -64,7 +64,6 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   def lensedState = {
     type StateIntPair[A] = State[(Int, Int), A]
-    type SS = Fx.fx2[StateIntPair, Option]
     type TS = Fx.fx2[StateInt, Option]
 
     val action: Eff[TS, String] =

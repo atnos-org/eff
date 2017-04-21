@@ -3,7 +3,6 @@ package org.atnos.eff.syntax.addon.scalaz
 import org.atnos.eff.addon.scalaz.concurrent.{TaskEffect, TaskInterpretation, TimedTask}
 import org.atnos.eff._
 
-import scala.concurrent.ExecutionContext
 import scala.util.Either
 import _root_.scalaz.concurrent.Task
 

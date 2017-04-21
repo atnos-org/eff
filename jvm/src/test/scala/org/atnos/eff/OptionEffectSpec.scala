@@ -61,8 +61,6 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
 
   def stacksafeOption = {
-    type E = Fx.fx1[Option]
-
     val list = (1 to 5000).toList
     val action = list.traverseU(i => OptionEffect.some(i))
 

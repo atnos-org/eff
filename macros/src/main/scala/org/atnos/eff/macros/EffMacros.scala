@@ -109,10 +109,6 @@ class EffMacros(val c: blackbox.Context) {
             q"def $name[..$tparams](...$params): Eff[$effectType, $returnType] = $rhs".asInstanceOf[DefDef]
         }
 
-        val concreteValsDefs: Seq[ValOrDefDef] = stats.collect {
-          case m @ DefDef(_, _, _, _, _, rhs) if rhs.nonEmpty => m
-        }
-
         val injectOpsObj = liftedOps
 
 
@@ -192,11 +188,6 @@ class EffMacros(val c: blackbox.Context) {
           val effectImplicitParams = (1 to numOutEffects).map(i => ValDef(Modifiers(Flag.IMPLICIT), replacementParamName(i), tq"${TypeName(s"R$i")} MemberIn U", EmptyTree)).toList
           val effectImplicitArgs = (1 to numOutEffects).map(replacementParamName)
           val typeU = TypeDef(Modifiers(Flag.PARAM), TypeName("U"), List(), TypeBoundsTree(tq"scala.Nothing", tq"scala.Any"))
-          val delegatorMethods: Seq[DefDef] = absValsDefsOps.map {
-            case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
-              val args = addImplicits(effectImplicitParams, nonStackParams(paramss)).map(_.collect { case t:ValDef => Ident(t.name.toTermName) })
-              DefDef(mods, name, tparams.dropRight(1), nonStackParams(paramss), tq"Eff[U, $returnType]", q"TranslatorFactory1.this.$name(...$args)")
-          }
 
           val methodsToBeImpl: Seq[DefDef] = absValsDefsOps.map {
             case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
@@ -207,9 +198,9 @@ class EffMacros(val c: blackbox.Context) {
             case q"..$mods def $name[..$tparams](...$paramss): Eff[$_, $returnType]" =>
               val binds = nonStackParams(paramss).flatMap(_.collect { case t:ValDef => Bind(t.name, Ident(termNames.WILDCARD))})
               val args = addImplicits(effectImplicitParams, nonStackParams(paramss)).map(_.collect { case t:ValDef => t.name })
-              val callTypeParams = (tparams.dropRight(1) :+ typeU).map(t => t.name)
               val rhs = q"$name(...$args)"
               cq"${adt(name)}(..$binds) => $rhs.asInstanceOf[Eff[U, X]]"
+
             case ValDef(_, name, _, _) =>
               cq"${adt(name)} => $name.asInstanceOf[Eff[U, X]]"
           }
@@ -295,7 +286,7 @@ class EffMacros(val c: blackbox.Context) {
           $genTrait
           $genCompanionObj
         """
-        println(showCode(gen))
+
         c.Expr[Any](gen)
 
       case other => c.abort(c.enclosingPosition, s"${showRaw(other)}")

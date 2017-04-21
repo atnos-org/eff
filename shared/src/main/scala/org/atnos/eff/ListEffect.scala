@@ -1,8 +1,6 @@
 package org.atnos.eff
 
 import Eff._
-
-import scala.collection.mutable.ListBuffer
 import cats.implicits._
 import Interpret._
 import cats.Traverse

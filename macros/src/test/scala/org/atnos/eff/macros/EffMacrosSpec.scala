@@ -2,13 +2,6 @@ package org.atnos.eff.macros
 
 import org.specs2.Specification
 import org.atnos.eff._
-import cats.syntax.all._
-import cats.data._
-import cats.{Eval, Traverse}
-import ReaderEffect._
-import WriterEffect._
-import EvalEffect._
-import Eff._
 
 class EffMacrosSpec extends Specification { def is = s2"""
 
@@ -55,7 +48,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
 
   def generatesSideEffectInterpreter = {
 
-    import org.atnos.eff._, interpret._, syntax.all._
+    import org.atnos.eff._, syntax.all._
     import scala.collection.mutable._
 
     val sideEffect = new KVStoreDsl.SideEffect {
@@ -123,7 +116,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
   }
 
   def generatesTranslatorFactory = {
-    import org.atnos.eff._, all._, interpret._, syntax.all._
+    import org.atnos.eff._, all._, syntax.all._
     import cats.implicits._
     import cats.data._
 

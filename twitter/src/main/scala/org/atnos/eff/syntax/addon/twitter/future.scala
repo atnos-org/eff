@@ -2,7 +2,7 @@ package org.atnos.eff.syntax.addon.twitter
 
 import com.twitter.util.{Future, FuturePool}
 import org.atnos.eff.addon.twitter._
-import org.atnos.eff.{Fx, _}
+import org.atnos.eff._
 
 trait future {
 

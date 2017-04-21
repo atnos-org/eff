@@ -1,7 +1,5 @@
 package org.atnos.eff
 
-import Eff._
-
 /**
  * Typeclass proving that it is possible to send a tree of effects R into another tree of effects U
  *

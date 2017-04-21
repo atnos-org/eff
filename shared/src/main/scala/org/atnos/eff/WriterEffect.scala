@@ -1,6 +1,5 @@
 package org.atnos.eff
 
-import scala.collection.mutable._
 import cats._
 import data._
 import cats.implicits._

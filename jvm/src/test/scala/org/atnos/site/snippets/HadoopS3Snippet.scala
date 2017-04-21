@@ -1,15 +1,12 @@
 // 8<---
 package org.atnos.site.snippets
 
-import HadoopS3Snippet._
-
 trait HadoopS3Snippet {
 // 8<---
 
 import org.atnos.eff._, all._
 import cats.data._
 import cats.Eval
-import HadoopStack._
 
 object HadoopStack {
 
@@ -31,7 +28,6 @@ object HadoopStack {
 }
 
 object S3Stack {
-  import S3Stack.{WriterString=>_,_}
 
   case class S3Conf(bucket: String)
 

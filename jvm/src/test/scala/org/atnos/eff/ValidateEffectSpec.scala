@@ -57,8 +57,6 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     type Comput = Fx.fx2[Validate[E, ?], Writer[E,?]]
     type Check[A] = Eff[Comput, A]
 
-    def runCheck[A](c: Check[A]) = c.runNel.runWriter.run
-
     val handle: E => Check[Unit] = { case e => tell[Comput, E](e).as(()) }
 
     val comp1: Check[Int] = for {

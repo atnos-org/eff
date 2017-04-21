@@ -1,7 +1,6 @@
 package org.atnos.eff.addon.scalaz.concurrent
 
 import java.util.concurrent._
-import java.util.concurrent.atomic.AtomicInteger
 
 import org.atnos.eff.syntax.all._
 
