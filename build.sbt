@@ -11,8 +11,8 @@ lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
   .settings(effSettings)
   .settings(noPublishSettings)
-  .aggregate(coreJVM, coreJS, macros, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
-  .dependsOn(coreJVM, coreJS, macros, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
+  .aggregate(coreJVM, coreJS, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
+  .dependsOn(coreJVM, coreJS, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
 
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff")
@@ -29,7 +29,7 @@ lazy val macros = project.in(file("macros"))
   .settings(moduleName := "eff-macros")
   .dependsOn(coreJVM)
   .settings(libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value)
-  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
+  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch))
   .settings(commonJvmSettings)
   .settings(effSettings:_*)
 
@@ -84,15 +84,8 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
-  si2712,
-  libraryDependencies ++= si2712Dependency(scalaVersion.value)
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 ) ++ warnUnusedImport ++ prompt
-
-lazy val si2712 =
-  scalacOptions ++=
-    (if (CrossVersion.partialVersion(scalaVersion.value).exists(_._2 >= 12)) Seq("-Ypartial-unification")
-    else Seq())
 
 lazy val tagName = Def.setting{
   s"v${if (releaseUseGlobalVersion.value) (version in ThisBuild).value else version.value}"
@@ -158,6 +151,7 @@ lazy val commonScalacOptions = Seq(
   "-Yno-adapted-args",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
+  "-Ypartial-unification",
   "-Xfuture"
 )
 
@@ -336,12 +330,6 @@ lazy val twitterUtilCore = Seq(
 lazy val catbird = Seq(
   "io.catbird" %% "catbird-util" % catbirdVersion
 )
-
-def si2712Dependency(scalaVersion: String) =
-  if (CrossVersion.partialVersion(scalaVersion).exists(_._2 < 12))
-    Seq(compilerPlugin("com.milessabin" % ("si2712fix-plugin_"+scalaVersion) % "1.2.0"))
-  else
-    Seq()
 
 lazy val commonResolvers = Seq(
   Resolver.sonatypeRepo("releases")

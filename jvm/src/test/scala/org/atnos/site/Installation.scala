@@ -11,25 +11,11 @@ libraryDependencies += "org.atnos" %% "eff" % "$version"
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 ```
 
-To get types like Reader[String, ?] (with more than one type parameter) correctly inferred, you'll need scala 2.12.1 with
+To get types like Reader[String, ?] (with more than one type parameter) correctly inferred, you'll to use the following compiler option
 
 ```scala
 scalacOptions += "-Ypartial-unification"
 ```
-
-for 2.10.6 and 2.11.8, there's a compiler plugin instead, use the full scala version as `VERSION`:
-
-```scala
-addCompilerPlugin("com.milessabin" % "si2712fix-plugin_VERSION" % "1.2.0")
-```
-
-or you could use
-
-```scala
-scalaOrganization := "org.typelevel"
-```
-
-to get the `-Ypartial-unification` flag for scala 2.11.8
 
 If you want to use [Scalaz](http://github.com/scalaz/scalaz) as a library for functional programming you will also need:
 ```scala

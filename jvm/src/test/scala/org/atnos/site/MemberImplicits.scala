@@ -11,9 +11,9 @@ tips to help you.
 ### Running effects with several type parameters
 
 Some effects use 2 type variables, like `Reader` or `Writer`. If you want to use those effects in an effect stack you need
-to add a compiler plugin to your build:
-```
-addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
+to make sure you have the following `scalac` option:
+```scala
+scalacOptions += "-Ypartial-unification"
 ```
 
 ### Use context bounds and type aliases
