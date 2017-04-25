@@ -71,6 +71,9 @@ object TwitterTimedFuture {
 
   implicit val twitterFutureSequenceCached: SequenceCached[TwitterTimedFuture] =
     new SequenceCached[TwitterTimedFuture] {
+      def get[X](cache: Cache, key: AnyRef): TwitterTimedFuture[Option[X]] =
+        TwitterTimedFuture((pool, _) => pool(cache.get(key)))
+
       def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TwitterTimedFuture[X]): TwitterTimedFuture[X] =
         TwitterTimedFuture((pool, scheduler) => cache.memo((key, sequenceKey), tx.runNow(pool, scheduler)))
 
@@ -83,8 +86,10 @@ object TwitterTimedFuture {
             i += 1
           }
         })
-
     }
+
+  def delay[A](a: =>A): TwitterTimedFuture[A] =
+    TwitterTimedFuture((pool, scheduler) => Future.apply(a))
 
 }
 

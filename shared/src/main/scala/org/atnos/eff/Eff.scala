@@ -418,12 +418,11 @@ trait EffInterpretation {
    * will be cached in the cache and retrieved from there if the Eff[R, A] computation is
    * executed again
    */
-  def memoizeEffect[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] = {
-    cache.get(key).map(Eff.pure[R, A]).getOrElse(memoizeEffectSequence(e, cache, key).map(a => {
-      cache.put(key, a)
-      a
-    }))
-  }
+  def memoizeEffect[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] =
+    send[M, R, Option[A]](cached.get(cache, key)).
+      flatMap(_.
+        map(Eff.pure[R, A]).
+        getOrElse(memoizeEffectSequence(e, cache, key).map(a => { cache.put(key, a); a })))
 
   private def memoizeEffectSequence[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] = {
     var seqKey = 0

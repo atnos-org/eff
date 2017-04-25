@@ -114,6 +114,9 @@ trait TaskInterpretation extends TaskTypes {
   }
 
   implicit val taskSequenceCached: SequenceCached[Task] = new SequenceCached[Task] {
+    def get[X](cache: Cache, key: AnyRef): Task[Option[X]] =
+      Task.fork(Task.delay(cache.get(key)))
+
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Task[X]): Task[X] =
       cache.memo((key, sequenceKey), tx.memoize)
 

@@ -1,0 +1,7 @@
+Maintenance version
+
+Fixes
+
+ * fix for the memoization of effects. Getting the value of a key must be delayed before building the memoization sequence
+
+

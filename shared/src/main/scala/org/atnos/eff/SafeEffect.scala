@@ -24,16 +24,16 @@ trait SafeTypes {
 trait SafeCreation extends SafeTypes {
 
   def protect[R :_safe, A](a: =>A): Eff[R, A] =
-    send[Safe, R, A](EvaluateValue[A](Eval.later(a)))
+    send[Safe, R, A](Safe.evaluate(a))
 
   def eval[R :_safe , A](a: Eval[A]): Eff[R, A] =
-    send[Safe, R, A](EvaluateValue[A](a))
+    send[Safe, R, A](Safe.eval(a))
 
   def exception[R :_safe, A](t: Throwable): Eff[R, A] =
-    send[Safe, R, A](FailedValue(t))
+    send[Safe, R, A](Safe.fail(t))
 
   def finalizerException[R :_safe](t: Throwable): Eff[R, Unit] =
-    send[Safe, R, Unit](FailedFinalizer(t))
+    send[Safe, R, Unit](Safe.failFinalizer(t))
 }
 
 trait SafeInterpretation extends SafeCreation { outer =>
@@ -303,8 +303,23 @@ case class FailedFinalizer(t: Throwable) extends Safe[Unit] {
 
 object Safe {
 
+  def evaluate[A](a: =>A): Safe[A] =
+    EvaluateValue[A](Eval.later(a))
+
+  def eval[A](a: Eval[A]): Safe[A] =
+    EvaluateValue[A](a)
+
+  def fail[A](t: Throwable): Safe[A] =
+    FailedValue(t)
+
+  def failFinalizer(t: Throwable): Safe[Unit] =
+    FailedFinalizer(t)
+
   implicit val safeSequenceCached: SequenceCached[Safe] =
     new SequenceCached[Safe] {
+      def get[X](cache: Cache, key: AnyRef): Safe[Option[X]] =
+        evaluate(cache.get(key))
+
       def apply[X](cache: Cache, key: AnyRef, subKey: Int, tx: =>Safe[X]): Safe[X] =
         cache.memo((key, subKey), tx.memoize)
 

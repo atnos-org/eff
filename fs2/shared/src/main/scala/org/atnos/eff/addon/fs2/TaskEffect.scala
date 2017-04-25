@@ -26,6 +26,9 @@ case class TimedTask[A](task: (Strategy, Scheduler) =>Task[A], timeout: Option[F
 
 object TimedTask {
 
+  def forkWithTimeout[A](task: TimedTask[A], timeout: Option[FiniteDuration]): TimedTask[A] =
+    TimedTask((strategy, scheduler) => Task.start(task.runNow(strategy, scheduler))(strategy).flatMap(identity), timeout)
+
   final def TimedTaskApplicative: Applicative[TimedTask] = new Applicative[TimedTask] {
     def pure[A](x: A): TimedTask[A] =
       TimedTask((_, _) => Task.now(x))
@@ -76,6 +79,9 @@ object TimedTask {
     TimedTask((_, _) => task, timeout)
 
   implicit val timedTaskSequenceCached: SequenceCached[TimedTask] = new SequenceCached[TimedTask] {
+    def get[X](cache: Cache, key: AnyRef): TimedTask[Option[X]] =
+      TimedTask((strategy, _) => Task.start(Task.delay(cache.get(key)))(strategy).flatMap(identity))
+
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = TimedTask { (strategy, scheduler) =>
       implicit val s = strategy
       implicit val ec = strategyToExecutionContext(s)
@@ -146,7 +152,7 @@ trait TaskCreation extends TaskTypes {
     taskForkWithTimeout(call, Some(timeout))
 
   final def taskForkWithTimeout[R :_task, A](call: TimedTask[A], timeout: Option[FiniteDuration]): Eff[R, A] =
-    TimedTask[A]((strategy, scheduler) => Task.start(call.runNow(strategy, scheduler))(strategy).flatMap(identity), timeout).send[R]
+    TimedTask.forkWithTimeout[A](call, timeout).send[R]
 
   final def taskForkWithStrategyAndTimeout[R :_task, A](call: TimedTask[A], strategy: Strategy, timeout: Option[FiniteDuration]): Eff[R, A] =
     TimedTask[A]((_, scheduler) => Task.start(call.runNow(strategy, scheduler))(strategy).flatMap(identity), timeout).send[R]

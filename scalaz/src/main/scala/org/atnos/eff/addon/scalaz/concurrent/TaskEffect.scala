@@ -70,6 +70,9 @@ object TimedTask {
   final def now[A](value: A): TimedTask[A] =
     TimedTask(_ => Task.now(value))
 
+  final def delay[A](value: =>A): TimedTask[A] =
+    TimedTask(_ => Task.delay(value))
+
   implicit final def fromTask[A](task: Task[A]): TimedTask[A] =
     TimedTask(_ => task)
 
@@ -77,6 +80,9 @@ object TimedTask {
     TimedTask(_ => task, timeout)
 
   implicit val timedTaskSequenceCached: SequenceCached[TimedTask] = new SequenceCached[TimedTask] {
+    def get[X](cache: Cache, key: AnyRef): TimedTask[Option[X]] =
+      TimedTask(_ => Task.fork(Task.delay(cache.get(key))))
+
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = {
       TimedTask { es =>
         implicit val executionContext = es.executionContext
