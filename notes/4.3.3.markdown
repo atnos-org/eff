@@ -1,0 +1,7 @@
+Maintenance version
+
+Fixes
+
+ * added back the macros to the released jars
+
+
