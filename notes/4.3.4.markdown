@@ -1,0 +1,7 @@
+Maintenance version
+
+Improvements
+
+ * added added `runWriterNoLogU` (aliased as `discardWriter`) to remove writer effects
+
+

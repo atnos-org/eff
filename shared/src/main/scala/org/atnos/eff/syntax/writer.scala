@@ -19,6 +19,12 @@ trait writer {
     def runWriterNoLog[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, A] =
       runWriterUnsafe[O](_ => ())
 
+    def runWriterNoLogU[O, U](implicit member: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
+      runWriterUnsafe[O](_ => ())
+
+    def discardWriter[O, U](implicit member: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
+      runWriterNoLogU[O, U]
+
     def runWriterLog[O](implicit member: Member[Writer[O, ?], R]): Eff[member.Out, List[O]] =
       runWriter[O](member).map(_._2)
 
