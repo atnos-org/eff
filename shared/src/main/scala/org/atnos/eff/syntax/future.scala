@@ -23,6 +23,12 @@ final class FutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
   def runAsync(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     FutureInterpretation.runAsync(e)
 
+  def runAsyncOn(executorServices: ExecutorServices)(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+    FutureInterpretation.runAsyncOn(executorServices)(e)
+
+  def runSequentialOn(executorServices: ExecutorServices)(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+    FutureInterpretation.runSequentialOn(executorServices)(e)
+
   def runSequential(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     FutureInterpretation.runSequential(e)
 }

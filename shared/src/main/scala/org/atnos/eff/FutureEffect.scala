@@ -98,8 +98,14 @@ trait FutureCreation extends FutureTypes {
 
 trait FutureInterpretation extends FutureTypes {
 
+  def runAsyncOn[R, A](executorServices: ExecutorServices)(e: Eff[R, A])(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+    runAsync(e)(executorServices.scheduler, executorServices.executionContext, m)
+
   def runAsync[R, A](e: Eff[R, A])(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     Eff.detachA(Eff.effInto[R, Fx1[TimedFuture], A](e))(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(scheduler, exc)
+
+  def runSequentialOn[R, A](executorServices: ExecutorServices)(e: Eff[R, A])(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+    runSequential(e)(executorServices.scheduler, executorServices.executionContext, m)
 
   def runSequential[R, A](e: Eff[R, A])(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     Eff.detach(Eff.effInto[R, Fx1[TimedFuture], A](e)).runNow(scheduler, exc)

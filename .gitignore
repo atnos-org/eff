@@ -3,3 +3,6 @@
 target/
 .settings
 /.ensime*
+hydra.log
+src/main/scala/hydra.partition
+src/test/scala/hydra.partition
