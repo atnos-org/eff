@@ -2,6 +2,11 @@ Maintenance version
 
 Improvements
 
- * added added `runWriterNoLogU` (aliased as `discardWriter`) to remove writer effects
+ * added `runWriterNoLogU` (aliased as `discardWriter`) to remove writer effects
+ * added some syntax to pass a specific `ExecutorServices` object to run a `TimedFuture` effect
+
+Fixes
+
+ * line up `EitherEffectOps` implicit members [#97](http://github.com/atnos-org/eff/issues/97)
 
 
