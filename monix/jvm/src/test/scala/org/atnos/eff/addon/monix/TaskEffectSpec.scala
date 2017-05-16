@@ -30,6 +30,8 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
  Attempted Task calls with timeout can be memoized $e10
  Failed tasks must not be memoized                 $e11
 
+ Async boundaries can be introduced between computations $e12
+
 """
 
   type S = Fx.fx2[Task, Option]
@@ -142,6 +144,15 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     makeRequest.taskAttempt.runSequential.runAsync must beRight(1).await
 
     invocationsNumber must be_==(1)
+  }
+
+  def e12 = {
+    def action[R :_task :_option]: Eff[R, Int] = for {
+      a <- taskDelay(10).asyncBoundary
+      b <- taskDelay(20)
+    } yield a + b
+
+    action[S].runOption.runAsync.runAsync must beSome(30).await(retries = 5, timeout = 5.seconds)
   }
 
   /**

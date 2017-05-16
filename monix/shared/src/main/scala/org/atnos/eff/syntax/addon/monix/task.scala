@@ -3,6 +3,8 @@ package org.atnos.eff.syntax.addon.monix
 import org.atnos.eff._
 import org.atnos.eff.addon.monix._
 import _root_.monix.eval.Task
+import monix.execution.Scheduler
+
 import scala.util.Either
 
 trait task {
@@ -12,6 +14,12 @@ trait task {
 }
 
 final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
+
+  def asyncBoundary(implicit task: Task |= R): Eff[R, A] =
+     e.flatMap(a => TaskEffect.asyncBoundary.map(_ => a))
+
+  def asyncBoundary(s: Scheduler)(implicit task: Task |= R): Eff[R, A] =
+    e.flatMap(a => TaskEffect.asyncBoundary(s).map(_ => a))
 
   def runTaskMemo[U](cache: Cache)(implicit m: Member.Aux[Memoized, R, U], task: Task |= U): Eff[U, A] =
     TaskEffect.runTaskMemo(cache)(e)
