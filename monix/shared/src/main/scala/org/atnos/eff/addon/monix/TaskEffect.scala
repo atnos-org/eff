@@ -36,6 +36,15 @@ trait TaskCreation extends TaskTypes {
   final def taskFork[R :_task, A](call: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     fromTask(Task.fork(call), timeout)
 
+  final def asyncBoundary[R :_task]: Eff[R, Unit] =
+    fromTask(forkedUnit)
+
+  final def asyncBoundary[R :_task](s: Scheduler): Eff[R, Unit] =
+    fromTask(forkedUnit.executeOn(s))
+
+  private val forkedUnit: Task[Unit] =
+    Task.fork(Task.unit)
+
   final def taskAsync[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                    timeout: Option[FiniteDuration] = None): Eff[R, A] = {
     val async = Task.async[A] { (_, cb) =>
