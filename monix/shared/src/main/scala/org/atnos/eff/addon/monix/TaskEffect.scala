@@ -80,7 +80,7 @@ trait TaskInterpretation extends TaskTypes {
           fa.attempt
       })
 
-  def taskFork[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, A] =
+  def forkTasks[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, A] =
     interpret.interceptNat[R, Task, A](e)(
       new (Task ~> Task) {
         def apply[X](fa: Task[X]): Task[X] =
