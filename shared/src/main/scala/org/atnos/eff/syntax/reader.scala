@@ -1,6 +1,6 @@
 package org.atnos.eff.syntax
 
-import cats.data.Reader
+import cats.data.{Kleisli, Reader}
 import org.atnos.eff._
 
 object reader extends reader
@@ -11,6 +11,10 @@ trait reader {
 
     def runReader[C](c: C)(implicit member: Member[Reader[C, ?], R]): Eff[member.Out, A] =
       ReaderInterpretation.runReader(c)(e)(member.aux)
+
+    def runKleisli[U, S, F[_]](env: S)(implicit mx: Member.Aux[Kleisli[F, S, ?], R, U],
+                                                m: F |= U): Eff[U, A] =
+      ReaderInterpretation.runKleisli[R, U, S, A, F](env)(e)(mx, m)
 
     def translateReader[U, S, B](getter: B => S)(implicit m1: Member.Aux[Reader[S, ?], R, U],
                                                           m2: (Reader[B, ?]) |= U): Eff[U, A] =

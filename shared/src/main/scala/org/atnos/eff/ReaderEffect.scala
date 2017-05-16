@@ -27,6 +27,10 @@ trait ReaderCreation {
   def local[R, T, U](f: T => U)(implicit member: Reader[T, ?] |= R): Eff[R, U] =
     send[Reader[T, ?], R, U](Reader(f))
 
+  /** modify the environment using a Kleisli[F, T, ?] */
+  def localKleisli[R, T, U, F[_]](f: T => F[U])(implicit member: Kleisli[F, T, ?] |= R): Eff[R, U] =
+    send[Kleisli[F, T, ?], R, U](Kleisli(f))
+
 }
 
 object ReaderCreation extends ReaderCreation
@@ -47,6 +51,21 @@ trait ReaderInterpretation {
       def onApplicative[X, T[_]: Traverse](ms: T[Reader[A, X]]): T[X] Either Reader[A, T[X]] =
         Left(ms.map(_.run(env)))
     })
+
+  /**
+   * interpret the Kleisli effect by providing an environment when required and translating the
+   * resulting target effect into the same stack
+   */
+  def runKleisli[R, U, S, A, F[_]](env: S)(e: Eff[R, A])
+                                  (implicit mx: Member.Aux[Kleisli[F, S, ?], R, U],
+                                            m: F |= U): Eff[U, A] =
+    interpret.translate(e) {
+      new Translate[Kleisli[F, S, ?], U] {
+        override def apply[X](kv: Kleisli[F, S, X]): Eff[U, X] = {
+          send[F, U, X](kv.run(env))
+        }
+      }
+    }
 
   /**
    * Interpret a Reader effect by using another Reader effect in the same stack

@@ -9,6 +9,7 @@ import org.atnos.eff.syntax.all._
 class ReaderEffectSpec extends Specification { def is = s2"""
 
  local can be used to "zoom" on a configuration $localEffect
+   localKleisli for the Kleisli effect $localKleisliEffect
 
  localReader can be used to transform a "small" reader effect into a "bigger" one $localReaderEffect
 
@@ -29,6 +30,18 @@ class ReaderEffectSpec extends Specification { def is = s2"""
     } yield (f, h)
 
     action.runReader(Config(10, "www.me.com")).run ==== ((10, "www.me.com"))
+  }
+
+  def localKleisliEffect = {
+    import cats.syntax.option._
+    type S = Fx.fx2[Kleisli[Option, Config, ?], Option]
+
+    val action: Eff[S, (Int, String)] = for {
+      f <- localKleisli[S, Config, Int, Option]((_:Config).factor.some)
+      h <- localKleisli[S, Config, String, Option]((_:Config).host.some)
+    } yield (f, h)
+
+    action.runKleisli(Config(10, "www.me.com")).runOption.run ==== Some((10, "www.me.com"))
   }
 
   def localReaderEffect = {
