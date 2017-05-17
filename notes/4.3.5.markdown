@@ -1,0 +1,14 @@
+Maintenance version
+
+Improvements
+
+ * upgraded `monix` to `2.3.0` [#102](http://github.com/atnos-org/eff/issues/102) (thanks to @dvic)
+ * added `ReaderEffect.runKleisli` for interpreting Kleisli effects on the same stack [#102](http://github.com/atnos-org/eff/issues/102) (thanks to @dvic)
+ * added a way to specify async boundaries with the Monix Task effect
+
+Fixes
+
+ * added a missing `Member[NoFx, FxAppend[R, NoFx]]` implicit
+ * added missing `IntoPoly` implicits for appending `NoFx`
+
+
