@@ -280,7 +280,7 @@ def testTask(task: TaskKey[Tests.Output]) =
   }.value
 
 lazy val catsVersion   = "0.9.0"
-lazy val monixVersion  = "2.1.0"
+lazy val monixVersion  = "2.3.0"
 lazy val scalazVersion = "7.2.7"
 lazy val fs2Version    = "0.9.2"
 lazy val specs2Version = "3.8.9"
