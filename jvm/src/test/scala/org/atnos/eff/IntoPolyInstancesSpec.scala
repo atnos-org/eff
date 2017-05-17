@@ -6,12 +6,14 @@ class IntoPolyInstancesSpec extends Specification { def is = s2"""
 
  The IntoPoly implicit definitions must create lawful instances:
 
-   intoAppendL2L $intoAppendL2L
-   intoAppendL2R $intoAppendL2R
-   intoAppendL3L $intoAppendL3L
-   intoAppendL3M $intoAppendL3M
-   intoAppendL3R $intoAppendL3R
-   intoAppendL1  $intoAppendL1
+   intoAppendL2L   $intoAppendL2L
+   intoAppendL2R   $intoAppendL2R
+   intoAppendL3L   $intoAppendL3L
+   intoAppendL3M   $intoAppendL3M
+   intoAppendL3R   $intoAppendL3R
+   intoAppendL1    $intoAppendL1
+   intoNoFxAppendL $intoNoFxAppendL
+   intoNoFxAppendR $intoNoFxAppendR
 
 """
 
@@ -54,6 +56,16 @@ class IntoPolyInstancesSpec extends Specification { def is = s2"""
     val into = IntoPoly.intoAppendL1[T1, Fx2[T2, T3]]
     checkLaw(into, Eff.send[T2, Fx2[T2, T3], Int](t2), Eff.send[T2, Fx.append[Fx1[T1], Fx2[T2, T3]], Int](t2))
     checkLaw(into, Eff.send[T3, Fx2[T2, T3], Int](t3), Eff.send[T3, Fx.append[Fx1[T1], Fx2[T2, T3]], Int](t3))
+  }
+
+  def intoNoFxAppendL = {
+    val into = IntoPoly.intoNoFxAppendL[Fx1[T1]]
+    checkLaw(into, Eff.send[T1, FxAppend[NoFx, Fx1[T1]], Int](t1), Eff.send[T1, Fx1[T1], Int](t1))
+  }
+
+  def intoNoFxAppendR = {
+    val into = IntoPoly.intoNoFxAppendR[Fx1[T1]]
+    checkLaw(into, Eff.send[T1, FxAppend[Fx1[T1], NoFx], Int](t1), Eff.send[T1, Fx1[T1], Int](t1))
   }
 
   /**

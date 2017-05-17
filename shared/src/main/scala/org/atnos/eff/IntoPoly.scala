@@ -31,6 +31,30 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
       }
     }
 
+  implicit def intoNoFxAppendL[R]: IntoPoly[FxAppend[NoFx, R], R] =
+    new IntoPoly[FxAppend[NoFx, R], R] {
+      val unionInto: UnionInto[FxAppend[NoFx, R], R] = new UnionInto[FxAppend[NoFx, R], R] {
+        def apply[A](union: Union[FxAppend[NoFx, R], A]): Union[R, A] =
+          union match {
+            case UnionAppendR(r)   => r
+            case UnionAppendL(l)   => sys.error("impossible - intoNoFxAppendL for UnionAppendL")
+            case UnionTagged(_, _) => sys.error("impossible - intoNoFxAppendL for UnionTagged")
+          }
+      }
+    }
+
+  implicit def intoNoFxAppendR[R]: IntoPoly[FxAppend[R, NoFx], R] =
+    new IntoPoly[FxAppend[R, NoFx], R] {
+      val unionInto: UnionInto[FxAppend[R, NoFx], R] = new UnionInto[FxAppend[R, NoFx], R] {
+        def apply[A](union: Union[FxAppend[R, NoFx], A]): Union[R, A] =
+          union match {
+            case UnionAppendL(l)   => l
+            case UnionAppendR(r)   => sys.error("impossible - intoNoFxAppendR for UnionAppendR")
+            case UnionTagged(_, _) => sys.error("impossible - intoNoFxAppendR for UnionTagged")
+          }
+      }
+    }
+
   implicit def intoSelf[R]: IntoPoly[R, R] =
     new IntoPoly[R, R] {
       val unionInto: UnionInto[R, R] =
@@ -51,7 +75,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           def apply[X](union: Union[FxAppend[Fx1[T2], R], X]) = union match {
             case UnionAppendL(l)   => UnionAppendL(l.tagged.increment)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible")
+            case UnionTagged(_, _) => sys.error("impossible - intoAppendL2L for UnionTagged")
           }
         }
     }
@@ -63,7 +87,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           def apply[X](union: Union[FxAppend[Fx1[T1], R], X]) = union match {
             case UnionAppendL(l)   => UnionAppendL(l.forget)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible")
+            case UnionTagged(_, _) => sys.error("impossible - intoAppendL2R for UnionTagged")
           }
         }
     }
@@ -75,7 +99,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           def apply[X](union: Union[FxAppend[Fx2[T2, T3], R], X]) = union match {
             case UnionAppendL(l)   => UnionAppendL(l.tagged.increment)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible")
+            case UnionTagged(_, _) => sys.error("impossible - intoAppendL3L for UnionTagged")
           }
         }
     }
@@ -89,7 +113,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
               if (l.tagged.index == 1) UnionAppendL(l.tagged.forget)
               else                     UnionAppendL(l.tagged.increment)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible")
+            case UnionTagged(_, _) => sys.error("impossible - intoAppendL3M for UnionTagged")
           }
         }
     }
@@ -101,7 +125,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           def apply[X](union: Union[FxAppend[Fx2[T1, T2], R], X]) = union match {
             case UnionAppendL(l)   => UnionAppendL(l.forget)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible")
+            case UnionTagged(_, _) => sys.error("impossible - intoAppendL3R for UnionTagged")
           }
         }
     }
