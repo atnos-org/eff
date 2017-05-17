@@ -513,7 +513,7 @@ trait MemberLower18 extends MemberLower19 {
 }
 
 trait MemberLower19 {
-  implicit def MemberAppendNoFx[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[R, NoFx], U] = new Member[T, FxAppend[R, NoFx]] { outer =>
+  implicit def MemberAppendNoFxR[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[R, NoFx], U] = new Member[T, FxAppend[R, NoFx]] { outer =>
     type Out = U
 
     def inject[V](tv: T[V]): Union[FxAppend[R, NoFx], V] =
@@ -524,5 +524,18 @@ trait MemberLower19 {
 
     def project[V](union: Union[FxAppend[R, NoFx], V]): Union[Out, V] Either T[V] =
       m.project(union.asInstanceOf[UnionAppendL[R, NoFx, V]].value)
+  }
+
+  implicit def MemberAppendNoFxL[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[NoFx, R], U] = new Member[T, FxAppend[NoFx, R]] { outer =>
+    type Out = U
+
+    def inject[V](tv: T[V]): Union[FxAppend[NoFx, R], V] =
+      Union.appendR(m.inject(tv))
+
+    def accept[V](union: Union[Out, V]): Union[FxAppend[NoFx, R], V] =
+      Union.appendR(m.accept(union))
+
+    def project[V](union: Union[FxAppend[NoFx, R], V]): Union[Out, V] Either T[V] =
+      m.project(union.asInstanceOf[UnionAppendR[NoFx, R, V]].value)
   }
 }
