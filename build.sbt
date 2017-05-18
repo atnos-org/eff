@@ -14,13 +14,15 @@ lazy val fs2Version         = "0.9.6"
 lazy val specs2Version      = "3.9.4"
 lazy val twitterUtilVersion = "6.42.0"
 lazy val catbirdVersion     = "0.13.0"
+lazy val doobieVersion      = "0.4.4"
+
 
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
   .settings(effSettings)
   .settings(noPublishSettings)
-  .aggregate(coreJVM, coreJS, macros, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
-  .dependsOn(coreJVM, coreJS, macros, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
+  .aggregate(coreJVM, coreJS, doobie, macros, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
+  .dependsOn(coreJVM, coreJS, doobie, macros, monixJVM, monixJS, scalaz, twitter, fs2JS, fs2JVM)
 
 lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff")
@@ -32,6 +34,12 @@ lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
+
+lazy val doobie = project
+  .settings(moduleName := "eff-doobie")
+  .dependsOn(coreJVM)
+  .settings(libraryDependencies ++= doobieJvm)
+  .settings(effSettings ++ commonJvmSettings:_*)
 
 lazy val macros = project.in(file("macros"))
   .settings(moduleName := "eff-macros")
@@ -293,6 +301,10 @@ lazy val catsJvm = Seq(
 lazy val catsJs = Seq(
   "org.typelevel" %%%! "cats-core" % catsVersion)
 
+lazy val doobieJvm = Seq(
+  "org.tpolecat" %% "doobie-core-cats" % doobieVersion,
+  "org.tpolecat" %% "doobie-h2-cats" % doobieVersion % "test")
+
 lazy val monixEval = Seq(
   "io.monix" %% "monix-eval" % monixVersion,
   "io.monix" %% "monix-cats" % monixVersion)
@@ -334,4 +346,6 @@ lazy val catbird = Seq(
 lazy val commonResolvers = Seq(
   Resolver.sonatypeRepo("releases")
   , Resolver.typesafeRepo("releases")
-  , Resolver.url("ambiata-oss", new URL("https://ambiata-oss.s3.amazonaws.com"))(Resolver.ivyStylePatterns))
+  , Resolver.url("ambiata-oss", new URL("https://ambiata-oss.s3.amazonaws.com"))(Resolver.ivyStylePatterns)
+  , Resolver.sonatypeRepo("snapshots")
+)
