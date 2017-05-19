@@ -26,6 +26,8 @@ This is probably very abstract so let's see more precisely what this all means.
 
 ### First example
 
+*Please make sure you have done all the setup described on the ${Installation} page first*
+
 A monadic action is modelled as a value of type `Eff[R, A]` where `R` denotes a set of effects and `A` is the value
 returned by the computation, possibly triggering some effects when evaluated.
 
