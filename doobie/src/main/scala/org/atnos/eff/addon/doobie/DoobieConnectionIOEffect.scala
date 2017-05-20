@@ -45,18 +45,18 @@ trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
 
         val beforeAfter: F[A] = for {
           _   <- t.strategy.before.foldMap(t.interpret).run(c)
-          res <- eInterpreted.into[FStack].detach(me)
+          res <- eInterpreted.detach(me)
           _   <- t.strategy.after.foldMap(t.interpret).run(c)
         } yield res
 
-        val always = t.strategy.always.foldMap(t.interpret).run(c)
-        val oops   = t.strategy.oops.foldMap(t.interpret).run(c)
+        lazy val always = t.strategy.always.foldMap(t.interpret).run(c)
+        lazy val oops   = t.strategy.oops.foldMap(t.interpret).run(c)
 
         val ErrF = MonadError[F, E]
 
-        send[F, FStack, A](
-          ErrF.handleErrorWith(beforeAfter)(err => oops *> always *> ErrF.raiseError(err)) <* always
-        )
+        (ErrF.handleErrorWith(beforeAfter)(err => oops *> ErrF.raiseError[A](err)) <* always)
+          .handleErrorWith(err => always *> ErrF.raiseError[A](err))
+          .send[FStack]
       }
     } yield res).detach
   }
