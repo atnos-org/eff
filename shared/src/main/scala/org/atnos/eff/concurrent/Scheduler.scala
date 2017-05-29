@@ -1,6 +1,6 @@
-package org.atnos.eff
+package org.atnos.eff.concurrent
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * The design of the Scheduler is taken from:

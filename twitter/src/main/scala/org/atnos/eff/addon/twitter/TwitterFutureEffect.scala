@@ -8,6 +8,7 @@ import org.atnos.eff._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.TimeoutException
 import com.twitter.util._
+import org.atnos.eff.concurrent.Scheduler
 
 object TwitterFutureCreation extends TwitterFutureCreation
 

@@ -3,6 +3,7 @@ package org.atnos.eff.syntax.addon.twitter
 import com.twitter.util.{Future, FuturePool}
 import org.atnos.eff.addon.twitter._
 import org.atnos.eff._
+import org.atnos.eff.concurrent.Scheduler
 
 trait future {
 

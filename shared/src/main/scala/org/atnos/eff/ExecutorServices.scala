@@ -4,6 +4,7 @@ import java.util.Collections
 import java.util.concurrent._
 
 import cats.Eval
+import org.atnos.eff.concurrent.{Scheduler, Schedulers}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}

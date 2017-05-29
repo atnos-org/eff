@@ -1,6 +1,7 @@
 package org.atnos.eff.syntax
 
 import org.atnos.eff._
+import org.atnos.eff.concurrent.Scheduler
 
 import scala.concurrent.{ExecutionContext, Future}
 
