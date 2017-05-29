@@ -3,7 +3,7 @@ package org.atnos.eff.addon.fs2
 import cats._
 import cats.implicits._
 import fs2._
-import org.atnos.eff.{Scheduler => _, _}
+import org.atnos.eff._
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration

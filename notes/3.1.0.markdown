@@ -2,12 +2,12 @@ This version brings some breaking API changes for async effects in order to make
 
 ## Changes
    
- * `TimedFuture`, `TwitterTimedFuture`, scalaz `TimedTask`, fs2 `TimedTask` now use a `org.atnos.eff.Scheduler` instead of a `ScheduledExecutorService` to
+ * `TimedFuture`, `TwitterTimedFuture`, scalaz `TimedTask`, fs2 `TimedTask` now use a `org.atnos.eff.concurrent.Scheduler` instead of a `ScheduledExecutorService` to
  timeout computations
  
  * a `Scheduler` can be created from a `ScheduledExecutorService` with the `ExecutorServices.schedulerFromScheduledExecutorService` method for the JVM
  
- * a `Scheduler` can be created with the `org.atnos.eff.Schedulers.default` method for ScalaJS
+ * a `Scheduler` can be created with the `org.atnos.eff.concurrent.Schedulers.default` method for ScalaJS
  
  * the monix `Task` effect is now directly using the `monix.eval.Task` type instead of using a `TimedTask` type before. 
  The API stays the same except for stacks declarations which are now `Fx.fx1[Task]` instead of `Fx.fx1[TimedTask]`

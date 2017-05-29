@@ -5,6 +5,7 @@ import java.util.concurrent.TimeoutException
 import cats._
 import cats.implicits._
 import org.atnos.eff.all._
+import org.atnos.eff.concurrent.Scheduler
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}

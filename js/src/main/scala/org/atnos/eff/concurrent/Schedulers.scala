@@ -1,4 +1,4 @@
-package org.atnos.eff
+package org.atnos.eff.concurrent
 
 import scala.concurrent.duration.FiniteDuration
 import scala.scalajs.js.timers._

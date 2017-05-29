@@ -5,7 +5,7 @@ import cats.implicits._
 import monix.eval._
 import monix.cats._
 import monix.execution._
-import org.atnos.eff.{Scheduler => _, _}
+import org.atnos.eff._
 import org.atnos.eff.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
