@@ -1,0 +1,13 @@
+Maintenance version
+
+Improvements
+
+ * *breaking change* moved the `Scheduler` trait to `org.atnos.eff.concurrent`
+ * added a link to the installation page at the beginning of the introduction
+ * upgraded `fs2` to `0.9.6` [#103](http://github.com/atnos-org/eff/issues/103) (thanks to @dvic)
+
+Fixes
+
+ * added back some concurrency for `traverseA` while keeping stacksafety fixes [#109](http://github.com/atnos-org/eff/issues/109)
+
+
