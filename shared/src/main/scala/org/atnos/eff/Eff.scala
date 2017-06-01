@@ -224,7 +224,13 @@ trait EffImplicits {
             case ImpureAp(u, c1, last1)            => ImpureAp(u append unions, Continuation.lift({ xs =>
               val usize = u.size
               val (taken, dropped) = xs.splitAt(usize)
-              Eff.impure(taken, Continuation.lift((xs: Vector[Any]) => ap(c1(xs))(c(dropped)), c1.onNone))
+              // don't recurse if the number of effects is too large
+              // this will ensure stack-safety on large traversals
+              // and keep enough concurrency on smaller traversals
+              if (xs.size > 100)
+                Eff.impure(taken, Continuation.lift((xs: Vector[Any]) => ap(c1(xs))(c(dropped)), c1.onNone))
+              else
+                ap(c1(xs))(c(dropped))
             }, c.onNone), last1 *> last)
           }
 

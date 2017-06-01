@@ -9,13 +9,20 @@ import cats.syntax.all._
 import cats.instances.all._
 import cats.Eq
 import cats.~>
-
-//import cats.laws.discipline.{arbitrary => _, _}
-//import CartesianTests._, Isomorphisms._
 import org.atnos.eff.all._
+import org.atnos.eff.concurrent.Scheduler
+import org.atnos.eff.future._
 import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.future._
+import org.specs2.concurrent.ExecutionEnv
+import org.specs2.matcher.ThrownExpectations
 
-class EffSpec extends Specification with ScalaCheck { def is = s2"""
+import scala.concurrent._
+import duration._
+import scala.collection.mutable.ListBuffer
+import scala.util.Random
+
+class EffSpec(ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  The Eff monad respects the laws            $laws
 
@@ -40,7 +47,8 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
    when the stack can be transformed to Fx1[M] and applicative $detachOneApplicativeEffectInto
 
  Eff values can be traversed with an applicative instance $traverseEff
- Eff.traverseA is stacksafe                               $traverseStacksafe
+ Eff.traverseA is stacksafe                               $traverseAStacksafe
+ Eff.traverseA preserves concurrency                      $traverseAConcurrent
 
  A stack can be added a new effect when the effect is not in stack $notInStack
  A stack can be added a new effect when the effect is in stack     $inStack
@@ -194,13 +202,30 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
       flatTraversed.runOption.run === Option(List(1, 2, 2, 3, 3, 4))
   }
 
-  def traverseStacksafe = {
+  def traverseAStacksafe = {
     val list = (1 to 5000).toList
 
     val traversed: Eff[Fx.fx1[Option], List[Int]] =
       list.traverseA(i => OptionEffect.some(i))
 
     traversed.runOption.run === Option(list)
+  }
+
+  def traverseAConcurrent = {
+    val list = (1 to 5000).toList
+    type S = Fx.fx2[Option, TimedFuture]
+    val messages: ListBuffer[Int] = new ListBuffer[Int]
+
+    val traversed: Eff[S, List[Int]] =
+      list.traverseA { i =>
+        OptionEffect.some[S, Int](i) >>
+        futureDelay[S, Int] { messages.append(i); i }
+      }
+
+    implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
+    Await.result(traversed.runOption.runAsync, 20.seconds) must beSome(list)
+
+    messages.toList must not(beEqualTo(messages.toList.sorted))
   }
 
   def functionReader[R, U, A, B](f: A => Eff[R, B])(implicit into: IntoPoly[R, U],
@@ -458,5 +483,11 @@ class EffSpec extends Specification with ScalaCheck { def is = s2"""
     def eqv(x: F[(Int, Int, Int)], y:F[(Int, Int, Int)]): Boolean =
       runOption(x).run == runOption(y).run
   }
+
+  implicit val scheduler: Scheduler =
+    ExecutorServices.schedulerFromGlobalExecutionContext
+
+  implicit val ec: ExecutionContext =
+    ee.ec
 
 }

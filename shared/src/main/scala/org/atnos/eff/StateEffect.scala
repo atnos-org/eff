@@ -105,9 +105,9 @@ trait StateInterpretation {
         Eff.pure(())
 
       def onApplicativeEffect[X, T[_]: Traverse](ms: T[State[S1, X]], continuation: Continuation[U, T[X], (A, S1)]): Eff[U, (A, S1)] = {
-        val (s1, x) = ms.sequence.run(s).value
+        val (s1, xs) = ms.sequence.run(s).value
         s = s1
-        Eff.impure(x, continuation)
+        Eff.impure(xs, continuation)
       }
     })
 
