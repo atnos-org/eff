@@ -16,5 +16,6 @@ trait all extends
   safe     with
   batch    with
   memo     with
+  future   with
   eff
 
