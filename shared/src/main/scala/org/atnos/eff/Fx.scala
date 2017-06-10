@@ -26,10 +26,10 @@ object Fx {
   type fx7[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_]] = FxAppend[Fx1[T1], FxAppend[Fx3[T2, T3, T4], Fx3[T5, T6, T7]]]
   type fx8[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_]] = FxAppend[Fx2[T1, T2], FxAppend[Fx3[T3, T4, T5], Fx3[T6, T7, T8]]]
   type fx9[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_], T9[_]] = FxAppend[Fx3[T1, T2, T3], FxAppend[Fx3[T4, T5, T6], Fx3[T7, T8, T9]]]
-  type fx10[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_], T9[_], T10[_]] = FxAppend[FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx3[T5, T6, T7], Fx3[T8, T9, T10]]]
+  type fx10[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_], T9[_], T10[_]] = FxAppend[Fx1[T1], FxAppend[Fx3[T2, T3, T4], FxAppend[Fx3[T5, T6, T7], Fx3[T8, T9, T10]]]]
 
-  type fx11[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_], T9[_], T10[_], T11[_]] = FxAppend[FxAppend[Fx2[T1, T2], Fx3[T3, T4, T5]], FxAppend[Fx3[T6, T7, T8], Fx3[T9, T10, T11]]]
-  type fx12[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_], T9[_], T10[_], T11[_], T12[_]] = FxAppend[FxAppend[Fx3[T1, T2, T3], Fx3[T4, T5, T6]], FxAppend[Fx3[T7, T8, T9], Fx3[T10, T11, T12]]]
+  type fx11[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_], T9[_], T10[_], T11[_]] = FxAppend[Fx2[T1, T2], FxAppend[Fx3[T3, T4, T5], FxAppend[Fx3[T6, T7, T8], Fx3[T9, T10, T11]]]]
+  type fx12[T1[_], T2[_], T3[_], T4[_], T5[_], T6[_], T7[_], T8[_], T9[_], T10[_], T11[_], T12[_]] = FxAppend[Fx3[T1, T2, T3], FxAppend[Fx3[T4, T5, T6], FxAppend[Fx3[T7, T8, T9], Fx3[T10, T11, T12]]]]
 
 }
 
