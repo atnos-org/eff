@@ -30,6 +30,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
  Failed tasks must not be memoized                 $e11
 
  Async calls can be memoized with a memo effect $e12
+ Task effect is stacksafe with traverseA        $e13
 
 """
 
@@ -157,6 +158,14 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
     (makeRequest >> makeRequest).runTaskMemo(cache).runSequential.unsafeRunAsyncFuture must be_==(1).await
     invocationsNumber must be_==(1)
+  }
+
+  def e13 = {
+    val action = (1 to 10000).toList.traverseA { i =>
+      taskDelay(i)
+    }
+
+    action.runAsync must not(throwA[Throwable])
   }
 
   /**

@@ -4,7 +4,7 @@ import java.util.concurrent._
 
 import org.atnos.eff.syntax.all._
 
-import scalaz.{-\/, Nondeterminism, \/, \/-}
+import scalaz.{-\/, \/, \/-, Nondeterminism}
 import scalaz.concurrent._
 import cats._
 import cats.implicits._
@@ -16,7 +16,7 @@ import scala.util.{Either, Failure, Success}
 
 case class TimedTask[A](run: ExecutorServices => Task[A], timeout: Option[FiniteDuration] = None) {
 
-  @inline def runNow(es: ExecutorServices): Task[A] =
+  def runNow(es: ExecutorServices): Task[A] =
     timeout.fold(run(es)) { t =>
       Task.async[A] { register =>
         val promise = Promise[A]
@@ -39,7 +39,7 @@ object TimedTask {
       TimedTask(_ => Task.now(x))
 
     def ap[A, B](ff: TimedTask[A => B])(fa: TimedTask[A]): TimedTask[B] =
-      TimedTask[B](es => Nondeterminism[Task].mapBoth(ff.runNow(es), fa.runNow(es))(_(_)))
+      TimedTask[B](es => Nondeterminism[Task].mapBoth(Task.fork(ff.runNow(es)), Task.fork(fa.runNow(es)))((f, a) => f(a)))
 
     override def toString = "Applicative[Task]"
   }

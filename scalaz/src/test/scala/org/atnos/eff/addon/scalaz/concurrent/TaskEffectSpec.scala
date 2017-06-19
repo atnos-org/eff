@@ -33,6 +33,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
  Failed tasks must not be memoized                 $e11
 
  Last actions must be triggered in case of a failure $e12
+ Task effect is stacksafe with traverseA             $e13
 
 """
 
@@ -172,6 +173,13 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     lastActionDone must beEqualTo(1)
   }
 
+  def e13 = {
+    val action = (1 to 10000).toList.traverseA { i =>
+      taskDelay(i)
+    }
+
+    action.runAsync must not(throwA[Throwable])
+  }
 
   /**
    * HELPERS

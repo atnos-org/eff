@@ -31,6 +31,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
  Failed tasks must not be memoized                 $e11
 
  Async boundaries can be introduced between computations $e12
+ Task effect is stacksafe with traverseA                 $e13
 
 """
 
@@ -153,6 +154,14 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     } yield a + b
 
     action[S].runOption.runAsync.runAsync must beSome(30).await(retries = 5, timeout = 5.seconds)
+  }
+
+  def e13 = {
+    val action = (1 to 10000).toList.traverseA { i =>
+      taskDelay(i)
+    }
+
+    action.runAsync must not(throwA[Throwable])
   }
 
   /**

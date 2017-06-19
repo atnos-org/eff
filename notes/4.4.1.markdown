@@ -1,0 +1,11 @@
+Maintenance version
+
+Improvements
+
+ * changed the representation of `Fx.fx10/11/12` for better type inference
+
+Fixes
+
+ * implemented a stacksafe `ap` for the scalaz task effect
+
+
