@@ -228,9 +228,9 @@ trait EffImplicits {
               // this will ensure stack-safety on large traversals
               // and keep enough concurrency on smaller traversals
               if (xs.size > 100)
-                Eff.impure(taken, Continuation.lift((xs: Vector[Any]) => ap(c1(xs))(c(dropped)), c1.onNone))
+                Eff.impure(taken, Continuation.lift((xs1: Vector[Any]) => ap(c1(xs1))(c(dropped)), c1.onNone))
               else
-                ap(c1(xs))(c(dropped))
+                ap(c1(taken))(c(dropped))
             }, c.onNone), last1 *> last)
           }
 

@@ -20,9 +20,8 @@ import org.specs2.matcher.ThrownExpectations
 import scala.concurrent._
 import duration._
 import scala.collection.mutable.ListBuffer
-import scala.util.Random
 
-class EffSpec(ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class EffSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  The Eff monad respects the laws            $laws
 
@@ -62,7 +61,8 @@ class EffSpec(ee: ExecutionEnv) extends Specification with ScalaCheck with Throw
  An effect can be logged using its execution trace                                 $traceEffect
 
  Applicative calls can be optimised by "batching" requests $optimiseRequests
- Interleaved applicative calls can be interpreted properly $interleavedApplicative (see release notes for 4.0.2)
+ Interleaved applicative calls can be interpreted properly $interleavedApplicative1 (see release notes for 4.0.2)
+ Interleaved applicative calls can be interpreted properly, with natural interpretation $interleavedApplicative2 (see release notes for 4.4.2)
 
 """
 
@@ -222,8 +222,7 @@ class EffSpec(ee: ExecutionEnv) extends Specification with ScalaCheck with Throw
         futureDelay[S, Int] { messages.append(i); i }
       }
 
-    implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
-    Await.result(traversed.runOption.runAsync, 20.seconds) must beSome(list)
+    traversed.runOption.runAsync must beSome(list).awaitFor(20.seconds)
 
     messages.toList must not(beEqualTo(messages.toList.sorted))
   }
@@ -448,13 +447,20 @@ class EffSpec(ee: ExecutionEnv) extends Specification with ScalaCheck with Throw
     result ==== optimisedResult
   }
 
-  def interleavedApplicative = {
+  def interleavedApplicative1 = {
     type S = Fx2[Option, String Either ?]
     val action = (1 to 4).toList.traverseA(i =>
       if (i % 2 == 0) OptionEffect.some[S, Int](i) else EitherEffect.right[S, String, Int](i))
 
     action.runOption.runEither.run ==== Right(Some(List(1, 2, 3, 4)))
+  }
 
+  def interleavedApplicative2 = {
+    type S = Fx2[Option, TimedFuture]
+    val action = (1 to 4).toList.traverseA(i =>
+      if (i % 2 == 0) OptionEffect.some[S, Int](i) else FutureEffect.futureDelay[S, Int](i))
+
+    FutureEffect.futureAttempt(action).runOption.runAsync must beSome(Right(List(1, 2, 3, 4)): Either[Throwable, List[Int]]).await
   }
 
   /**
@@ -486,8 +492,5 @@ class EffSpec(ee: ExecutionEnv) extends Specification with ScalaCheck with Throw
 
   implicit val scheduler: Scheduler =
     ExecutorServices.schedulerFromGlobalExecutionContext
-
-  implicit val ec: ExecutionContext =
-    ee.ec
 
 }

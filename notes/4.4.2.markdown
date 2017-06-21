@@ -1,0 +1,7 @@
+Maintenance version, with just one important correctness fix
+
+Fixes
+
+ * some interleaving of applicative effects were triggering a `ClassCastException`
+
+

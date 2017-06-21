@@ -86,9 +86,9 @@ trait Interpret {
         val collected = unions.project
 
         if (collected.effects.isEmpty)
-          collected.othersEff(continuation.interpret(e => runInterpreter(e)(interpreter))(interpretLast)).addLast(interpretLast(last))
+          collected.othersEff(interpretContinuation(continuation)).addLast(interpretLast(last))
         else
-          interpreter.onApplicativeEffect(collected.effects, interpretContinuation(collected.continuation(continuation, m))).addLast(interpretLast(last))
+          interpreter.onApplicativeEffect(collected.effects, collected.continuation(interpretContinuation(continuation))).addLast(interpretLast(last))
     }
   }
 
