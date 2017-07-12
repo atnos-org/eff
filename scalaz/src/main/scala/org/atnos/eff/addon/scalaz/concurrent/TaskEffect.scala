@@ -39,7 +39,10 @@ object TimedTask {
       TimedTask(_ => Task.now(x))
 
     def ap[A, B](ff: TimedTask[A => B])(fa: TimedTask[A]): TimedTask[B] =
-      TimedTask[B](es => Nondeterminism[Task].mapBoth(Task.fork(ff.runNow(es)), Task.fork(fa.runNow(es)))((f, a) => f(a)))
+      TimedTask[B] { ess =>
+        val es = ess.executorService
+        Nondeterminism[Task].mapBoth(Task.fork(ff.runNow(ess))(es), Task.fork(fa.runNow(ess))(es))((f, a) => f(a))
+      }
 
     override def toString = "Applicative[Task]"
   }
@@ -58,7 +61,7 @@ object TimedTask {
       }
 
     def raiseError[A](e: Throwable): TimedTask[A] =
-      TimedTask(ess => Task.fail(e))
+      TimedTask(_ => Task.fail(e))
 
     def handleErrorWith[A](fa: TimedTask[A])(f: Throwable => TimedTask[A]): TimedTask[A] =
       TimedTask(ess => fa.runNow(ess).handleWith[A] { case t => f(t).runNow(ess) })
@@ -81,7 +84,10 @@ object TimedTask {
 
   implicit val timedTaskSequenceCached: SequenceCached[TimedTask] = new SequenceCached[TimedTask] {
     def get[X](cache: Cache, key: AnyRef): TimedTask[Option[X]] =
-      TimedTask(_ => Task.fork(Task.delay(cache.get(key))))
+      TimedTask { ess =>
+        val es = ess.executorService
+        Task.fork(Task.delay(cache.get(key)))(es)
+      }
 
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>TimedTask[X]): TimedTask[X] = {
       TimedTask { es =>

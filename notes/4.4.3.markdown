@@ -1,0 +1,8 @@
+Maintenance version, with just one important resources fix
+
+Fixes
+
+ * *scalaz* use the `TimedTask` `ExecutorService` instead of the default `Strategy` to fork tasks in the
+  scalaz `TaskEffect`
+
+

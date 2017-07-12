@@ -3,6 +3,5 @@
 target/
 .settings
 /.ensime*
-hydra.log
-hydra-timings.csv
+.hydra
 **/partition.hydra
