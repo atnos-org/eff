@@ -178,8 +178,8 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
   def e15 = {
     val list = (1 to 5000).toList
-    val action = list.traverse(i => futureDelay(i)).detach
-    action.runNow(scheduler, ee.executionContext) must be_===(list).awaitFor(1 second)
+    val action = list.traverse(i => futureDelay(i)).detachA(TimedFuture.ApplicativeTimedFuture)
+    action.runNow(scheduler, ec) must be_===(list).awaitFor(1.seconds)
   }
 
   /**
