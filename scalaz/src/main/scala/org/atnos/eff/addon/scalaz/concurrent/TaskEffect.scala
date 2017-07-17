@@ -40,8 +40,7 @@ object TimedTask {
 
     def ap[A, B](ff: TimedTask[A => B])(fa: TimedTask[A]): TimedTask[B] =
       TimedTask[B] { ess =>
-        val es = ess.executorService
-        Nondeterminism[Task].mapBoth(Task.fork(ff.runNow(ess))(es), Task.fork(fa.runNow(ess))(es))((f, a) => f(a))
+        Nondeterminism[Task].mapBoth(Task.suspend(ff.runNow(ess)), Task.suspend(fa.runNow(ess)))((f, a) => f(a))
       }
 
     override def toString = "Applicative[Task]"
@@ -244,4 +243,3 @@ object TaskInterpretation extends TaskInterpretation
 trait TaskEffect extends TaskInterpretation with TaskCreation
 
 object TaskEffect extends TaskEffect
-
