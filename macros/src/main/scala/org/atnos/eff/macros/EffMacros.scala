@@ -300,7 +300,7 @@ class EffMacros(val c: blackbox.Context) {
                }
             """
             c.Expr[Any](gen)
-            
+
           case None =>
 
             val genCompanionObj =

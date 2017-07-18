@@ -1,0 +1,12 @@
+Maintenance version
+
+### Improvements
+
+ * *macro* the `@eff` macro annotation accepts type aliases for effects defined with `\=`, `|=` or `<=` [#107](https://github.com/atnos-org/eff/issues/107)
+ * *macro* the `@eff` macro annotation does not override an existing companion object definition [#107](https://github.com/atnos-org/eff/issues/107)
+
+### Fixes
+
+ * *macro* the `@eff` macro annotation doesn't fail if there is a smart constructor [#107](https://github.com/atnos-org/eff/issues/107)
+
+
