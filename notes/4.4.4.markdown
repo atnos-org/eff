@@ -2,6 +2,7 @@ Maintenance version
 
 ### Improvements
 
+ * *scalaz*  don't fork tasks in the applicative instance for the `TaskEffect`, just suspend them to avoid stackoverflows [#110](https://github.com/atnos-org/eff/issues/110) (thanks to @taojang)
  * *macro* the `@eff` macro annotation accepts type aliases for effects defined with `\=`, `|=` or `<=` [#107](https://github.com/atnos-org/eff/issues/107)
  * *macro* the `@eff` macro annotation does not override an existing companion object definition [#107](https://github.com/atnos-org/eff/issues/107)
 
