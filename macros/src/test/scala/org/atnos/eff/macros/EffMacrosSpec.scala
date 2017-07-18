@@ -5,21 +5,26 @@ import org.atnos.eff._
 
 class EffMacrosSpec extends Specification { def is = s2"""
 
- generates boilerplate code for custom effects $generatesBoilerplate
- generates a SideEffect sub-class with boilerplate-free methods $generatesSideEffectInterpreter
- generates a Translate sub-trait with boilerplate-free methods $generatesTranslateInterpreter
- generates a TranslatorFactory sub-trait with boilerplate-free methods $generatesTranslatorFactory
- generates a FunctionK sub-trait with boilerplate-free methods $generatesNaturalTransformationInterpreter
-"""
-  @eff trait KVStoreDsl {
-    type _kvstore[R] = KVStore MemberIn R
+ The @eff macro annotation must
+   generate boilerplate code for custom effects                         $generatesBoilerplate
+   generate a SideEffect sub-class with boilerplate-free methods        $generatesSideEffectInterpreter
+   generate a Translate sub-trait with boilerplate-free methods         $generatesTranslateInterpreter
+   generate a TranslatorFactory sub-trait with boilerplate-free methods $generatesTranslatorFactory
+   generate a FunctionK sub-trait with boilerplate-free methods         $generatesNaturalTransformationInterpreter
+   override an existing companion object                                $overrideExistingCompanion
 
+"""
+
+  @eff trait KVStoreDsl {
+    type _kvstore[R] = KVStore |= R
+
+    case class GetAllResult[T](result: List[T])
     case class GetResult[T](result: Option[T])
-    def unpackResult[T](getResult: GetResult[T]): Option[T] = getResult.result
 
     sealed trait KVStore[+A]
 
     def put[T : Ordering, R :_kvstore](key: String, value: T): Eff[R, Unit]
+    def getAll[T, R :_kvstore]: Eff[R, GetAllResult[T]]
     def get[T, R :_kvstore](key: String): Eff[R, GetResult[T]]
     def delete[T, R :_kvstore](key: String): Eff[R, Unit]
     def update[T : Ordering, R :_kvstore](key: String, f: T => T): Eff[R, Unit] =
@@ -27,6 +32,10 @@ class EffMacrosSpec extends Specification { def is = s2"""
         vMaybe <- get[T, R](key)
         _ <- vMaybe.result.map(v => put[T, R](key, f(v))).getOrElse(Eff.pure(()))
       } yield ()
+  }
+
+  object KVStoreDsl {
+    val someConstant = 1
   }
 
   import KVStoreDsl._
@@ -39,7 +48,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
       _ <- put("tame-cats", 5)
       n <- get[Int, R]("wild-cats")
       _ <- delete("tame-cats")
-    } yield unpackResult(n)
+    } yield n.result
   lazy val theProgram = program[Fx.fx1[KVStore]]
 
   def generatesBoilerplate = {
@@ -57,9 +66,12 @@ class EffMacrosSpec extends Specification { def is = s2"""
         kvs.put(key, value)
         ()
       }
-      def get[T](key: String): GetResult[T] = {
+      def getAll[T]: GetAllResult[T] =
+        GetAllResult(kvs.values.toList.asInstanceOf[List[T]])
+
+      def get[T](key: String): GetResult[T] =
         GetResult(kvs.get(key).asInstanceOf[Option[T]])
-      }
+
       def delete[T](key: String): Unit = {
         kvs.remove(key)
         ()
@@ -91,11 +103,20 @@ class EffMacrosSpec extends Specification { def is = s2"""
           _ <- modify((map: Map[String, Any]) => map.updated(key, value))
           r <- fromEither(Either.catchNonFatal(()))
         } yield r
+
+        def getAll[T]: Eff[U, GetAllResult[T]] = for {
+          _ <- tell(s"get all")
+          m <- StateEffect.get[U, Map[String, Any]]
+          r <- fromEither(Either.catchNonFatal(m.values.toList.map(_.asInstanceOf[T])))
+        } yield GetAllResult(r)
+
+
         def get[T](key: String): Eff[U, GetResult[T]] = for {
           _ <- tell(s"get($key)")
           m <- StateEffect.get[U, Map[String, Any]]
           r <- fromEither(Either.catchNonFatal(m.get(key).map(_.asInstanceOf[T])))
         } yield GetResult(r)
+
         def delete[T](key: String): Eff[U, Unit] = for {
           _ <- tell(s"delete($key)")
           u <- modify((map: Map[String, Any]) => map - key)
@@ -127,17 +148,25 @@ class EffMacrosSpec extends Specification { def is = s2"""
 
 
     val tr = new KVStoreDsl.TranslatorFactory3[ThrowableEither, WriterString, StateMap] {
-      def put[T : Ordering, U : _throwableEither : _writerString : _stateMap](key: String, value: T): Eff[U, Unit] = for {
+      def put[T : Ordering, U :_throwableEither :_writerString :_stateMap](key: String, value: T): Eff[U, Unit] = for {
         _ <- tell(s"put($key, $value)").into[U]
         _ <- modify((map: Map[String, Any]) => map.updated(key, value)).into[U]
         r <- fromEither(Either.catchNonFatal(())).into[U]
       } yield r
-      def get[T, U : _throwableEither : _writerString : _stateMap](key: String): Eff[U, GetResult[T]] = for {
+
+      def getAll[T, U :_throwableEither :_writerString :_stateMap]: Eff[U, GetAllResult[T]] = for {
+        _ <- tell(s"get all").into[U]
+        m <- StateEffect.get[U, Map[String, Any]].into[U]
+        r <- fromEither(Either.catchNonFatal(m.values.toList.map(_.asInstanceOf[T]))).into[U]
+      } yield GetAllResult(r)
+
+      def get[T, U :_throwableEither :_writerString :_stateMap](key: String): Eff[U, GetResult[T]] = for {
         _ <- tell(s"get($key)").into[U]
         m <- StateEffect.get[U, Map[String, Any]].into[U]
         r <- fromEither(Either.catchNonFatal(m.get(key).map(_.asInstanceOf[T]))).into[U]
       } yield GetResult(r)
-      def delete[T, U : _throwableEither : _writerString : _stateMap](key: String): Eff[U, Unit] = for {
+
+      def delete[T, U :_throwableEither :_writerString :_stateMap](key: String): Eff[U, Unit] = for {
         _ <- tell(s"delete($key)").into[U]
         u <- modify((map: Map[String, Any]) => map - key).into[U]
         r <- fromEither(Either.catchNonFatal(())).into[U]
@@ -163,9 +192,15 @@ class EffMacrosSpec extends Specification { def is = s2"""
     val optionInterp = new KVStoreDsl.FunctionK[Option] {
       def put[T](key: String, value: T)(implicit ordering: Ordering[T]): Option[Unit] = Some(())
       def get[T](key: String): Option[GetResult[T]] = Some(GetResult(None))
+      def getAll[T]: Option[GetAllResult[T]] = Some(GetAllResult(Nil))
       def delete[T](key: String): Option[Unit] = Some(())
     }
 
     runOption(theProgram.transform(optionInterp)).run ==== Some(None)
   }
+
+  def overrideExistingCompanion = {
+    KVStoreDsl.someConstant ==== 1
+  }
+
 }

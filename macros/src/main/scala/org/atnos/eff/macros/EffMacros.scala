@@ -40,14 +40,19 @@ class EffMacros(val c: blackbox.Context) {
     trees.headOption match {
       case Some(q"$_ trait ${tpname:TypeName}[..$_] extends { ..$earlydefns } with ..$parents { $self => ..$stats }") =>
         val (typeAlias: TypeDef, freeSType) =
-          stats.collectFirst { case typeDef @ q"type $_[..$_] = MemberIn[${Ident(s)}, $_]" => (typeDef, s) }
-            .getOrElse(abort(s"$tpname needs to define a type alias for MemberIn[S, A]"))
+          stats.collectFirst {
+            case typeDef @ q"type $_[..$_] = MemberIn[${Ident(s)}, $_]" => (typeDef, s)
+            case typeDef @ q"type $_[..$_] = |=[${Ident(s)}, $_]" => (typeDef, s)
+            case typeDef @ q"type $_[..$_] = /=[${Ident(s)}, $_]" => (typeDef, s)
+            case typeDef @ q"type $_[..$_] = <=[${Ident(s)}, $_]" => (typeDef, s)
+          }.getOrElse(abort(s"$tpname needs to define a type alias for MemberIn[S, A]"))
 
         val sealedTrait: ClassDef = stats.collectFirst {
           case cd @ q"sealed trait $name[..$_]" if name == freeSType => cd.asInstanceOf[ClassDef]
         }.getOrElse(abort(s"$tpname needs to define a sealed trait $freeSType[A]"))
 
         case class EffType(effectType: Tree, returnTypeTree: Tree)
+
         object ExpectedReturnType {
           def unapply(rt: Tree): Option[EffType] = rt match {
             case AppliedTypeTree(Ident(name), List(effectType, returnType))  if name.toString == "Eff" =>
@@ -111,12 +116,19 @@ class EffMacros(val c: blackbox.Context) {
 
         val injectOpsObj = liftedOps
 
-
         val genCaseClassesAndObjADT =
           absValsDefsOps.collect {
             case q"..$_ def $tname[..$tparams](...$paramss): ${AppliedTypeTree(_, returnType)} = $expr" =>
               val fixedParams = fixSI88771(paramss)
-              val implicitParams = fixedParams(1).collect {
+
+              val implicits = fixedParams match {
+                // this should not happen, there should be implicit parameters
+                case Nil           => Nil
+                case ps :: is :: _ => is
+                case is :: _       => is
+              }
+
+              val implicitParams = implicits.collect {
                 case ValDef(_, _, AppliedTypeTree(Ident(name), Seq(Ident(stackTypeName))), _) if name == typeAlias.name => stackTypeName
               }
               val nonStackReturnTypes = returnType.filter {
@@ -277,17 +289,34 @@ class EffMacros(val c: blackbox.Context) {
               $functionKTrait
             }
         """
-        val genCompanionObj =
-          q"""
-            object ${tpname.toTermName} extends ${tpname.toTypeName}
-          """
 
-        val gen = q"""
-          $genTrait
-          $genCompanionObj
-        """
+        trees.drop(1).headOption match {
+          case Some(q"""$mod object $companionName extends { ..$earlydefns } with ..$parents { ..$body }""")  =>
+            val gen = q"""
+               $genTrait
 
-        c.Expr[Any](gen)
+               $mod object $companionName extends { ..$earlydefns } with ..$parents with ${tpname.toTypeName} {
+                  ..$body
+               }
+            """
+            c.Expr[Any](gen)
+            
+          case None =>
+
+            val genCompanionObj =
+              q"""
+                object ${tpname.toTermName} extends ${tpname.toTypeName}
+              """
+
+            val gen = q"""
+              $genTrait
+
+              $genCompanionObj
+            """
+
+            c.Expr[Any](gen)
+        }
+
 
       case other => c.abort(c.enclosingPosition, s"${showRaw(other)}")
     }
