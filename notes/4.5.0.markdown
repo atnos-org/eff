@@ -1,0 +1,11 @@
+Maintenance version
+
+### Improvements
+
+ * *scalaz* added a `Catchable` instance for `Eff[R :_Task, ?]` and a natural transformation from `Task` to `Eff[R :_Task, ?]`
+
+### Fixes
+
+ * *doc* fix typo in the installation doc [#113](https://github.com/atnos-org/eff/issues/113) (thanks to @richardimaoka)
+
+

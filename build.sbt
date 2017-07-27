@@ -7,6 +7,14 @@ import org.scalajs.sbtplugin.cross.CrossType
 import Defaults.{defaultTestTasks, testTaskOptions}
 import sbtrelease._
 
+lazy val catsVersion        = "0.9.0"
+lazy val monixVersion       = "2.3.0"
+lazy val scalazVersion      = "7.2.7"
+lazy val fs2Version         = "0.9.6"
+lazy val specs2Version      = "3.9.4"
+lazy val twitterUtilVersion = "6.42.0"
+lazy val catbirdVersion     = "0.13.0"
+
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
   .settings(effSettings)
@@ -278,14 +286,6 @@ def testTask(task: TaskKey[Tests.Output]) =
         (javaHome in test).value
       )).flatMap(identity)
   }.value
-
-lazy val catsVersion   = "0.9.0"
-lazy val monixVersion  = "2.3.0"
-lazy val scalazVersion = "7.2.7"
-lazy val fs2Version    = "0.9.6"
-lazy val specs2Version = "3.9.4"
-lazy val twitterUtilVersion = "6.42.0"
-lazy val catbirdVersion = "0.13.0"
 
 lazy val catsJvm = Seq(
   "org.typelevel" %% "cats-core" % catsVersion)

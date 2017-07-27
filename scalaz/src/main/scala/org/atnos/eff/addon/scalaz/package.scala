@@ -1,7 +1,9 @@
 package org.atnos.eff
 package addon
 
-import org.atnos.eff.addon.scalaz.concurrent.TaskEffect
+import _root_.scalaz.concurrent.Task
+import scalaz.concurrent.TaskEffect
+import org.atnos.eff.addon.scalaz.task.{_Task, _task, fromTask, taskFailed, taskAttempt}
 
 import _root_.scalaz._
 import Scalaz._
@@ -43,6 +45,14 @@ package object scalaz {
 
   def catsSemigroup[A](s: Semigroup[A]): cats.Semigroup[A] = new cats.Semigroup[A] {
     def combine(x: A, y: A): A = s.append(x, y)
+  }
+
+  def natTaskEff[R :_task]: Task ~> Eff[R, ?] =
+    Lambda[Task ~> Eff[R, ?]](t => fromTask(t))
+
+  implicit def EffCatchable[R :_Task]: Catchable[Eff[R, ?]] = new Catchable[Eff[R, ?]] {
+    def attempt[A](f: Eff[R, A]) = taskAttempt(f).map(\/.fromEither)
+    def fail[A](err: Throwable) = taskFailed[R, A](err)
   }
 
   object EffScalaz {
