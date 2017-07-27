@@ -11,7 +11,7 @@ libraryDependencies += "org.atnos" %% "eff" % "$version"
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 ```
 
-To get types like `Reader[String, ?]` (with more than one type parameter) correctly inferred, you'll to use the following compiler option
+To get types like `Reader[String, ?]` (with more than one type parameter) correctly inferred, you'll have to use the following compiler option
 
 ```scala
 scalacOptions += "-Ypartial-unification"
