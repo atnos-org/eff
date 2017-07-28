@@ -22,10 +22,10 @@ You can also check out [this presentation](http://bit.ly/eff_flatmap_2016) at fl
 
 You add `eff` as an sbt dependency:
 ```scala
-libraryDependencies += "org.atnos" %% "eff" % "4.2.0"
+libraryDependencies += "org.atnos" %% "eff" % "4.5.0"
 
 // to write types like Reader[String, ?]
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 
 // to get types like Reader[String, ?] (with more than one type parameter) correctly inferred for scala 2.11 < 2.11.9
 // you can use the [Typelevel Scala compiler](http://typelevel.org/scala)
