@@ -17,6 +17,7 @@ You can learn more in the following sections:
  - ${"use Member implicits" ~ MemberImplicits }
  - ${"use an applicative evaluation" ~ ApplicativeEvaluation}
  - ${"tips and tricks" ~ Cookbook}
+ - ${"community resources" ~ CommunityResources}
 
 ### Contributing
 

@@ -19,6 +19,7 @@ class Website extends Specification { def is = s2"""
   , "Tutorial"
   , "TransformStack"
   , "Cookbook"
+  , "CommunityResources"
   ).map("org.atnos.site."+_) :+ "index"
 
   def userGuide = {
