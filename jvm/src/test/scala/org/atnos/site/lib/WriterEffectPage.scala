@@ -7,6 +7,7 @@ You can then define your own custom `Fold` to log the values to a file:${snippet
 import org.atnos.eff._, all._, syntax.all._
 import cats.data.Writer
 import java.io.PrintWriter
+import scala.io
 
 type S = Fx.fx1[Writer[String, ?]]
 
