@@ -29,14 +29,14 @@ object H2TestableTransactor {
                    always: ConnectionIO[Unit] = close)(
       implicit ev0: Monad[M],
       ev1: Catchable[M],
-      ev2: Suspendable[M]): (Transactor[M, JdbcConnectionPool], OpHistory) = {
+      ev2: Suspendable[M]): (Transactor[M], OpHistory) = {
     val pool = JdbcConnectionPool.create(url, user, pass)
 
     val c = new OpHistory()
 
     val t = Transactor(
-      kernel = pool,
-      connect = (a: JdbcConnectionPool) => ev2.delay(a.getConnection) <* ev2.pure(c.registerConnection()),
+      kernel0 = pool,
+      connect0 = (a: JdbcConnectionPool) => ev2.delay(a.getConnection) <* ev2.pure(c.registerConnection()),
       KleisliInterpreter[M](ev0, implicitly, implicitly).ConnectionInterpreter,
       Strategy(
         before = before <* delay(c.registerBefore()),

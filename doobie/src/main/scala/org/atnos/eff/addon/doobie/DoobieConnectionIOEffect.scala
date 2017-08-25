@@ -3,14 +3,11 @@ package org.atnos.eff.addon.doobie
 import java.sql.Connection
 
 import cats.implicits._
-import cats.{Monad, MonadError}
-import cats.free.Free
-import doobie.free.connection.ConnectionIO
-import doobie.imports.Transactor
-import fs2.util.Catchable
+import cats.{MonadError, ~>}
+import _root_.doobie.free.connection.ConnectionIO
+import _root_.doobie.imports.Transactor
 import org.atnos.eff._
 import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
 
 trait DoobieConnectionIOTypes {
   type _connectionIO[R] = ConnectionIO |= R
@@ -18,47 +15,48 @@ trait DoobieConnectionIOTypes {
 }
 
 trait DoobieConnectionIOCreation extends DoobieConnectionIOTypes {
-  final def pure[R: _connectionIO, A](a: A): Eff[R, A] =
-    send[ConnectionIO, R, A](Free.pure(a))
-
   final def fromConnectionIO[R: _connectionIO, A](a: ConnectionIO[A]): Eff[R, A] =
     send[ConnectionIO, R, A](a)
 }
 
 trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
-  def runConnectionIO[R, F[_]: Monad: Catchable, E, A, B](e: Eff[R, A])(
-      t: Transactor[F, B])(implicit m1: Member.Aux[ConnectionIO, R, Fx.fx1[F]], me: MonadError[F, E]): F[A] = {
 
-    type FStack = Fx.fx1[F]
+  def runConnectionIO[R, U, F[_], E, A, B](e: Eff[R, A])(t: Transactor[F])(
+    implicit mc: Member.Aux[ConnectionIO, R, U],
+             mf: F /= U,
+             me: MonadError[F, E] ): Eff[U, A] = {
 
-    (for {
-      c <- send[F, FStack, Connection](t.connect(t.kernel))
-      res <- {
+    def getConnection: Eff[U, Connection] =
+      send[F, U, Connection](t.connect(t.kernel))
 
-        val eInterpreted: Eff[FStack, A] = {
-          interpret.translate(e)(new Translate[ConnectionIO, FStack] {
-            override def apply[X](kv: ConnectionIO[X]): Eff[FStack, X] = {
-              send[F, FStack, X](kv.foldMap(t.interpret).run(c))
-            }
-          })
+    def runEffect(connection: Connection): Eff[U, A] =
+      interpret.translate(e)(new Translate[ConnectionIO, U] {
+        def apply[X](c: ConnectionIO[X]): Eff[U, X] = {
+          send[F, U, X](c.foldMap(t.interpret).run(connection))
         }
+      })
 
-        val beforeAfter: F[A] = for {
-          _   <- t.strategy.before.foldMap(t.interpret).run(c)
-          res <- eInterpreted.detach(me)
-          _   <- t.strategy.after.foldMap(t.interpret).run(c)
-        } yield res
+    def interceptErrors[Y](effect: Eff[U, Y])(oops: F[Unit]): Eff[U, Y] =
+      interpret.interceptNat(effect)(new (F ~> F) {
+        def apply[X](f: F[X]): F[X] =
+          f.handleErrorWith((err: E) => oops *> me.raiseError[X](err))
+      })
 
-        lazy val always = t.strategy.always.foldMap(t.interpret).run(c)
-        lazy val oops   = t.strategy.oops.foldMap(t.interpret).run(c)
+    getConnection.flatMap { connection =>
+      lazy val always: F[Unit] =
+        t.strategy.always.foldMap(t.interpret).run(connection)
 
-        val ErrF = MonadError[F, E]
+      lazy val oops: F[Unit] =
+        t.strategy.oops.foldMap(t.interpret).run(connection)
 
-        (ErrF.handleErrorWith(beforeAfter)(err => oops *> ErrF.raiseError[A](err)) <* always)
-          .handleErrorWith(err => always *> ErrF.raiseError[A](err))
-          .send[FStack]
-      }
-    } yield res).detach
+      val before: Eff[U, Unit] =
+        send(t.strategy.before.foldMap(t.interpret).run(connection))
+
+      val after: Eff[U, Unit] =
+        send(t.strategy.after.foldMap(t.interpret).run(connection))
+
+      interceptErrors(before >> runEffect(connection) << after)(oops).addLast(send(always))
+    }
   }
 }
 

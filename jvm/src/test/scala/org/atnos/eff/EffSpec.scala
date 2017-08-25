@@ -45,10 +45,6 @@ class EffSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck w
    when the stack is Fx1[M] and applicative                    $detachOneApplicativeEffect
    when the stack can be transformed to Fx1[M] and applicative $detachOneApplicativeEffectInto
 
- Eff values can be traversed with an applicative instance $traverseEff
- Eff.traverseA is stacksafe                               $traverseAStacksafe
- Eff.traverseA preserves concurrency                      $traverseAConcurrent
-
  A stack can be added a new effect when the effect is not in stack $notInStack
  A stack can be added a new effect when the effect is in stack     $inStack
 
@@ -59,10 +55,6 @@ class EffSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck w
  An effect can be augmented with other effects                                     $augmentEffect
  An effect can be logged using a custom logger                                     $writeEffect
  An effect can be logged using its execution trace                                 $traceEffect
-
- Applicative calls can be optimised by "batching" requests $optimiseRequests
- Interleaved applicative calls can be interpreted properly $interleavedApplicative1 (see release notes for 4.0.2)
- Interleaved applicative calls can be interpreted properly, with natural interpretation $interleavedApplicative2 (see release notes for 4.4.2)
 
 """
 
@@ -190,41 +182,6 @@ class EffSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck w
     val e: Eff[S, Int] = OptionEffect.some[S, Int](1)
 
     e.runWriter.runEither.detachA(Applicative[Option]) must beSome(Right[String, (Int, List[Int])]((1, Nil)))
-  }
-
-  def traverseEff = {
-    val traversed: Eff[Fx.fx1[Option], List[Int]] =
-      List(1, 2, 3).traverseA(i => OptionEffect.some(i))
-    val flatTraversed: Eff[Fx.fx1[Option], List[Int]] =
-      List(1, 2, 3).flatTraverseA(i => OptionEffect.some(List(i, i + 1)))
-
-    traversed.runOption.run === Option(List(1, 2, 3)) &&
-      flatTraversed.runOption.run === Option(List(1, 2, 2, 3, 3, 4))
-  }
-
-  def traverseAStacksafe = {
-    val list = (1 to 5000).toList
-
-    val traversed: Eff[Fx.fx1[Option], List[Int]] =
-      list.traverseA(i => OptionEffect.some(i))
-
-    traversed.runOption.run === Option(list)
-  }
-
-  def traverseAConcurrent = {
-    val list = (1 to 5000).toList
-    type S = Fx.fx2[Option, TimedFuture]
-    val messages: ListBuffer[Int] = new ListBuffer[Int]
-
-    val traversed: Eff[S, List[Int]] =
-      list.traverseA { i =>
-        OptionEffect.some[S, Int](i) >>
-        futureDelay[S, Int] { messages.append(i); i }
-      }
-
-    traversed.runOption.runAsync must beSome(list).awaitFor(20.seconds)
-
-    messages.toList must not(beEqualTo(messages.toList.sorted))
   }
 
   def functionReader[R, U, A, B](f: A => Eff[R, B])(implicit into: IntoPoly[R, U],
@@ -390,77 +347,6 @@ class EffSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck w
   def traceEffect = {
     runStored(action[Fx.fx2[Writer[Stored[_], ?], Stored]].trace[Stored]).runWriterLog.run ====
       List[Stored[_]](Update("a", 1), Get("b"), Remove("c"))
-  }
-
-  def optimiseRequests = {
-
-    // An effect to get users from a database
-    // calls can be individual or batched
-    case class User(i: Int)
-    sealed trait UserDsl[+A]
-
-    case class GetUser(i: Int) extends UserDsl[User]
-    case class GetUsers(is: List[Int]) extends UserDsl[List[User]]
-    type _userDsl[R] = UserDsl |= R
-
-    implicit def BatchableUserDsl: Batchable[UserDsl] = new Batchable[UserDsl] {
-      type Z = List[User]
-      type E = User
-      def distribute(z: Z): List[E] = z
-
-      def batch[X, Y](tx: UserDsl[X], ty: UserDsl[Y]): Option[UserDsl[Z]] = Option {
-        (tx, ty) match {
-          case (GetUser(i),   GetUser(j))   => GetUsers(List(i, j))
-          case (GetUser(i),   GetUsers(is)) => GetUsers(i :: is)
-          case (GetUsers(is), GetUser(i))   => GetUsers(is :+ i)
-          case (GetUsers(is), GetUsers(js)) => GetUsers(is ++ js)
-        }
-      }
-    }
-
-    def getUser[R :_userDsl](i: Int): Eff[R, User] =
-      send[UserDsl, R, User](GetUser(i))
-
-    def getWebUser(i: Int): User = User(i)
-    def getWebUsers(is: List[Int]): List[User] = is.map(i => User(i))
-
-    def runDsl[A](eff: Eff[Fx1[UserDsl], A]): A =
-      eff match {
-        case Pure(a, _) => a
-        case Impure(NoEffect(a), c, _)                  => runDsl(c(a))
-        case Impure(UnionTagged(GetUser(i), _), c, _)   => runDsl(c(getWebUser(i)))
-        case Impure(UnionTagged(GetUsers(is), _), c, _) => runDsl(c(getWebUsers(is)))
-        case ap @ ImpureAp(u, m, _)                     => runDsl(ap.toMonadic)
-        case Impure(_, _, _)                            => sys.error("this should not happen with just one effect. Got "+eff)
-      }
-
-    def action1[R :_userDsl] =
-      Eff.traverseA(List(1, 2))(i => getUser(i))
-
-    val action = action1
-
-    val optimised = action1.batch
-
-    val result = runDsl(action)
-    val optimisedResult = runDsl(optimised)
-
-    result ==== optimisedResult
-  }
-
-  def interleavedApplicative1 = {
-    type S = Fx2[Option, String Either ?]
-    val action = (1 to 4).toList.traverseA(i =>
-      if (i % 2 == 0) OptionEffect.some[S, Int](i) else EitherEffect.right[S, String, Int](i))
-
-    action.runOption.runEither.run ==== Right(Some(List(1, 2, 3, 4)))
-  }
-
-  def interleavedApplicative2 = {
-    type S = Fx2[Option, TimedFuture]
-    val action = (1 to 4).toList.traverseA(i =>
-      if (i % 2 == 0) OptionEffect.some[S, Int](i) else FutureEffect.futureDelay[S, Int](i))
-
-    FutureEffect.futureAttempt(action).runOption.runAsync must beSome(Right(List(1, 2, 3, 4)): Either[Throwable, List[Int]]).await
   }
 
   /**

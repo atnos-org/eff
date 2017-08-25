@@ -6,6 +6,7 @@ import com.ambiata.promulgate.project.ProjectPlugin.promulgate
 import org.scalajs.sbtplugin.cross.CrossType
 import Defaults.{defaultTestTasks, testTaskOptions}
 import sbtrelease._
+import org.scalajs.jsenv.nodejs._
 
 lazy val catsVersion        = "0.9.0"
 lazy val monixVersion       = "2.3.0"
@@ -15,7 +16,6 @@ lazy val specs2Version      = "3.9.4"
 lazy val twitterUtilVersion = "6.42.0"
 lazy val catbirdVersion     = "0.13.0"
 lazy val doobieVersion      = "0.4.4"
-
 
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
@@ -92,7 +92,7 @@ lazy val scoverageSettings = Seq(
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "2.12.2",
+  scalaVersion := "2.12.3",
   crossScalaVersions := Seq("2.11.11", scalaVersion.value)
 )
 
@@ -112,7 +112,7 @@ lazy val commonJsSettings = Seq(
   parallelExecution := false,
   requiresDOM := false,
   libraryDependencies ++= catsJs,
-  jsEnv := NodeJSEnv().value
+  jsEnv := new NodeJSEnv()
 ) ++ disableTests
 
 def disableTests = Seq(
@@ -122,6 +122,8 @@ def disableTests = Seq(
 )
 
 lazy val commonJvmSettings = Seq(
+  fork in Test := true,
+  cancelable in Global := true,
   (scalacOptions in Test) ~= (_.filterNot(_ == "-Xfatal-warnings")),
   libraryDependencies ++= catsJvm,
   libraryDependencies ++= specs2
@@ -303,7 +305,7 @@ lazy val catsJs = Seq(
 
 lazy val doobieJvm = Seq(
   "org.tpolecat" %% "doobie-core-cats" % doobieVersion,
-  "org.tpolecat" %% "doobie-h2-cats" % doobieVersion % "test")
+  "org.tpolecat" %% "doobie-h2-cats"   % doobieVersion % "test")
 
 lazy val monixEval = Seq(
   "io.monix" %% "monix-eval" % monixVersion,
