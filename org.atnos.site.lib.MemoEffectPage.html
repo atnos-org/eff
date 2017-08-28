@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Cookbook</title>
+    <title>Memo</title>
     <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
     <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
@@ -277,83 +277,44 @@
               </ul>
                   </ul>
     </li>
-              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['index','org-atnos-site-cookbook'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
+              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['org-atnos-site-outofthebox','index','org-atnos-site-lib-memoeffectpage'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
 
 </div>
 </div>
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
-<h1>Cookbook</h1>
+<h1>Memo</h1>
 <div id="tipue_search_content"></div>
 
-<p>A collection of examples of how to solve particular problems with Eff</p>
-<h3 id="partial-interpretation">Partial Interpretation</h3>
-<p>It’s common to want to use different effects in different parts of a program. Some effects, like error handling or logging, may extend through the whole of our program. However we may want to include additional effects, like state, within one part.</p>
-<p>The example below shows how we can do this</p>
-<ul>
-<li><p>the <code class="prettyprint">incrementNTimes</code> methods uses an additional <code class="prettyprint">State</code> effect for its implementation (necessary to call <code class="prettyprint">incrementCounter</code>)</p></li>
-<li><p>the additional <code class="prettyprint">State</code> effect is added to <code class="prettyprint">R</code> with the <code class="prettyprint">prepend</code> method: <code class="prettyprint">Fx.prepend[StateInt, R]</code></p></li>
-<li><p><code class="prettyprint">runState</code> is called within <code class="prettyprint">incrementNTimes</code> to finally interpret that effect</p></li>
-</ul>
-<pre><code class="prettyprint">import cats._, data._
+<p>The Memo effect allows the caching of expensive computations. Computations are “stored” with a given key, so that the next computation with the same key will return the previously computed value. When interpreting those computations a <code class="prettyprint">Cache</code> must be provided:</p>
+<pre><code class="prettyprint">import cats.Eval
 import cats.implicits._
-import org.atnos.eff._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
+import org.atnos.eff._, memo._
+import org.atnos.eff.syntax.memo._
+import org.atnos.eff.syntax.eval._
+import org.atnos.eff.syntax.eff._
 
-// Some type definitions for the effects we will use
-type EitherString[A] = Either[String, A]
-type WriterString[A] = Writer[String, A]
-type StateInt[A]     = State[Int, A]
+type S = Fx.fx2[Memoized, Eval]
 
-type _err[R] = EitherString |= R
-type _log[R] = WriterString |= R
-type _count[R] = StateInt |= R
+var i = 0
 
-/**
- * In module 1, some utility methods
- */
+def expensive[R :_memo]: Eff[R, Int] =
+  memoize(&quot;key&quot;, { i += 1; 10 * 10 })
 
-// repeat a side-effect n times
-def repeatM[M[_] : Monad](n: Int, computation: M[Unit]): M[Unit] =
-  if (n &lt;= 0) computation
-  else computation &gt;&gt; repeatM(n - 1, computation)
+(expensive[S] &gt;&gt; expensive[S]).runMemo(ConcurrentHashMapCache()).runEval.run === 100
 
-// check a condition and abort computations with a message if the condition is false
-def assert[R :_err](condition: Boolean, msg: String): Eff[R, Unit] =
-  if (!condition) left(msg) else right(())
-
-// increment a counter and log the new value
-def incrementCounter[R :_log :_count]: Eff[R, Unit] = for {
-  c &lt;- get
-  c2 = c + 1
-  _ &lt;- tell(s&quot;counter == $c2&quot;)
-  _ &lt;- put(c2)
-} yield ()
-
-/**
- * In module 2 your &quot;business&quot; logic
- */
-
-// increment a value n times (n need to be positive)
-def incrementNTimes[R :_err :_log](start: Int, times: Int): Eff[R, Int] = for {
-  // this call uses the stack R
-  _ &lt;- assert(times &gt;= 0, s&quot;$times is negative&quot;)
-
-  // the call uses the stack R plus an additional StateInt effect which is interpreted right away.
-  // The other effects remain
-  result &lt;- repeatM(times, incrementCounter[Fx.prepend[StateInt, R]]).execState(start)
-} yield result
-
-/**
- * A top-level call
- */
-
-type Stack = Fx.fx2[EitherString, WriterString]
-
-incrementNTimes[Stack](3, 2).runWriter.runEither.run</code></pre>
-<p><code class="prettyprint">&gt; Right((6,List(counter == 4, counter == 5, counter == 6)))</code></p>
+&quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
+<p><code class="prettyprint">&gt; there is only one invocation &lt;=&gt; true</code></p>
+<p>There are 2 cache implementations provided in this library to support the Memo effect:</p>
+<ul>
+<li><p><code class="prettyprint">org.atnos.eff.ConcurrentHashMapCache</code>: backed by a <code class="prettyprint">java.util.concurrent.ConcurrentHashMap</code> where the keys are hashcodes for the keys used to memoize the values. This cache is thread-safe but unbounded so use with care!</p></li>
+<li><p><code class="prettyprint">org.atnos.eff.ConcurrentWeakIdentityHashMapCache</code>: backed by a <code class="prettyprint">ConcurrentWeakIdentityHashMap</code> where the keys are <code class="prettyprint">System.identityHashCode</code> for the keys used to memoize the values. This cache is thread-safe and uses weak references which can be garbage collected when necessary.</p></li>
+</ul>
+<p>You can also use other, and better, cache implementations like <a href="https://github.com/ben-manes/caffeine">Caffeine</a> to get more functionalities like eviction policies, maximum size and so on. You will need to implement the <code class="prettyprint">Cache</code> interface for this</p>
+<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">trait</span> Cache {
+  <span class="kw">def</span> memo[V](key: AnyRef, value: =&gt;V): V
+}</code></pre></div>
 </div>
 
 <script>

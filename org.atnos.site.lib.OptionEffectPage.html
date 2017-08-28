@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Cookbook</title>
+    <title>Option</title>
     <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
     <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
@@ -277,83 +277,36 @@
               </ul>
                   </ul>
     </li>
-              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['index','org-atnos-site-cookbook'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
+              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['org-atnos-site-outofthebox','index','org-atnos-site-lib-optioneffectpage'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
 
 </div>
 </div>
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
-<h1>Cookbook</h1>
+<h1>Option</h1>
 <div id="tipue_search_content"></div>
 
-<p>A collection of examples of how to solve particular problems with Eff</p>
-<h3 id="partial-interpretation">Partial Interpretation</h3>
-<p>It’s common to want to use different effects in different parts of a program. Some effects, like error handling or logging, may extend through the whole of our program. However we may want to include additional effects, like state, within one part.</p>
-<p>The example below shows how we can do this</p>
-<ul>
-<li><p>the <code class="prettyprint">incrementNTimes</code> methods uses an additional <code class="prettyprint">State</code> effect for its implementation (necessary to call <code class="prettyprint">incrementCounter</code>)</p></li>
-<li><p>the additional <code class="prettyprint">State</code> effect is added to <code class="prettyprint">R</code> with the <code class="prettyprint">prepend</code> method: <code class="prettyprint">Fx.prepend[StateInt, R]</code></p></li>
-<li><p><code class="prettyprint">runState</code> is called within <code class="prettyprint">incrementNTimes</code> to finally interpret that effect</p></li>
-</ul>
-<pre><code class="prettyprint">import cats._, data._
-import cats.implicits._
-import org.atnos.eff._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
-
-// Some type definitions for the effects we will use
-type EitherString[A] = Either[String, A]
-type WriterString[A] = Writer[String, A]
-type StateInt[A]     = State[Int, A]
-
-type _err[R] = EitherString |= R
-type _log[R] = WriterString |= R
-type _count[R] = StateInt |= R
+<p>Adding an <code class="prettyprint">Option</code> effect in your stack allows to stop computations when necessary. If you create a value with <code class="prettyprint">some(a)</code> this value will be used downstream but if you use <code class="prettyprint">none</code> all computations will stop:</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 
 /**
- * In module 1, some utility methods
+ * Stack declaration
  */
+type S = Fx.fx1[Option]
 
-// repeat a side-effect n times
-def repeatM[M[_] : Monad](n: Int, computation: M[Unit]): M[Unit] =
-  if (n &lt;= 0) computation
-  else computation &gt;&gt; repeatM(n - 1, computation)
+// compute with this stack
+val map: Map[String, Int] =
+  Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
 
-// check a condition and abort computations with a message if the condition is false
-def assert[R :_err](condition: Boolean, msg: String): Eff[R, Unit] =
-  if (!condition) left(msg) else right(())
+// get 2 keys from the map and add the corresponding values
+def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+  a &lt;- fromOption(map.get(key1))
+  b &lt;- fromOption(map.get(key2))
+} yield a + b
 
-// increment a counter and log the new value
-def incrementCounter[R :_log :_count]: Eff[R, Unit] = for {
-  c &lt;- get
-  c2 = c + 1
-  _ &lt;- tell(s&quot;counter == $c2&quot;)
-  _ &lt;- put(c2)
-} yield ()
-
-/**
- * In module 2 your &quot;business&quot; logic
- */
-
-// increment a value n times (n need to be positive)
-def incrementNTimes[R :_err :_log](start: Int, times: Int): Eff[R, Int] = for {
-  // this call uses the stack R
-  _ &lt;- assert(times &gt;= 0, s&quot;$times is negative&quot;)
-
-  // the call uses the stack R plus an additional StateInt effect which is interpreted right away.
-  // The other effects remain
-  result &lt;- repeatM(times, incrementCounter[Fx.prepend[StateInt, R]]).execState(start)
-} yield result
-
-/**
- * A top-level call
- */
-
-type Stack = Fx.fx2[EitherString, WriterString]
-
-incrementNTimes[Stack](3, 2).runWriter.runEither.run</code></pre>
-<p><code class="prettyprint">&gt; Right((6,List(counter == 4, counter == 5, counter == 6)))</code></p>
+(addKeys(&quot;key1&quot;, &quot;key2&quot;).runOption.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runOption.run)</code></pre>
+<p><code class="prettyprint">&gt; (Some(30),None)</code></p>
 </div>
 
 <script>

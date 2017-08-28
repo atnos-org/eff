@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Cookbook</title>
+    <title>Safe</title>
     <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
     <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
@@ -277,83 +277,78 @@
               </ul>
                   </ul>
     </li>
-              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['index','org-atnos-site-cookbook'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
+              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['org-atnos-site-outofthebox','index','org-atnos-site-lib-safeeffectpage'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
 
 </div>
 </div>
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
-<h1>Cookbook</h1>
+<h1>Safe</h1>
 <div id="tipue_search_content"></div>
 
-<p>A collection of examples of how to solve particular problems with Eff</p>
-<h3 id="partial-interpretation">Partial Interpretation</h3>
-<p>It’s common to want to use different effects in different parts of a program. Some effects, like error handling or logging, may extend through the whole of our program. However we may want to include additional effects, like state, within one part.</p>
-<p>The example below shows how we can do this</p>
+<p>The Safe effect is useful to handle resources which must be closed even in the presence of exceptions. The main operations are</p>
 <ul>
-<li><p>the <code class="prettyprint">incrementNTimes</code> methods uses an additional <code class="prettyprint">State</code> effect for its implementation (necessary to call <code class="prettyprint">incrementCounter</code>)</p></li>
-<li><p>the additional <code class="prettyprint">State</code> effect is added to <code class="prettyprint">R</code> with the <code class="prettyprint">prepend</code> method: <code class="prettyprint">Fx.prepend[StateInt, R]</code></p></li>
-<li><p><code class="prettyprint">runState</code> is called within <code class="prettyprint">incrementNTimes</code> to finally interpret that effect</p></li>
+<li><code class="prettyprint">finally</code> to create an action which must always be executed after another one, even if the first one fails</li>
+<li><code class="prettyprint">catchThrowable</code> to handle a thrown exception</li>
+<li><code class="prettyprint">bracket(open)(step)(close)</code> to open a resource, use it and then close it safely. The <code class="prettyprint">close</code> part is a “finalizer”
+<p/></li>
 </ul>
-<pre><code class="prettyprint">import cats._, data._
-import cats.implicits._
-import org.atnos.eff._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
+<p>Let’s see an example for the protection of a resource:</p>
+<pre><code class="prettyprint">import org.atnos.eff.syntax.all._
+import org.atnos.eff._, all._
 
-// Some type definitions for the effects we will use
-type EitherString[A] = Either[String, A]
-type WriterString[A] = Writer[String, A]
-type StateInt[A]     = State[Int, A]
+// let&#39;s represent a resource which can be in use
+case class Resource(values: List[Int] = (1 to 10).toList, inUse: Boolean = false) {
+  def isClosed = !inUse
+}
 
-type _err[R] = EitherString |= R
-type _log[R] = WriterString |= R
-type _count[R] = StateInt |= R
+var resource = Resource()
 
-/**
- * In module 1, some utility methods
- */
+// our stack of effects, with safe evaluation
+type S = Fx.fx1[Safe]
 
-// repeat a side-effect n times
-def repeatM[M[_] : Monad](n: Int, computation: M[Unit]): M[Unit] =
-  if (n &lt;= 0) computation
-  else computation &gt;&gt; repeatM(n - 1, computation)
+def openResource: Eff[S, Resource] =
+  protect { resource = resource.copy(inUse = true); resource }
 
-// check a condition and abort computations with a message if the condition is false
-def assert[R :_err](condition: Boolean, msg: String): Eff[R, Unit] =
-  if (!condition) left(msg) else right(())
+def closeResource(r: Resource): Eff[S, Unit] =
+  protect(resource = r.copy(inUse = false))
 
-// increment a counter and log the new value
-def incrementCounter[R :_log :_count]: Eff[R, Unit] = for {
-  c &lt;- get
-  c2 = c + 1
-  _ &lt;- tell(s&quot;counter == $c2&quot;)
-  _ &lt;- put(c2)
-} yield ()
+def useResource(ok: Boolean) = (r: Resource) =&gt;
+  protect[S, Int](if (ok) r.values.sum else throw new Exception(&quot;boo&quot;))
 
-/**
- * In module 2 your &quot;business&quot; logic
- */
+// this program uses the resource safely even if there is an exception
+def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
+  bracket(openResource)(useResource(ok))(closeResource).
+    runSafe.run</code></pre>
+<pre><code class="prettyprint">&gt; Results
+Without exception: Right(55), finalizers exceptions: no exceptions, resource is closed: true
+With exception   : Left(boo), finalizers exceptions: no exceptions, resource is closed: true</code></pre>
+<p>As you can see in the signature of <code class="prettyprint">program</code> the return value of <code class="prettyprint">runSafe</code> is <code class="prettyprint">(Throwable Either A, List[Throwable])</code>. The first part is the result of your program, which may end with an exception, and the second part is the list of possible exceptions thrown by the finalizers which can themselves fail.</p>
+<p>A simpler version of <code class="prettyprint">bracket</code> is <code class="prettyprint">finally</code>.</p>
+<p>This example show how to use <code class="prettyprint">finally</code> but also what happens if a finalizer fails:</p>
+<pre><code class="prettyprint">import org.atnos.eff.syntax.all._
+import org.atnos.eff._, all._
 
-// increment a value n times (n need to be positive)
-def incrementNTimes[R :_err :_log](start: Int, times: Int): Eff[R, Int] = for {
-  // this call uses the stack R
-  _ &lt;- assert(times &gt;= 0, s&quot;$times is negative&quot;)
+// our stack of effects, with safe evaluation
+type S = Fx.fx1[Safe]
 
-  // the call uses the stack R plus an additional StateInt effect which is interpreted right away.
-  // The other effects remain
-  result &lt;- repeatM(times, incrementCounter[Fx.prepend[StateInt, R]]).execState(start)
-} yield result
+var sumDone: Boolean = false
 
-/**
- * A top-level call
- */
+def setDone(ok: Boolean): Eff[S, Unit] =
+  protect[S, Unit](if (ok) sumDone = true else throw new Exception(&quot;failed!!&quot;))
 
-type Stack = Fx.fx2[EitherString, WriterString]
-
-incrementNTimes[Stack](3, 2).runWriter.runEither.run</code></pre>
-<p><code class="prettyprint">&gt; Right((6,List(counter == 4, counter == 5, counter == 6)))</code></p>
+// this program tries to set sumDone to true when the computation is done
+def program(ok: Boolean, finalizeOk: Boolean): (Throwable Either Int, List[Throwable]) =
+  (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception(&quot;boo&quot;)) `finally` setDone(finalizeOk)).
+    runSafe.run
+</code></pre>
+<pre><code class="prettyprint">&gt; Results
+Computation ok, finalizer ok: Right(55), finalizers exceptions: no exceptions
+Computation ok, finalizer ko: Right(55), finalizers exceptions: List(failed!!)
+Computation ko, finalizer ok: Left(boo), finalizers exceptions: no exceptions
+Computation ko, finalizer ko: Left(boo), finalizers exceptions: List(failed!!)</code></pre>
+<p>Finally (no pun intended!) note that you can use <code class="prettyprint">execSafe</code> if you are not interested in the result of the finalizers.</p>
 </div>
 
 <script>

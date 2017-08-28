@@ -24,15 +24,263 @@
     <script src="./javascript/tipuesearch/tipuesearch.min.js"      type="text/javascript"></script>
 
 </head>
-<body onload="prettyPrint()">
+<body onload="prettyPrint(); tabberAutomatic([])">
 
 <div class="container">
 
-<div class="col-md-1"></div>
+<div class="col-md-2 col-sm-3 col-xs-3 sidebar-outer">
+<div class="col-md-2 fixed">
 
-<div class="col-md-1"></div>
+<!-- search box -->
+<div class="search-box">
+  <form action="search.html">
+    <input type="text" name="q" id="tipue_search_input" autocomplete="off" required>
+  </form>
+</div>
 
+<!-- table of contents -->
+<div id="tree"><ul>
+                <li id="index"><a href="index.html" title="eff">eff</a>
+      <ul><ul><li><a href="index.html#contributing" title="Contributing">Contributing</a>
+          
+        </li></ul></ul>
+      <ul>
+                    <ul>
+                <li id="org-atnos-site-installation"><a href="org.atnos.site.Installation.html" title="Installation">Installation</a>
+      <ul><ul><li><a href="org.atnos.site.Installation.html#imports" title="Imports">Imports</a>
+          <ul><li><a href="org.atnos.site.Installation.html#main-types" title="Main types">Main types</a>
+          
+        </li><li><a href="org.atnos.site.Installation.html#creating-effects" title="Creating effects">Creating effects</a>
+          
+        </li><li><a href="org.atnos.site.Installation.html#interpreting-effects" title="Interpreting effects">Interpreting ef...</a>
+          
+        </li><li><a href="org.atnos.site.Installation.html#intellij-support" title="Intellij support">Intellij support</a>
+          
+        </li><li><a href="org.atnos.site.Installation.html#with-scalaz" title="With Scalaz">With Scalaz</a>
+          
+        </li></ul>
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-introduction"><a href="org.atnos.site.Introduction.html" title="Introduction">Introduction</a>
+      <ul><ul><li><a href="org.atnos.site.Introduction.html#first-example" title="First example">First example</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-outofthebox"><a href="org.atnos.site.OutOfTheBox.html" title="Out of the box">Out of the box</a>
+      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what’s-next?" title="What’s next?">What’s next?</a>
+          
+        </li></ul></ul>
+      <ul>
+                    <ul>
+                <li id="org-atnos-site-lib-evaleffectpage"><a href="org.atnos.site.lib.EvalEffectPage.html" title="Eval">Eval</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-optioneffectpage"><a href="org.atnos.site.lib.OptionEffectPage.html" title="Option">Option</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-eithereffectpage"><a href="org.atnos.site.lib.EitherEffectPage.html" title="Either">Either</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-validateeffectpage"><a href="org.atnos.site.lib.ValidateEffectPage.html" title="Validate">Validate</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-erroreffectpage"><a href="org.atnos.site.lib.ErrorEffectPage.html" title="Error">Error</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-readereffectpage"><a href="org.atnos.site.lib.ReaderEffectPage.html" title="Reader">Reader</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-writereffectpage"><a href="org.atnos.site.lib.WriterEffectPage.html" title="Writer">Writer</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-stateeffectpage"><a href="org.atnos.site.lib.StateEffectPage.html" title="State">State</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-listeffectpage"><a href="org.atnos.site.lib.ListEffectPage.html" title="List">List</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-chooseeffectpage"><a href="org.atnos.site.lib.ChooseEffectPage.html" title="Choose">Choose</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-memoeffectpage"><a href="org.atnos.site.lib.MemoEffectPage.html" title="Memo">Memo</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-timedfutureeffectpage"><a href="org.atnos.site.lib.TimedFutureEffectPage.html" title="TimedFuture">TimedFuture</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-lib-safeeffectpage"><a href="org.atnos.site.lib.SafeEffectPage.html" title="Safe">Safe</a>
+      <ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul>
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
+      <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
+          
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-createeffects"><a href="org.atnos.site.CreateEffects.html" title="Creating effects">Creating effects</a>
+      <ul><ul><li><a href="org.atnos.site.CreateEffects.html#creation" title="Creation">Creation</a>
+          
+        </li><li><a href="org.atnos.site.CreateEffects.html#compiler-limitation" title="Compiler limitation">Compiler limita...</a>
+          
+        </li><li><a href="org.atnos.site.CreateEffects.html#interpreter" title="Interpreter">Interpreter</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
+      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
+          
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+          <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
+          
+        </li></ul>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+          
+        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
+          
+        </li><li><a href="org.atnos.site.TransformStack.html#merge-stacks" title="Merge stacks">Merge stacks</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+          
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+          
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+          
+        </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
+      <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
+          
+        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-cookbook"><a href="org.atnos.site.Cookbook.html" title="Cookbook">Cookbook</a>
+      <ul><ul><li><a href="org.atnos.site.Cookbook.html#partial-interpretation" title="Partial Interpretation">Partial Interpr...</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul><ul>
+                <li id="org-atnos-site-communityresources"><a href="org.atnos.site.CommunityResources.html" title="Community resources">Community resou...</a>
+      <ul><ul><li><a href="org.atnos.site.CommunityResources.html#blog-posts" title="Blog posts">Blog posts</a>
+          
+        </li></ul></ul>
+      <ul>
+                    
+                  </ul>
+    </li>
+              </ul>
+                  </ul>
+    </li>
+              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['index','org-atnos-site-introduction'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
 
+</div>
+</div>
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
@@ -50,6 +298,7 @@
 </ul>
 <p>This is probably very abstract so let’s see more precisely what this all means.</p>
 <h3 id="first-example">First example</h3>
+<p><em>Please make sure you have done all the setup described on the <link class="ok"><a href="org.atnos.site.Installation.html" tooltip="" class="ok">Installation</a></link> page first</em></p>
 <p>A monadic action is modelled as a value of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> denotes a set of effects and <code class="prettyprint">A</code> is the value returned by the computation, possibly triggering some effects when evaluated.</p>
 <p>The effects <code class="prettyprint">R</code> are modelled by a type-level list of “effect constructors”, for example:</p>
 <pre><code class="prettyprint">import cats._, data._
@@ -104,6 +353,13 @@ program[Stack].runReader(6).runWriter.runEval.run</code></pre>
 <p>You can now get a more detailed presentation of the use of the Eff monad by reading the <link class="ok"><a href="org.atnos.site.Tutorial.html" tooltip="" class="ok">tutorial</a></link> or you can learn about <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">other effects</a></link> supported by this library.</p>
 </div>
 
+<script>
+$(document).ready(function() {
+  $('#tipue_search_input').tipuesearch({
+    'show': 6
+  });
+});
+</script>
 </div>
 
 </body>
