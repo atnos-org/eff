@@ -200,7 +200,7 @@ trait EffImplicits {
         case Pure(a, last) =>
           ff match {
             case Pure(f, last1)                   => Pure(f(a), last1 *> last)
-            case Impure(NoEffect(f), c, last1)    => Eff.impure(a, Continuation.lift((x: A) => ap(c(f))(pure(x)), c.onNone)).addLast(last1 *> last)
+            case Impure(NoEffect(f), c, last1)    => Impure(NoEffect[AnyRef, Any](f), c.append(f1 => pure(f1(a))), c.onNone).addLast(last1 *> last)
             case Impure(u: Union[_, _], c, last1) => ImpureAp(Unions(u, Vector.empty), c.dimapEff((_:Vector[Any]).head)(_.map(_(a))), last1 *> last)
             case ImpureAp(u, c, last1)            => ImpureAp(u, c.map(_(a)), last1 *> last)
           }
