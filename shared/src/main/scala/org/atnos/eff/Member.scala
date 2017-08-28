@@ -26,7 +26,6 @@ final case class AppendMemberIn[T[_], L, R, X](isRight: Boolean, member: MemberI
 }
 
 object MemberIn extends MemberInLower1 {
-
   @implicitNotFound("No instance found for MemberIn[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R}")
   type |=[T[_], R] = MemberIn[T, R]
 }
@@ -69,6 +68,7 @@ trait MemberInLower5 {
 
   implicit def MemberInAppendAnyR[T[_], L, R](implicit m: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] =
     AppendMemberIn(isRight = true, m)
+
 }
 
 @implicitNotFound("No instance found for MemberInOut[${T}, ${R}].\nThe effect ${T} is not part of the stack ${R} or cannot be extracted from ${R}")
@@ -538,4 +538,5 @@ trait MemberLower19 {
     def project[V](union: Union[FxAppend[NoFx, R], V]): Union[Out, V] Either T[V] =
       m.project(union.asInstanceOf[UnionAppendR[NoFx, R, V]].value)
   }
+
 }
