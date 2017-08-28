@@ -1,0 +1,14 @@
+Doobie version!
+
+### Improvements
+
+ * *core* several member instances can be "packed" with one type alias: `type _effects = _foo &: _bar &&: _baz`. This type alias can be
+ used in method definitions `def foo[R :_effects](i: Int): Eff[R, Int]` [#112](https://github.com/atnos-org/eff/issues/112)
+
+ * *doobie* new `DoobieConnectionIO` effect to mix `ConnectionIO` programs with other effects [#116](https://github.com/atnos-org/eff/issues/116)
+
+### Fixes
+
+ * *doc* Add missing `scala.io` import to the `WriterEffect` tutorial [#115](https://github.com/atnos-org/eff/issues/115) (thanks to @richardimaoka)
+
+
