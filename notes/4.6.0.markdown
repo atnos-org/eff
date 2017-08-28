@@ -6,6 +6,7 @@ Doobie version!
  used in method definitions `def foo[R :_effects](i: Int): Eff[R, Int]` [#112](https://github.com/atnos-org/eff/issues/112)
 
  * *doobie* new `DoobieConnectionIO` effect to mix `ConnectionIO` programs with other effects [#116](https://github.com/atnos-org/eff/issues/116)
+   Thanks to the original work from @dvic!
 
 ### Fixes
 
