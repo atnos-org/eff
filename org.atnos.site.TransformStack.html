@@ -475,7 +475,49 @@ type S = Fx.prepend[WriterString, R]
 }</code></pre>
 <p>You create a “local” stack containing the <code class="prettyprint">WriterString</code> effect using the <code class="prettyprint">prepend</code> method. You now run the <code class="prettyprint">Db</code> effect and discard the logs to finally return only <code class="prettyprint">Eff[U, A]</code>.</p>
 <h3 id="merge-stacks">Merge stacks</h3>
-<p>We can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>. <code class="prettyprint">no file found at jvm/src/test/scala/org/atnos/site/snippets/HadoopS3Snippet.scala</code></p>
+<p>We can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
+<pre><code class="prettyprint">import org.atnos.eff._, all._
+import cats.data._
+import cats.Eval
+
+object HadoopStack {
+
+  case class HadoopConf(mappers: Int)
+
+  type HadoopReader[A] = Reader[HadoopConf, A]
+  type WriterString[A] = Writer[String, A]
+  type Hadoop = Fx.fx3[HadoopReader, WriterString, Eval]
+
+  def readFile(path: String): Eff[Hadoop, String] =
+    for {
+      c &lt;- ask[Hadoop, HadoopConf]
+      _ &lt;- tell[Hadoop, String](&quot;Reading from &quot;+path)
+    } yield c.mappers.toString
+
+  def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(implicit r: Member.Aux[HadoopReader, R, U]): Eff[U, A] =
+    ReaderEffect.runReader(conf)(e)
+
+}
+
+object S3Stack {
+
+  case class S3Conf(bucket: String)
+
+  type S3Reader[A] = Reader[S3Conf, A]
+  type WriterString[A] = Writer[String, A]
+
+  type S3 = Fx.fx3[S3Reader, WriterString, Eval]
+
+  def writeFile(key: String, content: String): Eff[S3, Unit] =
+    for {
+      c &lt;- ask[S3, S3Conf]
+      _ &lt;- tell[S3, String](&quot;Writing to bucket &quot;+c.bucket+&quot;: &quot;+content)
+    } yield ()
+
+  def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(implicit r: Member.Aux[S3Reader, R, U]): Eff[U, A] =
+    ReaderEffect.runReader(conf)(e)
+}
+</code></pre>
 <p>So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share some common effects, so the resulting stack we want to work with is:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
   import cats.Eval
