@@ -56,7 +56,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
    * Attempt to execute a safe action including finalizers
    */
   def attemptSafe[R, A](effect: Eff[R, A])(implicit m: Safe /= R): Eff[R, (ThrowableEither[A], List[Throwable])] =
-    intercept[R, Safe, A, Out[A]](effect)(safeInterpreter[R, A])
+    protect(intercept[R, Safe, A, Out[A]](effect)(safeInterpreter[R, A])).flatten
 
   def safeInterpreter[R, A]: Interpreter[Safe, R, A, Out[A]] =
     safeInterpreter(None)

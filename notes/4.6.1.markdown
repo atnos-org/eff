@@ -1,0 +1,7 @@
+Maintenance version
+
+### Fixes
+
+ * *core* fixed the safe effect which should not side-effect when being using the `attempt` operation
+
+

@@ -19,6 +19,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   A protected action can be executed and will return a Throwable Either A $safe1
 
   An "attempted" action will return an exception inside the same stack if it fails $attempt1
+  An "attempted" action does not side-effect                                       $attempt2
 
   It is possible to add a "finalizer" which will be executed whether an action is successful or not
   All the finalizers must be executed and their possible exceptions returned $finalize1
@@ -58,6 +59,12 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   def attempt1 = prop { n: Int =>
     protect[S, Int](action(n)).attempt.runSafe.run ====
       (Right(Either.cond(isEven(n), n, boom)) -> List())
+  }
+
+  def attempt2 = {
+    var evaluated = false
+    protect[S, Unit](evaluated = true).attempt
+    evaluated must beFalse
   }
 
   def finalize1 = prop { (n1: Int, n2: Int, n3: Int, n4: Int) =>
