@@ -3,6 +3,7 @@ package org.atnos.eff
 import cats._
 import cats.implicits._
 import Eff._
+import org.atnos.eff.fp.Indexable
 
 /**
  * Effects of type R, returning a value of type A
@@ -222,15 +223,8 @@ trait EffImplicits {
             case Impure(NoEffect(f), c1, last1)    => ImpureAp(unions, c.append(x => c1(f).map(_(x)))).addLast(last1 *> last)
             case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.lift(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
             case ImpureAp(u, c1, last1)            => ImpureAp(u append unions, Continuation.lift({ xs =>
-              val usize = u.size
-              val (taken, dropped) = xs.splitAt(usize)
-              // don't recurse if the number of effects is too large
-              // this will ensure stack-safety on large traversals
-              // and keep enough concurrency on smaller traversals
-              if (xs.size > 100)
-                Eff.impure(taken, Continuation.lift((xs1: Vector[Any]) => ap(c1(xs1))(c(dropped)), c1.onNone))
-              else
-                ap(c1(taken))(c(dropped))
+              val (fValues, aValues) = xs.splitAt(u.size)
+              Eff.impure(fValues, Continuation.lift((xs1: Vector[Any]) => ap(c1(xs1))(c(aValues)), c1.onNone))
             }, c.onNone), last1 *> last)
           }
 
@@ -274,17 +268,58 @@ trait EffCreation {
   def impure[R, A, B](value: A, continuation: Continuation[R, A, B], map: B => B): Eff[R, B] =
     Impure(NoEffect(value), Continuation.lift((a: A) => continuation(a), continuation.onNone).map(map))
 
+  /** create a delayed eff value */
+  def suspend[R, A, B](e: =>Eff[R, A]): Eff[R, A] =
+    Impure[R, Unit, A](NoEffect(()), Continuation.lift((_: Any) => e))
+
   /** apply a function to an Eff value using the applicative instance */
   def ap[R, A, B](a: Eff[R, A])(f: Eff[R, A => B]): Eff[R, B] =
     EffImplicits.EffApplicative[R].ap(f)(a)
 
   /** use the applicative instance of Eff to traverse a list of values */
-  def traverseA[R, F[_] : Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
-    Traverse[F].traverse(fs)(f)(EffImplicits.EffApplicative[R])
+  def traverseA[R, A, F[_] : Indexable, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] = {
+    val indexable = Indexable[F]
+    type IndexedImpure[X] = (ImpureAp[R, Any, X], indexable.Key)
+    type IndexedPure[X] = (Eff[R, X], indexable.Key)
+    type EitherIndexed[X] = IndexedImpure[X] Either IndexedPure[X]
+
+    // separate pure and impure values
+    val (impures, pures) =
+      indexable.list(fs).map { case (a, index) => (f(a), index) }.collect {
+        case (e @ Impure(NoEffect(_), _, _), index) => Right((e, index)): EitherIndexed[B]
+        case (e @ Pure(_, _),index)                 => Right((e, index)): EitherIndexed[B]
+        case (Impure(u: Union[_, _], c, l), index)  => Left ((ImpureAp(Unions(u), Continuation.lift((xs: Vector[Any]) => c(xs.head), c.onNone), l), index)): EitherIndexed[B]
+        case (e @ ImpureAp(_, _, _), index)         => Left ((e, index)): EitherIndexed[B]
+      }.separate
+
+    impures match {
+      case Nil =>
+        Traverse[List].sequence(pures.map { case (e, i) => e.map((_, i)) })(Eff.EffApplicative[R]).map(indexable.build[B])
+
+      case _ =>
+        val (unions, continuations) =
+          impures.collect { case (e, i) => (e.unions, (e.continuation, e.last, i)) }.separate
+
+        ImpureAp(Unions.group(unions.head, unions.tail),
+          // xs is the result of the applicative execution of all the unions
+          Continuation.lift { xs =>
+            sequenceA {
+              // apply each result to its continuation and keep track of the indexes
+              val results =
+                continuations.zip(xs).map { case ((c, l, i), x) =>
+                  (c(Vector(x)).addLast(l), i)
+                }
+
+              // add the pure effects and re-sort by the original indices
+              indexable.build(pures ::: results)
+            }
+          })
+    }
+  }
 
   /** use the applicative instance of Eff to sequence a list of values */
-  def sequenceA[R, F[_] : Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
-    Traverse[F].sequence(fs)(EffImplicits.EffApplicative[R])
+  def sequenceA[R, F[_] : Indexable, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
+    traverseA(fs)(identity)
 
   /** use the applicative instance of Eff to traverse a list of values, then flatten it */
   def flatTraverseA[R, F[_], A, B](fs: F[A])(f: A => Eff[R, F[B]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[B]] =

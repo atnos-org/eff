@@ -78,8 +78,14 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
 }
 
 object Unions {
+  def apply[R, A](u: Union[R, A]): Unions[R, A] =
+    Unions[R, A](u, Vector.empty)
+
+  def group[R](unions: Unions[R, Any], others: List[Unions[R, Any]]): Unions[R, Any] =
+    others.foldLeft(unions)(_ append _)
+
   def send[M[_], R, X](mx: M[X])(implicit m: MemberIn[M, R]) =
-    Unions[R, X](m.inject(mx), Vector.empty)
+    apply[R, X](m.inject(mx))
 }
 
 /**

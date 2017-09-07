@@ -68,7 +68,7 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
     val list = (1 to 5000).toList
 
     val traversed: Eff[Fx.fx1[Option], List[Int]] =
-      list.traverseA(i => OptionEffect.some(i))
+      Eff.traverseA(list)(i => OptionEffect.some(i))
 
     traversed.runOption.run === Option(list)
   }
@@ -79,9 +79,9 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
     val messages: ListBuffer[Int] = new ListBuffer[Int]
 
     val traversed: Eff[S, List[Int]] =
-      list.traverseA { i =>
+      Eff.traverseA(list) { i =>
         OptionEffect.some[S, Int](i) >>
-          futureDelay[S, Int] { messages.append(i); i }
+        futureDelay[S, Int] { messages.append(i); i }
       }
 
     traversed.runOption.runAsync must beSome(list).awaitFor(20.seconds)

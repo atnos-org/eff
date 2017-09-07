@@ -3,6 +3,7 @@ package syntax
 
 import cats._
 import cats.data.Writer
+import org.atnos.eff.fp.Indexable
 
 /**
   * Operations of Eff[R, A] values
@@ -23,8 +24,8 @@ trait effOperations {
 trait effCats {
   implicit final def toEffOneEffectOps[M[_], A](e: Eff[Fx1[M], A]): EffOneEffectOps[M, A] = new EffOneEffectOps(e)
   implicit final def toEffMonadicOps[R, M[_], A](e: Eff[R, M[A]]): EffMonadicOps[R, M, A] = new EffMonadicOps(e)
-  implicit final def toEffApplicativeOps[F[_], A](values: F[A]): EffApplicativeOps[F, A] = new EffApplicativeOps(values)
-  implicit final def toEffSequenceOps[F[_], R, A](values: F[Eff[R, A]]): EffSequenceOps[F, R, A] = new EffSequenceOps(values)
+  implicit final def toEffApplicativeOps[F[_] : Indexable, A](values: F[A]): EffApplicativeOps[F, A] = new EffApplicativeOps(values)
+  implicit final def toEffSequenceOps[F[_] : Indexable , R, A](values: F[Eff[R, A]]): EffSequenceOps[F, R, A] = new EffSequenceOps(values)
   implicit final def toEffFlatSequenceOps[F[_], R, A](values: F[Eff[R, F[A]]]): EffFlatSequenceOps[F, R, A] = new EffFlatSequenceOps(values)
   implicit final def toEffApplicativeSyntaxOps[R, A](a: Eff[R, A]): EffApplicativeSyntaxOps[R, A] = new EffApplicativeSyntaxOps(a)
 }
@@ -87,7 +88,7 @@ final class EffMonadicOps[R, M[_], A](val e: Eff[R, M[A]]) extends AnyVal {
 }
 
 final class EffApplicativeOps[F[_], A](val values: F[A]) extends AnyVal {
-  def traverseA[R, B](f: A => Eff[R, B])(implicit F: Traverse[F]): Eff[R, F[B]] =
+  def traverseA[R, B](f: A => Eff[R, B])(implicit i: Indexable[F]): Eff[R, F[B]] =
     Eff.traverseA(values)(f)
 
   def flatTraverseA[R, B](f: A => Eff[R, F[B]])(implicit F1: Traverse[F], F2: FlatMap[F]): Eff[R, F[B]] =
@@ -95,7 +96,7 @@ final class EffApplicativeOps[F[_], A](val values: F[A]) extends AnyVal {
 }
 
 final class EffSequenceOps[F[_], R, A](val values: F[Eff[R, A]]) extends AnyVal {
-  def sequenceA(implicit F: Traverse[F]): Eff[R, F[A]] =
+  def sequenceA(implicit i: Indexable[F]): Eff[R, F[A]] =
     Eff.sequenceA(values)
 }
 

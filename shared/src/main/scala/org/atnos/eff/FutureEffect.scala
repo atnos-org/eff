@@ -14,13 +14,18 @@ import scala.util.{Failure, Success}
 object FutureCreation extends FutureCreation
 
 final case class TimedFuture[A](callback: (Scheduler, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None) {
-  @inline def runNow(scheduler: Scheduler, ec: ExecutionContext): Future[A] =
-    timeout.fold(callback(scheduler, ec)) { t =>
-      val promise = Promise[A]
-      val cancelTimeout = scheduler.schedule({ promise.tryFailure(new TimeoutException); () }, t)
-      promise.tryCompleteWith(callback(scheduler, ec).map(a => { cancelTimeout(); a })(ec))
-      promise.future
+  @inline def runNow(scheduler: Scheduler, ec: ExecutionContext): Future[A] = {
+    timeout match {
+      case Some(t) =>
+        val promise = Promise[A]
+        val cancelTimeout = scheduler.schedule({ promise.tryFailure(new TimeoutException); () }, t)
+        promise.tryCompleteWith(callback(scheduler, ec).map(a => { cancelTimeout(); a })(ec))
+        promise.future
+
+      case None =>
+        callback(scheduler, ec)
     }
+  }
 }
 
 object TimedFuture {
@@ -31,9 +36,12 @@ object TimedFuture {
 
     def ap[A, B](ff: TimedFuture[(A) => B])(fa: TimedFuture[A]): TimedFuture[B] = {
       val newCallback = { (scheduler: Scheduler, ec: ExecutionContext) =>
-        val ffRan = ff.runNow(scheduler, ec)
-        val faRan = fa.runNow(scheduler, ec)
-        faRan.flatMap(a => ffRan.map(f => f(a))(ec))(ec)
+        implicit val context = ec
+        // suspending the second value is necessary to avoid stack overflows with the
+        // concurrency traverse in the EffApplicativeSpec
+        Future.sequence(List(ff.runNow(scheduler, ec), Future(fa.runNow(scheduler, ec)).flatten)).map { xs =>
+          xs.head.asInstanceOf[A => B](xs.last.asInstanceOf[A])
+        }
       }
       TimedFuture(newCallback)
     }

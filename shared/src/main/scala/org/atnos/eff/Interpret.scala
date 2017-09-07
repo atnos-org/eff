@@ -317,7 +317,7 @@ object Interpreter {
         whenStopped(translate(x).flatMap(continuation), continuation.onNone)
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
-        whenStopped(Eff.traverseA(xs)(translate.apply).flatMap(continuation), continuation.onNone)
+        whenStopped(Eff.traverseA(xs.toList)(translate.apply).flatMap(xs => continuation(xs.toVector.asInstanceOf[T[X]])), continuation.onNone)
     }
 
   def fromNat[M[_], N[_], R, A](nat: M ~> N)(implicit n: N |= R): Interpreter[M, R, A, A] =

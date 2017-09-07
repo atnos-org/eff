@@ -1,6 +1,5 @@
 package org.atnos.eff.addon.scalaz.concurrent
 
-import cats.implicits._
 import org.atnos.eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._

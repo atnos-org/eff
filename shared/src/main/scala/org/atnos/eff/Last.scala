@@ -50,4 +50,12 @@ object Last {
         Eff.pure[R, Unit](())
     }
 
+  implicit def MonoidLast[R]: Monoid[Last[R]] = new Monoid[Last[R]] {
+    val empty: Last[R] =
+      Last.none[R]
+
+    def combine(l1: Last[R], l2: Last[R]): Last[R] =
+      l1 *> l2
+  }
+
 }
