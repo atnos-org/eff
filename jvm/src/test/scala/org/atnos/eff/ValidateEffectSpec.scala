@@ -73,7 +73,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   def stacksafeRun = {
     val list = (1 to 5000).toList
-    val action = list.traverseU(i => ValidateEffect.wrong[S, String](i.toString))
+    val action = list.traverse(i => ValidateEffect.wrong[S, String](i.toString))
 
     action.runNel.run must not(throwAn[Exception])
   }

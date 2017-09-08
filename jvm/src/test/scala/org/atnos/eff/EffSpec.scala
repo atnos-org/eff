@@ -10,18 +10,10 @@ import cats.instances.all._
 import cats.Eq
 import cats.~>
 import org.atnos.eff.all._
-import org.atnos.eff.concurrent.Scheduler
-import org.atnos.eff.future._
 import org.atnos.eff.syntax.all._
-import org.atnos.eff.syntax.future._
-import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.ThrownExpectations
 
-import scala.concurrent._
-import duration._
-import scala.collection.mutable.ListBuffer
-
-class EffSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class EffSpec extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
 
  The Eff monad respects the laws            $laws
 
@@ -375,8 +367,5 @@ class EffSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck w
     def eqv(x: F[(Int, Int, Int)], y:F[(Int, Int, Int)]): Boolean =
       runOption(x).run == runOption(y).run
   }
-
-  implicit val scheduler: Scheduler =
-    ExecutorServices.schedulerFromGlobalExecutionContext
 
 }

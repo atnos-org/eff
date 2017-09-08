@@ -77,7 +77,7 @@ trait ChooseInterpretation {
         case e :: rest =>
           e match {
             case Pure(a, last) =>
-              go(rest, (EffMonad[U].pure(alternativeF.pure(a)) |@| result).map(alternativeF.combineK), resultLast.map(_ <* lastRun(last)))
+              go(rest, (EffMonad[U].pure(alternativeF.pure(a)), result).mapN(alternativeF.combineK), resultLast.map(_ <* lastRun(last)))
 
             case Impure(NoEffect(a), c, last) =>
               runChoose(c(a).addLast(last))
@@ -86,7 +86,7 @@ trait ChooseInterpretation {
               m.project(u) match {
                 case Left(u1) =>
                   val r1 = Impure(u1, c.interpret(runChoose[R, U, A, F])(_.interpret(l => runChoose[R, U, Unit, F](l).void))).addLast(lastRun(last))
-                  go(rest, (r1 |@| result).map(alternativeF.combineK))
+                  go(rest, (r1, result).mapN(alternativeF.combineK))
 
                 case Right(choose) =>
                   choose match {
@@ -113,7 +113,7 @@ trait ChooseImplicits {
   /**
    * MonadCombine implementation for the Eff[R, ?] type if R contains the Choose effect
    */
-  def EffMonadCombine[R](implicit m: Member[Choose, R]): MonadCombine[Eff[R, ?]] = new MonadCombine[Eff[R, ?]] {
+  def EffMonadAlternative[R](implicit m: Member[Choose, R]): Alternative[Eff[R, ?]] = new Alternative[Eff[R, ?]] with Monad[Eff[R, ?]] {
     def pure[A](a: A): Eff[R, A] =
       EffMonad[R].pure(a)
 
@@ -148,7 +148,7 @@ object Rand {
   def none[A]: Rand[A] =
     Rand(_ => None)
 
-  implicit def MonadCombineRandom: MonadCombine[Rand] = new MonadCombine[Rand] {
+  implicit def MonadCombineRandom: Alternative[Rand] = new Alternative[Rand] with Monad[Rand] {
     def pure[A](x: A): Rand[A] = Rand(_ => Option(x))
 
     def empty[A]: Rand[A] = Rand.none[A]
