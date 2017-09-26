@@ -7,7 +7,8 @@ import cats.Eval
 import org.atnos.eff.concurrent.{Scheduler, Schedulers}
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Promise}
+import scala.util.Try
 
 case class ExecutorServices(executorServiceEval:   Eval[ExecutorService],
                             scheduledExecutorEval: Eval[ScheduledExecutorService],
@@ -109,6 +110,12 @@ object ExecutorServices extends Schedulers {
       def schedule(timedout: =>Unit, duration: FiniteDuration): () => Unit = {
         val scheduled = s.schedule(new Runnable { def run(): Unit = timedout }, duration.toNanos, TimeUnit.NANOSECONDS)
         () => { scheduled.cancel(false); () }
+      }
+
+      def delay(duration: FiniteDuration): scala.concurrent.Future[Unit] = {
+        val p = Promise[Unit]()
+        s.schedule(new Runnable { def run(): Unit = { p.complete(Try(())); () } }, duration.toNanos, TimeUnit.NANOSECONDS)
+        p.future
       }
 
       override def toString = "Scheduler"

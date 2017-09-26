@@ -166,6 +166,12 @@ trait TaskCreation extends TaskTypes {
                                            timeout: Option[FiniteDuration] = None): Eff[R, A] =
     fromTask(Task.async[A](callbackConsumer)(strategy), timeout)
 
+  def retryUntil[R :_task, A](e: Eff[R, A], condition: A => Boolean, durations: List[FiniteDuration]): Eff[R, A] =
+    Eff.retryUntil(e, condition, durations, d => waitFor(d))
+
+  def waitFor[R :_task](duration: FiniteDuration): Eff[R, Unit] =
+    Eff.send(TimedTask((strategy, scheduler) => Task.schedule((), duration)(strategy, scheduler)))
+
 }
 
 object TaskCreation extends TaskCreation

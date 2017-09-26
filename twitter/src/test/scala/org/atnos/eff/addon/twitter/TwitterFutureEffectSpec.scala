@@ -35,6 +35,11 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
 
  TwitterTimedFuture calls can be memoized with a memo effect $e14
 
+## RETRIES
+
+ An effect can be retried until a condition becomes true          $retry1
+ It will return the latest value if the condition is still false
+ after all the durations have expired                             $retry2
 
 """
 
@@ -174,6 +179,38 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
 
     Await.result((makeRequest >> makeRequest).runTwitterFutureMemo(cache).runSequential) must be_==(1)
     invocationsNumber must be_==(1)
+  }
+
+  def retry1 = {
+    type S = Fx2[TwitterTimedFuture, Option]
+    var i = 0
+    val before = System.currentTimeMillis
+
+    val action: Eff[S, Int] =
+      futureDelay[S, Int] { sleepFor(10.millis); i += 1; i }
+
+    val durations = List(1.second, 1.second)
+
+    val execute: Eff[S, Int] =
+      action.retryUntil(i => i == 3, durations)
+
+    Await.result(execute.runOption.runSequential) must beSome(3)
+
+    val after = System.currentTimeMillis
+    (after - before) must be_>(durations.map(_.toMillis).sum)
+  }
+
+  def retry2 = {
+    type S = Fx2[TwitterTimedFuture, Option]
+    var i = 0
+
+    val action: Eff[S, Int] =
+      futureDelay[S, Int] { sleepFor(10.millis); i += 1; i }
+
+    val execute: Eff[S, Int] =
+      action.retryUntil(i => i == 5, List(10.millis, 20.millis))
+
+    Await.result(execute.runOption.runSequential) must beSome(3)
   }
 
   /**

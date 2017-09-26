@@ -5,6 +5,7 @@ import org.atnos.eff.addon.monix._
 import _root_.monix.eval.Task
 import monix.execution.Scheduler
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Either
 
 trait task {
@@ -35,6 +36,9 @@ final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def runSequential(implicit m: Member.Aux[Task, R, NoFx]): Task[A] =
     TaskInterpretation.runSequential(e)
+
+  def retryUntil(condition: A => Boolean, durations: List[FiniteDuration])(implicit task: Task |= R): Eff[R, A] =
+    TaskCreation.retryUntil(e, condition, durations)
 }
 
 

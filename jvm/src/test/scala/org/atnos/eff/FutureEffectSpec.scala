@@ -19,7 +19,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
  Future effects can work as normal values                      $e1
  Future effects can be attempted                               $e2
- Future effects can be executed concurrently                   $e3
+ Future effects can be executed concurrently                   $e3 ${tag("travis")}
  Future effects are stacksafe with recursion                   $e6
  An Future effect can be created from Either                   $e7
  An Future forked computation can be timed out                 $e8
@@ -33,6 +33,12 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
  addLast can be used to make sure an action executes when a future fails $e14
 
  Future effects can be detached safely with detachA $e15
+
+## RETRIES
+
+ An effect can be retried until a condition becomes true          $retry1
+ It will return the latest value if the condition is still false
+ after all the durations have expired                             $retry2
 
 """
 
@@ -180,6 +186,38 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
     val list = (1 to 5000).toList
     val action = list.traverse(i => futureDelay(i)).detachA(TimedFuture.ApplicativeTimedFuture)
     action.runNow(scheduler, ec) must be_===(list).awaitFor(10.second)
+  }
+
+  def retry1 = {
+    type S = Fx2[TimedFuture, Option]
+    var i = 0
+    val before = System.currentTimeMillis
+
+    val action: Eff[S, Int] =
+      futureDelay[S, Int] { sleepFor(10.millis); i += 1; i }
+
+    val durations = List(1.second, 1.second)
+
+    val execute: Eff[S, Int] =
+      action.retryUntil(i => i == 3, durations)
+
+    execute.runOption.runSequential must beSome(3).awaitFor(10.seconds)
+
+    val after = System.currentTimeMillis
+    (after - before) must be_>(durations.map(_.toMillis).sum)
+  }
+
+  def retry2 = {
+    type S = Fx2[TimedFuture, Option]
+    var i = 0
+
+    val action: Eff[S, Int] =
+      futureDelay[S, Int] { sleepFor(10.millis); i += 1; i }
+
+    val execute: Eff[S, Int] =
+      action.retryUntil(i => i == 5, List(10.millis, 20.millis))
+
+    execute.runOption.runSequential must beSome(3).await
   }
 
   /**

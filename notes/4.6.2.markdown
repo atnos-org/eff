@@ -1,0 +1,8 @@
+Maintenance version
+
+### Improvements
+
+ * added a `retryUntil` method for `Task` and `Future` effects to retry a computation a given number of times
+   until a condition is verified
+
+

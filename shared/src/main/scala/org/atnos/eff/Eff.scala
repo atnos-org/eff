@@ -4,6 +4,8 @@ import cats._
 import cats.implicits._
 import Eff._
 
+import scala.concurrent.duration.FiniteDuration
+
 /**
  * Effects of type R, returning a value of type A
  *
@@ -307,6 +309,21 @@ trait EffCreation {
       case Pure(a, l)        => Pure(a, l)
       case Impure(u, c, l)   => Impure(u,   c.copy(onNone = c.onNone <* action), l)
       case ImpureAp(u, c, l) => ImpureAp(u, c.copy(onNone = c.onNone <* action), l)
+    }
+
+  def retryUntil[R, A](e: Eff[R, A], condition: A => Boolean, durations: List[FiniteDuration], waitFor: FiniteDuration => Eff[R, Unit]): Eff[R, A] =
+    e.flatMap { a =>
+      if (condition(a))
+        Eff.pure(a)
+      else
+        durations match {
+          case Nil =>
+            Eff.pure(a)
+
+          case duration :: rest =>
+            waitFor(duration) >>
+            retryUntil(e, condition, rest, waitFor)
+        }
     }
 
 }
