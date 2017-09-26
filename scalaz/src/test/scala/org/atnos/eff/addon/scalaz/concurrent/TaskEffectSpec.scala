@@ -190,11 +190,15 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   def retry1 = {
     type S = Fx2[TimedTask, Option]
     var i = 0
+<<<<<<< HEAD
     val before = System.currentTimeMillis
+=======
+>>>>>>> added a retryUntil method for the scalaz Task effect
 
     val action: Eff[S, Int] =
       taskDelay[S, Int] { sleepFor(10.millis); i += 1; i }
 
+<<<<<<< HEAD
     val durations = List(1.second, 1.second)
 
     val execute: Eff[S, Int] =
@@ -204,6 +208,12 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
     val after = System.currentTimeMillis
     (after - before) must be_>(durations.map(_.toMillis).sum)
+=======
+    val execute: Eff[S, Int] =
+      action.retryUntil(i => i == 3, List(10.millis, 20.millis))
+
+    execute.runOption.runAsync.unsafePerformSync must beSome(3)
+>>>>>>> added a retryUntil method for the scalaz Task effect
   }
 
   def retry2 = {
