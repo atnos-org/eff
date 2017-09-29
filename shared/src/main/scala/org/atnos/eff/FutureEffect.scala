@@ -95,6 +95,11 @@ trait FutureCreation extends FutureTypes {
   final def futureDefer[R :_future, A](a: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TimedFuture, R, A](TimedFuture((_, _) => a, timeout))
 
+  def retryUntil[R :_future, A](e: Eff[R, A], condition: A => Boolean, durations: List[FiniteDuration]): Eff[R, A] =
+    Eff.retryUntil(e, condition, durations, d => waitFor(d))
+
+  def waitFor[R :_future](duration: FiniteDuration): Eff[R, Unit] =
+    Eff.send(TimedFuture((scheduler, _) => scheduler.delay(duration)))
 }
 
 trait FutureInterpretation extends FutureTypes {

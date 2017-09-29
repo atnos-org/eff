@@ -3,6 +3,7 @@ package org.atnos.eff.syntax
 import org.atnos.eff._
 import org.atnos.eff.concurrent.Scheduler
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait future {
@@ -32,6 +33,9 @@ final class FutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def runSequential(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     FutureInterpretation.runSequential(e)
+
+  def retryUntil(condition: A => Boolean, durations: List[FiniteDuration])(implicit future: TimedFuture |= R): Eff[R, A] =
+    FutureCreation.retryUntil(e, condition, durations)
 }
 
 

@@ -5,6 +5,8 @@ import org.atnos.eff.addon.twitter._
 import org.atnos.eff._
 import org.atnos.eff.concurrent.Scheduler
 
+import scala.concurrent.duration.FiniteDuration
+
 trait future {
 
   implicit final def toTwitterFutureOps[R, A](e: Eff[R, A]): TwitterFutureOps[R, A] = new TwitterFutureOps[R, A](e)
@@ -30,4 +32,7 @@ final class TwitterFutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def runSequential(implicit pool: FuturePool, scheduler: Scheduler, m: Member.Aux[TwitterTimedFuture, R, NoFx]): Future[A] =
     TwitterFutureInterpretation.runSequential(e)
+
+  def retryUntil(condition: A => Boolean, durations: List[FiniteDuration])(implicit task: TwitterTimedFuture |= R): Eff[R, A] =
+    TwitterFutureCreation.retryUntil(e, condition, durations)
 }

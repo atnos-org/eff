@@ -119,6 +119,15 @@ trait TwitterFutureCreation extends TwitterFutureTypes {
   final def futureFork[R :_future, A](a: => A)(pool: FuturePool, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     send[TwitterTimedFuture, R, A](TwitterTimedFuture((_, _) => pool(a), timeout))
 
+  def retryUntil[R :_future, A](e: Eff[R, A], condition: A => Boolean, durations: List[FiniteDuration]): Eff[R, A] =
+    Eff.retryUntil(e, condition, durations, d => waitFor(d))
+
+  def waitFor[R :_future](duration: FiniteDuration): Eff[R, Unit] =
+    Eff.send(TwitterTimedFuture((_, scheduler) =>
+      Future.Unit.delayed(Duration.fromNanoseconds(duration.toNanos))(twitterTimer)))
+
+  val twitterTimer: JavaTimer =
+    new JavaTimer()
 }
 
 trait TwitterFutureInterpretation extends TwitterFutureTypes {

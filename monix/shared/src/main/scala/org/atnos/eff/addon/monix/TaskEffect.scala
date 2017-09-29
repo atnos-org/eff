@@ -52,6 +52,12 @@ trait TaskCreation extends TaskTypes {
     }
     fromTask(async, timeout)
   }
+
+  def retryUntil[R :_task, A](e: Eff[R, A], condition: A => Boolean, durations: List[FiniteDuration]): Eff[R, A] =
+    Eff.retryUntil(e, condition, durations, d => waitFor(d))
+
+  def waitFor[R :_task](duration: FiniteDuration): Eff[R, Unit] =
+    Eff.send(Task.deferAction(scheduler => Task.delay { scheduler.scheduleOnce(duration)(()); () }))
 }
 
 object TaskCreation extends TaskCreation

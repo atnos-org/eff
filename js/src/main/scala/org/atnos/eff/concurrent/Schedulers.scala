@@ -1,5 +1,6 @@
 package org.atnos.eff.concurrent
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.scalajs.js.timers._
 
@@ -13,6 +14,9 @@ trait Schedulers {
       val handle = setTimeout(duration)(timedout)
       () => clearTimeout(handle)
     }
+
+    def delay(duration: FiniteDuration): Future[Unit] =
+      sys.error("delay(duration) not implemented")
 
     override def toString = "Scheduler"
   }

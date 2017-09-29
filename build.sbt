@@ -107,7 +107,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val tagName = Def.setting{

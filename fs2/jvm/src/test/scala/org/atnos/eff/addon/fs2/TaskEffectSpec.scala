@@ -19,7 +19,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
  Tasks can work as normal values                           $e1
  Task effects can be attempted                             $e2
- Task effects can be executed concurrently                 $e3
+ Task effects can be executed concurrently                 $e3 ${tag("travis")}
  Task effects are stacksafe with recursion                 $e5
  A forked task computation can be timed out                $e6
 
@@ -31,6 +31,12 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
  Async calls can be memoized with a memo effect $e12
  Task effect is stacksafe with traverseA        $e13
+
+ ## RETRIES
+
+ An effect can be retried until a condition becomes true          $retry1
+ It will return the latest value if the condition is still false
+ after all the durations have expired                             $retry2
 
 """
 
@@ -166,6 +172,32 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     }
 
     action.runAsync must not(throwA[Throwable])
+  }
+
+  def retry1 = {
+    type S = Fx2[TimedTask, Option]
+    var i = 0
+
+    val action: Eff[S, Int] =
+      taskDelay[S, Int] { sleepFor(10.millis); i += 1; i }
+
+    val execute: Eff[S, Int] =
+      action.retryUntil(i => i == 3, List(10.millis, 20.millis))
+
+    execute.runOption.runAsync.unsafeRun must beSome(3)
+  }
+
+  def retry2 = {
+    type S = Fx2[TimedTask, Option]
+    var i = 0
+
+    val action: Eff[S, Int] =
+      taskDelay[S, Int] { sleepFor(10.millis); i += 1; i }
+
+    val execute: Eff[S, Int] =
+      action.retryUntil(i => i == 5, List(10.millis, 20.millis))
+
+    execute.runOption.runAsync.unsafeRun must beSome(3)
   }
 
   /**

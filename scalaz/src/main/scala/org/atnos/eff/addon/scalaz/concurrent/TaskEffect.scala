@@ -4,7 +4,7 @@ import java.util.concurrent._
 
 import org.atnos.eff.syntax.all._
 
-import scalaz.{-\/, \/, \/-, Nondeterminism}
+import scalaz.{-\/, Nondeterminism, \/, \/-}
 import scalaz.concurrent._
 import cats._
 import cats.implicits._
@@ -186,9 +186,15 @@ trait TaskCreation extends TaskTypes {
       callbackConsumer(tea => cb(\/.fromEither(tea)))
     }, timeout).send[R]
 
+  def retryUntil[R :_task, A](e: Eff[R, A], condition: A => Boolean, durations: List[FiniteDuration]): Eff[R, A] =
+    Eff.retryUntil(e, condition, durations, d => waitFor(d))
+
+  def waitFor[R :_task](duration: FiniteDuration): Eff[R, Unit] =
+    Eff.send(TimedTask(_ => Task.now(()).after(duration)))
+
 }
 
-object TaskCreation extends TaskTypes
+object TaskCreation extends TaskCreation
 
 trait TaskInterpretation extends TaskTypes {
 

@@ -1,9 +1,10 @@
 package org.atnos.eff.syntax.addon.fs2
 
 import fs2.{Scheduler, Strategy, Task}
-import org.atnos.eff.addon.fs2.{TaskEffect, TaskInterpretation, TimedTask}
+import org.atnos.eff.addon.fs2.{TaskCreation, TaskEffect, TaskInterpretation, TimedTask}
 import org.atnos.eff.{Cache, Eff, Member, Memoized, _}
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Either
 
 trait task {
@@ -30,4 +31,7 @@ final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def runSequential(implicit strategy: Strategy, scheduler: Scheduler, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
     TaskInterpretation.runSequential(e)
+
+  def retryUntil(condition: A => Boolean, durations: List[FiniteDuration])(implicit task: TimedTask |= R): Eff[R, A] =
+    TaskCreation.retryUntil(e, condition, durations)
 }

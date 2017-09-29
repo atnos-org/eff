@@ -1,10 +1,11 @@
 package org.atnos.eff.syntax.addon.scalaz
 
-import org.atnos.eff.addon.scalaz.concurrent.{TaskEffect, TaskInterpretation, TimedTask}
+import org.atnos.eff.addon.scalaz.concurrent.{TaskCreation, TaskEffect, TaskInterpretation, TimedTask}
 import org.atnos.eff._
 
 import scala.util.Either
 import _root_.scalaz.concurrent.Task
+import scala.concurrent.duration.FiniteDuration
 
 trait task {
 
@@ -31,4 +32,9 @@ final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def runSequential(implicit es: ExecutorServices, m: Member.Aux[TimedTask, R, NoFx]): Task[A] =
     TaskInterpretation.runSequential(e)(es, m)
+
+  def retryUntil(condition: A => Boolean, durations: List[FiniteDuration])(implicit task: TimedTask |= R): Eff[R, A] =
+    TaskCreation.retryUntil(e, condition, durations)
+
+
 }
