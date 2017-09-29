@@ -62,7 +62,7 @@ class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   def stacksafeOption = {
     val list = (1 to 5000).toList
-    val action = list.traverseU(i => OptionEffect.some(i))
+    val action = list.traverse(i => OptionEffect.some(i))
 
     action.runOption.run ==== Some(list)
   }

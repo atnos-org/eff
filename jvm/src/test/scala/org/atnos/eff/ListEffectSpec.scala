@@ -40,7 +40,7 @@ class ListEffectSpec extends Specification { def is = s2"""
     val list = (1 to 5000).toList
 
     val action: Eff[L, List[Int]] =
-      list.traverseU(i => singleton[L, Int](i))
+      list.traverse(i => singleton[L, Int](i))
 
     action.runList.run.flatten must_== list
   }

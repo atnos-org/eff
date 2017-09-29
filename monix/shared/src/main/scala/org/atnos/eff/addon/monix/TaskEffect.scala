@@ -3,7 +3,6 @@ package org.atnos.eff.addon.monix
 import cats._
 import cats.implicits._
 import monix.eval._
-import monix.cats._
 import monix.execution._
 import org.atnos.eff._
 import org.atnos.eff.syntax.all._
@@ -60,10 +59,12 @@ object TaskCreation extends TaskCreation
 trait TaskInterpretation extends TaskTypes {
 
   private val monixTaskMonad: MonadError[Task, Throwable] =
-    monix.cats.monixToCatsMonadError(Task.typeClassInstances.monadError)
+    MonadError[Task, Throwable]
 
-  private val monixTaskApplicative : Applicative[Task] =
-    monixToCatsApplicative(Task.nondeterminism.applicative)
+  private val monixTaskApplicative : Applicative[Task] = {
+    import Task.nondeterminism
+    Applicative[Task]
+  }
 
   def runAsync[R, A](e: Eff[R, A])(implicit m: Member.Aux[Task, R, NoFx]): Task[A] =
     Eff.detachA(e)(monixTaskMonad, monixTaskApplicative, m)

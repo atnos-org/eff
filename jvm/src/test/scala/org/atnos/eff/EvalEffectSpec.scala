@@ -22,12 +22,12 @@ class EvalEffectSpec extends Specification { def is = s2"""
   val list = (1 to 5000).toList
 
   def stacksafeRun = {
-    val action = list.traverseU(i => EvalEffect.delay(i))
+    val action = list.traverse(i => EvalEffect.delay(i))
     action.runEval.run ==== list
   }
 
   def stacksafeAttempt = {
-    val action = list.traverseU(i => EvalEffect.delay(i))
+    val action = list.traverse(i => EvalEffect.delay(i))
     action.attemptEval.run ==== Right(list)
   }
 
