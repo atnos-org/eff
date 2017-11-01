@@ -1,0 +1,18 @@
+cats 1.0.0-MF version
+
+### Library upgrades
+
+This version fully takes advantage of cats 1.0.0-MF and upgrades the following libraries
+
+ library      | version
+ ------       | ----
+ monix        | 3.0.0-M1
+ twitter-util | 7.1.0
+ catbird      | 0.18.0
+ doobie       | 0.5.0-M8
+ cats-effect  | 0.4
+
+Note that the fs2 module has been removed since there is no more `fs2.Task` type which has been replaced by `cats.effect.IO`.
+
+
+

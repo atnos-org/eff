@@ -1,11 +1,10 @@
 package org.atnos.eff.addon.doobie
 
-import cats.Monad
 import cats.implicits._
 import doobie.free.KleisliInterpreter
 import doobie.free.connection.{ConnectionIO, close, commit, delay, rollback, setAutoCommit}
 import doobie.util.transactor.{Strategy, Transactor}
-import fs2.util.{Catchable, Suspendable}
+import cats.effect._
 import org.h2.jdbcx.JdbcConnectionPool
 
 object H2TestableTransactor {
@@ -24,25 +23,24 @@ object H2TestableTransactor {
                    user: String = "sa",
                    pass: String = "",
                    before: ConnectionIO[Unit] = setAutoCommit(false),
-                   after: ConnectionIO[Unit] = commit,
-                   oops: ConnectionIO[Unit] = rollback,
+                   after:  ConnectionIO[Unit] = commit,
+                   oops:   ConnectionIO[Unit] = rollback,
                    always: ConnectionIO[Unit] = close)(
-      implicit ev0: Monad[M],
-      ev1: Catchable[M],
-      ev2: Suspendable[M]): (Transactor[M], OpHistory) = {
+      implicit async: Async[M]): (Transactor[M], OpHistory) = {
+    
     val pool = JdbcConnectionPool.create(url, user, pass)
 
     val c = new OpHistory()
 
     val t = Transactor(
       kernel0 = pool,
-      connect0 = (a: JdbcConnectionPool) => ev2.delay(a.getConnection) <* ev2.pure(c.registerConnection()),
-      KleisliInterpreter[M](ev0, implicitly, implicitly).ConnectionInterpreter,
+      connect0 = (a: JdbcConnectionPool) => async.delay(a.getConnection) <* async.pure(c.registerConnection()),
+      KleisliInterpreter[M].ConnectionInterpreter,
       Strategy(
-        before = before <* delay(c.registerBefore()),
-        after = after <* delay(c.registerAfter()),
-        oops = oops <* delay(c.incrementOops()),
-        always = always <* delay(c.registerAlways())
+        before = before.flatMap(a => delay(c.registerBefore()).map(_ => a)),
+        after  = after .flatMap(a => delay(c.registerAfter()) .map(_ => a)),
+        oops   = oops  .flatMap(a => delay(c.incrementOops()) .map(_ => a)),
+        always = always.flatMap(a => delay(c.registerAlways()).map(_ => a))
       )
     )
 
