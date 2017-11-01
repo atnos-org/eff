@@ -15,7 +15,7 @@ lazy val fs2Version         = "0.9.6"
 lazy val specs2Version      = "4.0.0-RC4"
 lazy val twitterUtilVersion = "6.42.0"
 lazy val catbirdVersion     = "0.13.0"
-lazy val doobieVersion      = "0.4.4"
+lazy val doobieVersion      = "0.5.0-M8"
 lazy val catsEffectVersion  = "0.4"
 
 lazy val eff = project.in(file("."))
@@ -311,8 +311,8 @@ lazy val catsJs = Seq(
   "org.typelevel" %%%! "cats-core" % catsVersion)
 
 lazy val doobieJvm = Seq(
-  "org.tpolecat" %% "doobie-core-cats" % doobieVersion,
-  "org.tpolecat" %% "doobie-h2-cats"   % doobieVersion % "test")
+  "org.tpolecat" %% "doobie-core" % doobieVersion,
+  "org.tpolecat" %% "doobie-h2"   % doobieVersion % "test")
 
 lazy val catsEffectJvm = Seq(
   "org.typelevel" %% "cats-effect" % catsEffectVersion)
