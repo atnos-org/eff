@@ -34,7 +34,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
 
     val (xa, c) = H2TestableTransactor.create[Task]()
 
-    p.runConnectionIO(xa).detach.unsafeRun must_== 10
+    p.runConnectionIOCombine(xa).detach.unsafeRun must_== 10
     c.calls must_== List("connection", "before", "after", "always")
   }
 
@@ -47,7 +47,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
 
     val (xa, c) = H2TestableTransactor.create[Task]()
 
-    p.runConnectionIO(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("c failed"))
+    p.runConnectionIOCombine(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("c failed"))
     c.calls must_== List("connection", "before", "oops", "always")
   }
 
@@ -59,7 +59,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
 
     val (xa, c) = H2TestableTransactor.create[Task](before = delay(throw new Error("before failed")))
 
-    properProgram.runConnectionIO(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("before failed"))
+    properProgram.runConnectionIOCombine(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("before failed"))
     c.calls must_== List("connection", "oops", "always")
   }
 
@@ -71,7 +71,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
 
     val (xa, c) = H2TestableTransactor.create[Task](after = delay(throw new Error("after failed")))
 
-    properProgram.runConnectionIO(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("after failed"))
+    properProgram.runConnectionIOCombine(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("after failed"))
     c.calls must_== List("connection", "before", "oops", "always")
   }
 
@@ -81,7 +81,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
 
     val (xa, c) = H2TestableTransactor.create[Task](oops = delay(throw new Error("oops failed")))
 
-    erroneousProgram.runConnectionIO(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("oops failed"))
+    erroneousProgram.runConnectionIOCombine(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("oops failed"))
     c.calls must_== List("connection", "before", "always")
   }
 
@@ -90,7 +90,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
 
     val (xa, c) = H2TestableTransactor.create[Task](always = delay(throw new Error("always failed")))
 
-    properProgram.runConnectionIO(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("always failed"))
+    properProgram.runConnectionIOCombine(xa).detach.unsafeAttemptRun must beLeft(withExceptionMessage("always failed"))
     c.calls must_== List("connection", "before", "after")
   }
 

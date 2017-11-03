@@ -15,6 +15,13 @@ trait doobie {
 }
 
 final class DoobieConnectionIOOps[R, A](val e: Eff[R, A]) extends AnyVal {
+  def runConnectionIOCombine[F[_], U, E, B](t: Transactor[F])(
+    implicit mc: Member.Aux[ConnectionIO, R, U],
+    mf: MemberInOut[F, U],
+    me: MonadError[F, E]): Eff[U, A] = {
+    DoobieConnectionIOInterpretation.runConnectionIOCombine[R, U, F, E, A, B](e)(t)
+  }
+
   def runConnectionIO[F[_], U, E, B](t: Transactor[F])(
     implicit mc: Member.Aux[ConnectionIO, R, U],
     mf: MemberInOut[F, U],

@@ -5,7 +5,7 @@ import java.sql.Connection
 import cats.implicits._
 import cats.{MonadError, ~>}
 import _root_.doobie.free.connection.ConnectionIO
-import _root_.doobie.imports.Transactor
+import _root_.doobie.imports._
 import org.atnos.eff._
 import org.atnos.eff.all._
 
@@ -21,7 +21,7 @@ trait DoobieConnectionIOCreation extends DoobieConnectionIOTypes {
 
 trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
 
-  def runConnectionIO[R, U, F[_], E, A, B](e: Eff[R, A])(t: Transactor[F])(
+  def runConnectionIOCombine[R, U, F[_], E, A, B](e: Eff[R, A])(t: Transactor[F])(
     implicit mc: Member.Aux[ConnectionIO, R, U],
              mf: F /= U,
              me: MonadError[F, E] ): Eff[U, A] = {
@@ -57,6 +57,17 @@ trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
 
       interceptErrors(before >> runEffect(connection) << after)(oops).addLast(send(always))
     }
+  }
+
+  def runConnectionIO[R, U, F[_], E, A, B](e: Eff[R, A])(t: Transactor[F])(
+    implicit mc: Member.Aux[ConnectionIO, R, U],
+             mf: F /= U,
+             me: MonadError[F, E]): Eff[U, A] = {
+
+    interpret.translate(e)(new Translate[ConnectionIO, U] {
+      def apply[X](c: ConnectionIO[X]): Eff[U, X] =
+        send(c.transact(t))
+    })
   }
 }
 
