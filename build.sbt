@@ -8,7 +8,7 @@ import Defaults.{defaultTestTasks, testTaskOptions}
 import sbtrelease._
 import org.scalajs.jsenv.nodejs._
 
-lazy val catsVersion        = "1.0.0-RC1"
+lazy val catsVersion        = "1.0.0-RC2"
 lazy val monixVersion       = "3.0.0-M2"
 lazy val scalazVersion      = "7.2.7"
 lazy val specs2Version      = "4.0.1"
