@@ -56,6 +56,18 @@ lazy val macros = project.in(file("macros"))
   .settings(commonJvmSettings)
   .settings(effSettings:_*)
 
+lazy val docs = project.in(file("docs"))
+  .settings(commonJvmSettings)
+  .settings(promulgate.library("org.atnos.eff", "eff"))
+  .dependsOn(coreJVM, monixJVM, scalaz, twitter, fs2JVM)
+  .settings(buildSettings)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(userGuideSettings)
+  .settings(site.settings)
+  .settings(ghpages.settings)
+  .settings(testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website")))))
+
 lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core)
@@ -188,9 +200,7 @@ lazy val sharedPublishSettings = Seq(
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
   publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
-) ++ site.settings ++
-  ghpages.settings ++
-  userGuideSettings
+)
 
 lazy val userGuideSettings =
   Seq(
@@ -208,7 +218,7 @@ lazy val sharedReleaseProcess = Seq(
   , setReleaseVersion
   , commitReleaseVersion
   , tagRelease
-  , generateWebsite
+//  , generateWebsite
   , publishSite
   , publishArtifacts
   , setNextVersion
@@ -220,8 +230,8 @@ lazy val sharedReleaseProcess = Seq(
   Seq(
     releaseNextVersion := { v => Version(v).map(_.bumpBugfix.string).getOrElse(versionFormatError) },
     releaseTagName := "EFF-" + releaseVersion.value(version.value)
-  ) ++
-  testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website"))))
+  ) //++
+//  testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website"))))
 
 lazy val publishSite = ReleaseStep { st: State =>
   val st2 = executeStepTask(makeSite, "Making the site")(st)
