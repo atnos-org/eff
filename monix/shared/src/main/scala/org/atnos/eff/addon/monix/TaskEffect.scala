@@ -67,10 +67,8 @@ trait TaskInterpretation extends TaskTypes {
   private val monixTaskMonad: MonadError[Task, Throwable] =
     MonadError[Task, Throwable]
 
-  private val monixTaskApplicative : Applicative[Task] = {
-    import Task.nondeterminism
-    Applicative[Task]
-  }
+  private val monixTaskApplicative : Applicative[Task] =
+    Task.catsParallel.applicative
 
   def runAsync[R, A](e: Eff[R, A])(implicit m: Member.Aux[Task, R, NoFx]): Task[A] =
     Eff.detachA(e)(monixTaskMonad, monixTaskApplicative, m)

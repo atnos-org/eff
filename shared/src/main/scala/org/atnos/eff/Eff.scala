@@ -405,7 +405,7 @@ trait EffInterpretation {
 
         last match {
           case Last(Some(l)) =>
-            monad.handleErrorWith(result)(t => detachA(l.value) >> monad.raiseError(t))
+            monad.handleErrorWith(result)(t => detachA(l.value) *> monad.raiseError(t))
 
           case Last(None) =>
             result
@@ -420,7 +420,7 @@ trait EffInterpretation {
 
         last match {
           case Last(Some(l)) =>
-            monad.handleErrorWith(result)(t => detachA(l.value) >> monad.raiseError(t))
+            monad.handleErrorWith(result)(t => detachA(l.value) *> monad.raiseError(t))
 
           case Last(None) =>
             result
