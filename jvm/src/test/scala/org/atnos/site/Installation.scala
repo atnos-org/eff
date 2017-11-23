@@ -17,21 +17,19 @@ To get types like `Reader[String, ?]` (with more than one type parameter) correc
 scalacOptions += "-Ypartial-unification"
 ```
 
-If you want to use [Scalaz](http://github.com/scalaz/scalaz) as a library for functional programming you will also need:
-```scala
-libraryDependencies += "org.atnos" %% "eff-scalaz" % "$version"
-```
+##### Additional dependencies
 
-This will allows you to use the `Eff` monad as a Scalaz `Monad` (instead of the cats `Monad` which is the default implementation).
-The `eff-scalaz` dependency is also necessary if you want to use scalaz `Task` as an effect.
-(see $OutOfTheBox).
+This table lists the other available eff modules:
 
-On the other hand if you prefer to use [Monix](http://monix.io) `Task`, you will need
-a dependency on `eff-monix`:
+ Name              | Functionality
+ ----------------- | ----------------------------------------------------
+ `eff-scalaz`      | if you want to use [Scalaz](http://github.com/scalaz/scalaz) as a library for functional programming. This gives you a `Scalaz` `Monad` instance for `Eff` and a Scalaz's `Task` effect
+ `eff-monix`       | to use Monix's `Task` effect
+ `eff-cats-effect` | to use cats's `IO` effect
+ `eff-twitter`     | to use Twitter's `Future` effect
+ `eff-doobie`      | to use Doobie's `ConnectionIO` effect
 
-```scala
-libraryDependencies += "org.atnos" %% "eff-monix" % "$version"
-```
+<p/>
 
 ### Imports
 
@@ -41,6 +39,8 @@ The main `eff` types: `Eff`, `Member`, `Fx` are accessible in the `org.atnos.eff
 ```scala
 import org.atnos.eff._
 ```
+
+Many other effects are also available $OutOfTheBox.
 
 #### Creating effects
 

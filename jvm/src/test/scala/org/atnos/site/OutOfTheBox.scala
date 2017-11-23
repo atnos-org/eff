@@ -24,7 +24,7 @@ This library comes with the following effects:
 
 <small>(from `org.atnos.eff._`)</small>
 
-See the ${"imports" ~/ Installation} section on how to access each object.
+Other modules listed in $Installation provide additional effects (Twitter Future, Scalaz Task, Monix Task, Doobie ConnectionIO,...).
 
 <br/>
 
