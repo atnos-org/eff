@@ -2,15 +2,16 @@ package org.atnos.eff.addon.cats.effect
 
 import cats.effect.{Async, IO}
 import IO._
-
 import cats.~>
 import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
+import scala.util.Either
+import IOEffect._
 
-object IOEffect extends IOEffectCreation with IOInterpretation
+object IOEffect extends IOEffectCreation with IOInterpretation with IOInstances
 
 trait IOTypes {
 
@@ -75,4 +76,27 @@ trait IOInterpretation extends IOTypes {
   }
 }
 
+trait IOInstances extends IOTypes {
+  implicit def effectInstance[R :_Io]: cats.effect.Effect[Eff[R, ?]] = new cats.effect.Effect[Eff[R, ?]] {
+    def runAsync[A](fa: Eff[R, A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
+      ioAttempt(fa).flatMap(r => fromIO(cb(r)))
+
+    def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
+      fromIO(IO.async(k))
+
+    def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
+      fromIO(IO.suspend(thunk))
+
+    def liftIO[A](ioa: IO[A]): Eff[R, A] =
+      fromIO(ioa)
+
+    def raiseError[A](e: Throwable): Eff[R, A] =
+      fromIO(IO.raiseError(e))
+
+    def handleErrorWith[A](fa: Eff[R, A])(f: Throwable => Eff[R, A]): Eff[R, A] =
+      ioAttempt(fa).flatMap(f)
+  }
+}
+
+object IOInstances extends IOInstances
 
