@@ -20,11 +20,12 @@ This library comes with the following effects:
  `ChooseEffect`      | an effect for modeling non-determinism                                           | ${"link" ~ ChooseEffectPage}
  `MemoEffect`        | an effect for memoizing values                                                   | ${"link" ~ MemoEffectPage}
  `FutureEffect`      | an effect for asynchronous computations                                          | ${"link" ~ TimedFutureEffectPage}
+ `TaskEffect`        | an effect for asynchronous computations using Monix Tasks                        | ${"link" ~ TaskEffectPage}
  `SafeEffect`        | an effect for guaranteeing resource safety                                       | ${"link" ~ SafeEffectPage}
 
 <small>(from `org.atnos.eff._`)</small>
 
-Other modules listed in $Installation provide additional effects (Twitter Future, Scalaz Task, Monix Task, Doobie ConnectionIO,...).
+Other modules listed in $Installation provide additional effects (Twitter Future, Scalaz Task, Doobie ConnectionIO,...).
 
 <br/>
 
