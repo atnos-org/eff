@@ -241,7 +241,7 @@ trait EffImplicits {
               // don't recurse if the number of effects is too large
               // this will ensure stack-safety on large traversals
               // and keep enough concurrency on smaller traversals
-              if (xs.size > 100)
+              if (xs.size > 10)
                 Eff.impure(taken, Continuation.lift((xs1: Vector[Any]) => ap(c1(xs1))(c(dropped)), c1.onNone))
               else
                 ap(c1(taken))(c(dropped))

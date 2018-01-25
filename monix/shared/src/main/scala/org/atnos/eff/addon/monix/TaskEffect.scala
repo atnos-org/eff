@@ -1,6 +1,7 @@
 package org.atnos.eff.addon.monix
 
 import cats._
+import cats.effect._
 import cats.implicits._
 import monix.eval._
 import monix.execution._
@@ -149,6 +150,45 @@ trait TaskInterpretation extends TaskTypes {
 
 object TaskInterpretation extends TaskInterpretation
 
-trait TaskEffect extends TaskInterpretation with TaskCreation
+trait EffToTask[R] {
+  def apply[A](e: Eff[R, A]): Task[A]
+}
+
+trait TaskEffect extends TaskInterpretation with TaskCreation {
+
+  implicit def effectInstance[R :_Task](implicit runEff: EffToTask[R], scheduler: Scheduler): cats.effect.Effect[Eff[R, ?]] = new cats.effect.Effect[Eff[R, ?]] {
+
+    private val taskEffectInstance: cats.effect.Effect[Task] =
+      implicitly[cats.effect.Effect[Task]]
+
+    def runAsync[A](fa: Eff[R, A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
+      taskEffectInstance.runAsync(runEff(fa))(cb)
+
+    def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
+      fromTask(taskEffectInstance.async(k))
+
+    def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
+      fromTask(Task.apply(thunk)).flatten
+
+    def raiseError[A](e: Throwable): Eff[R, A] =
+      fromTask(taskEffectInstance.raiseError(e))
+
+    def handleErrorWith[A](fa: Eff[R, A])(f: Throwable => Eff[R, A]): Eff[R, A] =
+      taskAttempt(fa).flatMap {
+        case Left(t)  => f(t)
+        case Right(a) => Eff.pure(a)
+      }
+
+    def pure[A](a: A): Eff[R,A] =
+      Eff.pure(a)
+
+    def flatMap[A, B](fa: Eff[R,A])(f: A =>Eff[R, B]): Eff[R, B] =
+      fa.flatMap(f)
+
+    def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
+      Eff.EffMonad[R].tailRecM(a)(f)
+  }
+
+}
 
 object TaskEffect extends TaskEffect
