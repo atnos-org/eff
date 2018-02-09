@@ -16,6 +16,7 @@ lazy val twitterUtilVersion = "17.11.0"
 lazy val catbirdVersion     = "0.21.0"
 lazy val doobieVersion      = "0.5.0"
 lazy val catsEffectVersion  = "0.8"
+lazy val fs2Version         = "0.10.2"
 
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
@@ -59,7 +60,7 @@ lazy val macros = project.in(file("macros"))
 lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core)
-  .settings(libraryDependencies ++= Seq("co.fs2" %% "fs2-core" % "0.10.2"))
+  .settings(libraryDependencies ++= Seq("co.fs2" %% "fs2-core" % fs2Version))
   .settings(libraryDependencies ++= monixLib)
   .settings(effSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
