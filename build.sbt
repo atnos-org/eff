@@ -9,13 +9,13 @@ import sbtrelease._
 import org.scalajs.jsenv.nodejs._
 
 lazy val catsVersion        = "1.0.1"
-lazy val monixVersion       = "3.0.0-668a8b9"
+lazy val monixVersion       = "3.0.0-M3"
 lazy val scalazVersion      = "7.2.7"
 lazy val specs2Version      = "4.0.2"
 lazy val twitterUtilVersion = "17.11.0"
 lazy val catbirdVersion     = "0.21.0"
-lazy val doobieVersion      = "0.5.0-M11"
-lazy val catsEffectVersion  = "0.7"
+lazy val doobieVersion      = "0.5.0"
+lazy val catsEffectVersion  = "0.8"
 
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
@@ -59,7 +59,7 @@ lazy val macros = project.in(file("macros"))
 lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core)
-  .settings(libraryDependencies ++= Seq("co.fs2" %% "fs2-core" % "0.10.0-RC1"))
+  .settings(libraryDependencies ++= Seq("co.fs2" %% "fs2-core" % "0.10.2"))
   .settings(libraryDependencies ++= monixLib)
   .settings(effSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
@@ -73,7 +73,7 @@ lazy val scalaz = project.in(file("scalaz"))
   .dependsOn(coreJVM)
   .settings(libraryDependencies ++= scalazConcurrent)
   .settings(libraryDependencies ++= catsEffectJvm)
-  .settings(libraryDependencies ++= Seq("co.fs2" %% "fs2-core" % "0.10.0-RC1"))
+  .settings(libraryDependencies ++= Seq("co.fs2" %% "fs2-core" % "0.10.2"))
   .settings(libraryDependencies ++= specs2Scalaz)
   .settings(effSettings ++ commonJvmSettings:_*)
 
@@ -92,7 +92,7 @@ lazy val scoverageSettings = Seq(
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "2.12.3",
+  scalaVersion := "2.12.4",
   crossScalaVersions := Seq("2.11.11", scalaVersion.value)
 )
 
