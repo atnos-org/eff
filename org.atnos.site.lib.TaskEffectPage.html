@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Tutorial</title>
+    <title>Task</title>
     <link href="./images/s2.ico"                                   type="image/x-icon" rel="specs2 icon"/>
     <link href="./css/opensans-fonts.css"                          type="text/css"     rel="stylesheet" />
     <link href="./css/bootstrap.min.css"                           type="text/css"     rel="stylesheet" />
@@ -286,153 +286,47 @@
               </ul>
                   </ul>
     </li>
-              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['index','org-atnos-site-tutorial'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
+              </ul></div><script>$(function () { $('#tree').jstree({'core':{'initially_open':['org-atnos-site-outofthebox','index','org-atnos-site-lib-taskeffectpage'], 'animation':200}, 'themes' : {'theme': 'default','url': './css/themes/default/style.css'}, 'plugins':['themes', 'html_data']}); });</script>
 
 </div>
 </div>
 
 
 <div class="col-md-10 col-sm-9 col-xs-9">
-<h1>Tutorial</h1>
+<h1>Task</h1>
 <div id="tipue_search_content"></div>
 
-<p>This tutorial is intentionally structured like the <a href="http://typelevel.org/cats/datatypes/freemonad.html">Free monad tutorial for cats</a> so that a side-by-side comparison of the 2 approaches is possible.</p>
-<h3 id="study-your-topic">Study your topic</h3>
-<p>Let’s imagine that we want to create a DSL for a key-value store. We want to be able to do three things with keys:</p>
-<ul>
-<li>put a value into the store, associated with its key.</li>
-<li>get a value from the store given its key.</li>
-<li>delete a value from the store given its key.
-<p/></li>
-</ul>
-<p>The idea is to write a sequence of these operations in the embedded DSL as a “program”, interpret the “program”, and finally execute the “program” to interact with the actual key-value store.</p>
-<p>For example:</p>
-<pre><code class="prettyprint"> put(&quot;toto&quot;, 3)
- get(&quot;toto&quot;) // returns 3
- delete(&quot;toto&quot;)</code></pre>
-<p>But we want:</p>
-<ul>
-<li>the computation to be represented as a pure, immutable value</li>
-<li>to separate the creation and execution of the program</li>
-<li>to be able to support many different methods of execution</li>
-</ul>
-<h3 id="create-an-adt-representing-your-grammar">Create an ADT representing your grammar</h3>
-<p>ADT stands for “Algebraic Data Type”. In this context, it refers to a closed set of types which can be combined to build up complex, recursive values.</p>
-<p>We need to create an ADT to represent our key-value operations: <code class="prettyprint">no file found at ../jvm/src/test/scala/org/atnos/site/snippets/tutorial/AdtSnippet.scala</code></p>
-<h3 id="free-your-adt">Free your ADT</h3>
-<p>There are four basic steps to “freeing” the ADT:</p>
-<ol style="list-style-type: decimal">
-<li>Create smart constructors for <code class="prettyprint">KVStore[_]</code> using <code class="prettyprint">Eff.send</code></li>
-<li>Build a program out of key-value DSL operations</li>
-<li>Build an interpreter for programs of DSL operations</li>
-<li>Execute our interpreted program</li>
-<li>[optional] add some syntax for the interpreter</li>
-</ol>
-<h3 id="create-smart-constructors-using-eff.send">Create smart constructors using <code class="prettyprint">Eff.send</code></h3>
-<p>These methods will let you create <code class="prettyprint">Eff</code> values for your key-value store “Effect”:<code class="prettyprint">no file found at ../jvm/src/test/scala/org/atnos/site/snippets/tutorial/AdtCreationSnippet.scala</code></p>
-<p>Each method requires the <code class="prettyprint">KVStore</code> effect to be a member of an “effect stack” <code class="prettyprint">R</code>. The return values are of type <code class="prettyprint">Eff[R, A]</code> where <code class="prettyprint">R</code> is a stack of effects possibly containing other effects than key-value store operations and yielding values of type <code class="prettyprint">A</code>.</p>
-<h3 id="build-a-program">Build a program</h3>
-<p>Now that we can construct values with <code class="prettyprint">KVStore</code> effects we can use our DSL to write “programs” using a for-comprehension: <code class="prettyprint">no file found at ../jvm/src/test/scala/org/atnos/site/snippets/tutorial/AdtUsageSnippet.scala</code></p>
-<p>This looks like a monadic flow. However, it just builds a recursive data structure representing the sequence of operations.</p>
-<h3 id="write-an-interpreter-for-your-program">Write an interpreter for your program</h3>
-<p>As you may have understood now, <code class="prettyprint">Eff</code> is used to create an embedded DSL. By itself, this DSL only represents a sequence of operations (defined by a recursive data structure); it doesn’t produce anything.</p>
-<p><code class="prettyprint">Eff</code> is a programming language inside your programming language!</p>
-<p>So, like any other programming language, we need to interpret our abstract language into concrete values.</p>
-<p>To do this, we will use an interpreter transforming our <code class="prettyprint">KVStore</code> effects using a simple mutable map: <code class="prettyprint">no file found at ../jvm/src/test/scala/org/atnos/site/snippets/tutorial/AdtInterpreterSnippet.scala</code></p>
-<p>Please note this interpreter is impure – it mutates <code class="prettyprint">kvs</code> and also produces logging output using <code class="prettyprint">println</code>. The whole purpose of functional programming isn’t to prevent side-effects, it is just to push side-effects to the boundaries of your system in a well-known and controlled way.</p>
-<p>We can also interpret <code class="prettyprint">KVStore</code> effects differently and delegate the results to other effects in the same stack:</p>
-<ul>
-<li><code class="prettyprint">State</code> for maintaining the map of values</li>
-<li><code class="prettyprint">Writer</code> for logging</li>
-<li><code class="prettyprint">E Either ?</code> for type errors
-<p/>
-<code class="prettyprint">no file found at ../jvm/src/test/scala/org/atnos/site/snippets/tutorial/AdtInterpreterSafeSnippet.scala</code></li>
-</ul>
-<p><code class="prettyprint">Eff</code> is just a recursive structure that can be seen as sequence of operations producing other operations, with potentially other effects. In this way it is similar to folding a <code class="prettyprint">List</code>. We often use folds (e.g. <code class="prettyprint">foldRight</code>) to obtain a single value from a list; this recurses over the structure, combining its contents.</p>
-<p>The idea behind an <code class="prettyprint">Eff</code> interpreter is exactly the same. We “fold” the recursive structure by:</p>
-<ul>
-<li>consuming each operation</li>
-<li>compiling the operation into a target language</li>
-<li>computing next operation
-<p/></li>
-</ul>
-<p>An important aspect of interpreters is stack-safety. An interpreter evaluates each step of a computation on the stack then calls itself to evaluate the other steps. The <code class="prettyprint">org.atnos.eff.interpreter</code> object provides various methods helping you write a stack-safe interpreter:</p>
-<ul>
-<li><p><code class="prettyprint">interpretUnsafe</code> makes you define a <code class="prettyprint">SideEffect</code> trait to return a value <code class="prettyprint">X</code> from an effect <code class="prettyprint">T[X]</code></p></li>
-<li><p><code class="prettyprint">translate</code> makes you define a <code class="prettyprint">Translate</code> trait to “translate” your effect into other effects in the same stack</p></li>
-<li><p>both are specialized version of <code class="prettyprint">interpret1</code> which makes you define a <code class="prettyprint">Recurse</code> trait to either return a value <code class="prettyprint">X</code> from an effect or produce another <code class="prettyprint">Eff</code> computation</p></li>
-</ul>
-<h3 id="run-your-program">Run your program</h3>
-<p>The final step is naturally running your program after interpreting it to another <code class="prettyprint">Eff</code> value. We need to</p>
-<ul>
-<li>specify a concrete stack of effects containing the effect we want to interpret <code class="prettyprint">Fx.fx1[KVStore]</code> (just one effect in the stack)</li>
-<li>call our interpreter to get a <code class="prettyprint">Eff[NoFx, A]</code> value</li>
-<li>call a final <code class="prettyprint">run</code> to get an <code class="prettyprint">A</code> value
-<p/></li>
-</ul>
-<p>Like this:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, syntax.all._
+<p>The <code class="prettyprint">Task</code> effect is a thin shim on top of Monix’s <code class="prettyprint">Task</code>. This effect is not bundled in core Eff and requires the <code class="prettyprint">eff-monix</code> extension to use.</p>
+<p>Now, let’s create some <code class="prettyprint">Task</code> effects:</p>
+<pre><code class="prettyprint">import org.atnos.eff._
+import org.atnos.eff.addon.monix.task._
+import org.atnos.eff.syntax.addon.monix.task._
 
-// run the program with the unsafe interpreter
-runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run</code></pre>
-<p><code class="prettyprint">&gt; Some(14)</code></p>
-<p>With the safe interpreter, the process is the same and we need to</p>
-<ul>
-<li>specify an effect stack definition with all the effects</li>
-<li>call our “safe” interpreter</li>
-<li>call interpreters for all the other effects, including the final <code class="prettyprint">NoFx</code> effect with <code class="prettyprint">run</code>
-<p/></li>
-</ul>
-<p>Like that:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, syntax.all._
-import cats._, data._
+import monix.eval.Task
 
-// run the program with the safe interpreter
-type Stack = Fx.fx4[KVStore, Throwable Either ?, State[Map[String, Any], ?], Writer[String, ?]]
+type R = Fx.fx2[Task, Option]
 
-val (result, logs) =
-  runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
+val action: Eff[R, Int] =
+  for {
+  // create a value now
+    a &lt;- Eff.pure[R, Int](1)
 
-(result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
-<pre><code class="prettyprint">&gt; Right(Some(14))
-put(wild-cats, 2)
-get(wild-cats)
-put(wild-cats, 14)
-put(tame-cats, 5)
-get(wild-cats)
-delete(tame-cats)</code></pre>
-<h3 id="add-some-syntax">Add some syntax</h3>
-<p>It is nice to be able to “chain” <code class="prettyprint">run</code> methods with this additional piece of syntax:</p>
-<pre><code class="prettyprint">implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
-  def runStore[U](implicit m: Member.Aux[KVStore, R, U],
-                  throwable:_throwableEither[U],
-                  writer:_writerString[U],
-                  state:_stateMap[U]): Eff[U, A] =
-    runKVStore(effects)
-}
+    // evaluate a value later, on the thread pool specified by a Monix `Scheduler`, and continue when it&#39;s finished
+    b &lt;- taskDelay[R, Int](1)
+  } yield b
 
-val (result, logs) =
-  program[Stack].runStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
+</code></pre>
+<p>Then we need to pass a Monix <code class="prettyprint">Scheduler</code> in to begin the computation.</p>
+<pre><code class="prettyprint">
+implicit val scheduler = monix.execution.Scheduler(
+  java.util.concurrent.Executors.newScheduledThreadPool(10))
 
-(result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
-<pre><code class="prettyprint">&gt; Right(Some(14))
-put(wild-cats, 2)
-get(wild-cats)
-put(wild-cats, 14)
-put(tame-cats, 5)
-get(wild-cats)
-delete(tame-cats)</code></pre>
-<h3 id="composing-adts-with-the-eff-monad">Composing ADTs with the Eff monad</h3>
-<p>Real world applications often time combine different algebras. The typelevel set of effects <code class="prettyprint">R</code> in <code class="prettyprint">Eff[R, A]</code> lets us compose different algebras in the context of <code class="prettyprint">Eff</code>.</p>
-<p>Let’s see a trivial example of unrelated ADT’s getting composed that can form a more complex program. First you define your ADTs with smart constructors:<code class="prettyprint">no file found at ../jvm/src/test/scala/org/atnos/site/snippets/tutorial/UserInteractionSnippet.scala</code></p>
-<p>Then you simply require your program to have <code class="prettyprint">MemberIn</code> instances for those effects:<code class="prettyprint">no file found at ../jvm/src/test/scala/org/atnos/site/snippets/tutorial/UserInteractionProgramSnippet.scala</code></p>
-<p>Finally we write one interpreter per ADT:<code class="prettyprint">no file found at ../jvm/src/test/scala/org/atnos/site/snippets/tutorial/UserInteractionInterpretersSnippet.scala</code></p>
-<p>Now if we run our program for a Stack combining both effects and type in “snuggles” when prompted, we see something like this:</p>
-<pre><code class="prettyprint">type Stack = Fx.fx2[Interact, DataOp]
+</code></pre>
+<p>Monix doesn’t natively offer an Await API to block on a Task result. Instead it advises converting to a Scala <code class="prettyprint">Future</code> and using <code class="prettyprint">Await.result</code>. See https://monix.io/docs/2x/eval/task.html#blocking-for-a-result</p>
+<pre><code class="prettyprint">import scala.concurrent.Await
 
-runInteract(runDataOp(program[Stack]))</code></pre>
-<pre><code class="prettyprint">What&#39;s the kitty&#39;s name?
-Current cats: snuggles</code></pre>
+Await.result(action.runOption.runAsync.runAsync, 1 second)</code></pre>
+<p><code class="prettyprint">&gt; Some(1)</code></p>
 </div>
 
 <script>
