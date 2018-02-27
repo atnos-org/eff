@@ -1,0 +1,17 @@
+Maintenance version
+
+### Improvements
+
+This library upgrades `cats-effect` to `0.9.0` but also provides
+ 
+  1. less restrictive implicit instances for `Async[Eff[R, ?]]` when `R` contains `cats.effect.IO` or `io.monix.Task` effects
+  
+  2. 2 instances for `Effect[Eff[R, ?]]` when `R` contains `cats.effect.IO` or `io.monix.Task` effects.
+    Those instances can only be used if there is a way to transform `Eff[R, ?]` into `cats.effect.IO` (respectively `io.monix.Task`)
+    
+Previously the `Async` instances were only define through the `Effect` instances in point 2, because `Effect` extends `Async`.
+Now the `Async` instances are implicits and the `Effect` instances are explicit (no `implicit` keyword).     
+
+ 
+
+

@@ -15,7 +15,7 @@ lazy val specs2Version      = "4.0.2"
 lazy val twitterUtilVersion = "17.11.0"
 lazy val catbirdVersion     = "0.21.0"
 lazy val doobieVersion      = "0.5.0"
-lazy val catsEffectVersion  = "0.8"
+lazy val catsEffectVersion  = "0.9"
 lazy val fs2Version         = "0.10.2"
 
 lazy val eff = project.in(file("."))

@@ -10,29 +10,34 @@ import org.atnos.eff.Eff
 
 object effect {
 
-  implicit final def toIOOps[R, A](e: Eff[R, A]): IOOps[R, A] = new IOOps[R, A](e)
+  implicit final def toIOOps[A](e: Eff[Fx1[IO], A]): IOOps[A] = new IOOps[A](e)
+  implicit final def toIOOps2[R, A](e: Eff[R, A]): IOOps2[R, A] = new IOOps2[R, A](e)
 
 }
 
-final class IOOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class IOOps[A](val e: Eff[Fx1[IO], A]) extends AnyVal {
 
-  def runAsync(cb: Either[Throwable, A] => IO[Unit])(implicit m: Member.Aux[IO, R, NoFx]): IO[Unit] =
+  def runAsync(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
     IOEffect.runAsync(e)(cb)
 
-  def unsafeRunAsync(cb: Either[Throwable, A] => Unit)(implicit m: Member.Aux[IO, R, NoFx]): Unit =
+  def unsafeRunAsync(cb: Either[Throwable, A] => Unit): Unit =
     IOEffect.unsafeRunAsync(e)(cb)
 
-  def unsafeRunSync(implicit m: Member.Aux[IO, R, NoFx]): A =
+  def unsafeRunSync: A =
     IOEffect.unsafeRunSync(e)
 
-  def unsafeRunTimed(limit: Duration)(implicit m: Member.Aux[IO, R, NoFx]): Option[A] =
+  def unsafeRunTimed(limit: Duration): Option[A] =
     IOEffect.unsafeRunTimed(e, limit)
 
-  def unsafeToFuture(implicit m: Member.Aux[IO, R, NoFx]): Future[A] =
+  def unsafeToFuture: Future[A] =
     IOEffect.unsafeToFuture(e)
 
-  def to[F[_]](implicit f: Async[F], m: Member.Aux[IO, R, NoFx]): F[A] =
+  def to[F[_]](implicit f: Async[F]): F[A] =
     IOEffect.to(e)
+
+}
+
+final class IOOps2[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def ioAttempt(implicit m: MemberInOut[IO, R]): Eff[R, Throwable Either A] =
     IOEffect.ioAttempt(e)

@@ -1,7 +1,6 @@
 package org.atnos.eff.addon.cats.effect
 
 import cats.effect.{Async, IO}
-import IO._
 import cats.~>
 import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
@@ -45,23 +44,23 @@ trait IOEffectCreation extends IOTypes {
 
 trait IOInterpretation extends IOTypes {
 
-  def runAsync[R, A](e: Eff[R, A])(cb: Either[Throwable, A] => IO[Unit])(implicit m: Member.Aux[IO, R, NoFx]): IO[Unit] =
+  def runAsync[A](e: Eff[Fx1[IO], A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
     Eff.detach(e).runAsync(cb)
 
-  def unsafeRunAsync[R, A](e: Eff[R, A])(cb: Either[Throwable, A] => Unit)(implicit m: Member.Aux[IO, R, NoFx]): Unit =
+  def unsafeRunAsync[A](e: Eff[Fx1[IO], A])(cb: Either[Throwable, A] => Unit): Unit =
     Eff.detach(e).unsafeRunAsync(cb)
 
-  def unsafeRunSync[R, A](e: Eff[R, A])(implicit m: Member.Aux[IO, R, NoFx]): A =
+  def unsafeRunSync[A](e: Eff[Fx1[IO], A]): A =
     Eff.detach(e).unsafeRunSync
 
-  def unsafeRunTimed[R, A](e: Eff[R, A], limit: Duration)(implicit m: Member.Aux[IO, R, NoFx]): Option[A] =
+  def unsafeRunTimed[A](e: Eff[Fx1[IO], A], limit: Duration): Option[A] =
     Eff.detach(e).unsafeRunTimed(limit)
 
-  def unsafeToFuture[R, A](e: Eff[R, A])(implicit m: Member.Aux[IO, R, NoFx]): Future[A] =
+  def unsafeToFuture[A](e: Eff[Fx1[IO], A]): Future[A] =
     Eff.detach(e).unsafeToFuture
 
-  def to[R, F[_], A](e: Eff[R, A])(implicit f: Async[F], m: Member.Aux[IO, R, NoFx]): F[A] =
-    Eff.detach[IO, R, A, Throwable](e).to[F]
+  def to[F[_], A](e: Eff[Fx1[IO], A])(implicit f: Async[F]): F[A] =
+    Eff.detach[IO, Fx1[IO], A, Throwable](e).to[F]
 
   import interpret.of
 
@@ -76,12 +75,9 @@ trait IOInterpretation extends IOTypes {
   }
 }
 
-trait IOInstances extends IOTypes {
+trait IOInstances extends IOTypes { outer =>
 
-  implicit def effectInstance[R :_Io](implicit runIO: Eff[R, Unit] => IO[Unit]): cats.effect.Effect[Eff[R, ?]] = new cats.effect.Effect[Eff[R, ?]] {
-
-    def runAsync[A](fa: Eff[R, A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
-      runIO(ioAttempt(fa).flatMap(r => fromIO(cb(r))))
+  implicit def asyncInstance[R :_Io]: cats.effect.Async[Eff[R, ?]] = new cats.effect.Async[Eff[R, ?]] {
 
     def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
       fromIO(IO.async(k))
@@ -97,6 +93,35 @@ trait IOInstances extends IOTypes {
         case Left(t)  => f(t)
         case Right(a) => Eff.pure(a)
       }
+
+    def pure[A](a: A): Eff[R,A] =
+      Eff.pure(a)
+
+    def flatMap[A, B](fa: Eff[R,A])(f: A =>Eff[R, B]): Eff[R, B] =
+      fa.flatMap(f)
+
+    def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
+      Eff.EffMonad[R].tailRecM(a)(f)
+  }
+
+
+  def effectInstance[R :_Io](implicit runIO: Eff[R, Unit] => IO[Unit]): cats.effect.Effect[Eff[R, ?]] = new cats.effect.Effect[Eff[R, ?]] {
+    private val asyncInstance = outer.asyncInstance
+
+    def runAsync[A](fa: Eff[R, A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
+      runIO(ioAttempt(fa).flatMap(r => fromIO(cb(r))))
+
+    def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
+      asyncInstance.async(k)
+
+    def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
+      asyncInstance.suspend(thunk)
+
+    def raiseError[A](e: Throwable): Eff[R, A] =
+      asyncInstance.raiseError(e)
+
+    def handleErrorWith[A](fa: Eff[R, A])(f: Throwable => Eff[R, A]): Eff[R, A] =
+      asyncInstance.handleErrorWith(fa)(f)
 
     def pure[A](a: A): Eff[R,A] =
       Eff.pure(a)

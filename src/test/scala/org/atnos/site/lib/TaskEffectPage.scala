@@ -3,7 +3,6 @@ package lib
 
 import org.atnos.eff.syntax.all._
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object TaskEffectPage extends UserGuidePage { def is = "Task".title ^ s2"""
