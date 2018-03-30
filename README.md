@@ -27,13 +27,12 @@ libraryDependencies += "org.atnos" %% "eff" % "4.5.0"
 // to write types like Reader[String, ?]
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 
-// to get types like Reader[String, ?] (with more than one type parameter) correctly inferred for scala 2.11 < 2.11.9
-// you can use the [Typelevel Scala compiler](http://typelevel.org/scala)
-scalaOrganization in ThisBuild := "org.typelevel"
-
-// to get types like Reader[String, ?] (with more than one type parameter) correctly inferred for scala 2.12.x
+// to get types like Reader[String, ?] (with more than one type parameter) correctly inferred for scala 2.11.11+ and 2.12.x
 scalacOptions += "-Ypartial-unification"
 
+// to get types like Reader[String, ?] (with more than one type parameter) correctly inferred for scala 2.11.9 and before
+// you can use the [Typelevel Scala compiler](http://typelevel.org/scala)
+scalaOrganization in ThisBuild := "org.typelevel"
 ```
 
 # Contributing
