@@ -219,7 +219,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
 
     def both: Eff[S1, Int] = for {
       _ <- setString[S1]
-      s <- readSize[S0].transform(readerToState)(m1, m2)
+      s <- readSize[S0].transform(readerToState)
     } yield s
 
     both.runState("universe").runOption.run ==== Option((5, "hello"))

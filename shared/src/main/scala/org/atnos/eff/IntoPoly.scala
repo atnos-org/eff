@@ -55,6 +55,11 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
       }
     }
 
+
+}
+
+trait IntoPolyLower2  extends IntoPolyLower3 {
+
   implicit def intoSelf[R]: IntoPoly[R, R] =
     new IntoPoly[R, R] {
       val unionInto: UnionInto[R, R] =
@@ -63,10 +68,6 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
             union
         }
     }
-
-}
-
-trait IntoPolyLower2  extends IntoPolyLower3 {
 
   implicit def intoAppendL2L[T1[_], T2[_], R]: IntoPoly[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] =
     new IntoPoly[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] {

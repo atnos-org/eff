@@ -102,9 +102,11 @@ trait EitherInterpretation {
    *
    * This changes the stack of the Eff computation
    */
-  def zoomEither[SR, BR, U, E1, E2, A](r: Eff[SR, A], getter: E1 => E2)(implicit sr: Member.Aux[E1 Either ?, SR, U],
-                                                                                 br: Member.Aux[E2 Either ?, BR, U]): Eff[BR, A] =
-    transform[SR, BR, U, E1 Either ?, E2 Either ?, A](r,
+  def zoomEither[SR, BR, U1, U2, E1, E2, A](r: Eff[SR, A], getter: E1 => E2)(
+    implicit sr: Member.Aux[E1 Either ?, SR, U1],
+             br: Member.Aux[E2 Either ?, BR, U2],
+             into: IntoPoly[U1, U2]): Eff[BR, A] =
+    transform[SR, BR, U1, U2, E1 Either ?, E2 Either ?, A](r,
       new ~>[E1 Either ?, E2 Either ?] {
         def apply[X](r: E1 Either X): E2 Either X =
           r.leftMap(getter)

@@ -167,10 +167,11 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    * Lift a computation over a "small" error (for a subsystem) into
    * a computation over a "bigger" error (for the full application)
    */
-  def localError[SR, BR, U, F1, F2, A](r: Eff[SR, A], getter: F1 => F2)
-                                     (implicit sr: Member.Aux[Evaluate[F1, ?], SR, U],
-                                      br: Member.Aux[Evaluate[F2, ?], BR, U]): Eff[BR, A] =
-    transform[SR, BR, U, Evaluate[F1, ?], Evaluate[F2, ?], A](r,
+  def localError[SR, BR, U1, U2, F1, F2, A](r: Eff[SR, A], getter: F1 => F2)
+                                           (implicit sr: Member.Aux[Evaluate[F1, ?], SR, U1],
+                                                     br: Member.Aux[Evaluate[F2, ?], BR, U2],
+                                                     into: IntoPoly[U1, U2]): Eff[BR, A] =
+    transform[SR, BR, U1, U2, Evaluate[F1, ?], Evaluate[F2, ?], A](r,
       new ~>[Evaluate[F1, ?], Evaluate[F2, ?]] {
       def apply[X](r: Evaluate[F1, X]): Evaluate[F2, X] =
         Evaluate(r.run.leftMap(e => catsSyntaxEither(e).map(getter)))

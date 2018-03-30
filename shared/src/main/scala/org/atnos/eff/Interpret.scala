@@ -104,8 +104,10 @@ trait Interpret {
    * transform an effect into another one
    * using a natural transformation, leaving the rest of the stack untouched
    */
-  def transform[SR, BR, U, TS[_], TB[_], A](effect: Eff[SR, A], nat: TS ~> TB)
-                                               (implicit sr: Member.Aux[TS, SR, U], br: Member.Aux[TB, BR, U]): Eff[BR, A] = {
+  def transform[SR, BR, U1, U2, TS[_], TB[_], A](effect: Eff[SR, A], nat: TS ~> TB)
+                                               (implicit sr: Member.Aux[TS, SR, U1],
+                                                         br: Member.Aux[TB, BR, U2],
+                                                         into: IntoPoly[U1, U2]): Eff[BR, A] = {
     val m: Member.Aux[TS, SR, BR] = new Member[TS, SR] {
      type Out = BR
 
@@ -118,7 +120,7 @@ trait Interpret {
       def project[V](union: Union[SR, V]): Union[Out, V] Either TS[V] =
         sr.project(union) match {
           case Right(u) => Right(u)
-          case Left(o)  => Left(br.accept(o))
+          case Left(o)  => Left(br.accept(into.unionInto(o)))
         }
 
     }

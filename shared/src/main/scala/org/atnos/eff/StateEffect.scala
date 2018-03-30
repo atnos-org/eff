@@ -116,8 +116,19 @@ trait StateInterpretation {
    * a computation over a "bigger" state (for the full application state)
    */
   def lensState[TS, SS, U, T, S, A](state: Eff[TS, A], getter: S => T, setter: (S, T) => S)
-                                   (implicit ts: Member.Aux[State[T, ?], TS, U], ss: Member.Aux[State[S, ?], SS, U]): Eff[SS, A] =
-    Interpret.transform[TS, SS, U, State[T, ?], State[S, ?], A](state, new ~>[State[T, ?], State[S, ?]] {
+                                        (implicit ts: Member.Aux[State[T, ?], TS, U],
+                                                  ss: Member.Aux[State[S, ?], SS, U]): Eff[SS, A] =
+    intoState(state, getter, setter)
+
+  /**
+   * General lifting of a state effect into another
+   * from one stack to another. This will require a type annotation
+   */
+  def intoState[TS, SS, U1, U2, T, S, A](state: Eff[TS, A], getter: S => T, setter: (S, T) => S)
+                                        (implicit ts: Member.Aux[State[T, ?], TS, U1],
+                                                  ss: Member.Aux[State[S, ?], SS, U2],
+                                                  into: IntoPoly[U1, U2]): Eff[SS, A] =
+    Interpret.transform[TS, SS, U1, U2, State[T, ?], State[S, ?], A](state, new ~>[State[T, ?], State[S, ?]] {
       def apply[X](tstate: State[T, X]): State[S, X] =
         State { s: S =>
           val (t, x) = tstate.run(getter(s)).value

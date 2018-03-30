@@ -16,6 +16,9 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
    provided there is a "lens" (a getter and a setter) from T to S $lensedState
    with an implicit conversion                                    $stateImplicitLens
 
+   Also from a stack to another
+   provided there is a "lens" and an IntoPoly instance from one stack to another $stateIntoAnother
+
  The Eff monad is stack safe with State $stacksafeState
 
 """
@@ -76,9 +79,29 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val getter = (pair: (Int, Int)) => pair._2
     val setter = (pair: (Int, Int), j: Int) => (pair._1, j)
 
-    val lensed = lensState(action, getter, setter)
+    val lensed = action.lensState(getter, setter)
 
     lensed.runOption.runState((20, 30)).run ==== ((Some("hello"), (20, 12)))
+  }
+
+  def stateIntoAnother = {
+    type StateIntPair[A] = State[(Int, Int), A]
+    type TS = Fx.fx2[StateInt, Option]
+    type BR = Fx.fx3[StateIntPair, Option, Writer[String, ?]]
+
+    val action: Eff[TS, String] =
+      for {
+        _ <- put[TS, Int](10)
+        h <- OptionEffect.some[TS, String]("hello")
+        _ <- modify[TS, Int](_ + 2)
+      } yield h
+
+    val getter = (pair: (Int, Int)) => pair._2
+    val setter = (pair: (Int, Int), j: Int) => (pair._1, j)
+
+    val lensed: Eff[BR, String] = action.intoState(getter, setter)
+
+    lensed.runOption.runWriterNoLog.runState((20, 30)).run ==== ((Some("hello"), (20, 12)))
   }
 
   def stateImplicitLens = {
