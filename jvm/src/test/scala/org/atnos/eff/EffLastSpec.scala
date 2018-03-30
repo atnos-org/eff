@@ -82,7 +82,7 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
 
     val action =
       (protect[S, Int](1) >>
-       thenFinally(leftE[S, String, Int]("Error"), protect[S, Unit](i = 1))).
+       thenFinally(leftE[S, String, Int]("Error"), protect[S, Unit]({i = 1}))).
         map(i => i)
 
     action.execSafe.runEither.run

@@ -63,7 +63,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
 
   def attempt2 = {
     var evaluated = false
-    protect[S, Unit](evaluated = true).attempt
+    protect[S, Unit]({evaluated = true}).attempt
     evaluated must beFalse
   }
 

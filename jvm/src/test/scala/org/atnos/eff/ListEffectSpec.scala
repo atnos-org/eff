@@ -31,7 +31,7 @@ class ListEffectSpec extends Specification { def is = s2"""
 
   def emptyList = {
     def action[R :_list]: Eff[R, Int] =
-      (fromList((1 to 0).toList) |@| fromList((1 to 0).toList)).map(_ + _)
+      (fromList((1 to 0).toList), fromList((1 to 0).toList)).mapN(_ + _)
 
     action[L].runList.run ==== List()
   }
