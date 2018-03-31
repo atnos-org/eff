@@ -6,18 +6,18 @@ Extensible effects are an alternative to monad transformers for computing with e
 This library is based on the "free-er" monad and an "open union" of effects described by
 Oleg Kiselyov in [Freer monads, more extensible effects](http://okmij.org/ftp/Haskell/extensible/more.pdf).
 
-You can learn more in the following sections:
+You can learn more in the following sections, it is recommended to read them in order if you are new to `eff`:
 
- - ${"installation and imports" ~ Installation}
- - ${"your first effects" ~ Introduction}
- - ${"standard effects in eff" ~ OutOfTheBox}: `Reader`, `Writer`, `Eval`, `State`,...
- - ${"tutorial" ~ Tutorial}
- - ${"create your own effects" ~ CreateEffects}
- - ${"interpret and manipulate effect stacks" ~ TransformStack}
- - ${"use Member implicits" ~ MemberImplicits }
- - ${"use an applicative evaluation" ~ ApplicativeEvaluation}
- - ${"tips and tricks" ~ Cookbook}
- - ${"community resources" ~ CommunityResources}
+ 1. ${"installation and imports" ~ Installation}
+ 1. ${"your first effects" ~ Introduction}
+ 1. ${"standard effects in eff" ~ OutOfTheBox}: `Reader`, `Writer`, `Eval`, `State`,...
+ 1. ${"tutorial" ~ Tutorial}
+ 1. ${"create your own effects" ~ CreateEffects}
+ 1. ${"interpret and manipulate effect stacks" ~ TransformStack}
+ 1. ${"use Member implicits" ~ MemberImplicits }
+ 1. ${"use an applicative evaluation" ~ ApplicativeEvaluation}
+ 1. ${"tips and tricks" ~ Cookbook}
+ 1. ${"community resources" ~ CommunityResources}
 
 ### Contributing
 
