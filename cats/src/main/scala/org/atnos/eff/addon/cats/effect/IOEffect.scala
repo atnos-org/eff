@@ -26,19 +26,19 @@ trait IOEffectCreation extends IOTypes {
     io.send[R]
 
   final def ioRaiseError[R :_io, A](t: Throwable): Eff[R, A] =
-    IO.ioEffect.raiseError(t).send[R]
+    IO.raiseError(t).send[R]
 
   final def ioDelay[R :_io, A](io: =>A): Eff[R, A] =
-    IO.ioEffect.delay(io).send[R]
+    IO(io).send[R]
 
   final def ioFork[R :_io, A](io: =>A)(implicit ec: ExecutionContext): Eff[R, A] =
     ioShift >> ioDelay(io)
 
   final def ioSuspend[R :_io, A](io: =>IO[Eff[R, A]]): Eff[R, A] =
-    IO.ioEffect.suspend(io).send[R].flatten
+    IO.suspend(io).send[R].flatten
 
   final def ioShift[R :_io](implicit ec: ExecutionContext): Eff[R, Unit] =
-    IO.ioEffect.shift(ec).send[R]
+    IO.shift(ec).send[R]
 
 }
 

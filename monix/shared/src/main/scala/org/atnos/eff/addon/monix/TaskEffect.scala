@@ -31,10 +31,10 @@ trait TaskCreation extends TaskTypes {
     fromTask(Task.delay(call), timeout)
 
   final def taskForkScheduler[R :_task, A](call: Task[A], scheduler: Scheduler, timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    fromTask(Task.fork(call, scheduler), timeout)
+    fromTask(call.executeOn(scheduler), timeout)
 
   final def taskFork[R :_task, A](call: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    fromTask(Task.fork(call), timeout)
+    fromTask(call.executeAsync, timeout)
 
   final def asyncBoundary[R :_task]: Eff[R, Unit] =
     fromTask(forkedUnit)
@@ -43,7 +43,7 @@ trait TaskCreation extends TaskTypes {
     fromTask(forkedUnit.executeOn(s))
 
   private val forkedUnit: Task[Unit] =
-    Task.fork(Task.unit)
+    Task.unit.executeAsync
 
   final def taskAsync[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                    timeout: Option[FiniteDuration] = None): Eff[R, A] = {
@@ -68,8 +68,19 @@ trait TaskInterpretation extends TaskTypes {
   private val monixTaskMonad: MonadError[Task, Throwable] =
     MonadError[Task, Throwable]
 
-  private val monixTaskApplicative : Applicative[Task] =
-    Task.catsParallel.applicative
+  private val monixTaskApplicative = new Applicative[Task] {
+    override def ap[A, B](ff: Task[(A) => B])(fa: Task[A]): Task[B] = Task.mapBoth(ff, fa)(_ (_))
+
+    override def map2[A, B, Z](fa: Task[A], fb: Task[B])(f: (A, B) => Z): Task[Z] = Task.mapBoth(fa, fb)(f)
+
+    override def product[A, B](fa: Task[A], fb: Task[B]): Task[(A, B)] = Task.mapBoth(fa, fb)((_, _))
+
+    override def pure[A](a: A): Task[A] = Task.now(a)
+
+    override val unit: Task[Unit] = Task.now(())
+
+    override def map[A, B](fa: Task[A])(f: (A) => B): Task[B] = fa.map(f)
+  }
 
   def runAsync[R, A](e: Eff[R, A])(implicit m: Member.Aux[Task, R, NoFx]): Task[A] =
     Eff.detachA(e)(monixTaskMonad, monixTaskApplicative, m)
@@ -90,7 +101,7 @@ trait TaskInterpretation extends TaskTypes {
     interpret.interceptNat[R, Task, A](e)(
       new (Task ~> Task) {
         def apply[X](fa: Task[X]): Task[X] =
-          Task.fork(fa)
+          fa.executeAsync
       })
 
   /** memoize the task result using a cache */
@@ -130,7 +141,7 @@ trait TaskInterpretation extends TaskTypes {
 
   implicit val taskSequenceCached: SequenceCached[Task] = new SequenceCached[Task] {
     def get[X](cache: Cache, key: AnyRef): Task[Option[X]] =
-      Task.fork(Task.delay(cache.get(key)))
+      Task.delay(cache.get(key)).executeAsync
 
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Task[X]): Task[X] =
       cache.memo((key, sequenceKey), tx.memoize)
