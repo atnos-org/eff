@@ -11,3 +11,9 @@ sbt> cd eff
 sbt> +publishSigned
 sbt> sonatypeReleaseAll
 ```
+
+# Running the benchmarks
+
+```
+test:run
+```
