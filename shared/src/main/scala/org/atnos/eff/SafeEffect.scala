@@ -214,7 +214,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
    * Execute a second action if the first one is not successful, based on the error
    */
   def catchThrowable[R, A, B](action: Eff[R, A], pureValue: A => B, onThrowable: Throwable => Eff[R, B])(implicit m: Safe /= R): Eff[R, B] =
-    recoverThrowable[R, A, B](action, pureValue, PartialFunction(onThrowable))
+    recoverThrowable[R, A, B](action, pureValue, {case t => onThrowable(t)})
 
   /**
    * evaluate first action possibly having error effects

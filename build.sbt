@@ -91,7 +91,7 @@ lazy val scoverageSettings = Seq(
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.5",
   crossScalaVersions := Seq("2.11.11", scalaVersion.value)
 )
 
