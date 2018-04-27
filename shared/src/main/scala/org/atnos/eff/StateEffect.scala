@@ -36,6 +36,14 @@ trait StateCreation {
   def modify[R, S](f: S => S)(implicit member: State[S, ?] |= R): Eff[R, Unit] =
     send[State[S, ?], R, Unit](State.modify(f))
 
+  /** `modifyS.using` is a `modify` variant that often enables better type inference for the modify function `f`
+    * (when used in an effect stack with a single state effect).
+    *
+    * It does this by capturing the type params `R` and `S` before receiving the `f: S => S` parameter.  */
+  def modifyS[R, S](implicit member: State[S, ?] |= R) = new {
+    def using(f: S => S): Eff[R, Unit] = modify[R, S](f)
+  }
+
 }
 
 trait StateImplicits {
