@@ -328,7 +328,7 @@ case class Delete(key: String) extends KVStore[Unit]
 </code></pre>
 <h3 id="free-your-adt">Free your ADT</h3>
 <p>There are four basic steps to “freeing” the ADT:</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>Create smart constructors for <code class="prettyprint">KVStore[_]</code> using <code class="prettyprint">Eff.send</code></li>
 <li>Build a program out of key-value DSL operations</li>
 <li>Build an interpreter for programs of DSL operations</li>

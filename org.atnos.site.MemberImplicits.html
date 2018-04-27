@@ -299,7 +299,7 @@
 <p>Type inference with the Eff monad can be a bit tricky to get right if we want to avoid type annotations. Here are some tips to help you.</p>
 <h3 id="running-effects-with-several-type-parameters">Running effects with several type parameters</h3>
 <p>Some effects use 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. If you want to use those effects in an effect stack you need to make sure you have the following <code class="prettyprint">scalac</code> option:</p>
-<div class="sourceCode"><pre class="sourceCode scala"><code class="sourceCode scala">scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" data-line-number="1">scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></a></code></pre></div>
 <h3 id="use-context-bounds-and-type-aliases">Use context bounds and type aliases</h3>
 <p>When creating effects you can always “require” a stack containing the right effects with the <code class="prettyprint">MemberIn</code> typeclass:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
@@ -330,37 +330,37 @@ def putAndTell[R :_stateInt :_writerString](i: Int): Eff[R, Int] =
 <p>There are 3 different ways to declare that an effect is part of an effect stack with 3 typeclasses:</p>
 <table>
 <colgroup>
-<col width="16%" />
-<col width="8%" />
-<col width="29%" />
-<col width="45%" />
+<col style="width: 16%" />
+<col style="width: 7%" />
+<col style="width: 29%" />
+<col style="width: 47%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th align="left">Typeclass</th>
-<th align="left">Alias</th>
-<th align="left">Meaning</th>
-<th align="left">When to use it</th>
+<th>Typeclass</th>
+<th>Alias</th>
+<th>Meaning</th>
+<th>When to use it</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left"><code class="prettyprint">MemberIn[M, R]</code></td>
-<td align="left"><code class="prettyprint">M |= R</code></td>
-<td align="left">“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>”</td>
-<td align="left">to create <code class="prettyprint">M</code> effects in <code class="prettyprint">R</code></td>
+<td><code class="prettyprint">MemberIn[M, R]</code></td>
+<td><code class="prettyprint">M |= R</code></td>
+<td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>”</td>
+<td>to create <code class="prettyprint">M</code> effects in <code class="prettyprint">R</code></td>
 </tr>
 <tr class="even">
-<td align="left"><code class="prettyprint">MemberInOut[M, R]</code></td>
-<td align="left"><code class="prettyprint">M /= R</code></td>
-<td align="left">“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code> and can be extracted from it”</td>
-<td align="left">to intercept the effect <code class="prettyprint">M</code> (see <code class="prettyprint">Interpreter.scala</code>) and transform it while staying in the same stack. For example to <code class="prettyprint">handleError</code> for an Error effect</td>
+<td><code class="prettyprint">MemberInOut[M, R]</code></td>
+<td><code class="prettyprint">M /= R</code></td>
+<td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code> and can be extracted from it”</td>
+<td>to intercept the effect <code class="prettyprint">M</code> (see <code class="prettyprint">Interpreter.scala</code>) and transform it while staying in the same stack. For example to <code class="prettyprint">handleError</code> for an Error effect</td>
 </tr>
 <tr class="odd">
-<td align="left"><code class="prettyprint">Member[M, R]</code></td>
-<td align="left"><code class="prettyprint">M &lt;= R</code></td>
-<td align="left">“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>, can be extracted from it, and the resulting stack is <code class="prettyprint">m.Out</code>”</td>
-<td align="left">to interpret the effect in terms of special values or other effects and remove the effect from the stack</td>
+<td><code class="prettyprint">Member[M, R]</code></td>
+<td><code class="prettyprint">M &lt;= R</code></td>
+<td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>, can be extracted from it, and the resulting stack is <code class="prettyprint">m.Out</code>”</td>
+<td>to interpret the effect in terms of special values or other effects and remove the effect from the stack</td>
 </tr>
 </tbody>
 </table>

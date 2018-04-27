@@ -351,7 +351,7 @@ def program[R :_readerInt :_writerString :_eval]: Eff[R, Int] = for {
 program[Stack].runReader(6).runWriter.runEval.run</code></pre>
 <p><code class="prettyprint">&gt; (64,List(the required power is 6, the result is 64))</code></p>
 <p>As you can see, all the effects of the <code class="prettyprint">Stack</code> type are being executed one by one:</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>the <code class="prettyprint">Reader</code> effect, which provides a value, <code class="prettyprint">6</code>, to each computation needing it</li>
 <li>the <code class="prettyprint">Writer</code> effect, which logs messages</li>
 <li>the <code class="prettyprint">Eval</code> effect to compute the “power of 2 computation”</li>
