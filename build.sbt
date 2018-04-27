@@ -11,7 +11,7 @@ import org.scalajs.jsenv.nodejs._
 lazy val catsVersion        = "1.0.1"
 lazy val monixVersion       = "3.0.0-RC1"
 lazy val scalazVersion      = "7.2.7"
-lazy val specs2Version      = "4.0.2"
+lazy val specs2Version      = "4.1.0"
 lazy val twitterUtilVersion = "17.11.0"
 lazy val catbirdVersion     = "0.21.0"
 lazy val doobieVersion      = "0.5.0"
