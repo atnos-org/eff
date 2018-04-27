@@ -1,0 +1,16 @@
+Maintenance version
+
+### Improvements
+
+ - upgraded `monix` to `3.0.0-RC1` (#135) (by @benhutchison)
+ - upgraded `cats-effect` to `0.10.1` (#135) (by @benhutchison)
+ - compile with Scala `2.12.5` (#137) (by @benhutchison)
+ - moved the benchmarks so that `eff` can be included in community builds
+ - updated the readme version, added maven badge (#132) (by @benhutchison)
+ - emphasized `-Ypartial-unification` flag in install docs (#131) (by @benhutchison)
+ - the reading order of the documentation for newcomers is more explicit
+ - added a more general method for transforming a state effect into another one possibly in a bigger stack. This will generally require a type annotation
+
+
+
+
