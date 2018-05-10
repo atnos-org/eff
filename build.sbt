@@ -8,12 +8,12 @@ import Defaults.{defaultTestTasks, testTaskOptions}
 import sbtrelease._
 import org.scalajs.jsenv.nodejs._
 
-lazy val catsVersion        = "1.0.1"
+lazy val catsVersion        = "1.1.0"
 lazy val monixVersion       = "3.0.0-RC1"
-lazy val scalazVersion      = "7.2.7"
-lazy val specs2Version      = "4.0.2"
-lazy val twitterUtilVersion = "17.11.0"
-lazy val catbirdVersion     = "0.21.0"
+lazy val scalazVersion      = "7.2.22"
+lazy val specs2Version      = "4.2.0"
+lazy val twitterUtilVersion = "18.5.0"
+lazy val catbirdVersion     = "18.5.0"
 lazy val doobieVersion      = "0.5.0"
 lazy val catsEffectVersion  = "0.10.1"
 lazy val fs2Version         = "0.10.2"
@@ -53,7 +53,7 @@ lazy val macros = project.in(file("macros"))
   .settings(moduleName := "eff-macros")
   .dependsOn(coreJVM)
   .settings(libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value)
-  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch))
+  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
   .settings(commonJvmSettings)
   .settings(effSettings:_*)
 
@@ -91,15 +91,15 @@ lazy val scoverageSettings = Seq(
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "2.12.5",
-  crossScalaVersions := Seq("2.11.11", scalaVersion.value)
+  scalaVersion := "2.12.6",
+  crossScalaVersions := Seq("2.11.12", scalaVersion.value)
 )
 
 lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val tagName = Def.setting{
@@ -329,7 +329,7 @@ lazy val specs2 = Seq(
   , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
 
 lazy val scalameter = Seq(
-  "com.storm-enroute" %% "scalameter" % "0.8.2" % "test")
+  "com.storm-enroute" %% "scalameter" % "0.9" % "test")
 
 lazy val twitterUtilCore = Seq(
   "com.twitter" %% "util-collection" % twitterUtilVersion
