@@ -14,6 +14,7 @@ lazy val fs2Version         = "0.10.2"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)
+enablePlugins(BuildInfoPlugin)
 
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
@@ -168,7 +169,7 @@ lazy val sharedPublishSettings = Seq(
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
   publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
-) ++ userGuideSettings ++ notesSettings
+) ++ userGuideSettings ++ notesSettings ++ buildInfoSettings
 
 lazy val userGuideSettings =
   Seq(
@@ -191,6 +192,11 @@ lazy val notesSettings = Seq(
   },
   // just upload the notes
   ghreleaseAssets := Seq()
+)
+
+lazy val buildInfoSettings = Seq(
+  buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+  buildInfoPackage := "org.atnos.eff"
 )
 
 lazy val warnUnusedImport = Seq(
