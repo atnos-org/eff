@@ -168,7 +168,7 @@ lazy val sharedPublishSettings = Seq(
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
   publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
-) ++ userGuideSettings
+) ++ userGuideSettings ++ notesSettings
 
 lazy val userGuideSettings =
   Seq(
