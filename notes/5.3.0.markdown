@@ -1,0 +1,10 @@
+Maintenance version
+
+### Improvements
+
+ - updated dependencies (thanks to @xuwei-k)
+ - use sbt 1.1.4
+
+
+
+

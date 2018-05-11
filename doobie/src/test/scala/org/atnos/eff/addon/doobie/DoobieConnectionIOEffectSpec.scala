@@ -1,7 +1,7 @@
 package org.atnos.eff.addon.doobie
 
 import org.specs2.Specification
-import _root_.doobie.imports._
+import doobie._, doobie.implicits._
 import cats.effect._
 import org.atnos.eff.{Eff, Fx}
 import org.atnos.eff.syntax.all._

@@ -1,11 +1,5 @@
-import com.typesafe.sbt.SbtSite.SiteKeys._
-import com.typesafe.sbt.SbtGhPages.GhPagesKeys._
-import ReleaseTransformations._
 import ScoverageSbtPlugin._
-import com.ambiata.promulgate.project.ProjectPlugin.promulgate
 import org.scalajs.sbtplugin.cross.CrossType
-import Defaults.{defaultTestTasks, testTaskOptions}
-import sbtrelease._
 import org.scalajs.jsenv.nodejs._
 
 lazy val catsVersion        = "1.1.0"
@@ -17,6 +11,9 @@ lazy val catbirdVersion     = "18.5.0"
 lazy val doobieVersion      = "0.5.0"
 lazy val catsEffectVersion  = "0.10.1"
 lazy val fs2Version         = "0.10.2"
+
+enablePlugins(GhpagesPlugin)
+enablePlugins(SitePlugin)
 
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
@@ -30,7 +27,6 @@ lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff")
   .jsSettings(commonJsSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
-  .jvmSettings(promulgate.library("org.atnos.eff", "eff"):_*)
   .jvmSettings(notesSettings:_*)
   .settings(effSettings:_*)
 
@@ -102,14 +98,9 @@ lazy val commonSettings = Seq(
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6")
 ) ++ warnUnusedImport ++ prompt
 
-lazy val tagName = Def.setting{
-  s"v${if (releaseUseGlobalVersion.value) (version in ThisBuild).value else version.value}"
-}
-
 lazy val commonJsSettings = Seq(
   scalaJSStage in Global := FastOptStage,
   parallelExecution := false,
-  requiresDOM := false,
   libraryDependencies ++= catsJs,
   jsEnv := new NodeJSEnv()
 ) ++ disableTests
@@ -147,12 +138,12 @@ lazy val publishSettings =
       </developer>
     </developers>
     )
-) ++ credentialSettings ++ sharedPublishSettings ++ sharedReleaseProcess
+) ++ credentialSettings ++ sharedPublishSettings
 
 
 lazy val noPublishSettings = Seq(
-  publish := (),
-  publishLocal := (),
+  publish := (()),
+  publishLocal := (()),
   publishArtifact := false
 )
 
@@ -173,52 +164,19 @@ lazy val commonScalacOptions = Seq(
 )
 
 lazy val sharedPublishSettings = Seq(
-  releaseCrossBuild := true,
-  releaseTagName := tagName.value,
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishMavenStyle := true,
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
   publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
-) ++ site.settings ++
-  ghpages.settings ++
-  userGuideSettings
+) ++ userGuideSettings
 
 lazy val userGuideSettings =
   Seq(
-    GhPagesKeys.ghpagesNoJekyll := false,
-    SiteKeys.siteSourceDirectory in SiteKeys.makeSite := target.value / "specs2-reports" / "site",
-    includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
+    ghpagesNoJekyll := false,
+    siteSourceDirectory in makeSite := target.value / "specs2-reports" / "site",
+    includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
     git.remoteRepo := "git@github.com:atnos-org/eff.git"
   )
-
-lazy val sharedReleaseProcess = Seq(
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies
-  , inquireVersions
-  , runTest
-  , setReleaseVersion
-  , commitReleaseVersion
-  , tagRelease
-  , generateWebsite
-  , publishSite
-  , publishArtifacts
-  , setNextVersion
-  , commitNextVersion
-  , ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
-  , pushChanges
-  )
-) ++
-  Seq(
-    releaseNextVersion := { v => Version(v).map(_.bumpBugfix.string).getOrElse(versionFormatError) },
-    releaseTagName := "EFF-" + releaseVersion.value(version.value)
-  ) ++
-  testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website"))))
-
-lazy val publishSite = ReleaseStep { st: State =>
-  val st2 = executeStepTask(makeSite, "Making the site")(st)
-  executeStepTask(pushSite, "Publishing the site")(st2)
-}
 
 lazy val notesSettings = Seq(
   ghreleaseRepoOrg := "atnos-org",
@@ -228,15 +186,12 @@ lazy val notesSettings = Seq(
   ghreleaseNotes := { tagName: TagName =>
     // find the corresponding release notes
     val notesFilePath = s"notes/${tagName.replace("EFF-", "")}.markdown"
-    try io.Source.fromFile(notesFilePath).mkString
+    try scala.io.Source.fromFile(notesFilePath).mkString
     catch { case t: Throwable => throw new Exception(s"$notesFilePath not found") }
   },
   // just upload the notes
   ghreleaseAssets := Seq()
 )
-
-lazy val generateWebsiteTask = TaskKey[Tests.Output]("generate-website", "generate the website")
-lazy val generateWebsite     = executeStepTask(generateWebsiteTask, "Generating the website", Test)
 
 lazy val warnUnusedImport = Seq(
   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
@@ -255,46 +210,6 @@ lazy val prompt = shellPrompt in ThisBuild := { state =>
   val name = Project.extract(state).currentRef.project
   (if (name == "eff") "" else name) + "> "
 }
-
-def executeTask(task: TaskKey[_], info: String) = (st: State) => {
-  st.log.info(info)
-  val extracted = Project.extract(st)
-  val ref: ProjectRef = extracted.get(thisProjectRef)
-  extracted.runTask(task in ref, st)._1
-}
-
-def executeStepTask(task: TaskKey[_], info: String, configuration: Configuration) = ReleaseStep { st: State =>
-  executeTask(task, info, configuration)(st)
-}
-
-def executeStepTask(task: TaskKey[_], info: String) = ReleaseStep { st: State =>
-  executeTask(task, info)(st)
-}
-
-def executeTask(task: TaskKey[_], info: String, configuration: Configuration) = (st: State) => {
-  st.log.info(info)
-  Project.extract(st).runTask(task in configuration, st)._1
-}
-
-def testTaskDefinition(task: TaskKey[Tests.Output], options: Seq[TestOption]) =
-  Seq(testTask(task))                          ++
-    inScope(GlobalScope)(defaultTestTasks(task)) ++
-    inConfig(Test)(testTaskOptions(task))        ++
-    (testOptions in (Test, task) ++= options)
-
-def testTask(task: TaskKey[Tests.Output]) =
-  task := Def.taskDyn {
-    Def.task(
-      Defaults.allTestGroupsTask(
-        (streams in Test).value,
-        (loadedTestFrameworks in Test).value,
-        (testLoader in Test).value,
-        (testGrouping in Test in test).value,
-        (testExecution in Test in task).value,
-        (fullClasspath in Test in test).value,
-        (javaHome in test).value
-      )).flatMap(identity)
-  }.value
 
 lazy val catsJvm = Seq(
   "org.typelevel" %% "cats-core" % catsVersion)
