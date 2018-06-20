@@ -1,6 +1,6 @@
 import ScoverageSbtPlugin._
-import org.scalajs.sbtplugin.cross.CrossType
 import org.scalajs.jsenv.nodejs._
+import sbtcrossproject.{CrossType, crossProject}
 
 lazy val catsVersion        = "1.1.0"
 lazy val monixVersion       = "3.0.0-RC1"
@@ -24,7 +24,7 @@ lazy val eff = project.in(file("."))
   .aggregate(coreJVM, coreJS, doobie, cats, macros, monixJVM, monixJS, scalaz, twitter)
   .dependsOn(coreJVM % "test->test;compile->compile", coreJS, doobie, cats, macros, monixJVM, monixJS, scalaz, twitter)
 
-lazy val core = crossProject.crossType(CrossType.Full).in(file("."))
+lazy val core = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff")
   .jsSettings(commonJsSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
@@ -54,13 +54,13 @@ lazy val macros = project.in(file("macros"))
   .settings(commonJvmSettings)
   .settings(effSettings:_*)
 
-lazy val monix = crossProject.crossType(CrossType.Full).in(file("monix"))
+lazy val monix = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Full).in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core)
   .settings(libraryDependencies ++= monixLib)
   .settings(effSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
-  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= monixJs):_*)
+  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= monixJs.value):_*)
 
 lazy val monixJVM = monix.jvm
 lazy val monixJS =  monix.js
@@ -102,7 +102,7 @@ lazy val commonSettings = Seq(
 lazy val commonJsSettings = Seq(
   scalaJSStage in Global := FastOptStage,
   parallelExecution := false,
-  libraryDependencies ++= catsJs,
+  libraryDependencies ++= catsJs.value,
   jsEnv := new NodeJSEnv()
 ) ++ disableTests
 
@@ -220,8 +220,8 @@ lazy val prompt = shellPrompt in ThisBuild := { state =>
 lazy val catsJvm = Seq(
   "org.typelevel" %% "cats-core" % catsVersion)
 
-lazy val catsJs = Seq(
-  "org.typelevel" %%%! "cats-core" % catsVersion)
+lazy val catsJs = Def.setting(Seq(
+  "org.typelevel" %%% "cats-core" % catsVersion))
 
 lazy val doobieJvm = Seq(
   "org.tpolecat" %% "doobie-core" % doobieVersion,
@@ -233,8 +233,8 @@ lazy val catsEffectJvm = Seq(
 lazy val monixLib = Seq(
   "io.monix" %% "monix" % monixVersion)
 
-lazy val monixJs = Seq(
-  "io.monix" %%%! "monix" % monixVersion)
+lazy val monixJs = Def.setting(Seq(
+  "io.monix" %%% "monix" % monixVersion))
 
 lazy val scalazConcurrent = Seq(
   "org.scalaz" %% "scalaz-concurrent" % scalazVersion)
