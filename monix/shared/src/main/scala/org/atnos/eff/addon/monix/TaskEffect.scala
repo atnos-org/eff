@@ -77,7 +77,7 @@ trait TaskInterpretation extends TaskTypes {
 
     override def pure[A](a: A): Task[A] = Task.now(a)
 
-    override val unit: Task[Unit] = Task.now(())
+    override val unit: Task[Unit] = Task.unit
 
     override def map[A, B](fa: Task[A])(f: (A) => B): Task[B] = fa.map(f)
   }
