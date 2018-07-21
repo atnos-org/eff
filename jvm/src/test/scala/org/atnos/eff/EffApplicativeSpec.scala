@@ -40,7 +40,7 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
 
     val action1: Eff[S, Unit] =
       OptionEffect.some[S, Int](1) >>
-      futureDelay[S, Unit](messages.append("action1"))
+      futureDelay[S, Unit] { Thread.sleep(200); messages.append("action1") }
 
     val action2: Eff[S, Int] =
       OptionEffect.some[S, Int](2) >>
