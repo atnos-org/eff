@@ -45,7 +45,7 @@ lazy val catsEffect = crossProject.crossType(CrossType.Full).in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(core)
   .settings(libraryDependencies ++= catsEffectJvm)
-  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= catsEffectJs):_*)
+  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= catsEffectJs.value):_*)
   .jvmSettings(commonJvmSettings:_*)
   .settings(effSettings:_*)
 
@@ -236,8 +236,8 @@ lazy val doobieJvm = Seq(
 lazy val catsEffectJvm = Seq(
   "org.typelevel" %% "cats-effect" % catsEffectVersion)
 
-lazy val catsEffectJs = Seq(
-  "org.typelevel" %%%! "cats-effect" % catsEffectVersion)
+lazy val catsEffectJs = Def.setting(Seq(
+  "org.typelevel" %%% "cats-effect" % catsEffectVersion))
 
 lazy val monixLib = Seq(
   "io.monix" %% "monix" % monixVersion)
