@@ -21,9 +21,9 @@ lazy val eff = project.in(file("."))
   .settings(effSettings)
   .settings(noPublishSettings)
   .settings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter):_*)
-  .aggregate(coreJVM, coreJS, doobie, catsJVM, catsJS, macros, monixJVM, monixJS, scalaz, twitter)
+  .aggregate(coreJVM, coreJS, doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalaz, twitter)
   .dependsOn(coreJVM % "test->test;compile->compile", coreJS,
-    doobie, catsJVM, catsJS, macros, monixJVM, monixJS, scalaz, twitter)
+    doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalaz, twitter)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff")
@@ -41,7 +41,7 @@ lazy val doobie = project
   .settings(libraryDependencies ++= doobieJvm)
   .settings(effSettings ++ commonJvmSettings:_*)
 
-lazy val cats = crossProject.crossType(CrossType.Full).in(file("cats"))
+lazy val catsEffect = crossProject.crossType(CrossType.Full).in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(core)
   .settings(libraryDependencies ++= catsEffectJvm)
@@ -49,8 +49,8 @@ lazy val cats = crossProject.crossType(CrossType.Full).in(file("cats"))
   .jvmSettings(commonJvmSettings:_*)
   .settings(effSettings:_*)
 
-lazy val catsJVM = cats.jvm
-lazy val catsJS = cats.js
+lazy val catsEffectJVM = catsEffect.jvm
+lazy val catsEffectJS = catsEffect.js
 
 lazy val macros = project.in(file("macros"))
   .settings(moduleName := "eff-macros")
