@@ -9,7 +9,7 @@ lazy val specs2Version      = "4.2.0"
 lazy val twitterUtilVersion = "18.5.0"
 lazy val catbirdVersion     = "18.5.0"
 lazy val doobieVersion      = "0.5.0"
-lazy val catsEffectVersion  = "0.10.1"
+lazy val catsEffectVersion  = "1.0.0-RC2"
 lazy val fs2Version         = "0.10.2"
 
 enablePlugins(GhpagesPlugin)
@@ -21,8 +21,9 @@ lazy val eff = project.in(file("."))
   .settings(effSettings)
   .settings(noPublishSettings)
   .settings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter):_*)
-  .aggregate(coreJVM, coreJS, doobie, cats, macros, monixJVM, monixJS, scalaz, twitter)
-  .dependsOn(coreJVM % "test->test;compile->compile", coreJS, doobie, cats, macros, monixJVM, monixJS, scalaz, twitter)
+  .aggregate(coreJVM, coreJS, doobie, catsJVM, catsJS, macros, monixJVM, monixJS, scalaz, twitter)
+  .dependsOn(coreJVM % "test->test;compile->compile", coreJS,
+    doobie, catsJVM, catsJS, macros, monixJVM, monixJS, scalaz, twitter)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Full).in(file("."))
   .settings(moduleName := "eff")
@@ -40,11 +41,16 @@ lazy val doobie = project
   .settings(libraryDependencies ++= doobieJvm)
   .settings(effSettings ++ commonJvmSettings:_*)
 
-lazy val cats = project.in(file("cats"))
+lazy val cats = crossProject.crossType(CrossType.Full).in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
-  .dependsOn(coreJVM)
+  .dependsOn(core)
   .settings(libraryDependencies ++= catsEffectJvm)
-  .settings(effSettings ++ commonJvmSettings:_*)
+  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= catsEffectJs):_*)
+  .jvmSettings(commonJvmSettings:_*)
+  .settings(effSettings:_*)
+
+lazy val catsJVM = cats.jvm
+lazy val catsJS = cats.js
 
 lazy val macros = project.in(file("macros"))
   .settings(moduleName := "eff-macros")
@@ -229,6 +235,9 @@ lazy val doobieJvm = Seq(
 
 lazy val catsEffectJvm = Seq(
   "org.typelevel" %% "cats-effect" % catsEffectVersion)
+
+lazy val catsEffectJs = Seq(
+  "org.typelevel" %%%! "cats-effect" % catsEffectVersion)
 
 lazy val monixLib = Seq(
   "io.monix" %% "monix" % monixVersion)
