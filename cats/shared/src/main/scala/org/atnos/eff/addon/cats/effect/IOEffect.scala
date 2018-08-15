@@ -8,9 +8,8 @@ import org.atnos.eff.syntax.eff._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Either
-import IOEffect._
 
-object IOEffect extends IOEffectCreation with IOInterpretation with IOInstances
+object IOEffect extends IOEffectCreation with IOInterpretation
 
 trait IOTypes {
 
@@ -75,70 +74,4 @@ trait IOInterpretation extends IOTypes {
   }
 }
 
-trait IOInstances extends IOTypes { outer =>
-
-  implicit def asyncInstance[R :_Io](implicit runIO: Eff[R, Unit] => IO[Unit]): cats.effect.Async[Eff[R, ?]] = new cats.effect.Async[Eff[R, ?]] {
-
-    def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
-      fromIO(IO.async(k))
-
-    def asyncF[A](k: (Either[Throwable, A] => Unit) => Eff[R, Unit]): Eff[R, A] =
-      fromIO(IO.asyncF(k andThen runIO))
-
-    def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
-      fromIO(IO.apply(thunk)).flatten
-
-    def raiseError[A](e: Throwable): Eff[R, A] =
-      fromIO(IO.raiseError(e))
-
-    def handleErrorWith[A](fa: Eff[R, A])(f: Throwable => Eff[R, A]): Eff[R, A] =
-      ioAttempt(fa).flatMap {
-        case Left(t)  => f(t)
-        case Right(a) => Eff.pure(a)
-      }
-
-    def pure[A](a: A): Eff[R,A] =
-      Eff.pure(a)
-
-    def flatMap[A, B](fa: Eff[R,A])(f: A =>Eff[R, B]): Eff[R, B] =
-      fa.flatMap(f)
-
-    def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
-      Eff.EffMonad[R].tailRecM(a)(f)
-  }
-
-
-  def effectInstance[R :_Io](implicit runIO: Eff[R, Unit] => IO[Unit]): cats.effect.Effect[Eff[R, ?]] = new cats.effect.Effect[Eff[R, ?]] {
-    private val asyncInstance = outer.asyncInstance
-
-    def runAsync[A](fa: Eff[R, A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
-      runIO(ioAttempt(fa).flatMap(r => fromIO(cb(r))))
-
-    def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
-      asyncInstance.async(k)
-
-    def asyncF[A](k: (Either[Throwable, A] => Unit) => Eff[R, Unit]): Eff[R, A] =
-      asyncInstance.asyncF(k)
-
-    def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
-      asyncInstance.suspend(thunk)
-
-    def raiseError[A](e: Throwable): Eff[R, A] =
-      asyncInstance.raiseError(e)
-
-    def handleErrorWith[A](fa: Eff[R, A])(f: Throwable => Eff[R, A]): Eff[R, A] =
-      asyncInstance.handleErrorWith(fa)(f)
-
-    def pure[A](a: A): Eff[R,A] =
-      Eff.pure(a)
-
-    def flatMap[A, B](fa: Eff[R,A])(f: A =>Eff[R, B]): Eff[R, B] =
-      fa.flatMap(f)
-
-    def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
-      Eff.EffMonad[R].tailRecM(a)(f)
-  }
-}
-
-object IOInstances extends IOInstances
 
