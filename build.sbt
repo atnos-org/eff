@@ -1,6 +1,6 @@
 import ScoverageSbtPlugin._
 import org.scalajs.jsenv.nodejs._
-import sbtcrossproject.{CrossType, crossProject}
+import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 lazy val catsVersion        = "1.1.0"
 lazy val monixVersion       = "3.0.0-RC1"
@@ -25,7 +25,7 @@ lazy val eff = project.in(file("."))
   .dependsOn(coreJVM % "test->test;compile->compile", coreJS,
     doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalaz, twitter)
 
-lazy val core = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Full).in(file("."))
+lazy val core = crossProject(JSPlatform, JVMPlatform).in(file("."))
   .settings(moduleName := "eff")
   .jsSettings(commonJsSettings:_*)
   .jvmSettings(commonJvmSettings:_*)
@@ -41,7 +41,7 @@ lazy val doobie = project
   .settings(libraryDependencies ++= doobieJvm)
   .settings(effSettings ++ commonJvmSettings:_*)
 
-lazy val catsEffect = crossProject.crossType(CrossType.Full).in(file("cats"))
+lazy val catsEffect = crossProject(JSPlatform, JVMPlatform).in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(core)
   .settings(libraryDependencies ++= catsEffectJvm)
@@ -60,7 +60,7 @@ lazy val macros = project.in(file("macros"))
   .settings(commonJvmSettings)
   .settings(effSettings:_*)
 
-lazy val monix = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Full).in(file("monix"))
+lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core)
   .settings(libraryDependencies ++= monixLib)

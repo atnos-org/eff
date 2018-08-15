@@ -1,4 +1,4 @@
-package org.atnos.eff.addon.cats.effect
+  package org.atnos.eff.addon.cats.effect
 
 import cats.effect.{Async, IO}
 import cats.~>
@@ -77,10 +77,13 @@ trait IOInterpretation extends IOTypes {
 
 trait IOInstances extends IOTypes { outer =>
 
-  implicit def asyncInstance[R :_Io]: cats.effect.Async[Eff[R, ?]] = new cats.effect.Async[Eff[R, ?]] {
+  implicit def asyncInstance[R :_Io](implicit runIO: Eff[R, Unit] => IO[Unit]): cats.effect.Async[Eff[R, ?]] = new cats.effect.Async[Eff[R, ?]] {
 
     def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
       fromIO(IO.async(k))
+
+    def asyncF[A](k: (Either[Throwable, A] => Unit) => Eff[R, Unit]): Eff[R, A] =
+      fromIO(IO.asyncF(k andThen runIO))
 
     def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
       fromIO(IO.apply(thunk)).flatten
@@ -113,6 +116,9 @@ trait IOInstances extends IOTypes { outer =>
 
     def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
       asyncInstance.async(k)
+
+    def asyncF[A](k: (Either[Throwable, A] => Unit) => Eff[R, Unit]): Eff[R, A] =
+      asyncInstance.asyncF(k)
 
     def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
       asyncInstance.suspend(thunk)
