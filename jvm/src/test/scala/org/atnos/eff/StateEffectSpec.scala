@@ -21,6 +21,8 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  The Eff monad is stack safe with State $stacksafeState
 
+ modifyS is a modify variant that enables better type inference for state modification closures $modifySState
+
 """
 
   def putGetState = {
@@ -131,6 +133,18 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
       } yield ()
 
     updatePerson[Fx.fx2[String Either ?, State[Person, ?]]].evalState(Person(Address("here"))).runEither.run ==== Right(())
+  }
+
+
+  def modifySState = {
+
+    def action[R :_stateInt]: Eff[R, String] = for {
+      a <- get
+      _ <- put(a + 1)
+      _ <- modifyS.using(_ + 10)
+    } yield a.toString
+
+    action[SI].execStateZero[Int].run ==== 11
   }
 
   type StateInt[A] = State[Int, A]
