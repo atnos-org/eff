@@ -75,7 +75,6 @@ lazy val scalaz = project.in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
   .dependsOn(coreJVM)
   .settings(libraryDependencies ++= scalazConcurrent)
-  .settings(libraryDependencies ++= catsEffectJvm)
   .settings(libraryDependencies ++= specs2Scalaz)
   .settings(effSettings ++ commonJvmSettings:_*)
 
