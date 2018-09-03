@@ -44,7 +44,7 @@ trait IOEffectCreation extends IOTypes {
 trait IOInterpretation extends IOTypes {
 
   def runAsync[A](e: Eff[Fx1[IO], A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
-    Eff.detach(e).runAsync(cb)
+    Eff.detach(e).runAsync(cb).to[IO]
 
   def unsafeRunAsync[A](e: Eff[Fx1[IO], A])(cb: Either[Throwable, A] => Unit): Unit =
     Eff.detach(e).unsafeRunAsync(cb)

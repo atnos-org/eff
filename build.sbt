@@ -2,15 +2,15 @@ import ScoverageSbtPlugin._
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val catsVersion        = "1.1.0"
-lazy val monixVersion       = "3.0.0-RC1"
-lazy val scalazVersion      = "7.2.22"
-lazy val specs2Version      = "4.2.0"
-lazy val twitterUtilVersion = "18.5.0"
-lazy val catbirdVersion     = "18.5.0"
-lazy val doobieVersion      = "0.5.0"
-lazy val catsEffectVersion  = "1.0.0-RC2"
-lazy val fs2Version         = "0.10.2"
+lazy val catsVersion        = "1.2.0"
+lazy val monixVersion       = "3.0.0-M3"
+lazy val scalazVersion      = "7.2.26"
+lazy val specs2Version      = "4.3.4"
+lazy val twitterUtilVersion = "18.8.0"
+lazy val catbirdVersion     = "18.8.0"
+lazy val doobieVersion      = "0.6.0-M2"
+lazy val catsEffectVersion  = "1.0.0-RC3"
+lazy val fs2Version         = "1.0.0-SNAPSHOT"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)

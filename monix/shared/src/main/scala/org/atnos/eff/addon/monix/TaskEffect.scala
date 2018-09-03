@@ -34,7 +34,7 @@ trait TaskCreation extends TaskTypes {
     fromTask(call.executeOn(scheduler), timeout)
 
   final def taskFork[R :_task, A](call: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    fromTask(call.executeAsync, timeout)
+    fromTask(call.executeWithFork, timeout)
 
   final def asyncBoundary[R :_task]: Eff[R, Unit] =
     fromTask(forkedUnit)
@@ -43,7 +43,7 @@ trait TaskCreation extends TaskTypes {
     fromTask(forkedUnit.executeOn(s))
 
   private val forkedUnit: Task[Unit] =
-    Task.unit.executeAsync
+    Task.unit.executeWithFork
 
   final def taskAsync[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                    timeout: Option[FiniteDuration] = None): Eff[R, A] = {
@@ -101,7 +101,7 @@ trait TaskInterpretation extends TaskTypes {
     interpret.interceptNat[R, Task, A](e)(
       new (Task ~> Task) {
         def apply[X](fa: Task[X]): Task[X] =
-          fa.executeAsync
+          fa.executeWithFork
       })
 
   /** memoize the task result using a cache */
@@ -141,7 +141,7 @@ trait TaskInterpretation extends TaskTypes {
 
   implicit val taskSequenceCached: SequenceCached[Task] = new SequenceCached[Task] {
     def get[X](cache: Cache, key: AnyRef): Task[Option[X]] =
-      Task.delay(cache.get(key)).executeAsync
+      Task.delay(cache.get(key)).executeWithFork
 
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Task[X]): Task[X] =
       cache.memo((key, sequenceKey), tx.memoize)
