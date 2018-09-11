@@ -10,7 +10,6 @@ lazy val twitterUtilVersion = "18.8.0"
 lazy val catbirdVersion     = "18.8.0"
 lazy val doobieVersion      = "0.6.0-M2"
 lazy val catsEffectVersion  = "1.0.0-RC3"
-lazy val fs2Version         = "1.0.0-SNAPSHOT"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)

@@ -45,14 +45,12 @@ You can also use other `Future` or `Task` effects:
  - `twitter`: depend on `eff-twitter` and import `org.atnos.eff.addon.twitter.future._`
  - `scalaz`: depend on `eff-scalaz` and import `org.atnos.eff.addon.scalaz.task._`
  - `monix`: depend on `eff-monix` and import `org.atnos.eff.addon.monix.task._`
- - `fs2`: depend on `eff-fs2` and import `org.atnos.eff.addon.fs2.task._`
 
-There are corresponding syntax import to be able to call `runAsync` methods in:
+There are corresponding syntax imports to be able to call `runAsync` methods in:
 
  - `twitter`: `org.atnos.eff.syntax.addon.twitter.future._`
  - `scalaz`: `org.atnos.eff.syntax.addon.scalaz.task._`
  - `monix`: `org.atnos.eff.syntax.addon.monix.task._`
- - `fs2`: `org.atnos.eff.syntax.addon.fs2.task._`
 
 `Future` and `Task` computations can also be memoized to avoid expensive computations to be done several times. You can either
 

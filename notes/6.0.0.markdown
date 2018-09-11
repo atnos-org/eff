@@ -2,15 +2,11 @@ Dependencies upgrade!
 
 The following dependencies were upgraded:
 
- * **cats**: now on `1.2.0`
+ * **cats**: now on `1.3.1`
  
 No API change. 
 
- * **monix**: now on `3.0.0`
- 
-No API change. 
-
- * **fs2**: now on `1.0.0`
+ * **monix**: now on `3.0.0-RC1`
  
 No API change. 
  
