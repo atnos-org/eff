@@ -220,7 +220,7 @@ object ErrorEffect extends ErrorEffect[String] {
   }
 
   def traceWithIndent(t: Throwable, indent: String): String =
-    trace(t).lines.map(line => indent + line).mkString("\n")
+    augmentString(trace(t)).lines.map(line => indent + line).mkString("\n")
 }
 
 case class Evaluate[F, A](run: (Throwable Either F) Either cats.Eval[A])
