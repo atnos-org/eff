@@ -2,14 +2,14 @@ import ScoverageSbtPlugin._
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val catsVersion        = "1.2.0"
+lazy val catsVersion        = "1.4.0"
 lazy val monixVersion       = "3.0.0-M3"
 lazy val scalazVersion      = "7.2.26"
-lazy val specs2Version      = "4.3.4"
+lazy val specs2Version      = "4.3.5"
 lazy val twitterUtilVersion = "18.8.0"
 lazy val catbirdVersion     = "18.8.0"
 lazy val doobieVersion      = "0.6.0-M2"
-lazy val catsEffectVersion  = "1.0.0-RC3"
+lazy val catsEffectVersion  = "1.0.0"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)
@@ -100,7 +100,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6")
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
@@ -257,7 +257,7 @@ lazy val specs2 = Seq(
   , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
 
 lazy val scalameter = Seq(
-  "com.storm-enroute" %% "scalameter" % "0.9" % "test")
+  "com.storm-enroute" %% "scalameter" % "0.10" % "test")
 
 lazy val twitterUtilCore = Seq(
   "com.twitter" %% "util-collection" % twitterUtilVersion
