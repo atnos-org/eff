@@ -2,14 +2,14 @@ import ScoverageSbtPlugin._
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val catsVersion        = "1.4.0"
+lazy val catsVersion        = "1.5.0"
 lazy val monixVersion       = "3.0.0-M3"
 lazy val scalazVersion      = "7.2.26"
 lazy val specs2Version      = "4.3.5"
 lazy val twitterUtilVersion = "18.8.0"
 lazy val catbirdVersion     = "18.8.0"
 lazy val doobieVersion      = "0.6.0-M2"
-lazy val catsEffectVersion  = "1.0.0"
+lazy val catsEffectVersion  = "1.1.0"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)
@@ -100,7 +100,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.9")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
