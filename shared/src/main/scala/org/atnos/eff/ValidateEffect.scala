@@ -96,20 +96,22 @@ trait ValidateInterpretation extends ValidateCreation {
       def onPure(a: A): Eff[U, L SomeOr A] =
         Eff.pure(pure(a, l))
 
-      def onEffect[X](v: Validate[E, X], continuation: Continuation[U, X, L SomeOr A]): Eff[U, L SomeOr A] = {
-        l = v match {
-          case Correct(None) => l
-          case Correct(Some(w)) => l match {
-            case Left(errs) => Left(errs |+| map(w))
-            case Right(None) => Right(Some(map(w)))
-            case Right(Some(warns)) => Right(Some(warns |+| map(w)))
-          }
-          case Wrong(e) => l match {
-            case Left(errs) => Left(errs |+| map(e))
-            case Right(None) => Left(map(e))
-            case Right(Some(warns)) => Left(warns |+| map(e)) // uniting warnings and errors as cats do
-          }
+      private def combineLV[X](l: L Either Option[L], v: Validate[E, X]): L Either Option[L] = v match {
+        case Correct(None) => l
+        case Correct(Some(w)) => l match {
+          case Left(errs) => Left(errs |+| map(w))
+          case Right(None) => Right(Some(map(w)))
+          case Right(Some(warns)) => Right(Some(warns |+| map(w)))
         }
+        case Wrong(e) => l match {
+          case Left(errs) => Left(errs |+| map(e))
+          case Right(None) => Left(map(e))
+          case Right(Some(warns)) => Left(warns |+| map(e)) // uniting warnings and errors as cats do
+        }
+      }
+
+      def onEffect[X](v: Validate[E, X], continuation: Continuation[U, X, L SomeOr A]): Eff[U, L SomeOr A] = {
+        l = combineLV(l, v)
         Eff.impure(().asInstanceOf[X], continuation)
       }
 
@@ -117,11 +119,7 @@ trait ValidateInterpretation extends ValidateCreation {
         Eff.pure(())
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L SomeOr A]): Eff[U, L SomeOr A] = {
-        l = l |+| xs.map {
-          case Wrong(e) => Left(map(e))
-          case Correct(None) => Right(None)
-          case Correct(Some(w)) => Right(Some(map(w)))
-        }.fold
+        l = xs.foldLeft(l)(combineLV)
         Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
       }
     })
