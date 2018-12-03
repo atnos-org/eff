@@ -85,6 +85,53 @@ trait ValidateInterpretation extends ValidateCreation {
       }
     })
 
+  /** run the validate effect, yielding a non-empty list of failures or A or both */
+  def runIorNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, E IorNel A] =
+    runIorMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.one(e))
+
+  /** run the validate effect, yielding a list of failures or A or both */
+  def runIorMap[R, U, E, L : Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Ior A] =
+    runInterpreter(effect)(new Interpreter[Validate[E, ?], U, A, L Ior A] {
+      // Left means failed, Right means not failed (Option contains warnings)
+      private var l: L Either Option[L] = Right(None)
+
+      def onPure(a: A): Eff[U, L Ior A] =
+        Eff.pure(l match {
+          case Left(errs) => Ior.Left(errs)
+          case Right(None) => Ior.Right(a)
+          case Right(Some(warns)) => Ior.Both(warns, a)
+        })
+
+      def onEffect[X](v: Validate[E, X], continuation: Continuation[U, X, L Ior A]): Eff[U, L Ior A] = {
+        l = v match {
+          case Correct(None) => l
+          case Correct(Some(w)) => l match {
+            case Left(errs) => Left(errs |+| map(w))
+            case Right(None) => Right(Some(map(w)))
+            case Right(Some(warns)) => Right(Some(warns |+| map(w)))
+          }
+          case Wrong(e) => l match {
+            case Left(errs) => Left(errs |+| map(e))
+            case Right(None) => Left(map(e))
+            case Right(Some(warns)) => Left(warns |+| map(e)) // uniting warnings and errors as cats do
+          }
+        }
+        Eff.impure(().asInstanceOf[X], continuation)
+      }
+
+      def onLastEffect[X](x: Validate[E, X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
+        Eff.pure(())
+
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L Ior A]): Eff[U, L Ior A] = {
+        l = l |+| xs.map {
+          case Wrong(e) => Left(map(e))
+          case Correct(None) => Right(None)
+          case Correct(Some(w)) => Right(Some(map(w)))
+        }.fold
+        Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
+      }
+    })
+
   /** catch and handle possible wrong values */
   def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] =
     intercept(effect)(new Interpreter[Validate[E, ?], R, A, A] {
