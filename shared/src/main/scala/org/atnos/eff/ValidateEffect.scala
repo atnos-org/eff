@@ -18,7 +18,7 @@ trait ValidateEffect extends
 object ValidateEffect extends ValidateEffect
 
 sealed trait Validate[+E, A]
-case class Correct[E]() extends Validate[E, Unit]
+case class Correct[E](warn: Option[E] = None) extends Validate[E, Unit]
 case class Wrong[E](e: E) extends Validate[E, Unit]
 
 trait ValidateCreation {
@@ -70,7 +70,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onEffect[X](v: Validate[E, X], continuation: Continuation[U, X, L Either A]): Eff[U, L Either A] = {
         l = v match {
-          case Correct() => l
+          case Correct(_) => l
           case Wrong(e) => l.map(_ |+| map(e))
         }
         Eff.impure(().asInstanceOf[X], continuation)
@@ -80,7 +80,7 @@ trait ValidateInterpretation extends ValidateCreation {
         Eff.pure(())
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L Either A]): Eff[U, L Either A] = {
-        l = l |+| xs.map { case Wrong(e) => Some(map(e)); case Correct() => None }.fold
+        l = l |+| xs.map { case Wrong(e) => Some(map(e)); case Correct(_) => None }.fold
         Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
       }
     })
@@ -93,7 +93,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
         m match {
-          case Correct() => Eff.impure((), continuation)
+          case Correct(_) => Eff.impure((), continuation)
           case Wrong(e)  => handle(e)
         }
 
@@ -102,7 +102,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
         val traversed: State[Option[E], T[X]] = xs.traverse {
-          case Correct() => State[Option[E], X](state => (None, ()))
+          case Correct(_) => State[Option[E], X](state => (None, ()))
           case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
         }
 
