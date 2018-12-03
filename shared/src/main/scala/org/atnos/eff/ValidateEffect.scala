@@ -44,7 +44,7 @@ trait ValidateCreation {
     send[Validate[E, ?], R, Unit](Correct[E]()) >> Eff.EffMonad[R].pure(a)
 
   /** create a pure warning */
-  def warning[R, E, A](e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
+  def warning[R, E](e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
     send[Validate[E, ?], R, Unit](Correct[E](Some(e)))
 
   /** create a correct value with warning */
