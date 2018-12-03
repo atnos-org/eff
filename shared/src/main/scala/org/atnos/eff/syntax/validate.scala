@@ -1,6 +1,6 @@
 package org.atnos.eff.syntax
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{Ior, IorNel, NonEmptyList, ValidatedNel}
 import org.atnos.eff._
 import cats.Semigroup
 
@@ -18,6 +18,12 @@ trait validate {
 
     def runValidatedNel[E](implicit m: Member[Validate[E, ?], R]): Eff[m.Out, ValidatedNel[E, A]] =
       ValidateInterpretation.runValidatedNel(e)(m.aux)
+
+    def runIorMap[E, L : Semigroup](map: E => L)(implicit m: Member[Validate[E, ?], R]): Eff[m.Out, L Ior A] =
+      ValidateInterpretation.runIorMap(e)(map)(Semigroup[L], m.aux)
+
+    def runIorNel[E](implicit m: Member[Validate[E, ?], R]): Eff[m.Out, E IorNel A] =
+      ValidateInterpretation.runIorNel(e)(m.aux)
 
     def catchWrong[E](handle: E => Eff[R, A])(implicit m: Member[Validate[E, ?], R]): Eff[R, A] =
       ValidateInterpretation.catchWrong(e)(handle)
