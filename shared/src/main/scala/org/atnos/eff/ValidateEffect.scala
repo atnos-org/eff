@@ -18,7 +18,8 @@ trait ValidateEffect extends
 object ValidateEffect extends ValidateEffect
 
 sealed trait Validate[+E, A]
-case class Correct[E](warn: Option[E] = None) extends Validate[E, Unit]
+case class Correct[E]() extends Validate[E, Unit]
+case class Warning[E](e: E) extends Validate[E, Unit]
 case class Wrong[E](e: E) extends Validate[E, Unit]
 
 trait ValidateCreation {
@@ -45,7 +46,7 @@ trait ValidateCreation {
 
   /** create a pure warning */
   def warning[R, E](e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
-    send[Validate[E, ?], R, Unit](Correct[E](Some(e)))
+    send[Validate[E, ?], R, Unit](Warning[E](e))
 
   /** create a correct value with warning */
   def warning[R, E, A](a: A, e: E)(implicit m: Validate[E, ?] |= R): Eff[R, A] =
@@ -97,8 +98,8 @@ trait ValidateInterpretation extends ValidateCreation {
         Eff.pure(pure(a, l))
 
       private def combineLV[X](l: L Either Option[L], v: Validate[E, X]): L Either Option[L] = v match {
-        case Correct(None) => l
-        case Correct(Some(w)) => l match {
+        case Correct() => l
+        case Warning(w) => l match {
           case Left(errs) => Left(errs |+| map(w))
           case Right(None) => Right(Some(map(w)))
           case Right(Some(warns)) => Right(Some(warns |+| map(w)))
@@ -132,7 +133,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
         m match {
-          case Correct(_) => Eff.impure((), continuation)
+          case Correct() | Warning(_) => Eff.impure((), continuation)
           case Wrong(e)  => handle(e)
         }
 
@@ -141,7 +142,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
         val traversed: State[Option[E], T[X]] = xs.traverse {
-          case Correct(_) => State[Option[E], X](state => (None, ()))
+          case Correct() | Warning(_) => State[Option[E], X](state => (None, ()))
           case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
         }
 
