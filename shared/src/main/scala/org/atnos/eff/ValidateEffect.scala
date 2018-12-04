@@ -24,7 +24,7 @@ case class Wrong[E](e: E) extends Validate[E, Unit]
 trait ValidateCreation {
 
   /** create an Validate effect from a single Option value */
-  def validateOption[R, E, A](option: Option[A], e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
+  def validateOption[R, E, A](option: Option[A], e: => E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
     option.map(_ => correct(())).getOrElse(wrong(e))
 
   /** create an Validate effect from a single Either value */
@@ -40,11 +40,11 @@ trait ValidateCreation {
     send[Validate[E, ?], R, Unit](Correct[E]()) >> Eff.EffMonad[R].pure(a)
 
   /** check a correct condition */
-  def validateCheck[R, E](condition: Boolean, e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
+  def validateCheck[R, E](condition: Boolean, e: => E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
     if (condition) correct(()) else wrong(e)
 
   /** check a correct value */
-  def validateValue[R, E, A](condition: Boolean, a: A, e: E)(implicit m: Validate[E, ?] |= R): Eff[R, A] =
+  def validateValue[R, E, A](condition: Boolean, a: => A, e: => E)(implicit m: Validate[E, ?] |= R): Eff[R, A] =
     if (condition) correct(a) else wrong(e) >> Eff.EffMonad[R].pure(a)
 }
 
