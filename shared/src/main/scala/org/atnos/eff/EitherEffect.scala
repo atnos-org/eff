@@ -22,7 +22,7 @@ trait EitherCreation {
   type _throwableEither[R] = ThrowableEither |= R
 
   /** create an Either effect from a single Option value */
-  def optionEither[R, E, A](option: Option[A], e: E)(implicit member: (E Either ?) |= R): Eff[R, A] =
+  def optionEither[R, E, A](option: Option[A], e: => E)(implicit member: (E Either ?) |= R): Eff[R, A] =
     option.fold[Eff[R, A]](left[R, E, A](e))(right[R, E, A])
 
   /** create an Either effect from a single Either value */
