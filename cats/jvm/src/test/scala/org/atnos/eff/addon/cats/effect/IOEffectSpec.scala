@@ -21,6 +21,12 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
  Async boundaries can be introduced between computations $e4
  IO effect is stacksafe with traverseA                   $e5
 
+ Simple IO effects can be memoized                       $e6
+ Attempted IO effects can be memoized                    $e7
+ Simple IO effects with timeout can be memoized          $e8
+ Attempted IO effects with timeout can be memoized       $e9
+ Failed IO effects must not be memoized                  $e10
+
 """
 
   type S = Fx.fx2[IO, Option]
@@ -69,6 +75,61 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
     }
 
     action.unsafeRunAsync(_ => ()) must not(throwA[Throwable])
+  }
+
+  def e6 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = ioMemo("only once", cache, ioDelay({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).unsafeRunSync must be_==(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e7 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = ioMemo("only once", cache, ioDelay({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).ioAttempt.unsafeRunSync must beRight(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e8 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+    def makeRequest = ioMemo("only once", cache, ioDelay({ invocationsNumber += 1; 1 }))
+
+    (makeRequest >> makeRequest).unsafeRunSync must be_==(1)
+    invocationsNumber must be_==(1)
+  }
+
+  def e9 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    def makeRequest = ioDelay({ invocationsNumber += 1; 1 }).ioMemo("only once", cache)
+    (makeRequest >> makeRequest).ioAttempt.unsafeRunSync must beRight(1)
+
+    invocationsNumber must be_==(1)
+  }
+
+  def e10 = {
+    var invocationsNumber = 0
+    val cache = ConcurrentHashMapCache()
+
+    var firstTime = true
+
+    def makeRequest =
+      if (firstTime)
+        ioMemo("only once", cache, ioDelay { firstTime = false; throw new Exception("") } >> ioDelay({ invocationsNumber += 1; 1 }))
+      else
+        ioMemo("only once", cache, ioDelay { invocationsNumber += 1; 1 })
+
+    makeRequest.ioAttempt.unsafeRunSync must beLeft[Throwable]
+    makeRequest.ioAttempt.unsafeRunSync must beRight(1)
+
+    invocationsNumber must be_==(1)
   }
 
   /**

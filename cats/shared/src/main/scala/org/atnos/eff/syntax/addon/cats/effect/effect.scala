@@ -2,7 +2,7 @@ package org.atnos.eff.syntax.addon.cats
 
 import cats.effect.{Async, IO}
 import org.atnos.eff._
-import org.atnos.eff.addon.cats.effect.IOEffect
+import org.atnos.eff.addon.cats.effect.{IOEffect, IOInterpretation}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
@@ -44,4 +44,11 @@ final class IOOps2[R, A](val e: Eff[R, A]) extends AnyVal {
 
   def ioShift(implicit m: MemberIn[IO, R], ec: ExecutionContext): Eff[R, A] =
     IOEffect.ioShift >> e
+
+  def runIoMemo[U](cache: Cache)(implicit m: Member.Aux[Memoized, R, U], task: IO |= U): Eff[U, A] =
+    IOEffect.runIoMemo(cache)(e)
+
+  def ioMemo(key: AnyRef, cache: Cache)(implicit task: IO /= R): Eff[R, A] =
+    IOInterpretation.ioMemo(key, cache, e)
+
 }
