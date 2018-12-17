@@ -86,7 +86,7 @@ trait IOInterpretation extends IOTypes {
     */
   def ioMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: IO /= R): Eff[R, A] =
     ioAttempt(Eff.memoizeEffect(e, cache, key)).flatMap {
-      case Left(t) => Eff.send(taskSequenceCached.reset(cache, key)) >> IOEffect.ioRaiseError(t)
+      case Left(t) => Eff.send(ioSequenceCached.reset(cache, key)) >> IOEffect.ioRaiseError(t)
       case Right(a) => Eff.pure(a)
     }
 
@@ -108,7 +108,7 @@ trait IOInterpretation extends IOTypes {
     })
   }
 
-  implicit val taskSequenceCached: SequenceCached[IO] = new SequenceCached[IO] {
+  implicit val ioSequenceCached: SequenceCached[IO] = new SequenceCached[IO] {
     def get[X](cache: Cache, key: AnyRef): IO[Option[X]] =
       IO(cache.get(key))
 
