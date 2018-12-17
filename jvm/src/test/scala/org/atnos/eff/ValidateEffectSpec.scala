@@ -10,6 +10,12 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  run the validate effect                     $validateOk
  run the validate effect with nothing        $validateKo
+
+ run the validate effect (IorNel variant)    $validateIorOk
+ run the validate effect with warnings       $validateWarn
+ run the validate effect with warn & err     $validateWarnAndErr
+ run the validate effect with errs & warn    $validateWarnAndErr
+
  recover from wrong values                   $catchWrongValues1
  recover from wrong values and tell errors   $catchWrongValues2
 
@@ -39,6 +45,45 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
       } yield a
 
     validate.runNel.run ==== Left(NonEmptyList.of("error1", "error2"))
+  }
+
+  def validateWarn = {
+    val validate: Eff[S, Int] =
+      for {
+        _ <- ValidateEffect.warning[S, String]("warning1")
+        a <- ValidateEffect.warning[S, String, Int](10, "warning2")
+      } yield a
+
+    validate.runIorNel.run ==== Ior.Both(NonEmptyList.of("warning1", "warning2"), 10)
+  }
+
+  def validateWarnAndErr = {
+    val validate: Eff[S, Int] =
+      for {
+        a <- ValidateEffect.warning[S, String, Int](10, "warning")
+        _ <- ValidateEffect.wrong[S, String]("error")
+      } yield a
+
+    validate.runIorNel.run ==== Ior.Left(NonEmptyList.of("warning", "error"))
+  }
+
+  def validateErrAndWarn = {
+    val validate: Eff[S, Int] =
+      for {
+        _ <- ValidateEffect.wrong[S, String]("error")
+        a <- ValidateEffect.warning[S, String, Int](10, "warning")
+      } yield a
+
+    validate.runIorNel.run ==== Ior.Left(NonEmptyList.of("error", "warning"))
+  }
+  def validateIorOk = {
+    val validate: Eff[S, Int] =
+      for {
+        a <- ValidateEffect.correct[S, String, Int](1)
+        b <- ValidateEffect.correct[S, String, Int](2)
+      } yield a + b
+
+    validate.runIorNel.run ==== Ior.Right(3)
   }
 
   def catchWrongValues1 = {

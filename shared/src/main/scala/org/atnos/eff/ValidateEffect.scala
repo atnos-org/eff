@@ -19,6 +19,7 @@ object ValidateEffect extends ValidateEffect
 
 sealed trait Validate[+E, A]
 case class Correct[E]() extends Validate[E, Unit]
+case class Warning[E](e: E) extends Validate[E, Unit]
 case class Wrong[E](e: E) extends Validate[E, Unit]
 
 trait ValidateCreation {
@@ -31,6 +32,10 @@ trait ValidateCreation {
   def validateEither[R, E, A](either: E Either A)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
     either.fold(e => wrong(e), _ => correct(()))
 
+  /** create an Validate effect from a single Ior value */
+  def validateIor[R, E, A](ior: E Ior A)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
+    ior.fold(e => wrong(e), _ => correct(()), (w, _) => warning(w))
+
   /** create a failed value */
   def wrong[R, E](e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
     send[Validate[E, ?], R, Unit](Wrong(e))
@@ -38,6 +43,14 @@ trait ValidateCreation {
   /** create a correct value */
   def correct[R, E, A](a: A)(implicit m: Validate[E, ?] |= R): Eff[R, A] =
     send[Validate[E, ?], R, Unit](Correct[E]()) >> Eff.EffMonad[R].pure(a)
+
+  /** create a pure warning */
+  def warning[R, E](e: E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
+    send[Validate[E, ?], R, Unit](Warning[E](e))
+
+  /** create a correct value with warning */
+  def warning[R, E, A](a: A, e: E)(implicit m: Validate[E, ?] |= R): Eff[R, A] =
+    warning(e) >> Eff.EffMonad[R].pure(a)
 
   /** check a correct condition */
   def validateCheck[R, E](condition: Boolean, e: => E)(implicit m: Validate[E, ?] |= R): Eff[R, Unit] =
@@ -62,25 +75,52 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** run the validate effect, yielding a list of failures Either A */
   def runMap[R, U, E, L : Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Either A] =
-    runInterpreter(effect)(new Interpreter[Validate[E, ?], U, A, L Either A] {
-      private var l: Option[L] = None
+    runMapGen(effect)(map) { (a, l) => l.map(_ => a) }
 
-      def onPure(a: A): Eff[U, L Either A] =
-        Eff.pure(l.map(Left.apply).getOrElse(Right(a)))
+  /** run the validate effect, yielding a non-empty list of failures or A or both */
+  def runIorNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, E IorNel A] =
+    runIorMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.one(e))
 
-      def onEffect[X](v: Validate[E, X], continuation: Continuation[U, X, L Either A]): Eff[U, L Either A] = {
-        l = v match {
-          case Correct() => l
-          case Wrong(e) => l.map(_ |+| map(e))
+  /** run the validate effect, yielding a list of failures or A or both */
+  def runIorMap[R, U, E, L : Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L Ior A] =
+    runMapGen(effect)(map) { (a, l) => l match {
+      case Left(errs) => Ior.Left(errs)
+      case Right(None) => Ior.Right(a)
+      case Right(Some(warns)) => Ior.Both(warns, a)
+    }}
+
+  private def runMapGen[R, U, E, L : Semigroup, A, SomeOr[_, _]](effect: Eff[R, A])(map: E => L)(pure: (A, L Either Option[L]) => L SomeOr A)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L SomeOr A] =
+    runInterpreter(effect)(new Interpreter[Validate[E, ?], U, A, L SomeOr A] {
+      // Left means failed, Right means not failed (Option contains warnings)
+      private var l: L Either Option[L] = Right(None)
+
+      def onPure(a: A): Eff[U, L SomeOr A] =
+        Eff.pure(pure(a, l))
+
+      private def combineLV[X](l: L Either Option[L], v: Validate[E, X]): L Either Option[L] = v match {
+        case Correct() => l
+        case Warning(w) => l match {
+          case Left(errs) => Left(errs |+| map(w))
+          case Right(None) => Right(Some(map(w)))
+          case Right(Some(warns)) => Right(Some(warns |+| map(w)))
         }
+        case Wrong(e) => l match {
+          case Left(errs) => Left(errs |+| map(e))
+          case Right(None) => Left(map(e))
+          case Right(Some(warns)) => Left(warns |+| map(e)) // uniting warnings and errors as cats do
+        }
+      }
+
+      def onEffect[X](v: Validate[E, X], continuation: Continuation[U, X, L SomeOr A]): Eff[U, L SomeOr A] = {
+        l = combineLV(l, v)
         Eff.impure(().asInstanceOf[X], continuation)
       }
 
       def onLastEffect[X](x: Validate[E, X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
         Eff.pure(())
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L Either A]): Eff[U, L Either A] = {
-        l = l |+| xs.map { case Wrong(e) => Some(map(e)); case Correct() => None }.fold
+      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L SomeOr A]): Eff[U, L SomeOr A] = {
+        l = xs.foldLeft(l)(combineLV)
         Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
       }
     })
@@ -93,7 +133,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
         m match {
-          case Correct() => Eff.impure((), continuation)
+          case Correct() | Warning(_) => Eff.impure((), continuation)
           case Wrong(e)  => handle(e)
         }
 
@@ -102,7 +142,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
         val traversed: State[Option[E], T[X]] = xs.traverse {
-          case Correct() => State[Option[E], X](state => (None, ()))
+          case Correct() | Warning(_) => State[Option[E], X](state => (None, ()))
           case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
         }
 
