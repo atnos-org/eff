@@ -141,14 +141,14 @@ trait ValidateInterpretation extends ValidateCreation {
         continuation.runOnNone >> Eff.pure(())
 
       def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
-        val traversed: State[Option[E], T[X]] = xs.traverse {
-          case Correct() | Warning(_) => State[Option[E], X](state => (None, ()))
-          case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
+        val traversed: E Either T[X] = xs.traverse {
+          case Correct() | Warning(_) => Right(())
+          case Wrong(e)               => Left(e)
         }
 
-        traversed.run(None).value match {
-          case (None, tx)    => Eff.impure(tx, continuation)
-          case (Some(e), tx) => handle(e)
+        traversed match {
+          case Right(tx) => Eff.impure(tx, continuation)
+          case Left(e)   => handle(e)
         }
       }
 
