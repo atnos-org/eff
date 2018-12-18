@@ -1,4 +1,4 @@
-  package org.atnos.eff.addon.cats.effect
+package org.atnos.eff.addon.cats.effect
 
 import cats.effect.{Async, IO}
 import cats.~>
@@ -41,6 +41,8 @@ trait IOEffectCreation extends IOTypes {
 
 }
 
+object IOInterpretation extends IOInterpretation
+
 trait IOInterpretation extends IOTypes {
 
   def runAsync[A](e: Eff[Fx1[IO], A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
@@ -72,6 +74,58 @@ trait IOInterpretation extends IOTypes {
           io.attempt
       })
   }
+
+  /** memoize the io result using a cache */
+  def memoize[A](key: AnyRef, cache: Cache, io: IO[A]): IO[A] =
+    cache.get[A](key).fold(io.map { r => cache.put(key, r); r })(IO.pure)
+
+  /**
+    * Memoize io effects using a cache
+    *
+    * if this method is called with the same key the previous value will be returned
+    */
+  def ioMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit task: IO /= R): Eff[R, A] =
+    ioAttempt(Eff.memoizeEffect(e, cache, key)).flatMap {
+      case Left(t) => Eff.send(ioSequenceCached.reset(cache, key)) >> IOEffect.ioRaiseError(t)
+      case Right(a) => Eff.pure(a)
+    }
+
+  /**
+    * Memoize task values using a memoization effect
+    *
+    * if this method is called with the same key the previous value will be returned
+    */
+  def ioMemoized[R, A](key: AnyRef, e: Eff[R, A])(implicit task: IO /= R, m: Memoized |= R): Eff[R, A] =
+    MemoEffect.getCache[R].flatMap(cache => ioMemo(key, cache, e))
+
+  def runIoMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], task: IO |= U): Eff[U, A] = {
+    interpret.translate(effect)(new Translate[Memoized, U] {
+      def apply[X](mx: Memoized[X]): Eff[U, X] =
+        mx match {
+          case Store(key, value) => IOEffect.ioDelay(cache.memo(key, value()))
+          case GetCache() => IOEffect.ioDelay(cache)
+        }
+    })
+  }
+
+  implicit val ioSequenceCached: SequenceCached[IO] = new SequenceCached[IO] {
+    def get[X](cache: Cache, key: AnyRef): IO[Option[X]] =
+      IO(cache.get(key))
+
+    def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: => IO[X]): IO[X] =
+      cache.memo((key, sequenceKey), tx)
+
+    def reset(cache: Cache, key: AnyRef): IO[Unit] =
+      IO {
+        cache.reset(key)
+        var i = 0
+        while (cache.get((key, i)).isDefined) {
+          cache.reset((key, i))
+          i += 1
+        }
+      }
+  }
+
 }
 
 
