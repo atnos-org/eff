@@ -1,0 +1,11 @@
+Maintenance version
+
+### Improvements
+
+ - updated dependencies (thanks to @xuwei-k)
+ - added `memoize` for cats-effect `IO` (#159 thanks to @vitold)
+ - use cats `Ior` in validate effect (#155  thanks to @buzden)
+
+
+
+
