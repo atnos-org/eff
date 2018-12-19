@@ -161,33 +161,9 @@ trait ValidateInterpretation extends ValidateCreation {
   }
 
   /** catch and handle possible wrong values */
+  @deprecated("Use catchFirstWrong instead", "5.4.0")
   def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] =
-    intercept(effect)(new Interpreter[Validate[E, ?], R, A, A] {
-      def onPure(a: A): Eff[R, A] =
-        Eff.pure(a)
-
-      def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
-        m match {
-          case Correct() | Warning(_) => Eff.impure((), continuation)
-          case Wrong(e)  => handle(e)
-        }
-
-      def onLastEffect[X](x: Validate[E, X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
-        continuation.runOnNone >> Eff.pure(())
-
-      def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
-        val traversed: E Either T[X] = xs.traverse {
-          case Correct() | Warning(_) => Right(())
-          case Wrong(e)               => Left(e)
-        }
-
-        traversed match {
-          case Right(tx) => Eff.impure(tx, continuation)
-          case Left(e)   => handle(e)
-        }
-      }
-
-    })
+    catchFirstWrong(effect)(handle)
 }
 
 object ValidateInterpretation extends ValidateInterpretation
