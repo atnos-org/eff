@@ -129,13 +129,18 @@ trait ValidateInterpretation extends ValidateCreation {
   /** catch and handle possible wrong values */
   def catchWrongs[R, E, A, S[_]: Applicative](effect: Eff[R, A])(handle: S[E] => Eff[R, A])(implicit member: Validate[E, ?] <= R, semi: Semigroup[S[E]]): Eff[R, A] =
     intercept(effect)(new Interpreter[Validate[E, ?], R, A, A] {
+      private var errs: Option[S[E]] = None
+
       def onPure(a: A): Eff[R, A] =
-        Eff.pure(a)
+        errs.map(handle).getOrElse(Eff.pure(a))
 
       def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
         m match {
           case Correct() | Warning(_) => Eff.impure((), continuation)
-          case Wrong(e)               => handle(Applicative[S].pure(e)) // continuation can give more errors thus should be run
+          case Wrong(e)               => {
+            errs = errs |+| Some(Applicative[S].pure(e))
+            Eff.impure((), continuation) // repetition for type safety
+          }
         }
 
       def onLastEffect[X](x: Validate[E, X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
@@ -149,7 +154,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
         traversed match {
           case Valid(tx)  => Eff.impure(tx, continuation)
-          case Invalid(e) => handle(e)
+          case Invalid(e) => handle(errs.fold(e)(_ |+| e))
         }
       }
     })
