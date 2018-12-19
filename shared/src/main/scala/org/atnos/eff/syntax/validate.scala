@@ -2,7 +2,7 @@ package org.atnos.eff.syntax
 
 import cats.data.{Ior, IorNel, NonEmptyList, ValidatedNel}
 import org.atnos.eff._
-import cats.Semigroup
+import cats.{Applicative, Semigroup}
 
 object validate extends validate
 
@@ -25,9 +25,15 @@ trait validate {
     def runIorNel[E](implicit m: Member[Validate[E, ?], R]): Eff[m.Out, E IorNel A] =
       ValidateInterpretation.runIorNel(e)(m.aux)
 
+    @deprecated("Use catchFirstWrong or more general catchWrongs instead", "5.4.0")
     def catchWrong[E](handle: E => Eff[R, A])(implicit m: Member[Validate[E, ?], R]): Eff[R, A] =
       ValidateInterpretation.catchWrong(e)(handle)
 
+    def catchWrongs[E, S[_]: Applicative](handle: S[E] => Eff[R, A])(implicit m: Member[Validate[E, ?], R], semi: Semigroup[S[E]]): Eff[R, A] =
+      ValidateInterpretation.catchWrongs(e)(handle)
+
+    def catchFirstWrong[E](handle: E => Eff[R, A])(implicit m: Member[Validate[E, ?], R]): Eff[R, A] =
+      ValidateInterpretation.catchFirstWrong(e)(handle)
   }
 
 }
