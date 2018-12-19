@@ -18,6 +18,10 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  recover from wrong values                   $catchWrongValues1
  recover from wrong values and tell errors   $catchWrongValues2
+ recover, check that the first is catched    $catchFirstWrongValue
+ recover, check that all are catched, simple $catchAllWrongValuesLinear
+ recover, check that the last is catched     $catchLastWrongValue
+ recover, the whole list is catched          $catchAllWrongValuesApplicative
 
  run is stack safe with Validate  $stacksafeRun
 
@@ -112,6 +116,54 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val comp2: Check[Int] = comp1
 
     comp2.runNel.runWriter.run ==== ((Right(0), List("1", "2")))
+  }
+
+  def catchFirstWrongValue = {
+    val validate: Eff[S, String] =
+      for {
+        _ <- ValidateEffect.correct[S, String, Int](1)
+        _ <- ValidateEffect.wrong[S, String]("error1")
+        a <- EffMonad[S].pure(3)
+        _ <- ValidateEffect.wrong[S, String]("error2")
+      } yield a.toString
+
+    validate.catchFirstWrong((s: String) => pure(s)).runNel.run ==== Right("error1")
+  }
+
+  def catchAllWrongValuesLinear = {
+    val validate: Eff[S, String] =
+      for {
+        _ <- ValidateEffect.correct[S, String, Int](1)
+        _ <- ValidateEffect.wrong[S, String]("error1")
+        a <- EffMonad[S].pure(3)
+        _ <- ValidateEffect.wrong[S, String]("error2")
+      } yield a.toString
+
+    validate.catchAllWrongs((ss: NonEmptyList[String]) => pure(ss.mkString_("", ", ", ""))).runNel.run ==== Right("error1, error2")
+  }
+
+  def catchAllWrongValuesApplicative = {
+    type C = Fx.fx2[ValidateString, List]
+    val validate: Eff[C, String] =
+      for {
+        v <- ListEffect.values[C, Int](1, 2)
+        _ <- ValidateEffect.wrong[C, String]("error" + v.toString)
+        a <- EffMonad[C].pure(3)
+      } yield a.toString
+
+    validate.runList.catchAllWrongs((ss: NonEmptyList[String]) => pure(ss.toList)).runNel.run ==== Right(List("error1", "error2"))
+  }
+
+  def catchLastWrongValue = {
+    val validate: Eff[S, String] =
+      for {
+        _ <- ValidateEffect.correct[S, String, Int](1)
+        _ <- ValidateEffect.wrong[S, String]("error1")
+        a <- EffMonad[S].pure(3)
+        _ <- ValidateEffect.wrong[S, String]("error2")
+      } yield a.toString
+
+    validate.catchLastWrong((s: String) => pure(s)).runNel.run ==== Right("error2")
   }
 
   type ValidateString[A] = Validate[String, A]
