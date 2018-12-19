@@ -94,7 +94,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
         a <- EffMonad[S].pure(3)
       } yield a
 
-    validate.catchWrong((s: String) => pure(4)).runNel.run ==== Right(4)
+    validate.catchFirstWrong((s: String) => pure(4)).runNel.run ==== Right(4)
   }
 
   def catchWrongValues2 = {
@@ -105,8 +105,8 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val handle: E => Check[Unit] = { case e => tell[Comput, E](e).as(()) }
 
     val comp1: Check[Int] = for {
-      _ <- wrong[Comput, E]("1").catchWrong(handle)
-      _ <- wrong[Comput, E]("2").catchWrong(handle)
+      _ <- wrong[Comput, E]("1").catchFirstWrong(handle)
+      _ <- wrong[Comput, E]("2").catchFirstWrong(handle)
     } yield 0
 
     val comp2: Check[Int] = comp1
