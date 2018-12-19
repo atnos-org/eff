@@ -154,6 +154,12 @@ trait ValidateInterpretation extends ValidateCreation {
       }
     })
 
+  /** catch and handle the first wrong value */
+  def catchFirstWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, ?] <= R): Eff[R, A] = {
+    implicit val first: Semigroup[E] = (a, _) => a
+    catchWrongs[R, E, A, Id](effect)(handle)
+  }
+
   /** catch and handle possible wrong values */
   def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] =
     intercept(effect)(new Interpreter[Validate[E, ?], R, A, A] {
