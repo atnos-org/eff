@@ -1,6 +1,7 @@
 package org.atnos.eff
 
 import cats._, data._
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
 import org.atnos.eff.all._
 import Interpret._
@@ -122,6 +123,34 @@ trait ValidateInterpretation extends ValidateCreation {
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L SomeOr A]): Eff[U, L SomeOr A] = {
         l = xs.foldLeft(l)(combineLV)
         Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
+      }
+    })
+
+  /** catch and handle possible wrong values */
+  def catchWrongs[R, E, A, S[_]: Applicative](effect: Eff[R, A])(handle: S[E] => Eff[R, A])(implicit member: Validate[E, ?] <= R, semi: Semigroup[S[E]]): Eff[R, A] =
+    intercept(effect)(new Interpreter[Validate[E, ?], R, A, A] {
+      def onPure(a: A): Eff[R, A] =
+        Eff.pure(a)
+
+      def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
+        m match {
+          case Correct() | Warning(_) => Eff.impure((), continuation)
+          case Wrong(e)               => handle(Applicative[S].pure(e)) // continuation can give more errors thus should be run
+        }
+
+      def onLastEffect[X](x: Validate[E, X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
+        continuation.runOnNone >> Eff.pure(())
+
+      def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
+        val traversed: Validated[S[E], T[X]] = xs.traverse {
+          case Correct() | Warning(_) => Valid(())
+          case Wrong(e)               => Invalid(Applicative[S].pure(e))
+        }
+
+        traversed match {
+          case Valid(tx)  => Eff.impure(tx, continuation)
+          case Invalid(e) => handle(e)
+        }
       }
     })
 
