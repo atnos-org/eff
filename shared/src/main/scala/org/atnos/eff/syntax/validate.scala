@@ -35,6 +35,9 @@ trait validate {
     def catchFirstWrong[E](handle: E => Eff[R, A])(implicit m: Member[Validate[E, ?], R]): Eff[R, A] =
       ValidateInterpretation.catchFirstWrong(e)(handle)
 
+    def catchLastWrong[E](handle: E => Eff[R, A])(implicit m: Member[Validate[E, ?], R]): Eff[R, A] =
+      ValidateInterpretation.catchLastWrong(e)(handle)
+
     def catchAllWrongs[E](handle: NonEmptyList[E] => Eff[R, A])(implicit m: Member[Validate[E, ?], R]): Eff[R, A] =
       ValidateInterpretation.catchAllWrongs(e)(handle)
   }
