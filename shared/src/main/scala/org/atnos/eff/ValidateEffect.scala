@@ -165,13 +165,13 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** catch and handle the first wrong value */
   def catchFirstWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, ?] <= R): Eff[R, A] = {
-    implicit val first: Semigroup[E] = (a, _) => a
+    implicit val first: Semigroup[E] = Semigroup.instance{ (a, _) => a }
     catchWrongs[R, E, A, Id](effect)(handle)
   }
 
   /** catch and handle the first wrong value */
   def catchLastWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, ?] <= R): Eff[R, A] = {
-    implicit val last: Semigroup[E] = (_, b) => b
+    implicit val last: Semigroup[E] = Semigroup.instance{ (_, b) => b }
     catchWrongs[R, E, A, Id](effect)(handle)
   }
 
