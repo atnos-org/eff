@@ -135,14 +135,16 @@ trait ValidateInterpretation extends ValidateCreation {
       def onPure(a: A): Eff[R, A] =
         errs.map(handle).getOrElse(Eff.pure(a))
 
-      def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
-        m match {
-          case Correct() | Warning(_) => Eff.impure((), continuation)
+      def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] = {
+        val x: X = m match {
+          case Correct() | Warning(_) => ()
           case Wrong(e)               => {
             errs = errs |+| Some(Applicative[S].pure(e))
-            Eff.impure((), continuation) // repetition for type safety
+            ()
           }
         }
+        Eff.impure(x, continuation)
+      }
 
       def onLastEffect[X](x: Validate[E, X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
         continuation.runOnNone >> Eff.pure(())
