@@ -1,7 +1,6 @@
 package org.atnos.eff
 
 import cats._, data._
-import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
 import org.atnos.eff.all._
 import Interpret._
@@ -147,19 +146,13 @@ trait ValidateInterpretation extends ValidateCreation {
         continuation.runOnNone >> Eff.pure(())
 
       def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
-        val traversed: Validated[S[E], T[X]] = xs.traverse {
-          case Correct() | Warning(_) => Valid(())
-          case Wrong(e)               => Invalid(Applicative[S].pure(e))
+        val (eo, tx): (Option[S[E]], T[X]) = xs.traverse {
+          case Correct() | Warning(_) => (None, ())
+          case Wrong(e)               => (Some(Applicative[S].pure(e)), ())
         }
 
-        traversed match {
-          case Valid(tx)  => Eff.impure(tx, continuation)
-          case Invalid(e) => {
-            errs = errs |+| Some(e)
-            // Coercion is yet safe since only Validate[?, Unit] exist
-            Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
-          }
-        }
+        errs = errs |+| eo
+        Eff.impure(tx, continuation)
       }
     })
 
