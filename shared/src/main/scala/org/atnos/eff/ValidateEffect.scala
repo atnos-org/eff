@@ -121,7 +121,9 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L SomeOr A]): Eff[U, L SomeOr A] = {
         l = xs.foldLeft(l)(combineLV)
-        Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
+
+        val tx: T[X] = xs.map { case Correct() | Warning(_) | Wrong(_) => () }
+        Eff.impure(tx, continuation)
       }
     })
 
