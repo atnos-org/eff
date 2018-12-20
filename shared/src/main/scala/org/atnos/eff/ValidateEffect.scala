@@ -154,7 +154,11 @@ trait ValidateInterpretation extends ValidateCreation {
 
         traversed match {
           case Valid(tx)  => Eff.impure(tx, continuation)
-          case Invalid(e) => handle(errs.fold(e)(_ |+| e))
+          case Invalid(e) => {
+            errs = errs |+| Some(e)
+            // Coercion is yet safe since only Validate[?, Unit] exist
+            Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
+          }
         }
       }
     })
