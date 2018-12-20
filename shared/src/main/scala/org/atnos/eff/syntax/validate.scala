@@ -25,7 +25,7 @@ trait validate {
     def runIorNel[E](implicit m: Member[Validate[E, ?], R]): Eff[m.Out, E IorNel A] =
       ValidateInterpretation.runIorNel(e)(m.aux)
 
-    @deprecated("Use catchFirstWrong or more general catchWrongs instead", "5.4.0")
+    @deprecated("Use catchFirstWrong or more general catchWrongs instead", "5.4.2")
     def catchWrong[E](handle: E => Eff[R, A])(implicit m: Member[Validate[E, ?], R]): Eff[R, A] =
       ValidateInterpretation.catchWrong(e)(handle)
 
