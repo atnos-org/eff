@@ -18,10 +18,15 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
  recover from wrong values                   $catchWrongValues1
  recover from wrong values and tell errors   $catchWrongValues2
+
  recover, check that the first is catched    $catchFirstWrongValue
  recover, check that all are catched, simple $catchAllWrongValuesLinear
  recover, check that the last is catched     $catchLastWrongValue
  recover, the whole list is catched          $catctListOfWrongValues
+
+ recover, check the first catched, applic    $catchFirstWrongValueApplicative
+ recover, check all are catched, applicative $catchAllWrongValuesApplicative
+ recover, check the last catched, applic     $catchLastWrongValueApplicative
 
  run is stack safe with Validate  $stacksafeRun
 
@@ -142,6 +147,32 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
       } yield a.toString
 
     validate.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error1, error2")
+  }
+
+  object ForCatchingEffApplicative {
+    val v1: Eff[S, Int] = ValidateEffect.validateValue(condition = true, 5, "error1")
+    val v2: Eff[S, String] = ValidateEffect.validateValue(condition = false, "str", "error2")
+    val v3: Eff[S, Int] = ValidateEffect.validateValue(condition = false, 6, "error3")
+
+    final case class Prod(x: Int, s: String, y: Int)
+
+    val prod: Eff[S, Prod] = (v1, v2, v3).mapN(Prod)
+    val v: Eff[S, String] = prod.map(_.toString)
+  }
+
+  def catchFirstWrongValueApplicative = {
+    import ForCatchingEffApplicative._
+    v.catchFirstWrong((s: String) => pure(s)).runNel.run ==== Right("error2")
+  }
+
+  def catchAllWrongValuesApplicative = {
+    import ForCatchingEffApplicative._
+    v.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error2, error3")
+  }
+
+  def catchLastWrongValueApplicative = {
+    import ForCatchingEffApplicative._
+    v.catchLastWrong((s: String) => pure(s)).runNel.run ==== Right("error3")
   }
 
   def catctListOfWrongValues = {
