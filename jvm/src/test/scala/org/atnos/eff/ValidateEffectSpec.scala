@@ -153,9 +153,9 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
   }
 
   object ForCatchingEffApplicative {
-    val v1: Eff[S, Int] = ValidateEffect.validateValue(condition = true, 5, "error1")
-    val v2: Eff[S, String] = ValidateEffect.validateValue(condition = false, "str", "error2")
-    val v3: Eff[S, Int] = ValidateEffect.validateValue(condition = false, 6, "error3")
+    val v1: Eff[S, Int] = ValidateEffect.validateValue(condition = true, 5, "no error")
+    val v2: Eff[S, String] = ValidateEffect.validateValue(condition = false, "str", "error1")
+    val v3: Eff[S, Int] = ValidateEffect.validateValue(condition = false, 6, "error2")
 
     final case class Prod(x: Int, s: String, y: Int)
 
@@ -163,15 +163,15 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     val v: Eff[S, String] = prod.map(_.toString)
 
     def catchFirstWrongValue = {
-      v.catchFirstWrong((s: String) => pure(s)).runNel.run ==== Right("error2")
+      v.catchFirstWrong((s: String) => pure(s)).runNel.run ==== Right("error1")
     }
 
     def catchAllWrongValues = {
-      v.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error2, error3")
+      v.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error1, error2")
     }
 
     def catchLastWrongValue = {
-      v.catchLastWrong((s: String) => pure(s)).runNel.run ==== Right("error3")
+      v.catchLastWrong((s: String) => pure(s)).runNel.run ==== Right("error2")
     }
   }
 
