@@ -130,6 +130,8 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     validate.catchFirstWrong((s: String) => pure(s)).runNel.run ==== Right("error1")
   }
 
+  private def smashNelOfStrings[R](ss: NonEmptyList[String]): Eff[R, String] = pure(ss.mkString_("", ", ", ""))
+
   def catchAllWrongValuesLinear = {
     val validate: Eff[S, String] =
       for {
@@ -139,7 +141,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
         _ <- ValidateEffect.wrong[S, String]("error2")
       } yield a.toString
 
-    validate.catchAllWrongs((ss: NonEmptyList[String]) => pure(ss.mkString_("", ", ", ""))).runNel.run ==== Right("error1, error2")
+    validate.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error1, error2")
   }
 
   def catctListOfWrongValues = {
