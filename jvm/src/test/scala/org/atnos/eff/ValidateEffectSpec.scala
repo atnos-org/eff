@@ -29,7 +29,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
    all are catched                           ${ForCatchingEffApplicative.catchAllWrongValues}
    the last is catched                       ${ForCatchingEffApplicative.catchLastWrongValue}
 
- recover, the whole list is catched          $catctListOfWrongValues
+ recover, the whole list is catched          $catchListOfWrongValues
 
  run is stack safe with Validate  $stacksafeRun
 
@@ -174,7 +174,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     }
   }
 
-  def catctListOfWrongValues = {
+  def catchListOfWrongValues = {
     type C = Fx.fx2[ValidateString, List]
     val validate: Eff[C, String] =
       for {
