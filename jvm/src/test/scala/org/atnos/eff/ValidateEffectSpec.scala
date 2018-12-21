@@ -11,10 +11,11 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
  run the validate effect                     $validateOk
  run the validate effect with nothing        $validateKo
 
- run the validate effect (IorNel variant)    $validateIorOk
- run the validate effect with warnings       $validateWarn
- run the validate effect with warn & err     $validateWarnAndErr
- run the validate effect with errs & warn    $validateWarnAndErr
+ `Ior`ish or warnings-oriented validation
+   run resulting IorNel                      $validateIorOk
+   run with warnings                         $validateWarn
+   run with warnings and errors              $validateWarnAndErr
+   run with errors and warning               $validateWarnAndErr
 
  recover from wrong values                   $catchWrongValues1
  recover from wrong values and tell errors   $catchWrongValues2
