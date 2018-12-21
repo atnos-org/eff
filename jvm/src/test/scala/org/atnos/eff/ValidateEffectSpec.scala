@@ -131,10 +131,15 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
   private def smashNelOfStrings[R](ss: NonEmptyList[String]): Eff[R, String] = pure(ss.mkString_("", ", ", ""))
 
   object ForCatchingEffMonadic {
+    val intermediate: Eff[S, Unit] = for {
+      _ <- ValidateEffect.wrong[S, String]("error1")
+      _ <- ValidateEffect.wrong[S, String]("error1.5")
+    } yield ()
+
     val v: Eff[S, String] =
       for {
         _ <- ValidateEffect.correct[S, String, Int](1)
-        _ <- ValidateEffect.wrong[S, String]("error1")
+        _ <- intermediate
         a <- EffMonad[S].pure(3)
         _ <- ValidateEffect.wrong[S, String]("error2")
       } yield a.toString
@@ -144,7 +149,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     }
 
     def catchAllWrongValues = {
-      v.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error1, error2")
+      v.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error1, error1.5, error2")
     }
 
     def catchLastWrongValue = {
@@ -154,7 +159,10 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   object ForCatchingEffApplicative {
     val v1: Eff[S, Int] = ValidateEffect.validateValue(condition = true, 5, "no error")
-    val v2: Eff[S, String] = ValidateEffect.validateValue(condition = false, "str", "error1")
+    val v2: Eff[S, String] = for {
+      x <- ValidateEffect.validateValue(condition = false, "str", "error1")
+      _ <- ValidateEffect.wrong("error1.5")
+    } yield x
     val v3: Eff[S, Int] = ValidateEffect.validateValue(condition = false, 6, "error2")
 
     final case class Prod(x: Int, s: String, y: Int)
@@ -167,7 +175,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     }
 
     def catchAllWrongValues = {
-      v.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error1, error2")
+      v.catchAllWrongs(smashNelOfStrings).runNel.run ==== Right("error1, error1.5, error2")
     }
 
     def catchLastWrongValue = {
