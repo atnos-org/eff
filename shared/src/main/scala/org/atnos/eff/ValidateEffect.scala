@@ -121,38 +121,65 @@ trait ValidateInterpretation extends ValidateCreation {
 
       def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L SomeOr A]): Eff[U, L SomeOr A] = {
         l = xs.foldLeft(l)(combineLV)
-        Eff.impure(xs.map(_ => ().asInstanceOf[X]), continuation)
+
+        val tx: T[X] = xs.map { case Correct() | Warning(_) | Wrong(_) => () }
+        Eff.impure(tx, continuation)
       }
     })
 
   /** catch and handle possible wrong values */
-  def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] =
+  def catchWrongs[R, E, A, S[_]: Applicative](effect: Eff[R, A])(handle: S[E] => Eff[R, A])(implicit member: Validate[E, ?] <= R, semi: Semigroup[S[E]]): Eff[R, A] =
     intercept(effect)(new Interpreter[Validate[E, ?], R, A, A] {
-      def onPure(a: A): Eff[R, A] =
-        Eff.pure(a)
+      private var errs: Option[S[E]] = None
 
-      def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] =
-        m match {
-          case Correct() | Warning(_) => Eff.impure((), continuation)
-          case Wrong(e)  => handle(e)
+      def onPure(a: A): Eff[R, A] =
+        errs.map(handle).getOrElse(Eff.pure(a))
+
+      def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] = {
+        val x: X = m match {
+          case Correct() | Warning(_) => ()
+          case Wrong(e)               => {
+            errs = errs |+| Some(Applicative[S].pure(e))
+            ()
+          }
         }
+        Eff.impure(x, continuation)
+      }
 
       def onLastEffect[X](x: Validate[E, X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
         continuation.runOnNone >> Eff.pure(())
 
       def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
-        val traversed: State[Option[E], T[X]] = xs.traverse {
-          case Correct() | Warning(_) => State[Option[E], X](state => (None, ()))
-          case Wrong(e)  => State[Option[E], X](state => (Some(e), ()))
+        val (eo, tx): (Option[S[E]], T[X]) = xs.traverse {
+          case Correct() | Warning(_) => (None, ())
+          case Wrong(e)               => (Some(Applicative[S].pure(e)), ())
         }
 
-        traversed.run(None).value match {
-          case (None, tx)    => Eff.impure(tx, continuation)
-          case (Some(e), tx) => handle(e)
-        }
+        errs = errs |+| eo
+        Eff.impure(tx, continuation)
       }
-
     })
+
+  /** catch and handle the first wrong value */
+  def catchFirstWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, ?] <= R): Eff[R, A] = {
+    implicit val first: Semigroup[E] = Semigroup.instance{ (a, _) => a }
+    catchWrongs[R, E, A, Id](effect)(handle)
+  }
+
+  /** catch and handle the last wrong value */
+  def catchLastWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, ?] <= R): Eff[R, A] = {
+    implicit val last: Semigroup[E] = Semigroup.instance{ (_, b) => b }
+    catchWrongs[R, E, A, Id](effect)(handle)
+  }
+
+  /** catch and handle all wrong values */
+  def catchAllWrongs[R, E, A](effect: Eff[R, A])(handle: NonEmptyList[E] => Eff[R, A])(implicit member: Validate[E, ?] <= R): Eff[R, A] =
+    catchWrongs(effect)(handle)
+
+  /** catch and handle possible wrong values */
+  @deprecated("Use catchFirstWrong or more general catchWrongs instead", "5.4.2")
+  def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, ?]) <= R): Eff[R, A] =
+    catchFirstWrong(effect)(handle)
 }
 
 object ValidateInterpretation extends ValidateInterpretation
