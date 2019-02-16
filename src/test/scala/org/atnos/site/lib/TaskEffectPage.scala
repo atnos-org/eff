@@ -36,8 +36,7 @@ val action: Eff[R, Int] =
 Then we need to pass a Monix `Scheduler`  in to begin the computation.
 */
 
-implicit val scheduler = monix.execution.Scheduler(
-  ExecutionContext.fromExecutorService(Executors.newScheduledThreadPool(10)))
+implicit val scheduler = monix.execution.Scheduler(Executors.newScheduledThreadPool(10))
 
 /*p
 Monix doesn't natively offer an Await API to block on a Task result.
