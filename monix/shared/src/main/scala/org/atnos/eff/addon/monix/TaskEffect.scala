@@ -34,7 +34,7 @@ trait TaskCreation extends TaskTypes {
     fromTask(call.executeOn(scheduler), timeout)
 
   final def taskFork[R :_task, A](call: Task[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    fromTask(call.executeWithFork, timeout)
+    fromTask(call.executeAsync, timeout)
 
   final def asyncBoundary[R :_task]: Eff[R, Unit] =
     fromTask(forkedUnit)
@@ -43,11 +43,11 @@ trait TaskCreation extends TaskTypes {
     fromTask(forkedUnit.executeOn(s))
 
   private val forkedUnit: Task[Unit] =
-    Task.unit.executeWithFork
+    Task.unit.executeAsync
 
   final def taskAsync[R :_task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit,
                                    timeout: Option[FiniteDuration] = None): Eff[R, A] = {
-    val async = Task.async[A] { (_, cb) =>
+    val async = Task.create[A] { (_, cb) =>
       callbackConsumer(tea => cb(tea.fold(Failure(_), Success(_))))
       Cancelable.empty
     }
@@ -101,7 +101,7 @@ trait TaskInterpretation extends TaskTypes {
     interpret.interceptNat[R, Task, A](e)(
       new (Task ~> Task) {
         def apply[X](fa: Task[X]): Task[X] =
-          fa.executeWithFork
+          fa.executeAsync
       })
 
   /** memoize the task result using a cache */
@@ -141,7 +141,7 @@ trait TaskInterpretation extends TaskTypes {
 
   implicit val taskSequenceCached: SequenceCached[Task] = new SequenceCached[Task] {
     def get[X](cache: Cache, key: AnyRef): Task[Option[X]] =
-      Task.delay(cache.get(key)).executeWithFork
+      Task.delay(cache.get(key)).executeAsync
 
     def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>Task[X]): Task[X] =
       cache.memo((key, sequenceKey), tx.memoize)
@@ -167,10 +167,14 @@ trait EffToTask[R] {
 
 trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
 
-  implicit def asyncInstance[R :_Task]: cats.effect.Async[Eff[R, ?]] = new cats.effect.Async[Eff[R, ?]] {
-
+  implicit def asyncInstance[R :_Task](implicit runEff: EffToTask[R]): cats.effect.Async[Eff[R, ?]] = new cats.effect.Async[Eff[R, ?]] {
     private val taskAsyncInstance: cats.effect.Async[Task] =
       implicitly[cats.effect.Async[Task]]
+
+    override def asyncF[A](k: (Either[Throwable, A] => Unit) => Eff[R, Unit]): Eff[R, A] = fromTask(taskAsyncInstance.asyncF[A] { f => runEff(k(f)) })
+
+    override def bracketCase[A, B](acquire: Eff[R, A])(use: A => Eff[R, B])(release: (A, ExitCase[Throwable]) => Eff[R, Unit]): Eff[R, B] =
+      fromTask(taskAsyncInstance.bracketCase(runEff(acquire))(a => runEff(use(a)))((r, ec) => runEff(release(r, ec))))
 
     def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
       fromTask(taskAsyncInstance.async(k))
@@ -206,7 +210,12 @@ trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
     private val asyncInstance: cats.effect.Async[Eff[R, ?]] =
       outer.asyncInstance
 
-    def runAsync[A](fa: Eff[R, A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
+    override def asyncF[A](k: (Either[Throwable, A] => Unit) => Eff[R, Unit]) = asyncInstance.asyncF(k)
+
+    override def bracketCase[A, B](acquire: Eff[R, A])(use: A => Eff[R, B])(release: (A, ExitCase[Throwable]) => Eff[R, Unit]) =
+      asyncInstance.bracketCase(acquire)(use)(release)
+
+    def runAsync[A](fa: Eff[R, A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[Unit] =
       taskEffectInstance.runAsync(runEff(fa))(cb)
 
     def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =

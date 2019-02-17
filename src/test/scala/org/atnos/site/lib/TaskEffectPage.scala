@@ -1,8 +1,11 @@
 package org.atnos.site
 package lib
 
+import java.util.concurrent.Executors
+
 import org.atnos.eff.syntax.all._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 object TaskEffectPage extends UserGuidePage { def is = "Task".title ^ s2"""
@@ -33,8 +36,7 @@ val action: Eff[R, Int] =
 Then we need to pass a Monix `Scheduler`  in to begin the computation.
 */
 
-implicit val scheduler = monix.execution.Scheduler(
-  java.util.concurrent.Executors.newScheduledThreadPool(10))
+implicit val scheduler = monix.execution.Scheduler(Executors.newScheduledThreadPool(10))
 
 /*p
 Monix doesn't natively offer an Await API to block on a Task result.
@@ -43,7 +45,7 @@ See https://monix.io/docs/2x/eval/task.html#blocking-for-a-result
 */
 import scala.concurrent.Await
 
-Await.result(action.runOption.runAsync.runAsync, 1 second)
+Await.result(action.runOption.runAsync.runToFuture, 1 second)
 }.eval}
 
 """

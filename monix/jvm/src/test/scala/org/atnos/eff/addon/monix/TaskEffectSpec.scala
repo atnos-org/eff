@@ -49,7 +49,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       b <- taskDelay(20)
     } yield a + b
 
-    action[S].runOption.runSequential.runAsync must beSome(30).await(retries = 5, timeout = 5.seconds)
+    action[S].runOption.runSequential.runToFuture must beSome(30).await(retries = 5, timeout = 5.seconds)
   }
 
   def e2 = {
@@ -58,7 +58,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       b <- taskDelay { boom; 20 }
     } yield a + b
 
-    action[S].taskAttempt.runOption.runSequential.runAsync must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
+    action[S].taskAttempt.runOption.runSequential.runToFuture must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
   }
 
   def e3 = {
@@ -75,7 +75,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
     eventually(retries = 5, sleep = 0.seconds) {
       messages.clear
-      Await.result(run.runOption.runAsync.runAsync, 3.seconds)
+      Await.result(run.runOption.runAsync.runToFuture, 3.seconds)
 
       "the messages are ordered" ==> {
         messages.toList ==== delays.sorted
@@ -91,11 +91,11 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       if (i == 0) Task.now(Eff.pure(1))
       else Task.now(taskSuspend(loop(i - 1)).map(_ + 1))
 
-    Await.result(taskSuspend(loop(100000)).runSequential.runAsync, Duration.Inf) must not(throwAn[Exception])
+    Await.result(taskSuspend(loop(100000)).runSequential.runToFuture, Duration.Inf) must not(throwAn[Exception])
   }
 
   def e6 = {
-    taskDelay({ sleepFor(10000.millis); 1 }, timeout = Some(50.millis)).taskAttempt.runSequential.runAsync must beLeft[Throwable].awaitFor(20.seconds)
+    taskDelay({ sleepFor(10000.millis); 1 }, timeout = Some(50.millis)).taskAttempt.runSequential.runToFuture must beLeft[Throwable].awaitFor(20.seconds)
   }
 
   def e7 = {
@@ -103,7 +103,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val cache = ConcurrentHashMapCache()
     def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }))
 
-    (makeRequest >> makeRequest).runSequential.runAsync must be_==(1).await
+    (makeRequest >> makeRequest).runSequential.runToFuture must be_==(1).await
     invocationsNumber must be_==(1)
   }
 
@@ -112,7 +112,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val cache = ConcurrentHashMapCache()
     def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }))
 
-    (makeRequest >> makeRequest).taskAttempt.runSequential.runAsync must beRight(1).await
+    (makeRequest >> makeRequest).taskAttempt.runSequential.runToFuture must beRight(1).await
     invocationsNumber must be_==(1)
   }
 
@@ -121,7 +121,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val cache = ConcurrentHashMapCache()
     def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)))
 
-    (makeRequest >> makeRequest).runSequential.runAsync must be_==(1).await
+    (makeRequest >> makeRequest).runSequential.runToFuture must be_==(1).await
     invocationsNumber must be_==(1)
   }
 
@@ -130,7 +130,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val cache = ConcurrentHashMapCache()
 
     def makeRequest = taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)).taskMemo("only once", cache)
-      (makeRequest >> makeRequest).taskAttempt.runSequential.runAsync must beRight(1).await
+      (makeRequest >> makeRequest).taskAttempt.runSequential.runToFuture must beRight(1).await
 
     invocationsNumber must be_==(1)
   }
@@ -147,8 +147,8 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       else
         taskMemo("only once", cache, taskDelay { invocationsNumber += 1; 1 })
 
-    makeRequest.taskAttempt.runSequential.runAsync must beLeft[Throwable].await
-    makeRequest.taskAttempt.runSequential.runAsync must beRight(1).await
+    makeRequest.taskAttempt.runSequential.runToFuture must beLeft[Throwable].await
+    makeRequest.taskAttempt.runSequential.runToFuture must beRight(1).await
 
     invocationsNumber must be_==(1)
   }
@@ -159,7 +159,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       b <- taskDelay(20)
     } yield a + b
 
-    action[S].runOption.runAsync.runAsync must beSome(30).await(retries = 5, timeout = 5.seconds)
+    action[S].runOption.runAsync.runToFuture must beSome(30).await(retries = 5, timeout = 5.seconds)
   }
 
   def e13 = {
@@ -180,7 +180,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val execute: Eff[S, Int] =
       action.retryUntil(i => i == 3, List(10.millis, 20.millis))
 
-    execute.runOption.runAsync.runAsync must beSome(3).await
+    execute.runOption.runAsync.runToFuture must beSome(3).await
   }
 
   def retry2 = {
@@ -193,7 +193,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val execute: Eff[S, Int] =
       action.retryUntil(i => i == 5, List(10.millis, 20.millis))
 
-    execute.runOption.runAsync.runAsync must beSome(3).await
+    execute.runOption.runAsync.runToFuture must beSome(3).await
   }
 
   /**
