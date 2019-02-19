@@ -1,0 +1,8 @@
+Maintenance version
+
+### Improvements
+
+ - updated monix dependency to 3.0.0-RC2 (thanks to @dispalt)
+ - updated sbt 1.2.8 (#163) (by @xuwei-k)
+ - simpler implementation of applicative effect for errors catching (#161, by @buzden)
+
