@@ -12,7 +12,7 @@ trait error {
   implicit final def toErrorOps(e: Error): ErrorOps = new ErrorOps(e)
 }
 
-final class ErrorEffectOps[R, A](val action: Eff[R, A]) extends AnyVal {
+final class ErrorEffectOps[R, A](private val action: Eff[R, A]) extends AnyVal {
 
   def runError(implicit m: Member[ErrorOrOk, R]): Eff[m.Out, Error Either A] =
     ErrorEffect.runError(action)(m.aux)
@@ -27,7 +27,7 @@ final class ErrorEffectOps[R, A](val action: Eff[R, A]) extends AnyVal {
     ErrorEffect.ignoreException(action)
 }
 
-final class ErrorOrOkOps[A](val c: Error Either A) extends AnyVal {
+final class ErrorOrOkOps[A](private val c: Error Either A) extends AnyVal {
   def toErrorSimpleMessage: Option[String] =
     c match {
       case Left(e) => Some(new ErrorOps(e).simpleMessage)
@@ -41,7 +41,7 @@ final class ErrorOrOkOps[A](val c: Error Either A) extends AnyVal {
     }
 }
 
-final class ErrorOps(val e: Error) extends AnyVal {
+final class ErrorOps(private val e: Error) extends AnyVal {
   def simpleMessage: String =
     e match {
       case Left(t) => render(t)

@@ -13,7 +13,7 @@ trait eval {
 
 }
 
-final class EvalEffectScalazOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class EvalEffectScalazOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def attemptEvalDisjunction[U](implicit member: Member.Aux[Eval, R, U]): Eff[U, Throwable \/ A] =
     addon.scalaz.eval.attemptEvalDisjunction(e)

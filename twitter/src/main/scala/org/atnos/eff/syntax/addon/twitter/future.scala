@@ -15,7 +15,7 @@ trait future {
 
 object future extends future
 
-final class TwitterFutureOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class TwitterFutureOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def runTwitterFutureMemo[U](cache: Cache)(implicit memMember: Member.Aux[Memoized, R, U],
                                             futMember: TwitterTimedFuture |= U): Eff[U, A] =

@@ -9,7 +9,7 @@ trait either {
   implicit final def toEitherEffectOps[R, A](e: Eff[R, A]): EitherEffectOps[R, A] = new EitherEffectOps[R, A](e)
 }
 
-final class EitherEffectOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class EitherEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def runEither[E](implicit m: Member[(E Either ?), R]): Eff[m.Out, E Either A] =
     EitherInterpretation.runEither[R, m.Out, E, A](e)(m)
