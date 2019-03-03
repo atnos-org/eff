@@ -16,7 +16,7 @@ trait task {
 object task extends task
 
 
-final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class TaskOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def runTaskMemo[U](cache: Cache)(implicit m: Member.Aux[Memoized, R, U], task: TimedTask |= U): Eff[U, A] =
     TaskEffect.runTaskMemo(cache)(e)

@@ -12,7 +12,7 @@ trait validate {
 
 }
 
-final class ValidateEffectScalazOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class ValidateEffectScalazOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def runValidationNel[U, E](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, ValidationNel[E, A]] =
     addon.scalaz.validate.runValidationNel(e)

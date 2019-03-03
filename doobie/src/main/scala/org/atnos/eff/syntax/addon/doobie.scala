@@ -14,7 +14,7 @@ trait doobie {
 
 }
 
-final class DoobieConnectionIOOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class DoobieConnectionIOOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def runConnectionIO[F[_], U, E, B](t: Transactor[F])(
     implicit mc: Member.Aux[ConnectionIO, R, U],
     mf: MemberInOut[F, U],

@@ -9,7 +9,7 @@ trait either {
   implicit final def toEitherEffectScalazOps[R, A](e: Eff[R, A]): EitherEffectScalazOps[R, A] = new EitherEffectScalazOps[R, A](e)
 }
 
-final class EitherEffectScalazOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class EitherEffectScalazOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def runDisjunction[U, E](implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E \/ A] =
     addon.scalaz.either.runDisjunction(e)
 

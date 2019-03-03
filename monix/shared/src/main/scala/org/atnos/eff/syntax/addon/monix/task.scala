@@ -14,7 +14,7 @@ trait task {
 
 }
 
-final class TaskOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class TaskOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def asyncBoundary(implicit task: Task |= R): Eff[R, A] =
      e.flatMap(a => TaskEffect.asyncBoundary.map(_ => a))

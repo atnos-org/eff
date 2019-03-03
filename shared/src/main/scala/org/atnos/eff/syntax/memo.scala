@@ -11,7 +11,7 @@ trait memo {
 
 }
 
-final class MemoEffectOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class MemoEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def runMemo[U](cache: Cache)(implicit member: Member.Aux[Memoized, R, U], eval: Eval |= U): Eff[U, A] =
     MemoEffect.runMemo(cache)(e)(member, eval)

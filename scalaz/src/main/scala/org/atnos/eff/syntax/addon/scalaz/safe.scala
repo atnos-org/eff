@@ -11,7 +11,7 @@ trait safe {
 
 }
 
-final class SafeEffectScalazOps[R, A](val e: Eff[R, A]) extends AnyVal {
+final class SafeEffectScalazOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def runSafeDisjunction[U](implicit m: Member.Aux[Safe, R, U]): Eff[U, (Throwable \/ A, List[Throwable])] =
     addon.scalaz.safe.runSafeDisjunction(e)

@@ -15,7 +15,7 @@ object effect {
 
 }
 
-final class IOOps[A](val e: Eff[Fx1[IO], A]) extends AnyVal {
+final class IOOps[A](private val e: Eff[Fx1[IO], A]) extends AnyVal {
 
   def runAsync(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
     IOEffect.runAsync(e)(cb)
@@ -37,7 +37,7 @@ final class IOOps[A](val e: Eff[Fx1[IO], A]) extends AnyVal {
 
 }
 
-final class IOOps2[R, A](val e: Eff[R, A]) extends AnyVal {
+final class IOOps2[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def ioAttempt(implicit m: MemberInOut[IO, R]): Eff[R, Throwable Either A] =
     IOEffect.ioAttempt(e)
