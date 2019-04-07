@@ -5,7 +5,7 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 lazy val catsVersion        = "1.6.0"
 lazy val monixVersion       = "3.0.0-RC2"
 lazy val scalazVersion      = "7.2.26"
-lazy val specs2Version      = "4.3.6"
+lazy val specs2Version      = "4.5.1"
 lazy val twitterUtilVersion = "18.8.0"
 lazy val catbirdVersion     = "18.8.0"
 lazy val doobieVersion      = "0.6.0-M2"
@@ -257,7 +257,7 @@ lazy val specs2 = Seq(
   , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
 
 lazy val scalameter = Seq(
-  "com.storm-enroute" %% "scalameter" % "0.14" % "test")
+  "com.storm-enroute" %% "scalameter" % "0.17" % "test")
 
 lazy val twitterUtilCore = Seq(
   "com.twitter" %% "util-collection" % twitterUtilVersion
