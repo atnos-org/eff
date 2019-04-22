@@ -27,7 +27,7 @@ You add `eff` as an sbt dependency:
 libraryDependencies += "org.atnos" %% "eff" % "5.1.0"
 
 // to write types like Reader[String, ?]
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
 
 // to get types like Reader[String, ?] (with more than one type parameter) correctly inferred for scala 2.11.11+ and 2.12.x
 scalacOptions += "-Ypartial-unification"
