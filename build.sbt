@@ -55,7 +55,18 @@ lazy val macros = project.in(file("macros"))
   .settings(moduleName := "eff-macros")
   .dependsOn(coreJVM)
   .settings(libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value)
-  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
+  .settings(
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, v)) if v <= 12 =>
+          Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
+        case _ =>
+          // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
+          // https://github.com/scala/scala/pull/6606
+          Nil
+      }
+    }
+  )
   .settings(commonJvmSettings)
   .settings(effSettings:_*)
 
@@ -97,7 +108,7 @@ lazy val buildSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
-  scalacOptions ++= commonScalacOptions,
+  scalacOptions ++= commonScalacOptions.value,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
@@ -152,21 +163,31 @@ lazy val noPublishSettings = Seq(
   publishArtifact := false
 )
 
-lazy val commonScalacOptions = Seq(
-  "-deprecation",
-  "-encoding", "UTF-8",
-  "-feature",
-  "-language:_",
-  "-unchecked",
-  "-Xfatal-warnings",
-  "-Xlint",
-  "-Xlint:-nullary-unit",
-  "-Yno-adapted-args",
-  "-Ywarn-numeric-widen",
-  "-Ywarn-value-discard",
-  "-Ypartial-unification",
-  "-Xfuture"
-)
+lazy val commonScalacOptions = Def.setting {
+  Seq(
+    "-deprecation",
+    "-encoding", "UTF-8",
+    "-feature",
+    "-language:_",
+    "-unchecked",
+    "-Xlint",
+    "-Xlint:-nullary-unit",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-value-discard"
+  ) ++ {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v >= 13 =>
+        Nil
+      case _ =>
+        Seq(
+          "-Xfatal-warnings",
+          "-Yno-adapted-args",
+          "-Ypartial-unification",
+          "-Xfuture"
+        )
+    }
+  }
+}
 
 lazy val sharedPublishSettings = Seq(
   publishMavenStyle := true,
