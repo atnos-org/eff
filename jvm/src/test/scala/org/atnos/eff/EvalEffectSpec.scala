@@ -36,7 +36,7 @@ class EvalEffectSpec extends Specification { def is = s2"""
       if (i == 0) {
         Eval.now(Eff.pure(1))
       } else {
-        Eval.now(eval.defer(loop(i - 1)).map(_  + 1))
+        Eval.now(org.atnos.eff.eval.defer(loop(i - 1)).map(_  + 1))
       }
 
     loop(100000).value.runEval.run ==== 100001

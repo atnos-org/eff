@@ -42,8 +42,8 @@ trait MemberInLower2 extends MemberInLower3 {
   implicit def MemberIn3L[L[_], M[_], R[_]]: MemberIn[L, Fx3[L, M, R]] =
     TaggedMemberIn(1)
 
-  implicit def MemberInAppendL[T[_], L, R](implicit append: MemberIn[T, L]): MemberIn[T, FxAppend[L, R]] =
-    AppendMemberIn(isRight = false, append)
+  implicit def MemberInAppendAnyL[T[_], R]: MemberIn[T, FxAppend[Fx1[T], R]] =
+    AppendMemberIn(isRight = false, TaggedMemberIn(1))
 }
 
 trait MemberInLower3 extends MemberInLower4 {
@@ -63,8 +63,8 @@ trait MemberInLower4 extends MemberInLower5 {
 }
 
 trait MemberInLower5 {
-  implicit def MemberInAppendAnyL[T[_], R]: MemberIn[T, FxAppend[Fx1[T], R]] =
-    AppendMemberIn(isRight = false, TaggedMemberIn(1))
+  implicit def MemberInAppendL[T[_], L, R](implicit append: MemberIn[T, L]): MemberIn[T, FxAppend[L, R]] =
+    AppendMemberIn(isRight = false, append)
 
   implicit def MemberInAppendAnyR[T[_], L, R](implicit m: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] =
     AppendMemberIn(isRight = true, m)
