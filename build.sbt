@@ -2,7 +2,7 @@ import ScoverageSbtPlugin._
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val catsVersion        = "2.0.0-M3"
+lazy val catsVersion        = "2.0.0-M4"
 lazy val monixVersion       = "3.0.0-RC2"
 lazy val scalazVersion      = "7.2.27"
 lazy val specs2Version      = "4.5.1"
@@ -111,7 +111,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions.value,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.2")
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
