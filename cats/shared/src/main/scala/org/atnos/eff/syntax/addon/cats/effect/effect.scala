@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import org.atnos.eff.Eff
 
-object effect {
+package object effect {
 
   implicit final def toIOOps[A](e: Eff[Fx1[IO], A]): IOOps[A] = new IOOps[A](e)
   implicit final def toIOOps2[R, A](e: Eff[R, A]): IOOps2[R, A] = new IOOps2[R, A](e)

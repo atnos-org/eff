@@ -2,10 +2,11 @@ package org.atnos.eff.addon.doobie
 
 import java.sql.Connection
 
-import cats.implicits._
-import cats.{MonadError, ~>}
+import _root_.doobie.Transactor
 import _root_.doobie.free.connection.ConnectionIO
-import _root_.doobie.imports.Transactor
+import cats.effect.Bracket
+import cats.implicits._
+import cats.~>
 import org.atnos.eff._
 import org.atnos.eff.all._
 
@@ -24,10 +25,10 @@ trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
   def runConnectionIO[R, U, F[_], E, A, B](e: Eff[R, A])(t: Transactor[F])(
     implicit mc: Member.Aux[ConnectionIO, R, U],
              mf: F /= U,
-             me: MonadError[F, E] ): Eff[U, A] = {
+             me: Bracket[F, Throwable] ): Eff[U, A] = {
 
     def getConnection: Eff[U, Connection] =
-      send[F, U, Connection](t.connect(t.kernel))
+      send[F, U, Connection](t.connect(t.kernel).allocated.map(_._1))
 
     def runEffect(connection: Connection): Eff[U, A] =
       interpret.translate(e)(new Translate[ConnectionIO, U] {
@@ -39,7 +40,7 @@ trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
     def interceptErrors[Y](effect: Eff[U, Y])(oops: F[Unit]): Eff[U, Y] =
       interpret.interceptNat(effect)(new (F ~> F) {
         def apply[X](f: F[X]): F[X] =
-          f.handleErrorWith((err: E) => oops *> me.raiseError[X](err))
+          f.handleErrorWith((err: Throwable) => oops *> me.raiseError[X](err))
       })
 
     getConnection.flatMap { connection =>
