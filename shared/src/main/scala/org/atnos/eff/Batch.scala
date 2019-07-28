@@ -38,7 +38,7 @@ trait Batch {
               case e1 +: rest1 =>
                 ImpureAp(Unions(m.inject(e1), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
                   // the map operation has to reorder the results based on what could be batched or not
-                  continuation.contramap(ls => reorder(ls, result.hasBatched, result.keys ++ collected.otherIndices)), last)
+                  continuation.contramap(ls => reorder(ls, result.keys ++ collected.otherIndices)), last)
             }
         }
 
@@ -46,11 +46,11 @@ trait Batch {
     }
 
   // reorder an input list based on the expected indices for that list
-  private def reorder[T[_]](ls: Vector[Any], hasBatched: Boolean, indices: Vector[Int])(implicit batchable: Batchable[T]): Vector[Any] =
-    indices.zip(flatten(ls, hasBatched)).sortBy(_._1).map(_._2)
+  private def reorder[T[_]](ls: Vector[Any], indices: Vector[Int])(implicit batchable: Batchable[T]): Vector[Any] =
+    indices.zip(flatten(ls)).sortBy(_._1).map(_._2)
 
   // the result of batching
-  private def flatten[T[_]](ls: Vector[Any], hasBatch: Boolean)(implicit batchable: Batchable[T]): Vector[Any] =
+  private def flatten[T[_]](ls: Vector[Any])(implicit batchable: Batchable[T]): Vector[Any] =
     ls match {
       case xs :+ z =>
         xs ++ batchable.distribute(z.asInstanceOf[batchable.Z])
@@ -82,7 +82,6 @@ private sealed trait Batched[T[_]] {
   def effects: Vector[T[_]]
   def keys: Vector[Int]
   def batchedEffect: T[_]
-  def hasBatched: Boolean
 
   def append(ty: T[_], key: Int): Batched[T]
   def fuse(ty: T[_], key: Int): Batched[T]
@@ -97,7 +96,6 @@ private case class Composed[T[_]](unbatched: Vector[Batched[T]], batched: Single
   def effects = unbatched.flatMap(_.effects)
   def keys = unbatched.flatMap(_.keys) ++ batched.keys
   def batchedEffect: T[_] = batched.batchedEffect
-  def hasBatched: Boolean = batched.hasBatched
 
   def append(ty: T[_], key: Int) =
     copy(unbatched  = unbatched :+ Batched.single((ty, key)))
@@ -109,7 +107,6 @@ private case class Composed[T[_]](unbatched: Vector[Batched[T]], batched: Single
 private case class Single[T[_]](tx: T[_], keys: Vector[Int]) extends Batched[T] {
   def effects = Vector(tx)
   def batchedEffect = tx
-  def hasBatched: Boolean = keys.size > 1
 
   def append(ty: T[_], key: Int): Batched[T] =
     Composed(Vector(Batched.single((tx, key))), this)
