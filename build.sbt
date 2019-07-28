@@ -1,4 +1,3 @@
-import ScoverageSbtPlugin._
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
@@ -8,7 +7,7 @@ lazy val scalazVersion      = "7.2.28"
 lazy val specs2Version      = "4.6.0"
 lazy val twitterUtilVersion = "19.1.0"
 lazy val catbirdVersion     = "19.6.0"
-lazy val doobieVersion      = "0.6.0-M2"
+lazy val doobieVersion      = "0.8.0-M2"
 lazy val catsEffectVersion  = "2.0.0-M4"
 
 enablePlugins(GhpagesPlugin)
@@ -215,7 +214,7 @@ lazy val notesSettings = Seq(
     // find the corresponding release notes
     val notesFilePath = s"notes/${tagName.replace("EFF-", "")}.markdown"
     try scala.io.Source.fromFile(notesFilePath).mkString
-    catch { case t: Throwable => throw new Exception(s"$notesFilePath not found") }
+    catch { case t: Throwable => throw new Exception(s"$notesFilePath not found", t) }
   },
   // just upload the notes
   ghreleaseAssets := Seq()

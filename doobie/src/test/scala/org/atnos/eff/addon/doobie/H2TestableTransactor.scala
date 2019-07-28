@@ -1,11 +1,14 @@
 package org.atnos.eff.addon.doobie
 
+import java.util.concurrent.Executors
+
+import cats.effect._
 import cats.implicits._
-import doobie.free.KleisliInterpreter
 import doobie.free.connection.{ConnectionIO, close, commit, delay, rollback, setAutoCommit}
 import doobie.util.transactor.{Strategy, Transactor}
-import cats.effect._
 import org.h2.jdbcx.JdbcConnectionPool
+
+import scala.concurrent.ExecutionContext
 
 object H2TestableTransactor {
 
@@ -19,7 +22,7 @@ object H2TestableTransactor {
     def registerAlways(): Unit     = calls :+= "always"
   }
 
-  def create[M[_]](url: String = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
+  def create[M[_]: ContextShift](url: String = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
                    user: String = "sa",
                    pass: String = "",
                    before: ConnectionIO[Unit] = setAutoCommit(false),
@@ -32,11 +35,15 @@ object H2TestableTransactor {
 
     val c = new OpHistory()
 
-    val t = Transactor(
-      kernel0 = pool,
-      connect0 = (a: JdbcConnectionPool) => async.delay(a.getConnection) <* async.pure(c.registerConnection()),
-      KleisliInterpreter[M].ConnectionInterpreter,
-      Strategy(
+    val ec = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool)
+
+    val blocker = Blocker.liftExecutionContext(ec)
+
+    val pre = Transactor.fromDataSource.apply(pool, ec, blocker)
+
+    val t = pre.copy(
+      connect0 = con => pre.connect(con).evalTap(async.pure(_) <* async.pure(c.registerConnection())),
+      strategy0 = Strategy(
         before = before.flatMap(a => delay(c.registerBefore()).map(_ => a)),
         after  = after .flatMap(a => delay(c.registerAfter()) .map(_ => a)),
         oops   = oops  .flatMap(a => delay(c.incrementOops()) .map(_ => a)),

@@ -21,6 +21,8 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
     in strategy.always          $t6
 """
 
+  implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContexts.synchronous)
+
   type Stack = Fx.fx2[ConnectionIO, IO]
 
   def t1 = {
