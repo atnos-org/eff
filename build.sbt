@@ -7,7 +7,7 @@ lazy val scalazVersion      = "7.2.28"
 lazy val specs2Version      = "4.6.0"
 lazy val twitterUtilVersion = "19.1.0"
 lazy val catbirdVersion     = "19.6.0"
-lazy val doobieVersion      = "0.8.0-M2"
+lazy val doobieVersion      = "0.8.0-M3"
 lazy val catsEffectVersion  = "2.0.0-M4"
 
 enablePlugins(GhpagesPlugin)
