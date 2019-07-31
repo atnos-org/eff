@@ -9,6 +9,7 @@ lazy val twitterUtilVersion = "19.1.0"
 lazy val catbirdVersion     = "19.6.0"
 lazy val doobieVersion      = "0.8.0-M3"
 lazy val catsEffectVersion  = "2.0.0-M4"
+lazy val zioVersion = "1.0.0-RC10-1"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)
@@ -92,6 +93,14 @@ lazy val twitter = project
   .dependsOn(coreJVM)
   .settings(libraryDependencies ++= twitterUtilCore ++ catbird)
   .settings(effSettings ++ commonJvmSettings:_*)
+
+lazy val zio = crossProject(JSPlatform, JVMPlatform).in(file("zio"))
+  .settings(moduleName := "eff-zio")
+  .dependsOn(core)
+  .settings(libraryDependencies ++= zioLib)
+  .settings(effSettings:_*)
+  .jvmSettings(commonJvmSettings:_*)
+  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= zioJs.value):_*)
 
 lazy val scoverageSettings = Seq(
   coverageMinimum := 60,
@@ -288,6 +297,12 @@ lazy val twitterUtilCore = Seq(
 lazy val catbird = Seq(
   "io.catbird" %% "catbird-util" % catbirdVersion
 )
+
+lazy val zioLib = Seq(
+  "dev.zio" %% "zio" % zioVersion)
+
+lazy val zioJs = Def.setting(Seq(
+  "dev.zio" %%% "zio" % zioVersion))
 
 lazy val commonResolvers = Seq(
   Resolver.sonatypeRepo("releases")
