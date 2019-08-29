@@ -43,3 +43,7 @@ scalaOrganization in ThisBuild := "org.typelevel"
 and provide a safe and friendly environment for teaching, learning, and contributing as described in the [Scala Code of Conduct](https://www.scala-lang.org/conduct/).
 
 Feel free to open an issue if you notice a bug, have an idea for a feature, or have a question about the code. Pull requests are also gladly accepted.
+
+# extensions
+
+- [eff-zio](https://github.com/takayahilton/eff-zio) eff extension for ZIO effects.
