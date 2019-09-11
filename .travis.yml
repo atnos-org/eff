@@ -23,6 +23,7 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
+    - $HOME/.coursier
 
 script:
   - sbt -scala-version $TRAVIS_SCALA_VERSION ';clean; testOnly -- timefactor 5 exclude travis'
