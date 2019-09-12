@@ -28,4 +28,4 @@ cache:
 script:
   - sbt -scala-version $TRAVIS_SCALA_VERSION ';clean; testOnly -- timefactor 5 exclude travis'
   - find $HOME/.sbt -name "*.lock" | xargs rm
-  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs --no-run-if-empty rm
