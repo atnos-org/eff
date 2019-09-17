@@ -29,7 +29,7 @@ def openResource: Eff[S, Resource] =
   protect { resource = resource.copy(inUse = true); resource }
 
 def closeResource(r: Resource): Eff[S, Unit] =
-  protect(resource = r.copy(inUse = false))
+  protect { resource = r.copy(inUse = false) }
 
 def useResource(ok: Boolean) = (r: Resource) =>
   protect[S, Int](if (ok) r.values.sum else throw new Exception("boo"))
