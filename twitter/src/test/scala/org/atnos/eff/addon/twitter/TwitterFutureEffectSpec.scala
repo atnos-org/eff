@@ -1,6 +1,5 @@
 package org.atnos.eff.addon.twitter
 
-import scala.concurrent.duration._
 import com.twitter.util.{Await, FuturePool}
 import org.atnos.eff.addon.twitter.future._
 import org.atnos.eff.syntax.addon.twitter.future._
@@ -15,8 +14,6 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent._
 import duration._
 import org.specs2.matcher.ThrownExpectations
-
-import scala.util.control._
 
 class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = sequential ^ s2"""
 
@@ -72,8 +69,9 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
 
     def action(i: Int): Eff[S, Unit] =
       futureFork {
-          Thread.sleep(i.toLong)
-          messages.append(i)
+        Thread.sleep(i.toLong)
+        messages.append(i)
+        ()
       }(FuturePool.unboundedPool)
 
     val run = futureDelay[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action)

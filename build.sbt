@@ -6,7 +6,7 @@ lazy val monixVersion       = "3.0.0"
 lazy val scalazVersion      = "7.2.28"
 lazy val specs2Version      = "4.7.0"
 lazy val twitterUtilVersion = "19.9.0"
-lazy val catbirdVersion     = "19.8.0"
+lazy val catbirdVersion     = "19.9.0"
 lazy val doobieVersion      = "0.8.0-RC1"
 lazy val catsEffectVersion  = "2.0.0"
 
@@ -18,7 +18,6 @@ lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
   .settings(effSettings)
   .settings(noPublishSettings)
-  .settings(crossScalaVersions := Seq("2.11.12", scalaVersion.value))
   .settings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter):_*)
   .aggregate(coreJVM, coreJS, doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalaz, twitter)
   .dependsOn(coreJVM % "test->test;compile->compile", coreJS,
@@ -93,7 +92,6 @@ lazy val twitter = project
   .dependsOn(coreJVM)
   .settings(libraryDependencies ++= twitterUtilCore ++ catbird)
   .settings(effSettings ++ commonJvmSettings:_*)
-  .settings(crossScalaVersions := Seq("2.11.12", scalaVersion.value))
 
 lazy val scoverageSettings = Seq(
   coverageMinimum := 60,
@@ -104,7 +102,7 @@ lazy val scoverageSettings = Seq(
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.12.10",
   crossScalaVersions := Seq("2.11.12", scalaVersion.value, "2.13.0")
 )
 
