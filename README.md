@@ -21,20 +21,17 @@ You can also check out [this presentation](http://bit.ly/eff_flatmap_2016) at fl
 
 ## Installation
 
-You add `eff` as an sbt dependency:
+Eff is published for Scala 2.11, 2.12 and 2.13. `eff` core is available for the JVM and ScalaJS. Sbt dependency:
+
 ```scala
 // check maven badge above for latest version
-libraryDependencies += "org.atnos" %% "eff" % "5.1.0"
+libraryDependencies += "org.atnos" %% "eff" % "5.5.2"
 
 // to write types like Reader[String, ?]
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
 
 // to get types like Reader[String, ?] (with more than one type parameter) correctly inferred for scala 2.11.11+ and 2.12.x
 scalacOptions += "-Ypartial-unification"
-
-// to get types like Reader[String, ?] (with more than one type parameter) correctly inferred for scala 2.11.9 and before
-// you can use the [Typelevel Scala compiler](http://typelevel.org/scala)
-scalaOrganization in ThisBuild := "org.typelevel"
 ```
 
 # Contributing
@@ -44,6 +41,15 @@ and provide a safe and friendly environment for teaching, learning, and contribu
 
 Feel free to open an issue if you notice a bug, have an idea for a feature, or have a question about the code. Pull requests are also gladly accepted.
 
-# extensions
+# Extensions
+
+## Modules in this repository
+
+- [scalaz](./scalaz)
+- [monix](./monix)
+- [doobie](./doobie)
+- [twitter](./twitter) (deprecated)
+
+## External
 
 - [eff-zio](https://github.com/takayahilton/eff-zio) eff extension for ZIO effects.
