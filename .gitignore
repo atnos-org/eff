@@ -1,5 +1,8 @@
 .DS_Store
 .idea
+.metals
+.bloop
+.vscode
 target/
 .settings
 /.ensime*
