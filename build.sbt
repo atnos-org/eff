@@ -295,3 +295,7 @@ lazy val commonResolvers = Seq(
   , Resolver.url("ambiata-oss", new URL("https://ambiata-oss.s3.amazonaws.com"))(Resolver.ivyStylePatterns)
   , Resolver.sonatypeRepo("snapshots")
 )
+
+//sbt-pgp 2.0 switched from BouncyCastle to command line `gpg` and it doesnt
+//work for me. Stay with BouncyCastle until there's a clearer reason to change
+Global / useGpg := false

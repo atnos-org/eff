@@ -13,3 +13,4 @@ addSbtPlugin("com.eed3si9n"         % "sbt-buildinfo"         % "0.9.0")
 libraryDependencies += "com.sun.activation" % "javax.activation" % "1.2.0"
 
 resolvers += Resolver.url("sonatype", new URL("https://oss.sonatype.org/content/repositories/releases"))(Resolver.ivyStylePatterns)
+
