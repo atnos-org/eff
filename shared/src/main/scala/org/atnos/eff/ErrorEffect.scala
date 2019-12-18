@@ -155,12 +155,10 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    * ignore one possible exception that could be thrown
    */
   def ignoreException[R, E <: Throwable : ClassTag, A](action: Eff[R, A])(implicit m: ErrorOrOk /= R): Eff[R, Unit] =
-    catchError[R, A, Unit](action, (a: A) => (), { error: Error =>
-      error match {
-        case Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
-          EffMonad[R].pure(())
-        case other => outer.error(other)
-      }
+    catchError[R, A, Unit](action, (a: A) => (), {
+      case Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
+        EffMonad[R].pure(())
+      case other => outer.error(other)
     })
 
   /**
