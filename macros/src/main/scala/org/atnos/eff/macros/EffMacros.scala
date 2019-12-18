@@ -1,10 +1,8 @@
 package org.atnos.eff.macros
 
-import scala.reflect.api.Trees
-import scala.reflect.macros.blackbox
-
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.language.experimental.macros
+import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox
 
 @compileTimeOnly("enable macro paradise to expand macro annotations")
