@@ -174,7 +174,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
     transform[SR, BR, U1, U2, Evaluate[F1, ?], Evaluate[F2, ?], A](r,
       new ~>[Evaluate[F1, ?], Evaluate[F2, ?]] {
       def apply[X](r: Evaluate[F1, X]): Evaluate[F2, X] =
-        Evaluate(r.run.leftMap(e => catsSyntaxEither(e).map(getter)))
+        Evaluate(r.run.leftMap(e => e.map(getter)))
     })
 
   /**

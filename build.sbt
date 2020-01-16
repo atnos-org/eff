@@ -1,7 +1,7 @@
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val catsVersion        = "2.0.0"
+lazy val catsVersion        = "2.1.0"
 lazy val monixVersion       = "3.1.0"
 lazy val scalazVersion      = "7.2.28"
 lazy val specs2Version      = "4.8.2"
@@ -103,7 +103,7 @@ lazy val scoverageSettings = Seq(
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := "2.12.10",
-  crossScalaVersions := Seq("2.11.12", scalaVersion.value, "2.13.1")
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.1")
 )
 
 lazy val commonSettings = Seq(
