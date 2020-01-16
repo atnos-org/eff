@@ -77,7 +77,7 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-outofthebox"><a href="org.atnos.site.OutOfTheBox.html" title="Out of the box">Out of the box</a>
-      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what’s-next?" title="What’s next?">What’s next?</a>
+      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what's-next?" title="What's next?">What's next?</a>
           
         </li></ul></ul>
       <ul>
@@ -222,7 +222,7 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
-      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
+      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-&quot;effect-stack&quot;?" title="What is an &quot;effect stack&quot;?">What is an &quot;eff...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
@@ -230,7 +230,7 @@
         </li></ul>
         </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-&quot;locally&quot;" title="Interpret an effect &quot;locally&quot;">Interpret an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#merge-stacks" title="Merge stacks">Merge stacks</a>
           
@@ -247,7 +247,7 @@
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#&quot;packing&quot;-member-instances" title="&quot;Packing&quot; member instances">&quot;Packing&quot; membe...</a>
           
         </li></ul></ul>
       <ul>
@@ -278,6 +278,8 @@
                 <li id="org-atnos-site-communityresources"><a href="org.atnos.site.CommunityResources.html" title="Community resources">Community resou...</a>
       <ul><ul><li><a href="org.atnos.site.CommunityResources.html#blog-posts" title="Blog posts">Blog posts</a>
           
+        </li><li><a href="org.atnos.site.CommunityResources.html#tutorials-&amp;-examples" title="Tutorials &amp; Examples">Tutorials &amp; Exa...</a>
+          
         </li></ul></ul>
       <ul>
                     
@@ -299,9 +301,9 @@
 <p>Type inference with the Eff monad can be a bit tricky to get right if we want to avoid type annotations. Here are some tips to help you.</p>
 <h3 id="running-effects-with-several-type-parameters">Running effects with several type parameters</h3>
 <p>Some effects use 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. If you want to use those effects in an effect stack you need to make sure you have the following <code class="prettyprint">scalac</code> option:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" data-line-number="1">scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></a></code></pre></div>
+<pre class="sourceCode scala"><code class="sourceCode scala">scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></code></pre>
 <h3 id="use-context-bounds-and-type-aliases">Use context bounds and type aliases</h3>
-<p>When creating effects you can always “require” a stack containing the right effects with the <code class="prettyprint">MemberIn</code> typeclass:</p>
+<p>When creating effects you can always &quot;require&quot; a stack containing the right effects with the <code class="prettyprint">MemberIn</code> typeclass:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 import org.atnos.eff.all._
 
@@ -329,45 +331,39 @@ def putAndTell[R :_stateInt :_writerString](i: Int): Eff[R, Int] =
 <h3 id="know-your-member-typeclasses">Know your <code class="prettyprint">Member</code> typeclasses</h3>
 <p>There are 3 different ways to declare that an effect is part of an effect stack with 3 typeclasses:</p>
 <table>
-<colgroup>
-<col style="width: 16%" />
-<col style="width: 7%" />
-<col style="width: 29%" />
-<col style="width: 47%" />
-</colgroup>
 <thead>
 <tr class="header">
-<th>Typeclass</th>
-<th>Alias</th>
-<th>Meaning</th>
-<th>When to use it</th>
+<th align="left">Typeclass</th>
+<th align="left">Alias</th>
+<th align="left">Meaning</th>
+<th align="left">When to use it</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code class="prettyprint">MemberIn[M, R]</code></td>
-<td><code class="prettyprint">M |= R</code></td>
-<td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>”</td>
-<td>to create <code class="prettyprint">M</code> effects in <code class="prettyprint">R</code></td>
+<td align="left"><code class="prettyprint">MemberIn[M, R]</code></td>
+<td align="left"><code class="prettyprint">M |= R</code></td>
+<td align="left">&quot;<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>&quot;</td>
+<td align="left">to create <code class="prettyprint">M</code> effects in <code class="prettyprint">R</code></td>
 </tr>
 <tr class="even">
-<td><code class="prettyprint">MemberInOut[M, R]</code></td>
-<td><code class="prettyprint">M /= R</code></td>
-<td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code> and can be extracted from it”</td>
-<td>to intercept the effect <code class="prettyprint">M</code> (see <code class="prettyprint">Interpreter.scala</code>) and transform it while staying in the same stack. For example to <code class="prettyprint">handleError</code> for an Error effect</td>
+<td align="left"><code class="prettyprint">MemberInOut[M, R]</code></td>
+<td align="left"><code class="prettyprint">M /= R</code></td>
+<td align="left">&quot;<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code> and can be extracted from it&quot;</td>
+<td align="left">to intercept the effect <code class="prettyprint">M</code> (see <code class="prettyprint">Interpreter.scala</code>) and transform it while staying in the same stack. For example to <code class="prettyprint">handleError</code> for an Error effect</td>
 </tr>
 <tr class="odd">
-<td><code class="prettyprint">Member[M, R]</code></td>
-<td><code class="prettyprint">M &lt;= R</code></td>
-<td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>, can be extracted from it, and the resulting stack is <code class="prettyprint">m.Out</code>”</td>
-<td>to interpret the effect in terms of special values or other effects and remove the effect from the stack</td>
+<td align="left"><code class="prettyprint">Member[M, R]</code></td>
+<td align="left"><code class="prettyprint">M &lt;= R</code></td>
+<td align="left">&quot;<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>, can be extracted from it, and the resulting stack is <code class="prettyprint">m.Out</code>&quot;</td>
+<td align="left">to interpret the effect in terms of special values or other effects and remove the effect from the stack</td>
 </tr>
 </tbody>
 </table>
-<h3 id="packing-member-instances">“Packing” member instances</h3>
+<h3 id="packing-member-instances">&quot;Packing&quot; member instances</h3>
 <p>Some function signatures can be repetitive when they always require the same list of effects:</p>
 <p>def foo1<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int] def foo2<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int] def foo3<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int]</p>
-<p>It is possible to “pack” them with the following <code class="prettyprint">_effects</code> type definition:</p>
+<p>It is possible to &quot;pack&quot; them with the following <code class="prettyprint">_effects</code> type definition:</p>
 <pre><code class="prettyprint">import org.atnos.eff.Members.{&amp;:, &amp;&amp;:}
 
 trait Foo[A]
@@ -403,7 +399,7 @@ type U = Fx.fx4[Foo, Bar, Baz, Boo]
 
 t.foo[S](1)
 t.foo[U](1)</code></pre>
-<p>The implicit definition <code class="prettyprint">extractMember</code> in the <code class="prettyprint">Members</code> object will take care of “unpacking” the member instances where required. Note that this implicit must <em>not</em> be in scope when calling the methods requiring the “packed” implicits otherwise it will trigger a divergent implicit search.</p>
+<p>The implicit definition <code class="prettyprint">extractMember</code> in the <code class="prettyprint">Members</code> object will take care of &quot;unpacking&quot; the member instances where required. Note that this implicit must <em>not</em> be in scope when calling the methods requiring the &quot;packed&quot; implicits otherwise it will trigger a divergent implicit search.</p>
 </div>
 
 <script>
