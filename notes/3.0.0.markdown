@@ -13,9 +13,9 @@ Most improvements have been contributed by @edmundnoble and @benhutchison.
  * added a method to update the read value of a Reader effect [#60](https://github.com/atnos-org/eff/pull/60). Three methods 
    are now available: 
    
-     * `translateReader` to interpret a `Reader[A, ?]` effect into another `Reader[B, ?]` effect in the stack
-     * `zoomReader` to replace a `Reader[A, ?]` effect with `Reader[B, ?]` in the same stack
-     * `localReader` to modify the read value `A` in the `Reader[A, ?]` effect
+     * `translateReader` to interpret a `Reader[A, *]` effect into another `Reader[B, *]` effect in the stack
+     * `zoomReader` to replace a `Reader[A, *]` effect with `Reader[B, *]` in the same stack
+     * `localReader` to modify the read value `A` in the `Reader[A, *]` effect
 <p/>        
  * similarly we have `translateEither`, `zoomEither` and `localEither` for the `EitherEffect`
 <p/>        

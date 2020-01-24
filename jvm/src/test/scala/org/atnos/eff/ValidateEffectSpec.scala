@@ -113,7 +113,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
   def catchWrongValues2 = {
     type E = String
-    type Comput = Fx.fx2[Validate[E, ?], Writer[E,?]]
+    type Comput = Fx.fx2[Validate[E, *], Writer[E,*]]
     type Check[A] = Eff[Comput, A]
 
     val handle: E => Check[Unit] = { case e => tell[Comput, E](e).as(()) }

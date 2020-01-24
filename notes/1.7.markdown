@@ -6,4 +6,4 @@ Improvements:
    This allows to execute future computations in parallel
  * added a `FutureEffect` for Scala's `Future`
  * removed "tagged" effects for `Reader`, `Writer`, `State` since the `SI-2712` compiler is now able to distinguish 2 
-    effects `Reader[A, ?]` and `Reader[B, ?]` in the same stack
+    effects `Reader[A, *]` and `Reader[B, *]` in the same stack

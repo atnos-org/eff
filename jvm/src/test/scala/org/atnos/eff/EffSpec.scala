@@ -160,7 +160,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
     delay(1).detach.value === 1
 
   def detachOneEffectInto = {
-    type S = Fx.append[Fx.fx2[Writer[Int, ?], Either[String, ?]], Fx.fx1[Option]]
+    type S = Fx.append[Fx.fx2[Writer[Int, *], Either[String, *]], Fx.fx1[Option]]
     val e: Eff[S, Int] = OptionEffect.some[S, Int](1)
 
     e.runWriter.runEither.detach must beSome[String Either (Int, List[Int])](Right((1, Nil)))
@@ -170,14 +170,14 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
     delay(1).detachA(Applicative[Eval]).value === 1
 
   def detachOneApplicativeEffectInto = {
-    type S = Fx.append[Fx.fx2[Writer[Int, ?], Either[String, ?]], Fx.fx1[Option]]
+    type S = Fx.append[Fx.fx2[Writer[Int, *], Either[String, *]], Fx.fx1[Option]]
     val e: Eff[S, Int] = OptionEffect.some[S, Int](1)
 
     e.runWriter.runEither.detachA(Applicative[Option]) must beSome(Right[String, (Int, List[Int])]((1, Nil)))
   }
 
   def functionReader[R, U, A, B](f: A => Eff[R, B])(implicit into: IntoPoly[R, U],
-                                                    m: MemberIn[Reader[A, ?], U]): Eff[U, B] =
+                                                    m: MemberIn[Reader[A, *], U]): Eff[U, B] =
     ask[U, A].flatMap(f(_).into[U])
 
   def notInStack = {
@@ -304,14 +304,14 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
       def apply[X](tx: Stored[X]) = pure[U, X](().asInstanceOf[X])
     })
 
-  def action[R: MemberIn[Stored, ?]]: Eff[R, Unit] =
+  def action[R: MemberIn[Stored, *]]: Eff[R, Unit] =
     send[Stored, R, Unit](Update("a", 1)) >>
     send[Stored, R, Unit](Get("b"))       >>
     send[Stored, R, Unit](Remove("c"))
 
   def augmentEffect = {
     val wAugment =
-      new Augment[Stored, Writer[String, ?]] {
+      new Augment[Stored, Writer[String, *]] {
         def apply[X](tx: Stored[X]) = tx match {
           case Get(k) => Writer.tell(k)
           case Update(k, _) => Writer.tell(k)
@@ -319,7 +319,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
         }
       }
 
-      runStored(action[Fx.fx2[Writer[String, ?], Stored]].augment(wAugment)).runWriterLog.run ==== List("a", "b", "c")
+      runStored(action[Fx.fx2[Writer[String, *], Stored]].augment(wAugment)).runWriterLog.run ==== List("a", "b", "c")
   }
 
   def writeEffect = {
@@ -332,12 +332,12 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
         }
       }
 
-    runStored(action[Fx.fx2[Writer[String, ?], Stored]].write(w)).runWriterLog.run ==== List("a", "b", "c")
+    runStored(action[Fx.fx2[Writer[String, *], Stored]].write(w)).runWriterLog.run ==== List("a", "b", "c")
 
   }
 
   def traceEffect = {
-    runStored(action[Fx.fx2[Writer[Stored[_], ?], Stored]].trace[Stored]).runWriterLog.run ====
+    runStored(action[Fx.fx2[Writer[Stored[_], *], Stored]].trace[Stored]).runWriterLog.run ====
       List[Stored[_]](Update("a", 1), Get("b"), Remove("c"))
   }
 

@@ -2,7 +2,7 @@ Maintenance version
 
 ### Improvements
 
- * *scalaz* added a `Catchable` instance for `Eff[R :_Task, ?]` and a natural transformation from `Task` to `Eff[R :_Task, ?]`
+ * *scalaz* added a `Catchable` instance for `Eff[R :_Task, *]` and a natural transformation from `Task` to `Eff[R :_Task, *]`
 
 ### Fixes
 

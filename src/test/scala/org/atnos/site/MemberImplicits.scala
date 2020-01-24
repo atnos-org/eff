@@ -37,8 +37,8 @@ def putAndTell[R](i: Int)(implicit s: StateInt |= R, w: WriterString |= R): Eff[
 You can even use context bounds to make the declaration of `putAndTell` more concise:${snippet{
 import org.atnos.eff.all._
 
-type _stateInt[R] = State[Int, ?] |= R
-type _writerString[R] = Writer[String, ?] |= R
+type _stateInt[R] = State[Int, *] |= R
+type _writerString[R] = Writer[String, *] |= R
 
 def putAndTell[R :_stateInt :_writerString](i: Int): Eff[R, Int] =
   for {

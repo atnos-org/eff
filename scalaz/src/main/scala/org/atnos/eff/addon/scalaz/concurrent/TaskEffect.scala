@@ -211,8 +211,8 @@ trait TaskInterpretation extends TaskTypes {
   import interpret.of
 
   def taskAttempt[R, A](e: Eff[R, A])(implicit async: TimedTask /= R): Eff[R, Throwable Either A] =
-    interpret.interceptNatM[R, TimedTask, Throwable Either ?, A](e,
-      new (TimedTask ~> (TimedTask of (Throwable Either ?))#l) {
+    interpret.interceptNatM[R, TimedTask, Throwable Either *, A](e,
+      new (TimedTask ~> (TimedTask of (Throwable Either *))#l) {
         override def apply[X](fa: TimedTask[X]): TimedTask[Throwable Either X] = attempt(fa)
       })
 

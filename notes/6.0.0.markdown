@@ -13,7 +13,7 @@ No API change.
  * **cats-effect**: now on `1.0.0`
 
 It turns out that it is not possible to provide a meaningful implementation of the cats-effect typeclasses like `Async` or `Effect` without
-requiring that an `Eff[R, ?]` stack is some sort of [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio) which restricts a lot the use cases for Eff. So rather than letting users go this path those instances have been removed. 
+requiring that an `Eff[R, *]` stack is some sort of [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio) which restricts a lot the use cases for Eff. So rather than letting users go this path those instances have been removed. 
 
 
 

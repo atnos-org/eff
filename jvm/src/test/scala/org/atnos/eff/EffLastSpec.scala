@@ -92,7 +92,7 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
   /**
    * HELPERS
    */
-  type _eitherString[R] = Either[String, ?] |= R
+  type _eitherString[R] = Either[String, *] |= R
 
   def acquire[R :_Safe]: Eff[R, Int] = protect[R, Int] { i += 1; i }
   def release[R :_Safe]: Int => Eff[R, Int] = (_: Int) => protect[R, Int] { i -= 1; i }
@@ -105,6 +105,6 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
   def eff[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
     bracketLast(acquire[R])(_ => use)(release[R])
 
-  type S = Fx.fx2[Safe, Either[String, ?]]
+  type S = Fx.fx2[Safe, Either[String, *]]
 
 }

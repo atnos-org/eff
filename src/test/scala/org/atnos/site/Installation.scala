@@ -7,11 +7,11 @@ You add `eff` as an sbt dependency:
 ```scala
 libraryDependencies += "org.atnos" %% "eff" % "$version"
 
-// to write types like Reader[String, ?]
+// to write types like Reader[String, *]
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
 ```
 
-To get types like `Reader[String, ?]` (with more than one type parameter) correctly inferred, you'll have to use the following compiler option
+To get types like `Reader[String, *]` (with more than one type parameter) correctly inferred, you'll have to use the following compiler option
 
 ```scala
 scalacOptions += "-Ypartial-unification"

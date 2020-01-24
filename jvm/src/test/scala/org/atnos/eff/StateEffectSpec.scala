@@ -12,7 +12,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
  modify can be used to modify the current state $modifyState
  The state monad works applicatively $applicativeState
 
- A State[T, ?] effect can be lifted into a State[S, ?] effect
+ A State[T, *] effect can be lifted into a State[S, *] effect
    provided there is a "lens" (a getter and a setter) from T to S $lensedState
    with an implicit conversion                                    $stateImplicitLens
 
@@ -87,7 +87,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
   def stateIntoAnother = {
     type StateIntPair[A] = State[(Int, Int), A]
     type TS = Fx.fx2[StateInt, Option]
-    type BR = Fx.fx3[StateIntPair, Option, Writer[String, ?]]
+    type BR = Fx.fx3[StateIntPair, Option, Writer[String, *]]
 
     val action: Eff[TS, String] =
       for {
@@ -113,10 +113,10 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     implicit val getAddress: Person => Address = (p: Person) => p.address
     implicit val setAddress: Address => Person => Person = (a: Address) => (p: Person) => p.copy(address = a)
 
-    type PerS[E] = State[Person, ?] |= E
-    type PerR[E] = Reader[Person, ?] |= E
-    type Add[E] = State[Address, ?] |= E
-    type Err[E] = Either[String, ?] |= E
+    type PerS[E] = State[Person, *] |= E
+    type PerR[E] = Reader[Person, *] |= E
+    type Add[E] = State[Address, *] |= E
+    type Err[E] = Either[String, *] |= E
 
     def isBadPerson[E: PerR: Err]: Eff[E, Boolean] =
       ask.map(_.hashCode % 13 == 0)
@@ -130,7 +130,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
         _   <- updateAddress
       } yield ()
 
-    updatePerson[Fx.fx2[String Either ?, State[Person, ?]]].evalState(Person(Address("here"))).runEither.run ==== Right(())
+    updatePerson[Fx.fx2[String Either *, State[Person, *]]].evalState(Person(Address("here"))).runEither.run ==== Right(())
   }
 
   type StateInt[A] = State[Int, A]

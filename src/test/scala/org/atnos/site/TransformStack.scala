@@ -75,7 +75,7 @@ runT1(runT4(runT2(runT3(Eff.send[T3, S, Int](???)))))
 
 #### Change the effect
 
-A typical use case for this is to transform a stack having a `Reader[S, ?]` effect to a stack having a `Reader[B, ?]` effect
+A typical use case for this is to transform a stack having a `Reader[S, *]` effect to a stack having a `Reader[B, *]` effect
  where `S` is "contained" in `B` (meaning that there is a mapping from `B`, "big", to `S`, "small"). Here is an example:${snippet{
 import org.atnos.eff._, all._
 import org.atnos.eff.syntax.all._
@@ -120,8 +120,8 @@ action.runReader(Conf("www.me.com", 8080)).runOption.run
 
 There are also specialized versions of `transform` for `Reader` and `State`:
 
- - `ReaderEffect.localReader` takes a "getter" `B => A` to transform a stack with a `Reader[A, ?]` into a stack with a `Reader[B, ?]`
- - `StateEffect.lensState` takes a "getter" `S => T` and a "setter" `(S, T) => S` to to transform a stack with a `State[T, ?]` into a stack with a `State[S, ?]`
+ - `ReaderEffect.localReader` takes a "getter" `B => A` to transform a stack with a `Reader[A, *]` into a stack with a `Reader[B, *]`
+ - `StateEffect.lensState` takes a "getter" `S => T` and a "setter" `(S, T) => S` to to transform a stack with a `State[T, *]` into a stack with a `State[S, *]`
 
 ### Translate an effect into multiple others
 
@@ -129,7 +129,7 @@ A common thing to do is to translate effects (a webservice DSL for example) into
 
 For example you might have this stack:
 ```
-type S = Fx.fx3[Authenticated, TimedFuture, AuthError Either ?]
+type S = Fx.fx3[Authenticated, TimedFuture, AuthError Either *]
 ```
 
 And you want to write an interpreter which will translate authentication actions into `TimedFuture` and `Either`:${snippet{
@@ -179,8 +179,8 @@ def authenticateImpl(token: String): Future[AuthError Either AccessRights] =
 
 def authenticate[S :_authenticate](token: String) = Authenticate(token).send
 
-type S1 = Fx.fx3[Authenticated, AuthError Either ?, TimedFuture]
-type R1 = Fx.fx2[AuthError Either ?, TimedFuture]
+type S1 = Fx.fx3[Authenticated, AuthError Either *, TimedFuture]
+type R1 = Fx.fx2[AuthError Either *, TimedFuture]
 
 val result: Eff[R1, AccessRights] = runAuth(authenticate[S1]("faketoken"))
 
@@ -218,7 +218,7 @@ import org.atnos.eff.all._
 import cats.data._
 
 trait Db[A]
-type _writerString[R] = Writer[String, ?] |= R
+type _writerString[R] = Writer[String, *] |= R
 
 def runDb[R, U, A](queries: Eff[R, A])(
   implicit db:     Member.Aux[Db, R, U],
@@ -296,7 +296,7 @@ some common effects, so the resulting stack we want to work with is:${snippet{
 
 Then we can use the `into` method to inject effects from each stack into this common stack:${snippet{
 // 8<--
-type HadoopS3 = Fx.fx4[S3Stack.S3Reader, HadoopStack.HadoopReader, cats.data.Writer[String, ?], Eval]
+type HadoopS3 = Fx.fx4[S3Stack.S3Reader, HadoopStack.HadoopReader, cats.data.Writer[String, *], Eval]
 // 8<--
 import S3Stack._
 import HadoopStack._
