@@ -91,8 +91,8 @@ trait TaskInterpretation extends TaskTypes {
   import interpret.of
 
   def taskAttempt[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, Throwable Either A] =
-    interpret.interceptNatM[R, Task, Throwable Either ?, A](e,
-      new (Task ~> (Task of (Throwable Either ?))#l) {
+    interpret.interceptNatM[R, Task, Throwable Either *, A](e,
+      new (Task ~> (Task of (Throwable Either *))#l) {
         def apply[X](fa: Task[X]): Task[Throwable Either X] =
           fa.attempt
       })
@@ -167,7 +167,7 @@ trait EffToTask[R] {
 
 trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
 
-  implicit def asyncInstance[R :_Task](implicit runEff: EffToTask[R]): cats.effect.Async[Eff[R, ?]] = new cats.effect.Async[Eff[R, ?]] {
+  implicit def asyncInstance[R :_Task](implicit runEff: EffToTask[R]): cats.effect.Async[Eff[R, *]] = new cats.effect.Async[Eff[R, *]] {
     private val taskAsyncInstance: cats.effect.Async[Task] =
       implicitly[cats.effect.Async[Task]]
 
@@ -202,12 +202,12 @@ trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
 
   }
 
-  def effectInstance[R :_Task](implicit runEff: EffToTask[R], scheduler: Scheduler): cats.effect.Effect[Eff[R, ?]] = new cats.effect.Effect[Eff[R, ?]] {
+  def effectInstance[R :_Task](implicit runEff: EffToTask[R], scheduler: Scheduler): cats.effect.Effect[Eff[R, *]] = new cats.effect.Effect[Eff[R, *]] {
 
     private val taskEffectInstance: cats.effect.Effect[Task] =
       implicitly[cats.effect.Effect[Task]]
 
-    private val asyncInstance: cats.effect.Async[Eff[R, ?]] =
+    private val asyncInstance: cats.effect.Async[Eff[R, *]] =
       outer.asyncInstance
 
     override def asyncF[A](k: (Either[Throwable, A] => Unit) => Eff[R, Unit]) = asyncInstance.asyncF(k)

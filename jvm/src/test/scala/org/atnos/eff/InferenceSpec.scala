@@ -24,11 +24,11 @@ class InferenceSpec extends Specification { def is = s2"""
 }
 
 object Example1  {
-  type RNG[R] = Member[State[Int, ?], R]
-  type Log[R] = Member[Writer[String, ?], R]
-  type Env[R] = Member[Reader[String, ?], R]
+  type RNG[R] = Member[State[Int, *], R]
+  type Log[R] = Member[Writer[String, *], R]
+  type Env[R] = Member[Reader[String, *], R]
 
-  type S = Fx.fx3[State[Int, ?], Writer[String, ?], Reader[String, ?]]
+  type S = Fx.fx3[State[Int, *], Writer[String, *], Reader[String, *]]
 
   def putAndTell[R : RNG : Log: Env](i: Int) =
     for {

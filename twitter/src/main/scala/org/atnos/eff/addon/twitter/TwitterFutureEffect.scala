@@ -141,8 +141,8 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
   import interpret.of
 
   final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, Throwable Either A] =
-    interpret.interceptNatM[R, TwitterTimedFuture, Throwable Either ?, A](e,
-      new (TwitterTimedFuture ~> (TwitterTimedFuture of (Throwable Either ?))#l) {
+    interpret.interceptNatM[R, TwitterTimedFuture, Throwable Either *, A](e,
+      new (TwitterTimedFuture ~> (TwitterTimedFuture of (Throwable Either *))#l) {
         override def apply[X](fa: TwitterTimedFuture[X]): TwitterTimedFuture[Throwable Either X] = attempt(fa)
       })
 

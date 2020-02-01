@@ -34,7 +34,7 @@ class ReaderEffectSpec extends Specification { def is = s2"""
 
   def localKleisliEffect = {
     import cats.syntax.option._
-    type S = Fx.fx2[Kleisli[Option, Config, ?], Option]
+    type S = Fx.fx2[Kleisli[Option, Config, *], Option]
 
     val action: Eff[S, (Int, String)] = for {
       f <- localKleisli[S, Config, Int, Option]((_:Config).factor.some)
