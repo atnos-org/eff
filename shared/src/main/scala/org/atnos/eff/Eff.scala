@@ -153,9 +153,9 @@ object Eff extends EffCreation with
 trait EffImplicits {
 
   /**
-    * Monad implementation for the Eff[R, ?] type
+    * Monad implementation for the Eff[R, *] type
     */
-  final val effMonadUnsafe: Monad[Eff[AnyRef, ?]] = new Monad[Eff[AnyRef, ?]] {
+  final val effMonadUnsafe: Monad[Eff[AnyRef, *]] = new Monad[Eff[AnyRef, *]] {
 
     def pure[A](a: A): Eff[AnyRef, A] =
       Pure[AnyRef, A](a)
@@ -201,7 +201,7 @@ trait EffImplicits {
       }
   }
 
-  final val effApplicativeUnsafe: Applicative[Eff[AnyRef, ?]] = new Applicative[Eff[AnyRef, ?]] {
+  final val effApplicativeUnsafe: Applicative[Eff[AnyRef, *]] = new Applicative[Eff[AnyRef, *]] {
 
     def pure[A](a: A): Eff[AnyRef, A] =
       Pure[AnyRef, A](a)
@@ -251,9 +251,9 @@ trait EffImplicits {
       }
   }
 
-  implicit final def EffMonad[R]: Monad[Eff[R, ?]] = effMonadUnsafe.asInstanceOf[Monad[Eff[R, ?]]]
+  implicit final def EffMonad[R]: Monad[Eff[R, *]] = effMonadUnsafe.asInstanceOf[Monad[Eff[R, *]]]
 
-  final def EffApplicative[R]: Applicative[Eff[R, ?]] = effApplicativeUnsafe.asInstanceOf[Applicative[Eff[R, ?]]]
+  final def EffApplicative[R]: Applicative[Eff[R, *]] = effApplicativeUnsafe.asInstanceOf[Applicative[Eff[R, *]]]
 
 }
 
@@ -302,11 +302,11 @@ trait EffCreation {
 
   /** use the applicative instance of Eff to traverse a list of values, then flatten it */
   def flatTraverseA[R, F[_], A, B](fs: F[A])(f: A => Eff[R, F[B]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[B]] =
-    FT.flatTraverse[Eff[R, ?], A, B](fs)(f)(EffImplicits.EffApplicative[R], FM)
+    FT.flatTraverse[Eff[R, *], A, B](fs)(f)(EffImplicits.EffApplicative[R], FM)
 
   /** use the applicative instance of Eff to sequence a list of values, then flatten it */
   def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[A]] =
-    FT.flatSequence[Eff[R, ?], A](fs)(EffImplicits.EffApplicative[R], FM)
+    FT.flatSequence[Eff[R, *], A](fs)(EffImplicits.EffApplicative[R], FM)
 
   /** bracket an action with one last action to execute at the end of the program */
   def bracketLast[R, A, B, C](acquire: Eff[R, A])(use: A => Eff[R, B])(release: A => Eff[R, C]): Eff[R, B] =

@@ -14,13 +14,13 @@ trait validate {
 
 final class ValidateEffectScalazOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
-  def runValidationNel[U, E](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, ValidationNel[E, A]] =
+  def runValidationNel[U, E](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, ValidationNel[E, A]] =
     addon.scalaz.validate.runValidationNel(e)
 
-  def runNelDisjunction[U, E](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, NonEmptyList[E] \/ A] =
+  def runNelDisjunction[U, E](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, NonEmptyList[E] \/ A] =
     addon.scalaz.validate.runNelDisjunction(e)
 
-  def runMapDisjunction[U, E, L : Semigroup](map: E => L)(implicit m: Member.Aux[Validate[E, ?], R, U]): Eff[U, L \/ A] =
+  def runMapDisjunction[U, E, L : Semigroup](map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L \/ A] =
     addon.scalaz.validate.runMapDisjunction(e)(map)
 
 }

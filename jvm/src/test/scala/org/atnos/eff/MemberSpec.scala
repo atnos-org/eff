@@ -70,10 +70,10 @@ for 4-element stacks:
   }
 
   def natIn =
-    stateIn[Fx2[State[String, ?], Option]].runOption.evalState("hello").run ==== Option(5)
+    stateIn[Fx2[State[String, *], Option]].runOption.evalState("hello").run ==== Option(5)
 
   def natInOut =
-    stateInOut[Fx2[State[String, ?], Option]].runOption.evalState("hello").run ==== Option(5)
+    stateInOut[Fx2[State[String, *], Option]].runOption.evalState("hello").run ==== Option(5)
 
   /**
    * HELPERS
@@ -140,18 +140,18 @@ for 4-element stacks:
       new SMember4 { type T[A] = Eval[A];         val member = evalMember4 } ,
       new SMember4 { type T[A] = ReaderInt[A];    val member = readerMember4 })
 
-  type readStr[E] = Reader[String, ?] |= E
-  type stateStr[E] = State[String, ?] |= E
+  type readStr[E] = Reader[String, *] |= E
+  type stateStr[E] = State[String, *] |= E
 
-  type ReadStr[E] = Reader[String, ?] /= E
-  type StateStr[E] = State[String, ?] /= E
+  type ReadStr[E] = Reader[String, *] /= E
+  type StateStr[E] = State[String, *] /= E
 
-  implicit def readerStateNat[S1] = new (Reader[S1, ?] ~> State[S1, ?]) {
+  implicit def readerStateNat[S1] = new (Reader[S1, *] ~> State[S1, *]) {
     def apply[X](r: Reader[S1, X]): State[S1, X] =
       State((s: S1) => (s, r.run(s)))
   }
 
-  implicit def stateReaderNat[S1] = new (State[S1, ?] ~> Reader[S1, ?]) {
+  implicit def stateReaderNat[S1] = new (State[S1, *] ~> Reader[S1, *]) {
     def apply[X](state: State[S1, X]): Reader[S1, X] =
       Reader((s: S1) => state.runA(s).value)
   }
@@ -162,8 +162,8 @@ for 4-element stacks:
       _ <- option.some(s)
     } yield s.size
 
-  def stateIn[E](implicit state: State[String, ?] |= E, option: Option |= E): Eff[E, Int] =
-    readIn[E](state.transform[Reader[String, ?]], option)
+  def stateIn[E](implicit state: State[String, *] |= E, option: Option |= E): Eff[E, Int] =
+    readIn[E](state.transform[Reader[String, *]], option)
 
   def readInOut[E: ReadStr: _option]: Eff[E, Int] =
     for {
@@ -171,6 +171,6 @@ for 4-element stacks:
       _ <- option.some(s)
     } yield s.size
 
-  def stateInOut[E](implicit state: State[String, ?] /= E, option: Option |= E): Eff[E, Int] =
-    readInOut[E](state.transform[Reader[String, ?]], option)
+  def stateInOut[E](implicit state: State[String, *] /= E, option: Option |= E): Eff[E, Int] =
+    readInOut[E](state.transform[Reader[String, *]], option)
 }
