@@ -18,7 +18,7 @@ final case class TimedFuture[A](callback: (Scheduler, ExecutionContext) => Futur
     timeout.fold(callback(scheduler, ec)) { t =>
       val promise = Promise[A]
       val cancelTimeout = scheduler.schedule({ promise.tryFailure(new TimeoutException); () }, t)
-      promise.tryCompleteWith(callback(scheduler, ec).map(a => { cancelTimeout(); a })(ec))
+      promise.completeWith(callback(scheduler, ec).map(a => { cancelTimeout(); a })(ec))
       promise.future
     }
 }
