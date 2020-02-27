@@ -464,7 +464,7 @@ trait MemberLower16 extends MemberLower17 {
     }
   }
 
-  // Specifialized version of MemberAppendR with an existential type for the output stack
+  // Specialized version of MemberAppendR with an existential type for the output stack
   implicit def MemberAppendRNoAux[T[_], L, R](implicit append: Member[T, R]): Member.Aux[T, FxAppend[L, R], FxAppend[L, append.Out]] =
     Member.MemberAppendR[T, L, R, append.Out](append)
 }
