@@ -1,8 +1,6 @@
 #!/bin/sh
 test -e ~/.coursier/cr || (mkdir -p ~/.coursier && wget -q -O ~/.coursier/cr https://git.io/vgvpD && chmod +x ~/.coursier/cr)
-CLASSPATH="$(~/.coursier/cr fetch -q -p \
-  \
-  org.atnos:eff_2.12:4.1.0 \
-  com.lihaoyi:ammonite_2.12.1:0.8.1 \
-  \
-)" java ammonite.Main --predef 'import org.atnos.eff._, all._, syntax.all._'
+~/.coursier/cr launch -q -P -M ammonite.Main \
+  com.lihaoyi:ammonite_2.13.1:2.0.4 \
+  org.atnos:eff_2.13:5.7.0 \
+  -- --predef-code 'import org.atnos.eff._, all._, syntax.all._' < /dev/tty
