@@ -1,7 +1,6 @@
 package org.atnos.eff.macros
 
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
-import scala.language.experimental.macros
 import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox
 
