@@ -37,16 +37,12 @@ trait ExtractMember[T, +H] {
 
 object ExtractMember extends ExtractLower1 {
   implicit def extractHead[H, T <: Members]: ExtractMember[H Cons T, H] =
-    new ExtractMember[H Cons T, H] {
-      def member(effects: H Cons T) = effects.head
-    }
+    _.head
 }
 
 trait ExtractLower1 {
   implicit def extractTail[H1, H2, T <: Members](implicit extract: ExtractMember[T, H2]): ExtractMember[H1 Cons T, H2] =
-    new ExtractMember[H1 Cons T, H2] {
-      def member(effects: H1 Cons T) = extract.member(effects.tail)
-    }
+    effects => extract.member(effects.tail)
 }
 
 
