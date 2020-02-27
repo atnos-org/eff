@@ -1,14 +1,14 @@
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val catsVersion        = "2.0.0"
+lazy val catsVersion        = "2.1.1"
 lazy val monixVersion       = "3.1.0"
 lazy val scalazVersion      = "7.2.28"
 lazy val specs2Version      = "4.8.3"
-lazy val twitterUtilVersion = "19.12.0"
-lazy val catbirdVersion     = "19.12.0"
-lazy val doobieVersion      = "0.8.0-RC1"
-lazy val catsEffectVersion  = "2.0.0"
+lazy val twitterUtilVersion = "20.1.0"
+lazy val catbirdVersion     = "20.1.0"
+lazy val doobieVersion      = "0.8.8"
+lazy val catsEffectVersion  = "2.1.1"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)
@@ -103,14 +103,14 @@ lazy val scoverageSettings = Seq(
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := "2.12.10",
-  crossScalaVersions := Seq("2.11.12", scalaVersion.value, "2.13.1")
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.1")
 )
 
 lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions.value,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(

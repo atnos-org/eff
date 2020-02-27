@@ -9,7 +9,7 @@ import cats.data.Writer
 import java.io.PrintWriter
 import scala.io
 
-type S = Fx.fx1[Writer[String, ?]]
+type S = Fx.fx1[Writer[String, *]]
 
 val action: Eff[S, Int] = for {
   a <- pure[S, Int](1)

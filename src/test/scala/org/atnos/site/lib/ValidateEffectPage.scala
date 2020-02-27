@@ -9,7 +9,7 @@ The `Validate` effect is similar to the `Either` effect but let you accumulate f
   /**
    * Stack declaration
    */
-  type S = Fx.fx1[Validate[String, ?]]
+  type S = Fx.fx1[Validate[String, *]]
 
   def checkPositiveInt(i: Int): Eff[S, Unit] =
   validateCheck(i >= 0, s"$i is not positive")

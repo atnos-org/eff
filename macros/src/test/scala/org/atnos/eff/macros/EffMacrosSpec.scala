@@ -88,8 +88,8 @@ class EffMacrosSpec extends Specification { def is = s2"""
     import cats.implicits._
     import cats.data._
 
-    type _writerString[R] = Writer[String, ?] |= R
-    type _stateMap[R]     = State[Map[String, Any], ?] |= R
+    type _writerString[R] = Writer[String, *] |= R
+    type _stateMap[R]     = State[Map[String, Any], *] |= R
 
     def runKVStore[R, U, A](effects: Eff[R, A])
       (implicit m: Member.Aux[KVStore, R, U],
@@ -128,7 +128,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
     }
 
     // run the program with the safe interpreter
-    type Stack = Fx.fx4[KVStore, Throwable Either ?, State[Map[String, Any], ?], Writer[String, ?]]
+    type Stack = Fx.fx4[KVStore, Throwable Either *, State[Map[String, Any], *], Writer[String, *]]
 
     val (result, logs) =
       runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
@@ -175,7 +175,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
     }
 
     // run the program with the safe interpreter
-    type Stack = Fx.fx4[KVStore, Throwable Either ?, State[Map[String, Any], ?], Writer[String, ?]]
+    type Stack = Fx.fx4[KVStore, Throwable Either *, State[Map[String, Any], *], Writer[String, *]]
 
     // The TranslatorFactory instance contains an implicit class that provides the runKVStore method on the program
     import tr._
