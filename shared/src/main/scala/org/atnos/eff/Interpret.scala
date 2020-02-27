@@ -25,9 +25,9 @@ import Eff._
  *
  * There are also easier ways to define interpreters. The `recurse` method and the `Recurser` trait define:
  *
- *  - onPure(a: A): B: how to map a pure value A to the result B
- *  - onEffect[X](mx: M[X]): X Either Eff[R, B]: either extract a value from the effect or return another effect
- *  - onApplicative[X](tx: T[M[X]]): T[X] Either M[T[X]]: either extract individual values from each effect or "sequence" the effect
+ *  - `onPure(a: A): B`: how to map a pure value A to the result B
+ *  - `onEffect[X](mx: M[X]): X Either Eff[R, B]`: either extract a value from the effect or return another effect
+ *  - `onApplicative[X](tx: T[M[X]]): T[X] Either M[T[X]]`: either extract individual values from each effect or "sequence" the effect
  *
  * Even simpler, the `Translate` trait does a translation from an effect `M[X]` to other effects in the stack.
  *

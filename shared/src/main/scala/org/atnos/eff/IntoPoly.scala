@@ -5,8 +5,10 @@ package org.atnos.eff
  *
  * for example
  *
+ * @example {{{
  *  send[Option1, Fx.fx3[Option1, Option2, Option3], Int](Option1(1)).
  *    into[Fx.fx5[Option1, Option2, Option3, Option4, Option5]]
+ * }}}
  *
  *  should work because all the effects of the first stack are present in the second
  *

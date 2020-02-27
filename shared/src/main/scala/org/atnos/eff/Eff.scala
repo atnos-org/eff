@@ -30,7 +30,9 @@ import scala.concurrent.duration.FiniteDuration
  * Important:
  *
  *  The list of continuations is NOT implemented as a type sequence but simply as a
+ *  {{{
  *    Vector[Any => Eff[R, Any]]
+ *  }}}
  *
  *  This means that various `.asInstanceOf` are present in the implementation and could lead
  *  to burns and severe harm. Use with caution!
@@ -46,7 +48,7 @@ import scala.concurrent.duration.FiniteDuration
  * Since this last action will be executed, its value never collected so if it throws an exception it is possible
  * to print it by defining the eff.debuglast system property (-Deff.debuglast=true)
  *
- * @see http://okmij.org/ftp/Haskell/extensible/more.pdf
+ * @see [[http://okmij.org/ftp/Haskell/extensible/more.pdf]]
  *
  */
 sealed trait Eff[R, A] {
@@ -121,7 +123,7 @@ case class Impure[R, X, A](union: Effect[R, X], continuation: Continuation[R, X,
  * been interpreted.
  *
  * This essentially models a sequence + map operation but it is important to understand that the list of
- * Union objects can represent different effects and be like: Vector[Option[Int], Future[String], Option[Int]].
+ * Union objects can represent different effects and be like: `Vector[Option[Int], Future[String], Option[Int]]`.
  *
  * Interpreting such an Eff value for a given effect (say Option) consists in:
  *

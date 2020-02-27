@@ -80,7 +80,7 @@ object ExecutorServices extends Schedulers {
       Eval.later(scheduledExecutor(threadsNb)),
       Eval.later(ec))
 
-  /** taken from https://gist.github.com/viktorklang/5245161 */
+  /** taken from [[https://gist.github.com/viktorklang/5245161]] */
   def executorFromExecutionContext(ec: =>ExecutionContext): ExecutorService =
     ec match {
       case null => throw null

@@ -14,7 +14,7 @@ class EffMacros(val c: blackbox.Context) {
 
   def abort(msg: String) = c.abort(c.enclosingPosition, msg)
 
-  // https://issues.scala-lang.org/browse/SI-8771
+  // https://github.com/scala/bug/issues/8771
   def fixSI88771(paramss: Any) = paramss.asInstanceOf[List[List[ValDef]]].map(_.map(_.duplicate))
 
   def replaceContainerType(tree: Trees#Tree, newType: TypeName): AppliedTypeTree = tree match {

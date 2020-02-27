@@ -10,9 +10,9 @@ package org.atnos.eff
  *   - FxAppend[L, R]
  *
  *  The union type has three concrete constructors:
- *   - UnionAppendL(nested: Union[L]): Union[FxAppend[L, R]]
- *   - UnionAppendR(nested: Union[R]): Union[FxAppend[L, R]]
- *   - UnionTagged(valueUnsafe: Any, index: Int): Union[R] (for R in fx1, fx2, fx3...)
+ *   - `UnionAppendL(nested: Union[L]): Union[FxAppend[L, R]]`
+ *   - `UnionAppendR(nested: Union[R]): Union[FxAppend[L, R]]`
+ *   - `UnionTagged(valueUnsafe: Any, index: Int): Union[R] (for R in fx1, fx2, fx3...)`
  *  In that respect UnionTagged behaves similarly to a tagged union in C or C++.
  *
  */
