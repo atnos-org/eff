@@ -287,7 +287,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   def beOdd: Matcher[Int] = (n: Int) => (isOdd(n), s"$n is not odd")
 
   // to check finalization with other effects
-  type _eitherString[R] = Either[String, ?] |= R
+  type _eitherString[R] = Either[String, *] |= R
 
   def acquire[R :_Safe]: Eff[R, Int] = protect[R, Int] { i += 1; i }
   def release[R :_Safe]: Int => Eff[R, Int] = (_: Int) => protect[R, Int] { i -= 1; i }
@@ -300,7 +300,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   def bracketAction[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
     bracket(acquire[R])(_ => use)(release[R])
 
-  type U = Fx.fx2[Safe, Either[String, ?]]
+  type U = Fx.fx2[Safe, Either[String, *]]
 
 
 

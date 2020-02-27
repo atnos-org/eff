@@ -288,14 +288,14 @@ import org.atnos.eff.syntax.all._
   def action[R]: Eff[R, Int] =
     ???
 
-  def actionS1[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runOption.runEither.runReader("foo")
-  def actionS2[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runOption.runReader("foo").runEither
-  def actionS3[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runEither.runReader("foo").runOption
-  def actionS4[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runEither.runOption.runReader("foo")
-  def actionS5[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runReader("foo").runEither.runOption
-  def actionS6[S] = action[Fx.append[Fx3[Option, Throwable Either ?, Reader[String, ?]], S]].runReader("foo").runOption.runEither
+  def actionS1[S] = action[Fx.append[Fx3[Option, Throwable Either *, Reader[String, *]], S]].runOption.runEither.runReader("foo")
+  def actionS2[S] = action[Fx.append[Fx3[Option, Throwable Either *, Reader[String, *]], S]].runOption.runReader("foo").runEither
+  def actionS3[S] = action[Fx.append[Fx3[Option, Throwable Either *, Reader[String, *]], S]].runEither.runReader("foo").runOption
+  def actionS4[S] = action[Fx.append[Fx3[Option, Throwable Either *, Reader[String, *]], S]].runEither.runOption.runReader("foo")
+  def actionS5[S] = action[Fx.append[Fx3[Option, Throwable Either *, Reader[String, *]], S]].runReader("foo").runEither.runOption
+  def actionS6[S] = action[Fx.append[Fx3[Option, Throwable Either *, Reader[String, *]], S]].runReader("foo").runOption.runEither
 
-  type SAppend[S] = Fx.append[Fx.fx4[Option, Throwable Either ?, Reader[String, ?], State[Int, ?]], S]
+  type SAppend[S] = Fx.append[Fx.fx4[Option, Throwable Either *, Reader[String, *], State[Int, *]], S]
   def actionA1[S] = action[SAppend[S]].runState(1).runOption.runEither.runReader("foo")
   def actionA2[S] = action[SAppend[S]].runState(1).runOption.runReader("foo").runEither
   def actionA3[S] = action[SAppend[S]].runState(1).runEither.runReader("foo").runOption
@@ -309,6 +309,6 @@ import org.atnos.eff.syntax.all._
 
   def withOptionEffect[S: _Option]: Eff[S, Unit] = ???
   def withOptionEffect2[S: _Option]: Eff[S, Unit] =
-    withOptionEffect[Fx.prepend[Reader[String, ?], S]].runReader("hello")
+    withOptionEffect[Fx.prepend[Reader[String, *], S]].runReader("hello")
 
 }

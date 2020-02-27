@@ -25,8 +25,8 @@ object WriterEffect extends WriterEffect
 trait WriterCreation {
 
   /** write a given value */
-  def tell[R, O](o: O)(implicit member: Writer[O, ?] |= R): Eff[R, Unit] =
-    send[Writer[O, ?], R, Unit](Writer(o, ()))
+  def tell[R, O](o: O)(implicit member: Writer[O, *] |= R): Eff[R, Unit] =
+    send[Writer[O, *], R, Unit](Writer(o, ()))
 
 }
 
@@ -39,15 +39,15 @@ trait WriterInterpretation {
    *
    * This uses a ListBuffer internally to append values
    */
-  def runWriter[R, U, O, A, B](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, List[O])] =
+  def runWriter[R, U, O, A, B](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, *], R, U]): Eff[U, (A, List[O])] =
     runWriterFold(w)(ListFold[O])
 
   /**
    * More general fold of runWriter where we can use a fold to accumulate values in a mutable buffer
    */
-  def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: RightFold[O, B])(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, (A, B)] = {
+  def runWriterFold[R, U, O, A, B](w: Eff[R, A])(fold: RightFold[O, B])(implicit m: Member.Aux[Writer[O, *], R, U]): Eff[U, (A, B)] = {
     val executed =
-      Interpret.runInterpreter(w)(new Interpreter[Writer[O, ?], U, A, (A, fold.S)] {
+      Interpret.runInterpreter(w)(new Interpreter[Writer[O, *], U, A, (A, fold.S)] {
         def onPure(a: A): Eff[U, (A, fold.S)] =
           Eff.pure((a, fold.init))
 
@@ -78,8 +78,8 @@ trait WriterInterpretation {
   /**
    * Run a side-effecting fold
    */
-  def runWriterUnsafe[R, U, O, A](w: Eff[R, A])(f: O => Unit)(implicit m: Member.Aux[Writer[O, ?], R, U]): Eff[U, A] =
-    interpretUnsafe(w)(new SideEffect[Writer[O, ?]] {
+  def runWriterUnsafe[R, U, O, A](w: Eff[R, A])(f: O => Unit)(implicit m: Member.Aux[Writer[O, *], R, U]): Eff[U, A] =
+    interpretUnsafe(w)(new SideEffect[Writer[O, *]] {
       def apply[X](tx: Writer[O, X]): X = {
         val (o, x) = tx.run
         f(o)
@@ -90,13 +90,13 @@ trait WriterInterpretation {
         ms.map(apply)
     })
 
-  def runWriterEval[R, U, O, A](w: Eff[R, A])(f: O => Eval[Unit])(implicit m: Member.Aux[Writer[O, ?], R, U], ev: Eval |= U): Eff[U, A] =
+  def runWriterEval[R, U, O, A](w: Eff[R, A])(f: O => Eval[Unit])(implicit m: Member.Aux[Writer[O, *], R, U], ev: Eval |= U): Eff[U, A] =
     runWriterFold(w)(EvalFold(f)).flatMap { case (a, e) => send[Eval, U, Unit](e).as(a) }
 
-  def runWriterMonoid[R, U, O, A](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, ?], R, U], O: Monoid[O]): Eff[U, (A, O)] =
+  def runWriterMonoid[R, U, O, A](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, *], R, U], O: Monoid[O]): Eff[U, (A, O)] =
     runWriterFold(w)(MonoidFold[O])
 
-  def runWriterIntoMonoid[R, U, O, M, A](w: Eff[R, A])(f: O => M)(implicit m: Member.Aux[Writer[O, ?], R, U], M: Monoid[M]): Eff[U, (A, M)] =
+  def runWriterIntoMonoid[R, U, O, M, A](w: Eff[R, A])(f: O => M)(implicit m: Member.Aux[Writer[O, *], R, U], M: Monoid[M]): Eff[U, (A, M)] =
     runWriterFold(w)(IntoMonoidFold[M, O](f))
 
   implicit def ListFold[A]: RightFold[A, List[A]] = new RightFold[A, List[A]] {

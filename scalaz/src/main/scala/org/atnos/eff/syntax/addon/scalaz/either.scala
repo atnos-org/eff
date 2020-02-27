@@ -10,13 +10,13 @@ trait either {
 }
 
 final class EitherEffectScalazOps[R, A](private val e: Eff[R, A]) extends AnyVal {
-  def runDisjunction[U, E](implicit m: Member.Aux[(E Either ?), R, U]): Eff[U, E \/ A] =
+  def runDisjunction[U, E](implicit m: Member.Aux[(E Either *), R, U]): Eff[U, E \/ A] =
     addon.scalaz.either.runDisjunction(e)
 
-  def runDisjunctionCombine[U, E](implicit m: Member.Aux[(E Either ?), R, U], s: Semigroup[E]): Eff[U, E \/ A] =
+  def runDisjunctionCombine[U, E](implicit m: Member.Aux[(E Either *), R, U], s: Semigroup[E]): Eff[U, E \/ A] =
     addon.scalaz.either.runDisjunctionCombine(e)
 
-  def catchLeftCombine[E](handle: E => Eff[R, A])(implicit member: (E Either ?) /= R, s: Semigroup[E]): Eff[R, A] =
+  def catchLeftCombine[E](handle: E => Eff[R, A])(implicit member: (E Either *) /= R, s: Semigroup[E]): Eff[R, A] =
     addon.scalaz.either.catchLeftCombine(e)(handle)
 
 }
