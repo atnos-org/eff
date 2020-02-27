@@ -17,7 +17,7 @@ To get types like `Reader[String, *]` (with more than one type parameter) correc
 scalacOptions += "-Ypartial-unification"
 ```
 
-##### Additional dependenciesd
+##### Additional dependencies
 
 This table lists the other available eff modules:
 
