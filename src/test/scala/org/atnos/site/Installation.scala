@@ -8,7 +8,7 @@ You add `eff` as an sbt dependency:
 libraryDependencies += "org.atnos" %% "eff" % "$version"
 
 // to write types like Reader[String, *]
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 ```
 
 To get types like `Reader[String, *]` (with more than one type parameter) correctly inferred, you'll have to use the following compiler option

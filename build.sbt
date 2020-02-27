@@ -110,7 +110,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions.value,
   resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
