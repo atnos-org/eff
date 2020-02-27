@@ -111,9 +111,9 @@ object ChooseInterpretation extends ChooseInterpretation
 
 trait ChooseImplicits {
   /**
-   * MonadCombine implementation for the Eff[R, ?] type if R contains the Choose effect
+   * MonadCombine implementation for the Eff[R, *] type if R contains the Choose effect
    */
-  def EffMonadAlternative[R](implicit m: Member[Choose, R]): Alternative[Eff[R, ?]] = new Alternative[Eff[R, ?]] with Monad[Eff[R, ?]] {
+  def EffMonadAlternative[R](implicit m: Member[Choose, R]): Alternative[Eff[R, *]] = new Alternative[Eff[R, *]] with Monad[Eff[R, *]] {
     def pure[A](a: A): Eff[R, A] =
       EffMonad[R].pure(a)
 

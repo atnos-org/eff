@@ -18,7 +18,7 @@ class WriterEffectSpec extends Specification with ThrownExpectations { def is = 
 """
 
   def sideEffecting = {
-    type S = Fx.fx1[Writer[String, ?]]
+    type S = Fx.fx1[Writer[String, *]]
 
     val action: Eff[S, String] = for {
       f <- tell[S, String]("hello")
@@ -34,7 +34,7 @@ class WriterEffectSpec extends Specification with ThrownExpectations { def is = 
   }
 
   def evalWriting = {
-    type S = Fx.fx2[Writer[String, ?], Eval]
+    type S = Fx.fx2[Writer[String, *], Eval]
 
     val action: Eff[S, String] = for {
       f <- tell[S, String]("hello")

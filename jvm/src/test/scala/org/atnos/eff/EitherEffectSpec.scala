@@ -149,8 +149,8 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
     case class Error2(e1: Error1)
 
-    type R1 = Fx.fx1[(Error1 Either ?)]
-    type R2 = Fx.fx1[(Error2 Either ?)]
+    type R1 = Fx.fx1[(Error1 Either *)]
+    type R2 = Fx.fx1[(Error2 Either *)]
 
     val action1: Eff[R1, Unit] =
       EitherEffect.left(Error1("boom"))
@@ -165,7 +165,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     case class Error1(m: String)
     case class Error2(e1: Error1)
 
-    type R1 = Fx.fx2[Error1 Either ?, Error2 Either ?]
+    type R1 = Fx.fx2[Error1 Either *, Error2 Either *]
 
     val action1: Eff[R1, Unit] =
       EitherEffect.left(Error1("boom"))
@@ -179,13 +179,13 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     implicit def e1Toe2: Error1 => Error2 = (e1: Error1) => Error2(e1)
     import either._
 
-    def withE1[R](i: Int)(implicit m: (Error1 Either ?) |= R): Eff[R, Int] =
+    def withE1[R](i: Int)(implicit m: (Error1 Either *) |= R): Eff[R, Int] =
       either.right[R, Error1, Int](i)
 
-    def withE2[R](implicit m: (Error2 Either ?) |= R): Eff[R, String] =
+    def withE2[R](implicit m: (Error2 Either *) |= R): Eff[R, String] =
       withE1[R](10).map(_.toString)
 
-    withE2[Fx.fx1[Error2 Either ?]].runEither.run ==== Right("10")
+    withE2[Fx.fx1[Error2 Either *]].runEither.run ==== Right("10")
   }
 
   def handleFromCatchNonFatal = {
@@ -203,7 +203,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
   }
 
   def runEitherWithCombine = {
-    type R = Fx1[String Either ?]
+    type R = Fx1[String Either *]
     val action =
       EitherEffect.left[R, String, Int]("a") *>
       EitherEffect.left[R, String, Int]("b") *>

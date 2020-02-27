@@ -146,7 +146,7 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
   }
 
   def interleavedApplicative1 = {
-    type S = Fx2[Option, String Either ?]
+    type S = Fx2[Option, String Either *]
     val action = (1 to 4).toList.traverseA(i =>
       if (i % 2 == 0) OptionEffect.some[S, Int](i) else EitherEffect.right[S, String, Int](i))
 

@@ -19,9 +19,9 @@ package object scalaz {
   object task extends TaskEffect
 
   /**
-   * Monad implementation for the Eff[R, ?] type
+   * Monad implementation for the Eff[R, *] type
    */
-  implicit final def EffScalazMonad[R]: Monad[Eff[R, ?]] with BindRec[Eff[R, ?]] = new Monad[Eff[R, ?]] with BindRec[Eff[R, ?]] {
+  implicit final def EffScalazMonad[R]: Monad[Eff[R, *]] with BindRec[Eff[R, *]] = new Monad[Eff[R, *]] with BindRec[Eff[R, *]] {
     def point[A](a: =>A): Eff[R, A] =
       Eff.EffMonad[R].pure(a)
 
@@ -35,7 +35,7 @@ package object scalaz {
       Eff.EffMonad[R].tailRecM(a)(a1 => f(a1).map(_.fold(Left.apply, Right.apply)))
   }
 
-  def EffScalazApplicative[R]: Applicative[Eff[R, ?]] = new Applicative[Eff[R, ?]] {
+  def EffScalazApplicative[R]: Applicative[Eff[R, *]] = new Applicative[Eff[R, *]] {
     def point[A](a: =>A): Eff[R, A] =
       Eff.EffApplicative[R].pure(a)
 
@@ -47,10 +47,10 @@ package object scalaz {
     def combine(x: A, y: A): A = s.append(x, y)
   }
 
-  def natTaskEff[R :_task]: Task ~> Eff[R, ?] =
-    Lambda[Task ~> Eff[R, ?]](t => fromTask(t))
+  def natTaskEff[R :_task]: Task ~> Eff[R, *] =
+    Lambda[Task ~> Eff[R, *]](t => fromTask(t))
 
-  implicit def EffCatchable[R :_Task]: Catchable[Eff[R, ?]] = new Catchable[Eff[R, ?]] {
+  implicit def EffCatchable[R :_Task]: Catchable[Eff[R, *]] = new Catchable[Eff[R, *]] {
     def attempt[A](f: Eff[R, A]) = taskAttempt(f).map(\/.fromEither)
     def fail[A](err: Throwable) = taskFailed[R, A](err)
   }
@@ -64,11 +64,11 @@ package object scalaz {
       Traverse[F].sequence(fs)(EffScalazApplicative[R])
 
     def flatTraverseA[R, F[_], A, B](fs: F[A])(f: A => Eff[R, F[B]])(implicit FT: Traverse[F], FM: Bind[F]): Eff[R, F[B]] =
-      FT.traverseM[A, Eff[R, ?], B](fs)(f)(EffScalazApplicative[R], FM)
+      FT.traverseM[A, Eff[R, *], B](fs)(f)(EffScalazApplicative[R], FM)
 
     /** use the applicative instance of Eff to sequence a list of values, then flatten it */
     def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(implicit FT: Traverse[F], FM: Bind[F]): Eff[R, F[A]] =
-      FT.traverseM[Eff[R, F[A]], Eff[R, ?], A](fs)(identity)(EffScalazApplicative[R], FM)
+      FT.traverseM[Eff[R, F[A]], Eff[R, *], A](fs)(identity)(EffScalazApplicative[R], FM)
 
     def detach[M[_], A](eff: Eff[Fx1[M], A])(implicit m: Monad[M], b: BindRec[M]): M[A] =
       BindRec[M].tailrecM[Eff[Fx1[M], A], A] {

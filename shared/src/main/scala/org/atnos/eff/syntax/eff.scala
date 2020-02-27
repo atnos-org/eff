@@ -46,10 +46,10 @@ final class EffTranslateIntoOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def translateInto[T[_], U](t: Translate[T, U])(implicit m: MemberInOut[T, R], into: IntoPoly[R, U]): Eff[U, A] =
     interpret.translateInto(e)(t)(m, into)
 
-  def write[T[_], O](w: Write[T, O])(implicit memberT: MemberInOut[T, R], memberW: MemberInOut[Writer[O, ?], R]): Eff[R, A] =
+  def write[T[_], O](w: Write[T, O])(implicit memberT: MemberInOut[T, R], memberW: MemberInOut[Writer[O, *], R]): Eff[R, A] =
     interpret.write(e)(w)
 
-  def trace[F[_]](implicit memberF: MemberInOut[F, R], memberW: MemberInOut[Writer[F[_], ?], R]): Eff[R, A] =
+  def trace[F[_]](implicit memberF: MemberInOut[F, R], memberW: MemberInOut[Writer[F[_], *], R]): Eff[R, A] =
     interpret.trace[R, F, A](e)
 
   def augment[T[_], O[_]](w: Augment[T, O])(implicit memberT: MemberInOut[T, R], memberO: MemberIn[O, R]): Eff[R, A] =

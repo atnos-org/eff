@@ -14,8 +14,8 @@ import org.atnos.eff.interpret._
 import cats.implicits._
 import cats.data._
 
-type _writerString[R] = Writer[String, ?] |= R
-type _stateMap[R]     = State[Map[String, Any], ?] |= R
+type _writerString[R] = Writer[String, *] |= R
+type _stateMap[R]     = State[Map[String, Any], *] |= R
 
 /**
  * Safe interpreter for KVStore effects

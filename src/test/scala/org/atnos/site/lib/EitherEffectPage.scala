@@ -9,7 +9,7 @@ The `Either` effect is similar to the `Option` effect but adds the possibility t
   /**
    * Stack declaration
    */
-  type S = Fx.fx1[String Either ?]
+  type S = Fx.fx1[String Either *]
 
   // compute with this stack
   val map: Map[String, Int] =
@@ -32,7 +32,7 @@ A `catchLeft` method can also be used to intercept an error and possibly recover
   import org.atnos.eff._, all._, syntax.all._
   // 8<--
   case class TooBig(value: Int)
-  type E = Fx.fx1[TooBig Either ?]
+  type E = Fx.fx1[TooBig Either *]
 
   val i = 7
 

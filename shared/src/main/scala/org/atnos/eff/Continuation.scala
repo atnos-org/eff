@@ -113,7 +113,7 @@ object Continuation {
   def unit[R, A]: Continuation[R, A, A] =
     Continuation(Vector.empty)
 
-  implicit def ArrsFunctor[R, X]: Functor[Continuation[R, X, ?]] = new Functor[Continuation[R, X, ?]] {
+  implicit def ArrsFunctor[R, X]: Functor[Continuation[R, X, *]] = new Functor[Continuation[R, X, *]] {
     def map[A, B](fa: Continuation[R, X, A])(f: A => B): Continuation[R, X, B] =
       fa.map(f)
   }
