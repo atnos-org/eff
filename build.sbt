@@ -108,7 +108,6 @@ lazy val buildSettings = Seq(
 
 lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions.value,
-  resolvers ++= commonResolvers,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 ) ++ warnUnusedImport ++ prompt
@@ -287,13 +286,6 @@ lazy val twitterUtilCore = Seq(
 
 lazy val catbird = Seq(
   "io.catbird" %% "catbird-util" % catbirdVersion
-)
-
-lazy val commonResolvers = Seq(
-  Resolver.sonatypeRepo("releases")
-  , Resolver.typesafeRepo("releases")
-  , Resolver.url("ambiata-oss", new URL("https://ambiata-oss.s3.amazonaws.com"))(Resolver.ivyStylePatterns)
-  , Resolver.sonatypeRepo("snapshots")
 )
 
 //sbt-pgp 2.0 switched from BouncyCastle to command line `gpg` and it doesnt
