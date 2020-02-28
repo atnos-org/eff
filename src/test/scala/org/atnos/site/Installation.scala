@@ -23,7 +23,7 @@ This table lists the other available eff modules:
 
  Name              | Functionality
  ----------------- | ----------------------------------------------------
- `eff-scalaz`      | if you want to use [Scalaz](http://github.com/scalaz/scalaz) as a library for functional programming. This gives you a `Scalaz` `Monad` instance for `Eff` and a Scalaz's `Task` effect
+ `eff-scalaz`      | if you want to use [Scalaz](https://github.com/scalaz/scalaz) as a library for functional programming. This gives you a `Scalaz` `Monad` instance for `Eff` and a Scalaz's `Task` effect
  `eff-monix`       | to use Monix's `Task` effect
  `eff-cats-effect` | to use cats's `IO` effect
  `eff-twitter`     | to use Twitter's `Future` effect

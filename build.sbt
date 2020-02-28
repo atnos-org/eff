@@ -140,7 +140,7 @@ lazy val effSettings =
 lazy val publishSettings =
   Seq(
   homepage := Some(url("https://github.com/atnos-org/eff")),
-  licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
+  licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
   scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/eff"), "scm:git:git@github.com:atnos-org/eff.git")),
   autoAPIMappings := true,
   apiURL := Some(url("http://atnos.org/eff/api/")),
