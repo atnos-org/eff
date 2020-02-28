@@ -77,7 +77,7 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-outofthebox"><a href="org.atnos.site.OutOfTheBox.html" title="Out of the box">Out of the box</a>
-      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what's-next?" title="What's next?">What's next?</a>
+      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what’s-next?" title="What’s next?">What’s next?</a>
           
         </li></ul></ul>
       <ul>
@@ -222,7 +222,7 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
-      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-&quot;effect-stack&quot;?" title="What is an &quot;effect stack&quot;?">What is an &quot;eff...</a>
+      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
@@ -230,7 +230,7 @@
         </li></ul>
         </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-&quot;locally&quot;" title="Interpret an effect &quot;locally&quot;">Interpret an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#merge-stacks" title="Merge stacks">Merge stacks</a>
           
@@ -247,7 +247,7 @@
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#&quot;packing&quot;-member-instances" title="&quot;Packing&quot; member instances">&quot;Packing&quot; membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
         </li></ul></ul>
       <ul>
@@ -298,8 +298,8 @@
 <h1>TimedFuture</h1>
 <div id="tipue_search_content"></div>
 
-<p>The <code class="prettyprint">TimedFuture</code> effect is a thin shim on top of Scala's <code class="prettyprint">Future</code>. The only extra capability it has built-in is timeouts, which are supported by passing in a <code class="prettyprint">ScheduledExecutionContext</code>. Note that because <code class="prettyprint">Future</code> represents a computation already taking place, <code class="prettyprint">TimedFuture</code> is a function that returns a <code class="prettyprint">Future</code>. This means if you start a computation before passing the <code class="prettyprint">Future</code> into Eff, the <code class="prettyprint">Future</code> will begin less predictably.</p>
-<p>Now, let's create some <code class="prettyprint">TimedFuture</code> effects:</p>
+<p>The <code class="prettyprint">TimedFuture</code> effect is a thin shim on top of Scala’s <code class="prettyprint">Future</code>. The only extra capability it has built-in is timeouts, which are supported by passing in a <code class="prettyprint">ScheduledExecutionContext</code>. Note that because <code class="prettyprint">Future</code> represents a computation already taking place, <code class="prettyprint">TimedFuture</code> is a function that returns a <code class="prettyprint">Future</code>. This means if you start a computation before passing the <code class="prettyprint">Future</code> into Eff, the <code class="prettyprint">Future</code> will begin less predictably.</p>
+<p>Now, let’s create some <code class="prettyprint">TimedFuture</code> effects:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 import org.atnos.eff.future._
 import org.atnos.eff.syntax.all._

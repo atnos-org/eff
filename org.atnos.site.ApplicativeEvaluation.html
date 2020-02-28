@@ -77,7 +77,7 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-outofthebox"><a href="org.atnos.site.OutOfTheBox.html" title="Out of the box">Out of the box</a>
-      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what's-next?" title="What's next?">What's next?</a>
+      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what’s-next?" title="What’s next?">What’s next?</a>
           
         </li></ul></ul>
       <ul>
@@ -222,7 +222,7 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
-      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-&quot;effect-stack&quot;?" title="What is an &quot;effect stack&quot;?">What is an &quot;eff...</a>
+      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
@@ -230,7 +230,7 @@
         </li></ul>
         </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-&quot;locally&quot;" title="Interpret an effect &quot;locally&quot;">Interpret an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#merge-stacks" title="Merge stacks">Merge stacks</a>
           
@@ -247,7 +247,7 @@
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#&quot;packing&quot;-member-instances" title="&quot;Packing&quot; member instances">&quot;Packing&quot; membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
         </li></ul></ul>
       <ul>
@@ -299,7 +299,7 @@
 <div id="tipue_search_content"></div>
 
 <h3 id="concurrent-evaluation">Concurrent evaluation</h3>
-<p>The default interpretation of <code class="prettyprint">Eff</code> values is &quot;monadic&quot; meaning that effectful values are being evaluated in order. This becomes clear when traversing a list of values with the <code class="prettyprint">FutureEffect</code>:</p>
+<p>The default interpretation of <code class="prettyprint">Eff</code> values is “monadic” meaning that effectful values are being evaluated in order. This becomes clear when traversing a list of values with the <code class="prettyprint">FutureEffect</code>:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, future._, syntax.all._
 import cats.Eval
 import cats.data.Writer
@@ -335,7 +335,7 @@ Await.result(Eff.detachA(action.runEval.runWriterLog[String])(TimedFuture.MonadT
 <p><code class="prettyprint">&gt; List(1000, 500, 50)</code></p>
 <p>This uses now <code class="prettyprint">traverseA</code> (instead of <code class="prettyprint">traverse</code>) to do an applicative traversal and execute futures concurrently and the fastest actions finish first.</p>
 <h3 id="batching">Batching</h3>
-<p>Another advantage of applicative effects is that we can intercept them individual requests and &quot;batch&quot; them into one single request. For example:</p>
+<p>Another advantage of applicative effects is that we can intercept them individual requests and “batch” them into one single request. For example:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 import cats.implicits._
 
@@ -352,7 +352,7 @@ def getUser[R :_userDsl](i: Int): Eff[R, User] =
   send[UserDsl, R, User](GetUser(i))
 
 </code></pre>
-<p>Let's create an interpreter for this DSL:</p>
+<p>Let’s create an interpreter for this DSL:</p>
 <pre><code class="prettyprint">// the real method calls to a webservice
 def getWebUser(i: Int): User = User(i)
 def getWebUsers(is: List[Int]): List[User] = is.map(i =&gt; User(i))
@@ -373,7 +373,7 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
 }
 
 </code></pre>
-<p>We can also optimise a <code class="prettyprint">UserDsl</code> program by providing a <code class="prettyprint">Batchable</code> instance describing how to &quot;batch&quot; 2 calls into 1:</p>
+<p>We can also optimise a <code class="prettyprint">UserDsl</code> program by providing a <code class="prettyprint">Batchable</code> instance describing how to “batch” 2 calls into 1:</p>
 <pre><code class="prettyprint">implicit def BatchableUserDsl: Batchable[UserDsl] = new Batchable[UserDsl] {
   type Z = List[User]
   type E = User
@@ -391,7 +391,7 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
 }
 
 </code></pre>
-<p>Now let's create a program using the <code class="prettyprint">User</code> DSL with applicative calls which can be optimised:</p>
+<p>Now let’s create a program using the <code class="prettyprint">User</code> DSL with applicative calls which can be optimised:</p>
 <pre><code class="prettyprint">def program[R :_userDsl]: Eff[R, List[User]] =
   Eff.traverseA(List(1, 2, 3))(i =&gt; getUser(i))
 

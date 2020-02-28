@@ -77,7 +77,7 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-outofthebox"><a href="org.atnos.site.OutOfTheBox.html" title="Out of the box">Out of the box</a>
-      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what's-next?" title="What's next?">What's next?</a>
+      <ul><ul><li><a href="org.atnos.site.OutOfTheBox.html#what’s-next?" title="What’s next?">What’s next?</a>
           
         </li></ul></ul>
       <ul>
@@ -222,7 +222,7 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
-      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-&quot;effect-stack&quot;?" title="What is an &quot;effect stack&quot;?">What is an &quot;eff...</a>
+      <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
@@ -230,7 +230,7 @@
         </li></ul>
         </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-&quot;locally&quot;" title="Interpret an effect &quot;locally&quot;">Interpret an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#merge-stacks" title="Merge stacks">Merge stacks</a>
           
@@ -247,7 +247,7 @@
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#&quot;packing&quot;-member-instances" title="&quot;Packing&quot; member instances">&quot;Packing&quot; membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
         </li></ul></ul>
       <ul>
@@ -299,41 +299,45 @@
 <div id="tipue_search_content"></div>
 
 <p>You add <code class="prettyprint">eff</code> as an sbt dependency:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala">libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff&quot;</span> % <span class="st">&quot;5.5.2&quot;</span>
-
-<span class="co">// to write types like Reader[String, ?]</span>
-<span class="fu">addCompilerPlugin</span>(<span class="st">&quot;org.typelevel&quot;</span> %% <span class="st">&quot;kind-projector&quot;</span> % <span class="st">&quot;0.10.3&quot;</span>)</code></pre>
-<p>To get types like <code class="prettyprint">Reader[String, ?]</code> (with more than one type parameter) correctly inferred, you'll have to use the following compiler option</p>
-<pre class="sourceCode scala"><code class="sourceCode scala">scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb1-1"><a href="#cb1-1"></a>libraryDependencies += <span class="st">&quot;org.atnos&quot;</span> %% <span class="st">&quot;eff&quot;</span> % <span class="st">&quot;5.7.0&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="co">// to write types like Reader[String, *]</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="fu">addCompilerPlugin</span>(<span class="st">&quot;org.typelevel&quot;</span> %% <span class="st">&quot;kind-projector&quot;</span> % <span class="st">&quot;0.11.0&quot;</span> cross CrossVersion.<span class="fu">full</span>)</span></code></pre></div>
+<p>To get types like <code class="prettyprint">Reader[String, *]</code> (with more than one type parameter) correctly inferred, you’ll have to use the following compiler option</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb2-1"><a href="#cb2-1"></a>scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></span></code></pre></div>
 <h5 id="additional-dependencies">Additional dependencies</h5>
 <p>This table lists the other available eff modules:</p>
 <table>
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 75%" />
+</colgroup>
 <thead>
 <tr class="header">
-<th align="left">Name</th>
-<th align="left">Functionality</th>
+<th>Name</th>
+<th>Functionality</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left"><code class="prettyprint">eff-scalaz</code></td>
-<td align="left">if you want to use <a href="http://github.com/scalaz/scalaz">Scalaz</a> as a library for functional programming. This gives you a <code class="prettyprint">Scalaz</code> <code class="prettyprint">Monad</code> instance for <code class="prettyprint">Eff</code> and a Scalaz's <code class="prettyprint">Task</code> effect</td>
+<td><code class="prettyprint">eff-scalaz</code></td>
+<td>if you want to use <a href="https://github.com/scalaz/scalaz">Scalaz</a> as a library for functional programming. This gives you a <code class="prettyprint">Scalaz</code> <code class="prettyprint">Monad</code> instance for <code class="prettyprint">Eff</code> and a Scalaz’s <code class="prettyprint">Task</code> effect</td>
 </tr>
 <tr class="even">
-<td align="left"><code class="prettyprint">eff-monix</code></td>
-<td align="left">to use Monix's <code class="prettyprint">Task</code> effect</td>
+<td><code class="prettyprint">eff-monix</code></td>
+<td>to use Monix’s <code class="prettyprint">Task</code> effect</td>
 </tr>
 <tr class="odd">
-<td align="left"><code class="prettyprint">eff-cats-effect</code></td>
-<td align="left">to use cats's <code class="prettyprint">IO</code> effect</td>
+<td><code class="prettyprint">eff-cats-effect</code></td>
+<td>to use cats’s <code class="prettyprint">IO</code> effect</td>
 </tr>
 <tr class="even">
-<td align="left"><code class="prettyprint">eff-twitter</code></td>
-<td align="left">to use Twitter's <code class="prettyprint">Future</code> effect</td>
+<td><code class="prettyprint">eff-twitter</code></td>
+<td>to use Twitter’s <code class="prettyprint">Future</code> effect</td>
 </tr>
 <tr class="odd">
-<td align="left"><code class="prettyprint">eff-doobie</code></td>
-<td align="left">to use Doobie's <code class="prettyprint">ConnectionIO</code> effect</td>
+<td><code class="prettyprint">eff-doobie</code></td>
+<td>to use Doobie’s <code class="prettyprint">ConnectionIO</code> effect</td>
 </tr>
 </tbody>
 </table>
@@ -341,45 +345,45 @@
 <h3 id="imports">Imports</h3>
 <h4 id="main-types">Main types</h4>
 <p>The main <code class="prettyprint">eff</code> types: <code class="prettyprint">Eff</code>, <code class="prettyprint">Member</code>, <code class="prettyprint">Fx</code> are accessible in the <code class="prettyprint">org.atnos.eff</code> package:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">_</span></code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>._</span></code></pre></div>
 <p>Many other effects are also available <link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">Out of the box</a></link>.</p>
 <h4 id="creating-effects">Creating effects</h4>
 <p>The functions used to create effects are grouped under different objects named after the effect type. For example if you want to create the <code class="prettyprint">Eval</code> effect you need to import:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">eval</span>.<span class="fu">_</span></code></pre>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">eval</span>._</span></code></pre></div>
 <p>You can also import most of the effects at once with:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">all</span>.<span class="fu">_</span></code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">all</span>._</span></code></pre></div>
 <p>The only effects not included in the previous import are:</p>
 <ul>
-<li><p>the <code class="prettyprint">Error</code> effect. This effect requires a type parameter representing the &quot;failure&quot; type and must be provided by the user of the library</p></li>
-<li><p>the <code class="prettyprint">Future</code> effect. This effect shares some operations like <code class="prettyprint">runAsync</code> with other &quot;async&quot; effects like monix's <code class="prettyprint">TaskEffect</code> and the import could clash with <code class="prettyprint">import org.atnos.eff.addon.monix.task._</code></p></li>
+<li><p>the <code class="prettyprint">Error</code> effect. This effect requires a type parameter representing the “failure” type and must be provided by the user of the library</p></li>
+<li><p>the <code class="prettyprint">Future</code> effect. This effect shares some operations like <code class="prettyprint">runAsync</code> with other “async” effects like monix’s <code class="prettyprint">TaskEffect</code> and the import could clash with <code class="prettyprint">import org.atnos.eff.addon.monix.task._</code></p></li>
 </ul>
 <h4 id="interpreting-effects">Interpreting effects</h4>
-<p>Interpreting effects usually requires some syntax to &quot;run&quot; a given effect. For example to &quot;run&quot; the <code class="prettyprint">Option</code> effect you will import:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="co">// to create the effect</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">option</span>.<span class="fu">_</span>
-
-<span class="co">// to access the runOption method</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">syntax</span>.<span class="fu">option</span>.<span class="fu">_</span>
-
-<span class="fu">fromOption</span>(Option(<span class="dv">1</span>)).<span class="fu">runOption</span></code></pre>
+<p>Interpreting effects usually requires some syntax to “run” a given effect. For example to “run” the <code class="prettyprint">Option</code> effect you will import:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">// to create the effect</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">option</span>._</span>
+<span id="cb6-3"><a href="#cb6-3"></a></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="co">// to access the runOption method</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">syntax</span>.<span class="fu">option</span>._</span>
+<span id="cb6-6"><a href="#cb6-6"></a></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="fu">fromOption</span>(Option(<span class="dv">1</span>)).<span class="fu">runOption</span></span></code></pre></div>
 <p>You can also access all the syntax imports at once with:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">syntax</span>.<span class="fu">all</span>.<span class="fu">_</span></code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">syntax</span>.<span class="fu">all</span>._</span></code></pre></div>
 <h4 id="intellij-support">Intellij support</h4>
-<p>Intellij error highlighting doesn't support implicit-directed type inference yet, check https://youtrack.jetbrains.com/issue/SCL-11140 or https://youtrack.jetbrains.com/issue/SCL-10753 for progress.</p>
+<p>Intellij error highlighting doesn’t support implicit-directed type inference yet, check https://youtrack.jetbrains.com/issue/SCL-11140 or https://youtrack.jetbrains.com/issue/SCL-10753 for progress.</p>
 <h4 id="with-scalaz">With Scalaz</h4>
 <p>If you use Scalaz as your functional programming library you might need additional imports in order to use some creation methods specific to Scalaz. For example:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">either</span>.<span class="fu">_</span>
-
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>))</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">either</span>._</span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>))</span></code></pre></div>
 <p>There is also an <code class="prettyprint">all</code> object importing all those methods at once:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">all</span>.<span class="fu">_</span>
-
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>))</code></pre>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">all</span>._</span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>))</span></code></pre></div>
 <p>And you can already guess, there are some syntax imports following the same pattern:</p>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">either</span>.<span class="fu">_</span>
-<span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">syntax</span>.<span class="fu">either</span>.<span class="fu">_</span>
-
-<span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>)).<span class="fu">runDisjunction</span></code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">either</span>._</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">import</span> org.<span class="fu">atnos</span>.<span class="fu">eff</span>.<span class="fu">addon</span>.<span class="fu">scalaz</span>.<span class="fu">syntax</span>.<span class="fu">either</span>._</span>
+<span id="cb10-3"><a href="#cb10-3"></a></span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="fu">fromDisjunction</span>(\/-(<span class="dv">1</span>)).<span class="fu">runDisjunction</span></span></code></pre></div>
 </div>
 
 <script>
