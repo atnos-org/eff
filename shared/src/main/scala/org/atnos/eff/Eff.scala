@@ -154,10 +154,13 @@ object Eff extends EffCreation with
 
 trait EffImplicits {
 
+  @deprecated(message = "use EffMonad", since = "")
+  final def effMonadUnsafe: Monad[Eff[AnyRef, *]] = effMonadUnsafeImpl
+
   /**
     * Monad implementation for the Eff[R, *] type
     */
-  final val effMonadUnsafe: Monad[Eff[AnyRef, *]] = new Monad[Eff[AnyRef, *]] {
+  private[this] final val effMonadUnsafeImpl: Monad[Eff[AnyRef, *]] = new Monad[Eff[AnyRef, *]] {
 
     def pure[A](a: A): Eff[AnyRef, A] =
       Pure[AnyRef, A](a)
@@ -203,7 +206,10 @@ trait EffImplicits {
       }
   }
 
-  final val effApplicativeUnsafe: Applicative[Eff[AnyRef, *]] = new Applicative[Eff[AnyRef, *]] {
+  @deprecated(message = "use EffApplicative", since = "")
+  final def effApplicativeUnsafe: Applicative[Eff[AnyRef, *]] = effApplicativeUnsafeImpl
+
+  private[this] final val effApplicativeUnsafeImpl: Applicative[Eff[AnyRef, *]] = new Applicative[Eff[AnyRef, *]] {
 
     def pure[A](a: A): Eff[AnyRef, A] =
       Pure[AnyRef, A](a)
@@ -253,9 +259,9 @@ trait EffImplicits {
       }
   }
 
-  implicit final def EffMonad[R]: Monad[Eff[R, *]] = effMonadUnsafe.asInstanceOf[Monad[Eff[R, *]]]
+  implicit final def EffMonad[R]: Monad[Eff[R, *]] = effMonadUnsafeImpl.asInstanceOf[Monad[Eff[R, *]]]
 
-  final def EffApplicative[R]: Applicative[Eff[R, *]] = effApplicativeUnsafe.asInstanceOf[Applicative[Eff[R, *]]]
+  final def EffApplicative[R]: Applicative[Eff[R, *]] = effApplicativeUnsafeImpl.asInstanceOf[Applicative[Eff[R, *]]]
 
 }
 
