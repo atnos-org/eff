@@ -19,9 +19,9 @@ lazy val eff = project.in(file("."))
   .settings(effSettings)
   .settings(noPublishSettings)
   .settings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter))
-  .aggregate(coreJVM, coreJS, doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalaz, twitter)
+  .aggregate(coreJVM, coreJS, doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalazJVM, scalazJS, twitter)
   .dependsOn(coreJVM % "test->test;compile->compile", coreJS,
-    doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalaz, twitter)
+    doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalazJVM, scalazJS, twitter)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform).in(file("."))
   .settings(moduleName := "eff")
@@ -80,11 +80,16 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
 lazy val monixJVM = monix.jvm
 lazy val monixJS =  monix.js
 
-lazy val scalaz = project.in(file("scalaz"))
+lazy val scalaz = crossProject(JSPlatform, JVMPlatform).in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
-  .dependsOn(coreJVM)
-  .settings(libraryDependencies ++= scalazCore)
-  .settings(effSettings ++ commonJvmSettings)
+  .dependsOn(core)
+  .settings(libraryDependencies ++= scalazCore.value)
+  .settings(effSettings)
+  .jvmSettings(commonJvmSettings)
+  .jsSettings(commonJsSettings)
+
+lazy val scalazJVM = scalaz.jvm
+lazy val scalazJS = scalaz.js
 
 lazy val twitter = project
   .settings(moduleName := "eff-twitter")
@@ -263,8 +268,8 @@ lazy val monixLib = Seq(
 lazy val monixJs = Def.setting(Seq(
   "io.monix" %%% "monix" % monixVersion))
 
-lazy val scalazCore = Seq(
-  "org.scalaz" %% "scalaz-core" % scalazVersion)
+lazy val scalazCore = Def.setting(Seq(
+  "org.scalaz" %%% "scalaz-core" % scalazVersion))
 
 lazy val specs2 = Seq(
     "org.specs2" %% "specs2-core"
