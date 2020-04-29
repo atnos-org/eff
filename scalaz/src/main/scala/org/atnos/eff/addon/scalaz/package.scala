@@ -1,10 +1,6 @@
 package org.atnos.eff
 package addon
 
-import _root_.scalaz.concurrent.Task
-import scalaz.concurrent.TaskEffect
-import org.atnos.eff.addon.scalaz.task.{_Task, _task, fromTask, taskFailed, taskAttempt}
-
 import _root_.scalaz._
 import Scalaz._
 
@@ -15,8 +11,6 @@ package object scalaz {
     eval   with
     safe   with
     validate
-
-  object task extends TaskEffect
 
   /**
    * Monad implementation for the Eff[R, *] type
@@ -31,7 +25,7 @@ package object scalaz {
     def bind[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
       Eff.EffMonad[R].flatMap(fa)(f)
 
-    def tailrecM[A, B](f: A => Eff[R, A \/ B])(a: A): Eff[R, B] =
+    def tailrecM[A, B](a: A)(f: A => Eff[R, A \/ B]): Eff[R, B] =
       Eff.EffMonad[R].tailRecM(a)(a1 => f(a1).map(_.fold(Left.apply, Right.apply)))
   }
 
@@ -45,14 +39,6 @@ package object scalaz {
 
   def catsSemigroup[A](s: Semigroup[A]): cats.Semigroup[A] = new cats.Semigroup[A] {
     def combine(x: A, y: A): A = s.append(x, y)
-  }
-
-  def natTaskEff[R :_task]: Task ~> Eff[R, *] =
-    Lambda[Task ~> Eff[R, *]](t => fromTask(t))
-
-  implicit def EffCatchable[R :_Task]: Catchable[Eff[R, *]] = new Catchable[Eff[R, *]] {
-    def attempt[A](f: Eff[R, A]) = taskAttempt(f).map(\/.fromEither)
-    def fail[A](err: Throwable) = taskFailed[R, A](err)
   }
 
   object EffScalaz {
@@ -71,7 +57,7 @@ package object scalaz {
       FT.traverseM[Eff[R, F[A]], Eff[R, *], A](fs)(identity)(EffScalazApplicative[R], FM)
 
     def detach[M[_], A](eff: Eff[Fx1[M], A])(implicit m: Monad[M], b: BindRec[M]): M[A] =
-      BindRec[M].tailrecM[Eff[Fx1[M], A], A] {
+      BindRec[M].tailrecM[Eff[Fx1[M], A], A](eff) {
         case Pure(a, Last(Some(l))) => Monad[M].point(-\/(l.value.as(a)))
         case Pure(a, Last(None))    => Monad[M].point(\/-(a))
 
@@ -90,10 +76,10 @@ package object scalaz {
 
         case ap @ ImpureAp(_, _, _) =>
           Monad[M].point(-\/(ap.toMonadic))
-      }(eff)
+      }
 
     def detachA[M[_], A](eff: Eff[Fx1[M], A])(implicit monad: Monad[M], bindRec: BindRec[M], applicative: Applicative[M]): M[A] =
-      BindRec[M].tailrecM[Eff[Fx1[M], A], A] {
+      BindRec[M].tailrecM[Eff[Fx1[M], A], A](eff) {
         case Pure(a, Last(Some(l))) => monad.point(-\/(l.value.as(a)))
         case Pure(a, Last(None))    => monad.point(\/-(a))
 
@@ -118,7 +104,7 @@ package object scalaz {
             case Last(Some(l)) => Monad[M].map(sequenced)(x => -\/(continuation(x).addLast(last)))
             case Last(None)    => Monad[M].map(sequenced)(x => -\/(continuation(x)))
           }
-      }(eff)
+      }
   }
 
 }

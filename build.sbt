@@ -3,7 +3,7 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 lazy val catsVersion        = "2.1.1"
 lazy val monixVersion       = "3.2.0"
-lazy val scalazVersion      = "7.2.30"
+lazy val scalazVersion      = "7.3.0"
 lazy val specs2Version      = "4.9.4"
 lazy val twitterUtilVersion = "20.4.1"
 lazy val catbirdVersion     = "20.3.0"
@@ -83,8 +83,7 @@ lazy val monixJS =  monix.js
 lazy val scalaz = project.in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
   .dependsOn(coreJVM)
-  .settings(libraryDependencies ++= scalazConcurrent)
-  .settings(libraryDependencies ++= specs2Scalaz)
+  .settings(libraryDependencies ++= scalazCore)
   .settings(effSettings ++ commonJvmSettings)
 
 lazy val twitter = project
@@ -264,11 +263,8 @@ lazy val monixLib = Seq(
 lazy val monixJs = Def.setting(Seq(
   "io.monix" %%% "monix" % monixVersion))
 
-lazy val scalazConcurrent = Seq(
-  "org.scalaz" %% "scalaz-concurrent" % scalazVersion)
-
-lazy val specs2Scalaz = Seq(
-  "org.specs2" %% "specs2-scalaz" % specs2Version % "test")
+lazy val scalazCore = Seq(
+  "org.scalaz" %% "scalaz-core" % scalazVersion)
 
 lazy val specs2 = Seq(
     "org.specs2" %% "specs2-core"
