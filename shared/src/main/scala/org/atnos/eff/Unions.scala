@@ -24,7 +24,7 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
    * if the first effect of this Unions object is interpreted
    */
   def continueWith[B](continuation: Continuation[R, Vector[Any], B]): Continuation[R, A, B] =
-    Continuation.lift({ x: X =>
+    Continuation.lift({ (x: X) =>
       rest match {
         case v if v.isEmpty =>
           continuation(x +: Vector.empty)
