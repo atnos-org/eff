@@ -130,7 +130,7 @@ trait StateInterpretation {
                                                   into: IntoPoly[U1, U2]): Eff[SS, A] =
     Interpret.transform[TS, SS, U1, U2, State[T, *], State[S, *], A](state, new ~>[State[T, *], State[S, *]] {
       def apply[X](tstate: State[T, X]): State[S, X] =
-        State { s: S =>
+        State { (s: S) =>
           val (t, x) = tstate.run(getter(s)).value
           (setter(s, t), x)
         }
