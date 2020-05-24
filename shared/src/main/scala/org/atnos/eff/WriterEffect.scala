@@ -61,7 +61,7 @@ trait WriterInterpretation {
 
         def onApplicativeEffect[X, T[_] : Traverse](xs: T[Writer[O, X]], continuation: Continuation[U, T[X], (A, fold.S)]): Eff[U, (A, fold.S)] = {
           val os = new collection.mutable.ListBuffer[O]
-          val values = xs.map { w: Writer[O, X] =>
+          val values = xs.map { w =>
             val (o, x) = w.run
             os.append(o)
             x
