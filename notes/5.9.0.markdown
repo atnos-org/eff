@@ -1,0 +1,7 @@
+- [Update util-core to 20.5.0](https://github.com/atnos-org/eff/commit/de955c7891ebd7b4d84aa3d886b1c49378dc103e)
+- [Update scalaz-core to 7.3.1](https://github.com/atnos-org/eff/commit/6adb57436a399a33fe5a5ab23be03e33d0dca444)
+- [Update sbt-scalajs, scalajs-compiler to 1.1.0](https://github.com/atnos-org/eff/commit/b1a0aa85f14b2999896a0e0c2281dfd9ee788636)
+- [goodbye scalaz.concurrent.Task](https://github.com/atnos-org/eff/commit/75a5181cb9cc178505c8bdec8fea364f0e302d26)
+- [Update monix to 3.2.1](https://github.com/atnos-org/eff/commit/95b407f5e67a526f968415208e4485e4bf2b283b)
+- [add scalazJS project](https://github.com/atnos-org/eff/commit/a6c7b1facbeea054b5a2df9f30dde25757f1044f)
+- [Update scalaz to 7.3.0](https://github.com/atnos-org/eff/commit/645e23e96034c81cb8c7dbfeb1f6055d4ea36dd9)
