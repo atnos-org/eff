@@ -287,7 +287,3 @@ lazy val twitterUtilCore = Seq(
 lazy val catbird = Seq(
   "io.catbird" %% "catbird-util" % catbirdVersion
 )
-
-//sbt-pgp 2.0 switched from BouncyCastle to command line `gpg` and it doesnt
-//work for me. Stay with BouncyCastle until there's a clearer reason to change
-Global / useGpg := false
