@@ -14,6 +14,8 @@ enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)
 enablePlugins(BuildInfoPlugin)
 
+def hash() = sys.process.Process("git rev-parse HEAD").lineStream_!.head
+
 lazy val eff = project.in(file("."))
   .settings(moduleName := "root")
   .settings(effSettings)
@@ -108,6 +110,14 @@ lazy val buildSettings = Seq(
 
 lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions.value,
+  scalacOptions in (Compile, doc) ++= {
+    Seq(
+      "-sourcepath",
+      (baseDirectory in LocalRootProject).value.getAbsolutePath,
+      "-doc-source-url",
+      s"https://github.com/atnos-org/eff/tree/${hash()}€{FILE_PATH}.scala"
+    )
+  },
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 ) ++ warnUnusedImport ++ prompt
@@ -115,6 +125,11 @@ lazy val commonSettings = Seq(
 lazy val commonJsSettings = Seq(
   scalaJSStage in Global := FastOptStage,
   parallelExecution := false,
+  scalacOptions += {
+    val a = (baseDirectory in LocalRootProject).value.toURI.toString
+    val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
+    s"-P:scalajs:mapSourceURI:$a->$g/"
+  },
   libraryDependencies ++= catsJs.value,
   jsEnv := new NodeJSEnv()
 ) ++ disableTests
