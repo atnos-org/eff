@@ -368,9 +368,7 @@ def putAndTell[R :_stateInt :_writerString](i: Int): Eff[R, Int] =
 </table>
 <h3 id="packing-member-instances">“Packing” member instances</h3>
 <p>Some function signatures can be repetitive when they always require the same list of effects:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">def</span> foo1[R :_foo :_bar :_baz](i: Int): Eff[R, Int]</span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">def</span> foo2[R :_foo :_bar :_baz](i: Int): Eff[R, Int]</span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">def</span> foo3[R :_foo :_bar :_baz](i: Int): Eff[R, Int]</span></code></pre></div>
+<p>def foo1<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int] def foo2<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int] def foo3<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int]</p>
 <p>It is possible to “pack” them with the following <code class="prettyprint">_effects</code> type definition:</p>
 <pre><code class="prettyprint">import org.atnos.eff.Members.{&amp;:, &amp;&amp;:}
 
