@@ -8,7 +8,7 @@ sbt> ghpagesPushSite
 sbt> githubRelease EFF-<tag name>
 sbt> cd eff
 sbt> +publishSigned
-sbt> sonatypeReleaseAll
+sbt> sonatypeBundleRelease
 ```
 
 # Running the benchmarks
