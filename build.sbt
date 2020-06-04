@@ -2,7 +2,7 @@ import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 lazy val catsVersion        = "2.1.1"
-lazy val monixVersion       = "3.2.1"
+lazy val monixVersion       = "3.2.2"
 lazy val scalazVersion      = "7.3.1"
 lazy val specs2Version      = "4.9.4"
 lazy val twitterUtilVersion = "20.5.0"
