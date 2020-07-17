@@ -1,0 +1,7 @@
+- [Update scala versions](https://github.com/scalaz/scalaz/commit/e7ac29cb836187b9bbaa96109903e9a0be56d9eb)
+- [Update cats-effect to 2.1.4](https://github.com/scalaz/scalaz/commit/ffa6dc477fac38b51e9864c0467e3fa943063216)
+- [Update catbird-util to 20.6.0](https://github.com/scalaz/scalaz/commit/ae5b5ada1b0ce6deaac97c778bfdaccf2d188767)
+- [Update scalaz-core to 7.3.2](https://github.com/scalaz/scalaz/commit/226021c93eba567407b2612a0934d02dcc99cda1)
+- [Update sbt-scalajs, scalajs-compiler to 1.1.1](https://github.com/scalaz/scalaz/commit/410b9c0df7702034f09ac53361112cf7f864d45e)
+- [Update util-core to 20.6.0](https://github.com/scalaz/scalaz/commit/ad31d861021446848e77f3c3c7f30fa2d397f3d2)
+- [Update monix to 3.2.2](https://github.com/scalaz/scalaz/commit/4144532a23c18c71a93bfbae808d5ca658ee2fae)
