@@ -76,7 +76,7 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
 
     val run = futureDelay[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action)
     eventually(retries = 5, sleep = 0.seconds) {
-      messages.clear
+      messages.clear()
       Await.result(run.runOption.runAsync)
 
       "the messages are ordered" ==> {
