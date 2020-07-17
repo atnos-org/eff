@@ -74,7 +74,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val run = taskDelay[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action)
 
     eventually(retries = 5, sleep = 0.seconds) {
-      messages.clear
+      messages.clear()
       Await.result(run.runOption.runAsync.runToFuture, 3.seconds)
 
       "the messages are ordered" ==> {
