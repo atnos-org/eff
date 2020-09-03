@@ -4,7 +4,6 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import org.specs2.{ScalaCheck, Specification}
 import cats.syntax.all._
-import cats.instances.all._
 import cats.Eq
 import org.atnos.eff.Batchable
 import org.atnos.eff.all._

@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import Eff._
 
 import scala.concurrent.duration.FiniteDuration

@@ -3,7 +3,6 @@ package org.atnos.eff
 import org.specs2.{ScalaCheck, Specification}
 import org.scalacheck.Gen.posNum
 import cats.syntax.all._
-import cats.instances.all._
 import cats.data._
 import Eff._
 import org.atnos.eff.all._

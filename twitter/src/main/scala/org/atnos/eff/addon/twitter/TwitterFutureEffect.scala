@@ -1,7 +1,7 @@
 package org.atnos.eff.addon.twitter
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff._
 

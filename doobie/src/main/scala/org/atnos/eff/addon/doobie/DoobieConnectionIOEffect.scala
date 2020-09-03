@@ -5,7 +5,7 @@ import java.sql.Connection
 import _root_.doobie.Transactor
 import _root_.doobie.free.connection.ConnectionIO
 import cats.effect.Bracket
-import cats.implicits._
+import cats.syntax.all._
 import cats.~>
 import org.atnos.eff._
 import org.atnos.eff.all._

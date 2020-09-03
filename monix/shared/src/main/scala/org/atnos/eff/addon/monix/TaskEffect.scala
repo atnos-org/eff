@@ -2,7 +2,6 @@ package org.atnos.eff.addon.monix
 
 import cats._
 import cats.effect._
-import cats.implicits._
 import monix.eval._
 import monix.execution._
 import org.atnos.eff._

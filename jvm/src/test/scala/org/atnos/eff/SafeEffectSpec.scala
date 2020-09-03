@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats.Eval
-import cats.implicits._
+import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
