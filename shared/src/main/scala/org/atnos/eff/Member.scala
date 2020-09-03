@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats.~>
-import cats.implicits._
+import cats.syntax.all._
 
 import scala.annotation.{implicitNotFound, switch}
 

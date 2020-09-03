@@ -3,7 +3,7 @@ package org.atnos.eff
 import org.specs2.Specification
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-import cats.implicits._
+import cats.syntax.all._
 
 class ChooseEffectSpec extends Specification { def is = s2"""
 

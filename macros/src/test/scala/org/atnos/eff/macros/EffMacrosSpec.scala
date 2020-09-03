@@ -85,7 +85,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
 
   def generatesTranslateInterpreter = {
     import org.atnos.eff._, all._, interpret._, syntax.all._
-    import cats.implicits._
+    import cats.syntax.all._
     import cats.data._
 
     type _writerString[R] = Writer[String, *] |= R
@@ -138,7 +138,7 @@ class EffMacrosSpec extends Specification { def is = s2"""
 
   def generatesTranslatorFactory = {
     import org.atnos.eff._, all._, syntax.all._
-    import cats.implicits._
+    import cats.syntax.all._
     import cats.data._
 
     type WriterString[A] = Writer[String, A]

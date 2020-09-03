@@ -249,37 +249,35 @@ import org.atnos.eff.syntax.all._
   type Check[A] = Eff[C,A]
 
   val value : Check[Int] = Eff.pure(3)
-
-  import cats.instances.list._
   import org.atnos.eff.syntax.all._
 //
-  val c1 = value.runChoose.runReader("foo").runState("baz").runNel.run
-  val c2 = value.runChoose.runReader("foo").runNel.runState("baz").run
-  val c3 = value.runChoose.runState("foo").runReader("baz").runNel.run
-  val c4 = value.runChoose.runState("foo").runNel.runReader("baz").run
-  val c5 = value.runChoose.runNel.runState("foo").runReader("baz").run
-  val c6 = value.runChoose.runNel.runReader("baz").runState("foo").run
+  val c1 = value.runChoose[Vector].runReader("foo").runState("baz").runNel.run
+  val c2 = value.runChoose[Vector].runReader("foo").runNel.runState("baz").run
+  val c3 = value.runChoose[Vector].runState("foo").runReader("baz").runNel.run
+  val c4 = value.runChoose[Vector].runState("foo").runNel.runReader("baz").run
+  val c5 = value.runChoose[Vector].runNel.runState("foo").runReader("baz").run
+  val c6 = value.runChoose[Vector].runNel.runReader("baz").runState("foo").run
 
-  val r1 = value.runReader("foo").runChoose.runState("baz").runNel.run
-  val r2 = value.runReader("foo").runChoose.runNel.runState("baz").run
-  val r3 = value.runReader("foo").runState("foo").runChoose.runNel.run
-  val r4 = value.runReader("foo").runState("foo").runNel.runChoose.run
-  val r5 = value.runReader("foo").runNel.runState("foo").runChoose.run
-  val r6 = value.runReader("foo").runNel.runChoose.runState("foo").run
+  val r1 = value.runReader("foo").runChoose[Vector].runState("baz").runNel.run
+  val r2 = value.runReader("foo").runChoose[Vector].runNel.runState("baz").run
+  val r3 = value.runReader("foo").runState("foo").runChoose[Vector].runNel.run
+  val r4 = value.runReader("foo").runState("foo").runNel.runChoose[Vector].run
+  val r5 = value.runReader("foo").runNel.runState("foo").runChoose[Vector].run
+  val r6 = value.runReader("foo").runNel.runChoose[Vector].runState("foo").run
 
-  val s1 = value.runState("baz").runChoose.runReader("foo").runNel.run
-  val s2 = value.runState("baz").runChoose.runNel.runReader("foo").run
-  val s3 = value.runState("baz").runReader("foo").runChoose.runNel.run
-  val s4 = value.runState("baz").runReader("foo").runNel.runChoose.run
-  val s5 = value.runState("baz").runNel.runReader("foo").runChoose.run
-  val s6 = value.runState("baz").runNel.runChoose.runReader("foo").run
+  val s1 = value.runState("baz").runChoose[Vector].runReader("foo").runNel.run
+  val s2 = value.runState("baz").runChoose[Vector].runNel.runReader("foo").run
+  val s3 = value.runState("baz").runReader("foo").runChoose[Vector].runNel.run
+  val s4 = value.runState("baz").runReader("foo").runNel.runChoose[Vector].run
+  val s5 = value.runState("baz").runNel.runReader("foo").runChoose[Vector].run
+  val s6 = value.runState("baz").runNel.runChoose[Vector].runReader("foo").run
 
-  val n1 = value.runNel.runChoose.runReader("foo").runState("baz").run
-  val n2 = value.runNel.runChoose.runState("baz").runReader("foo").run
-  val n3 = value.runNel.runReader("foo").runChoose.runState("baz").run
-  val n4 = value.runNel.runReader("foo").runState("baz").runChoose.run
-  val n5 = value.runNel.runState("baz").runReader("foo").runChoose.run
-  val n6 = value.runNel.runState("baz").runChoose.runReader("foo").run
+  val n1 = value.runNel.runChoose[Vector].runReader("foo").runState("baz").run
+  val n2 = value.runNel.runChoose[Vector].runState("baz").runReader("foo").run
+  val n3 = value.runNel.runReader("foo").runChoose[Vector].runState("baz").run
+  val n4 = value.runNel.runReader("foo").runState("baz").runChoose[Vector].run
+  val n5 = value.runNel.runState("baz").runReader("foo").runChoose[Vector].run
+  val n6 = value.runNel.runState("baz").runChoose[Vector].runReader("foo").run
 
 
 

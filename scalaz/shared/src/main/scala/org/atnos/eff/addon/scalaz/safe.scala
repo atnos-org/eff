@@ -2,7 +2,7 @@ package org.atnos.eff
 package addon.scalaz
 
 import scalaz._
-import cats.implicits._
+import cats.syntax.all._
 
 object safe extends safe
 
