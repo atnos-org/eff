@@ -3,7 +3,7 @@ package org.atnos.eff.addon.doobie
 import java.util.concurrent.Executors
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import doobie.free.connection.{ConnectionIO, close, commit, delay, rollback, setAutoCommit}
 import doobie.util.transactor.{Strategy, Transactor}
 import org.h2.jdbcx.JdbcConnectionPool

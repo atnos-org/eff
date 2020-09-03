@@ -5,7 +5,6 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
 import cats.syntax.all._
-import cats.instances.all._
 
 class ListEffectSpec extends Specification { def is = s2"""
 

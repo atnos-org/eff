@@ -4,7 +4,7 @@ import cats.Eval
 import org.specs2._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-import cats.implicits._
+import cats.syntax.all._
 import org.scalacheck.Gen
 import EitherEffect.{left => leftE, right => rightE}
 import scala.collection.mutable.ListBuffer

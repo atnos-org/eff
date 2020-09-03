@@ -5,7 +5,7 @@ import ErrorEffect.{ok => OK, ErrorOrOk}
 
 import scala.collection.mutable.ListBuffer
 import cats.data._
-import cats.implicits._
+import cats.syntax.all._
 import cats.Eval
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._

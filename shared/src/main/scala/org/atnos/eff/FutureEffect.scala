@@ -3,7 +3,7 @@ package org.atnos.eff
 import java.util.concurrent.TimeoutException
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.concurrent.Scheduler
 

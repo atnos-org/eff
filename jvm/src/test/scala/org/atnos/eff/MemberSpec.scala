@@ -2,7 +2,6 @@ package org.atnos.eff
 
 import cats.{Eval, ~>}
 import cats.data._
-import cats.implicits._
 import org.specs2._
 import org.scalacheck._
 import option._

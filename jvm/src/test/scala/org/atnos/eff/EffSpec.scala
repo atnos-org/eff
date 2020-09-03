@@ -6,7 +6,6 @@ import org.specs2.{ScalaCheck, Specification}
 import cats._
 import data._
 import cats.syntax.all._
-import cats.instances.all._
 import cats.Eq
 import cats.~>
 import org.atnos.eff.all._
