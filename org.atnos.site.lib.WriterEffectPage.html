@@ -327,7 +327,7 @@ def fileFold(path: String) = new RightFold[String, Unit] {
 }
 
 action.runWriterFold(fileFold(&quot;target/log&quot;)).run
-io.Source.fromFile(&quot;target/log&quot;).getLines.toList</code></pre>
+io.Source.fromFile(&quot;target/log&quot;).getLines().toList</code></pre>
 <p><code class="prettyprint">&gt; List(second value 2, first value 1)</code></p>
 </div>
 

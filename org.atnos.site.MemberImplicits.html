@@ -301,7 +301,7 @@
 <p>Type inference with the Eff monad can be a bit tricky to get right if we want to avoid type annotations. Here are some tips to help you.</p>
 <h3 id="running-effects-with-several-type-parameters">Running effects with several type parameters</h3>
 <p>Some effects use 2 type variables, like <code class="prettyprint">Reader</code> or <code class="prettyprint">Writer</code>. If you want to use those effects in an effect stack you need to make sure you have the following <code class="prettyprint">scalac</code> option:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb1-1"><a href="#cb1-1"></a>scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>scalacOptions += <span class="st">&quot;-Ypartial-unification&quot;</span></span></code></pre></div>
 <h3 id="use-context-bounds-and-type-aliases">Use context bounds and type aliases</h3>
 <p>When creating effects you can always “require” a stack containing the right effects with the <code class="prettyprint">MemberIn</code> typeclass:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
