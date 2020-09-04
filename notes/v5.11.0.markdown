@@ -1,0 +1,6 @@
+- [Update cats-core to 2.2.0](https://github.com/atnos-org/eff/commit/4ca2e5d15b5a46ac3c2a30999bc04c682b777b96)
+- [Update util-core to 20.8.1](https://github.com/atnos-org/eff/commit/466658c801545f870a2de48f5bd263eef3c88b1a)
+- [Update specs2-core, specs2-html, ... to 4.10.3](https://github.com/atnos-org/eff/commit/9fd32457e58dc9320d340cf57f5909f4cc312532)
+- [Update sbt-buildinfo to 0.10.0](https://github.com/atnos-org/eff/commit/f957be7b8af6aac0bcbada520955f67fbb888107)
+- [Update util-core to 20.7.0](https://github.com/atnos-org/eff/commit/908c9af93553322ef40b529749639b0757b6d85c)
+- [fix warnings](https://github.com/atnos-org/eff/commit/3e3d5fa17771541f2fafaca044c0181c496c323f)
