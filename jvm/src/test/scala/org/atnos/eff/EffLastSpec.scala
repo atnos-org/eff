@@ -14,6 +14,9 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
   An action can run completely at the end, regardless of the number of flatmaps $runLast
     now with one very last action which fails, there should be no exception     $runLastFail
 
+  `addLast` run several times and flatMap, then last actions should be executed by reverse order $runLastSeveralTimes
+    the same result if `addLast` run at first of `for`                                           $runLastAtFirst
+
   bracket last triggers the last action regardless of the effects at play
     either right + ok $e1
     either right + protect exception $e2
@@ -40,6 +43,48 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
     act.runSafe.runEval.run
 
     messages.toList ==== List("a", "b", "end")
+  }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
+
+  def runLastSeveralTimes = prop { xs: List[String] =>
+    type R = Fx.fx2[Safe, Eval]
+    val messages = new ListBuffer[String]
+
+    import org.atnos.eff.all._
+    import org.atnos.eff.syntax.all._
+
+    val act = (for {
+      _ <- protect[R, Unit](messages.append("a"))
+      _ <- protect[R, Unit](messages.append("b")).addLast(protect[R, Unit](messages.append("end1")))
+      _ <- protect[R, Unit](messages.append("c"))
+      _ <- protect[R, Unit](messages.append("d")).addLast(protect[R, Unit](messages.append("end2")))
+    } yield ()).addLast(
+      protect[R, Unit](messages.append("end3"))
+    )
+
+    act.runSafe.runEval.run
+
+    messages.toList ==== List("a", "b", "c", "d", "end2", "end1", "end3")
+  }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
+
+  def runLastAtFirst = prop { xs: List[String] =>
+    type R = Fx.fx2[Safe, Eval]
+    val messages = new ListBuffer[String]
+
+    import org.atnos.eff.all._
+    import org.atnos.eff.syntax.all._
+
+    val act = (for {
+      _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit](messages.append("end1")))
+      _ <- protect[R, Unit](messages.append("b"))
+      _ <- protect[R, Unit](messages.append("c")).addLast(protect[R, Unit](messages.append("end2")))
+      _ <- protect[R, Unit](messages.append("d"))
+    } yield ()).addLast(
+      protect[R, Unit](messages.append("end3"))
+    )
+
+    act.runSafe.runEval.run
+
+    messages.toList ==== List("a", "b", "c", "d", "end2", "end1", "end3")
   }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
 
   def runLastFail = prop { xs: List[String] =>
