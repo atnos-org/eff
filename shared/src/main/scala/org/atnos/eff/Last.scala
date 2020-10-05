@@ -22,7 +22,7 @@ case class Last[R](value: Option[Eval[Eff[R, Unit]]]) {
       case (None, None)       => this
       case (Some(r), None)    => this
       case (None, Some(l))    => last
-      case (Some(r), Some(l)) => Last(Option(r *> l))
+      case (Some(r), Some(l)) => Last(Option(r.map2(l)((a, b) => b <* a)))
     }
 
   def *>(last: Last[R]): Last[R] =
@@ -30,7 +30,7 @@ case class Last[R](value: Option[Eval[Eff[R, Unit]]]) {
       case (None, None)       => this
       case (Some(r), None)    => this
       case (None, Some(l))    => last
-      case (Some(r), Some(l)) => Last(Option(r *> l))
+      case (Some(r), Some(l)) => Last(Option(r.map2(l)(_ *> _)))
     }
 }
 
