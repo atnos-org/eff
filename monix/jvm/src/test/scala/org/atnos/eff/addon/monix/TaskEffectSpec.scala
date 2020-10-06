@@ -33,6 +33,8 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
  Async boundaries can be introduced between computations $e12
  Task effect is stacksafe with traverseA                 $e13
 
+ Last actiotns with Task must be executed by reverse order $e14
+
 ## RETRIES
 
  An effect can be retried until a condition becomes true          $retry1
@@ -194,6 +196,27 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       action.retryUntil(i => i == 5, List(10.millis, 20.millis))
 
     execute.runOption.runAsync.runToFuture must beSome(3).await
+  }
+
+  def e14 = {
+    type S = Fx2[Task, Option]
+    val messages = new ListBuffer[String]
+
+    val action: Eff[S, Unit] = (for {
+      _ <- taskDelay[S, Unit] {
+        messages.append("a")
+      }.addLast(taskDelay[S, Unit](messages.append("end 1")))
+      _ <- taskDelay[S, Unit] {
+        messages.append("b")
+      }.addLast(taskDelay[S, Unit](messages.append("end 2")))
+      _ <- taskDelay[S, Unit] {
+        messages.append("c")
+      }
+    } yield ()).addLast(taskDelay[S, Unit](messages.append("end 3")))
+
+    Await.result(action.runOption.runSequential.runToFuture, Duration.Inf)
+
+    messages.toList ==== List("a", "b", "c", "end 2", "end 1", "end 3")
   }
 
   /**

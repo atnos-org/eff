@@ -57,13 +57,13 @@ case class Continuation[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: 
           } else {
             fv match {
               case Pure(a1, l1) =>
-                go(rest, a1, last *> l1)
+                go(rest, a1, last >> l1)
 
               case Impure(u, q, l) =>
-                Impure[R, u.X, B](u, q.copy(q.functions ++ rest, onNone = q.onNone *> onNone), last *> l)
+                Impure[R, u.X, B](u, q.copy(q.functions ++ rest, onNone = q.onNone >> onNone), last >> l)
 
               case ImpureAp(unions, q, l) =>
-                ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest, onNone = q.onNone *> onNone), last *> l)
+                ImpureAp[R, unions.X, B](unions, q.copy(q.functions ++ rest, onNone = q.onNone >> onNone), last >> l)
             }
           }
       }

@@ -77,7 +77,7 @@ trait ChooseInterpretation {
         case e :: rest =>
           e match {
             case Pure(a, last) =>
-              go(rest, (EffMonad[U].pure(alternativeF.pure(a)), result).mapN(alternativeF.combineK), resultLast.map(_ <* lastRun(last)))
+              go(rest, (EffMonad[U].pure(alternativeF.pure(a)), result).mapN(alternativeF.combineK), resultLast.map(_ << lastRun(last)))
 
             case Impure(NoEffect(a), c, last) =>
               runChoose(c(a).addLast(last))

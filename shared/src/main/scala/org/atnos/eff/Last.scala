@@ -17,20 +17,20 @@ case class Last[R](value: Option[Eval[Eff[R, Unit]]]) {
   def interpretEff[U](n: Last[R] => Eff[U, Unit]): Last[U] =
     Last.eff(n(this))
 
-  def <*(last: Last[R]): Last[R] =
+  def <<(last: Last[R]): Last[R] =
     (value, last.value) match {
       case (None, None)       => this
       case (Some(r), None)    => this
       case (None, Some(l))    => last
-      case (Some(r), Some(l)) => Last(Option(r.map2(l)((a, b) => b <* a)))
+      case (Some(r), Some(l)) => Last(Option(r.map2(l)(_ >> _)))
     }
 
-  def *>(last: Last[R]): Last[R] =
+  def >>(last: Last[R]): Last[R] =
     (value, last.value) match {
       case (None, None)       => this
       case (Some(r), None)    => this
       case (None, Some(l))    => last
-      case (Some(r), Some(l)) => Last(Option(r.map2(l)(_ *> _)))
+      case (Some(r), Some(l)) => Last(Option(r.map2(l)(_ >> _)))
     }
 }
 
