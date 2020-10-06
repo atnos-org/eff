@@ -8,3 +8,4 @@ target/
 /.ensime*
 .hydra
 **/partition.hydra
+.bsp/
