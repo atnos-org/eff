@@ -1,0 +1,6 @@
+- [Fix `addLast`](https://github.com/atnos-org/eff/commit/117b70e866cd737ba0c06ae536bb82782af7dd3d)
+- [Update sbt to 1.4.0](https://github.com/atnos-org/eff/commit/5ff1e4b8d7ae73a97977b6f0b02d7595b226c65d)
+- [Update util-core to 20.9.0](https://github.com/atnos-org/eff/commit/3d0b150a44b68e6f400660bd1864e72c75d8c7c1)
+- [Update sbt-scalajs, scalajs-compiler to 1.2.0](https://github.com/atnos-org/eff/commit/d0c0ae8684689b7e7d82aa2905aae6bc6cfb2692)
+- [Update doobie-core, doobie-h2 to 0.9.2](https://github.com/atnos-org/eff/commit/be0beb1be07d2acb5ce6a73fdae86cb7c9ee988a)
+- [Update cats-effect to 2.2.0](https://github.com/atnos-org/eff/commit/0ef3e4cae1e7ccdce8c807e3c483ed715726f86c)
