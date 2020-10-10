@@ -1,0 +1,21 @@
+name: CI
+on:
+  pull_request:
+  push:
+  schedule:
+  - cron: '0 0 * * 0'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - java: 8
+          - java: 11
+    steps:
+    - uses: actions/checkout@v1
+    - uses: olafurpg/setup-scala@v7
+      with:
+        java-version: "adopt@1.${{ matrix.java }}"
+    - uses: coursier/cache-action@v4.1
+    - run: sbt -v -sbt-opts .github/workflows/.sbtopts "+ test:compile" "+testOnly -- timefactor 5 exclude travis"
