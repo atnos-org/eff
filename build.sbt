@@ -113,6 +113,7 @@ lazy val buildSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
+  libraryDependencies ++= specs2,
   scalacOptions ++= commonScalacOptions.value,
   scalacOptions in (Compile, doc) ++= {
     Seq(
@@ -149,7 +150,6 @@ lazy val commonJvmSettings = Seq(
   cancelable in Global := true,
   (scalacOptions in Test) ~= (_.filterNot(_ == "-Xfatal-warnings")),
   libraryDependencies ++= catsJvm,
-  libraryDependencies ++= specs2
 ) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
 
 lazy val effSettings =
