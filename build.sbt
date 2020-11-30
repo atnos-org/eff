@@ -124,7 +124,16 @@ lazy val commonSettings = Seq(
     )
   },
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.1" cross CrossVersion.full)
+  libraryDependencies ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((3, _)) =>
+        Nil
+      case _ =>
+        Seq(
+          compilerPlugin("org.typelevel" %% "kind-projector" % "0.11.1" cross CrossVersion.full)
+        )
+    }
+  }
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
