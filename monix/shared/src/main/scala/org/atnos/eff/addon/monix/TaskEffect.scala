@@ -90,8 +90,8 @@ trait TaskInterpretation extends TaskTypes {
   import interpret.of
 
   def taskAttempt[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, Throwable Either A] =
-    interpret.interceptNatM[R, Task, Throwable Either *, A](e,
-      new (Task ~> (Task of (Throwable Either *))#l) {
+    interpret.interceptNatM[R, Task, Either[Throwable, *], A](e,
+      new (Task ~> (Task of Either[Throwable, *])#l) {
         def apply[X](fa: Task[X]): Task[Throwable Either X] =
           fa.attempt
       })

@@ -129,7 +129,7 @@ A common thing to do is to translate effects (a webservice DSL for example) into
 
 For example you might have this stack:
 ```
-type S = Fx.fx3[Authenticated, TimedFuture, AuthError Either *]
+type S = Fx.fx3[Authenticated, TimedFuture, Either[AuthError, *]]
 ```
 
 And you want to write an interpreter which will translate authentication actions into `TimedFuture` and `Either`:${snippet{
@@ -179,8 +179,8 @@ def authenticateImpl(token: String): Future[AuthError Either AccessRights] =
 
 def authenticate[S :_authenticate](token: String) = Authenticate(token).send
 
-type S1 = Fx.fx3[Authenticated, AuthError Either *, TimedFuture]
-type R1 = Fx.fx2[AuthError Either *, TimedFuture]
+type S1 = Fx.fx3[Authenticated, Either[AuthError, *], TimedFuture]
+type R1 = Fx.fx2[Either[AuthError, *], TimedFuture]
 
 val result: Eff[R1, AccessRights] = runAuth(authenticate[S1]("faketoken"))
 
@@ -189,7 +189,7 @@ val result: Eff[R1, AccessRights] = runAuth(authenticate[S1]("faketoken"))
 The call to `send` above needs to send an `TimedFuture` value in the stack `U`. This is possible because `TimedFuture` is an
 effect in `U` as evidenced by `future`.
 
-Furthermore, `authenticate` returns an `AuthError Either *` value. We can "collapse" it into `U` because `AuthError Either *`
+Furthermore, `authenticate` returns an `Either[AuthError, *]` value. We can "collapse" it into `U` because `Either[AuthError, *]`
 is an effect of `U` as evidenced by `either`.
 
 

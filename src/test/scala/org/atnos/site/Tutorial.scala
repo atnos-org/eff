@@ -83,7 +83,7 @@ We can also interpret `KVStore` effects differently and delegate the results to 
 
  - `State` for maintaining the map of values
  - `Writer` for logging
- - `E Either *` for type errors
+ - `Either[E, *]` for type errors
 <p/>
 ${definition[AdtInterpreterSafeSnippet]}
 
@@ -150,7 +150,7 @@ import org.atnos.eff._, syntax.all._
 import cats._, data._
 
 // run the program with the safe interpreter
-type Stack = Fx.fx4[KVStore, Throwable Either *, State[Map[String, Any], *], Writer[String, *]]
+type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
 
 val (result, logs) =
   runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
@@ -171,7 +171,7 @@ import cats._, data._
 type _writerString[R] = Writer[String, *] |= R
 type _stateMap[R]     = State[Map[String, Any], *] |= R
 
-type Stack = Fx.fx4[KVStore, Throwable Either *, State[Map[String, Any], *], Writer[String, *]]
+type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
 
 // 8<---
 

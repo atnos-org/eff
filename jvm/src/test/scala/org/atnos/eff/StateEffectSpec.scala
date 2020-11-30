@@ -130,7 +130,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
         _   <- updateAddress
       } yield ()
 
-    updatePerson[Fx.fx2[String Either *, State[Person, *]]].evalState(Person(Address("here"))).runEither.run ==== Right(())
+    updatePerson[Fx.fx2[Either[String, *], State[Person, *]]].evalState(Person(Address("here"))).runEither.run ==== Right(())
   }
 
   type StateInt[A] = State[Int, A]
