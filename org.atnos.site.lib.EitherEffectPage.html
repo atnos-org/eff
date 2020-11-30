@@ -304,7 +304,7 @@
   /**
    * Stack declaration
    */
-  type S = Fx.fx1[String Either *]
+  type S = Fx.fx1[Either[String, *]]
 
   // compute with this stack
   val map: Map[String, Int] =
@@ -321,7 +321,7 @@
 <p><em>Note</em>: the <code class="prettyprint">?</code> syntax comes from the <a href="https://github.com/typelevel/kind-projector">kind-projector</a> project and allows us to avoid type lambdas.</p>
 <p>A <code class="prettyprint">catchLeft</code> method can also be used to intercept an error and possibly recover from it:</p>
 <pre><code class="prettyprint">  case class TooBig(value: Int)
-  type E = Fx.fx1[TooBig Either *]
+  type E = Fx.fx1[Either[TooBig, *]]
 
   val i = 7
 

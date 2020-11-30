@@ -390,7 +390,7 @@ action.runReader(Conf(&quot;www.me.com&quot;, 8080)).runOption.run</code></pre>
 <h3 id="translate-an-effect-into-multiple-others">Translate an effect into multiple others</h3>
 <p>A common thing to do is to translate effects (a webservice DSL for example) into multiple others (<code class="prettyprint">TimedFuture</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Either</code>, etc…).</p>
 <p>For example you might have this stack:</p>
-<pre><code class="prettyprint">type S = Fx.fx3[Authenticated, TimedFuture, AuthError Either *]</code></pre>
+<pre><code class="prettyprint">type S = Fx.fx3[Authenticated, TimedFuture, Either[AuthError, *]]</code></pre>
 <p>And you want to write an interpreter which will translate authentication actions into <code class="prettyprint">TimedFuture</code> and <code class="prettyprint">Either</code>:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
@@ -438,12 +438,12 @@ def authenticateImpl(token: String): Future[AuthError Either AccessRights] =
 
 def authenticate[S :_authenticate](token: String) = Authenticate(token).send
 
-type S1 = Fx.fx3[Authenticated, AuthError Either *, TimedFuture]
-type R1 = Fx.fx2[AuthError Either *, TimedFuture]
+type S1 = Fx.fx3[Authenticated, Either[AuthError, *], TimedFuture]
+type R1 = Fx.fx2[Either[AuthError, *], TimedFuture]
 
 val result: Eff[R1, AccessRights] = runAuth(authenticate[S1](&quot;faketoken&quot;))</code></pre>
 <p>The call to <code class="prettyprint">send</code> above needs to send an <code class="prettyprint">TimedFuture</code> value in the stack <code class="prettyprint">U</code>. This is possible because <code class="prettyprint">TimedFuture</code> is an effect in <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">future</code>.</p>
-<p>Furthermore, <code class="prettyprint">authenticate</code> returns an <code class="prettyprint">AuthError Either *</code> value. We can “collapse” it into <code class="prettyprint">U</code> because <code class="prettyprint">AuthError Either *</code> is an effect of <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">either</code>.</p>
+<p>Furthermore, <code class="prettyprint">authenticate</code> returns an <code class="prettyprint">Either[AuthError, *]</code> value. We can “collapse” it into <code class="prettyprint">U</code> because <code class="prettyprint">Either[AuthError, *]</code> is an effect of <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">either</code>.</p>
 <p>You might wonder why we don’t use a more direct type signature like:</p>
 <pre><code class="prettyprint">def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(
   implicit authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A]</code></pre>

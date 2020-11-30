@@ -443,7 +443,7 @@ def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff
 <ul>
 <li><code class="prettyprint">State</code> for maintaining the map of values</li>
 <li><code class="prettyprint">Writer</code> for logging</li>
-<li><code class="prettyprint">E Either *</code> for type errors
+<li><code class="prettyprint">Either[E, *]</code> for type errors
 <p/></li>
 </ul>
 <pre><code class="prettyprint">import org.atnos.eff._
@@ -557,7 +557,7 @@ runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run</code></pre>
 import cats._, data._
 
 // run the program with the safe interpreter
-type Stack = Fx.fx4[KVStore, Throwable Either *, State[Map[String, Any], *], Writer[String, *]]
+type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
 
 val (result, logs) =
   runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
