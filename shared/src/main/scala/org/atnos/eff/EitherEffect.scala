@@ -22,27 +22,27 @@ trait EitherCreation {
   type _throwableEither[R] = ThrowableEither |= R
 
   /** create an Either effect from a single Option value */
-  def optionEither[R, E, A](option: Option[A], e: => E)(implicit member: (E Either *) |= R): Eff[R, A] =
+  def optionEither[R, E, A](option: Option[A], e: => E)(implicit member: Either[E, *] |= R): Eff[R, A] =
     option.fold[Eff[R, A]](left[R, E, A](e))(right[R, E, A])
 
   /** create an Either effect from a single Either value */
-  def fromEither[R, E, A](Either: E Either A)(implicit member: (E Either *) |= R): Eff[R, A] =
+  def fromEither[R, E, A](Either: E Either A)(implicit member: Either[E, *] |= R): Eff[R, A] =
     Either.fold[Eff[R, A]](left[R, E, A], right[R, E, A])
 
   /** create a failed value */
-  def left[R, E, A](e: E)(implicit member: (E Either *) |= R): Eff[R, A] =
-    send[E Either *, R, A](Left(e))
+  def left[R, E, A](e: E)(implicit member: Either[E, *] |= R): Eff[R, A] =
+    send[Either[E, *], R, A](Left(e))
 
   /** create a correct value */
-  def right[R, E, A](a: A)(implicit member: (E Either *) |= R): Eff[R, A] =
-    send[E Either *, R, A](Right(a))
+  def right[R, E, A](a: A)(implicit member: Either[E, *] |= R): Eff[R, A] =
+    send[Either[E, *], R, A](Right(a))
 
   /** create an Either effect from a value possibly throwing an exception */
-  def fromCatchNonFatal[R, E, A](a: =>A)(onThrowable: Throwable => E)(implicit member: (E Either *) |= R): Eff[R, A] =
+  def fromCatchNonFatal[R, E, A](a: =>A)(onThrowable: Throwable => E)(implicit member: Either[E, *] |= R): Eff[R, A] =
     fromEither(Either.catchNonFatal(a).leftMap(onThrowable))
 
   /** create an Either effect from a value possibly throwing a Throwable */
-  def catchNonFatalThrowable[R, A](a: =>A)(implicit member: (Throwable Either *) |= R): Eff[R, A] =
+  def catchNonFatalThrowable[R, A](a: =>A)(implicit member: ThrowableEither |= R): Eff[R, A] =
     fromCatchNonFatal(a)(identity)
 }
 
@@ -51,37 +51,37 @@ object EitherCreation extends EitherCreation
 trait EitherInterpretation {
 
   /** run the Either effect, yielding E Either A */
-  def runEither[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[(E Either *), R, U]): Eff[U, E Either A] =
+  def runEither[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[Either[E, *], R, U]): Eff[U, E Either A] =
     interpretEither(effect)(cats.instances.either.catsStdInstancesForEither[E])
 
   /** run the Either effect, yielding E Either A and combine all Es */
-  def runEitherCombine[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[(E Either *), R, U], s: Semigroup[E]): Eff[U, E Either A] =
+  def runEitherCombine[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[Either[E, *], R, U], s: Semigroup[E]): Eff[U, E Either A] =
     interpretEither(effect)(EitherApplicative[E])
 
-  private def interpretEither[R, U, E, A](effect: Eff[R, A])(ap: Applicative[E Either *])(implicit m: Member.Aux[(E Either *), R, U]): Eff[U, E Either A] =
+  private def interpretEither[R, U, E, A](effect: Eff[R, A])(ap: Applicative[Either[E, *]])(implicit m: Member.Aux[Either[E, *], R, U]): Eff[U, E Either A] =
     Interpret.recurse(effect)(eitherRecurser[U, E, A, E Either A](a => Right(a), e => EffMonad[U].pure(Left(e)))(ap))
 
   /** catch possible left values */
-  def attemptEither[R, E, A](effect: Eff[R, A])(implicit member: (E Either *) /= R): Eff[R, E Either A] =
+  def attemptEither[R, E, A](effect: Eff[R, A])(implicit member: Either[E, *] /= R): Eff[R, E Either A] =
     catchLeft[R, E, E Either A](effect.map(a => Either.right(a)))(e => pure(Either.left(e)))
 
   /** catch and handle a possible left value */
-  def catchLeft[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either *) /= R): Eff[R, A] =
+  def catchLeft[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Either[E, *] /= R): Eff[R, A] =
     catchLeftEither[R, E, A](effect)(handle)(cats.instances.either.catsStdInstancesForEither[E])
 
   /** run the Either effect, handling E (with effects) and yielding A */
-  def runEitherCatchLeft[R, U, E, A](r: Eff[R, A])(handle: E => Eff[U, A])(implicit m: Member.Aux[(E Either *), R, U]): Eff[U, A] =
+  def runEitherCatchLeft[R, U, E, A](r: Eff[R, A])(handle: E => Eff[U, A])(implicit m: Member.Aux[Either[E, *], R, U]): Eff[U, A] =
     runEither(r).flatMap(_.fold(handle, pure))
 
   /** catch and handle a possible left value. The value is the combination of all failures in case of an applicative */
-  def catchLeftCombine[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (E Either *) /= R, s: Semigroup[E]): Eff[R, A] =
+  def catchLeftCombine[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Either[E, *] /= R, s: Semigroup[E]): Eff[R, A] =
     catchLeftEither[R, E, A](effect)(handle)(EitherApplicative[E])
 
-  private def catchLeftEither[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(ap: Applicative[E Either *])(implicit member: (E Either *) /= R): Eff[R, A] =
+  private def catchLeftEither[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(ap: Applicative[Either[E, *]])(implicit member: Either[E, *] /= R): Eff[R, A] =
     Interpret.intercept(effect)(Interpreter.fromRecurser(eitherRecurser[R, E, A, A](a => a, handle)(ap)))
 
-  private def eitherRecurser[R, E, A, B](pureValue: A => B, handle: E => Eff[R, B])(ap: Applicative[E Either *]): Recurser[E Either *, R, A, B] =
-    new Recurser[E Either *, R, A, B] {
+  private def eitherRecurser[R, E, A, B](pureValue: A => B, handle: E => Eff[R, B])(ap: Applicative[Either[E, *]]): Recurser[Either[E, *], R, A, B] =
+    new Recurser[Either[E, *], R, A, B] {
       def onPure(a: A): B =
         pureValue(a)
 
@@ -103,11 +103,11 @@ trait EitherInterpretation {
    * This changes the stack of the Eff computation
    */
   def zoomEither[SR, BR, U1, U2, E1, E2, A](r: Eff[SR, A], getter: E1 => E2)(
-    implicit sr: Member.Aux[E1 Either *, SR, U1],
-             br: Member.Aux[E2 Either *, BR, U2],
+    implicit sr: Member.Aux[Either[E1, *], SR, U1],
+             br: Member.Aux[Either[E2, *], BR, U2],
              into: IntoPoly[U1, U2]): Eff[BR, A] =
-    transform[SR, BR, U1, U2, E1 Either *, E2 Either *, A](r,
-      new ~>[E1 Either *, E2 Either *] {
+    transform[SR, BR, U1, U2, Either[E1, *], Either[E2, *], A](r,
+      new ~>[Either[E1, *], Either[E2, *]] {
         def apply[X](r: E1 Either X): E2 Either X =
           r.leftMap(getter)
       })
@@ -117,8 +117,8 @@ trait EitherInterpretation {
    * a computation over a "bigger" error (for the full application)
    */
   def translateEither[R, U, E1, E2, A](r: Eff[R, A], getter: E1 => E2)
-                                      (implicit sr: Member.Aux[E1 Either *, R, U], br: (E2 Either *) |= U): Eff[U, A] =
-    translate(r) { new Translate[E1 Either *, U] {
+                                      (implicit sr: Member.Aux[Either[E1, *], R, U], br: Either[E2, *] |= U): Eff[U, A] =
+    translate(r) { new Translate[Either[E1, *], U] {
       def apply[X](ex: E1 Either X): Eff[U, X] =
         ex match {
           case Left(e1) => EitherEffect.left[U, E2, X](getter(e1))
@@ -129,13 +129,13 @@ trait EitherInterpretation {
   /**
    * Update the error value, the stack of the Eff computation stays the same
    */
-  def localEither[R, E, A](e: Eff[R, A])(modify: E => E)(implicit m: (E Either *) /= R): Eff[R, A] =
-    interceptNat(e)(new ~>[E Either *, E Either *] {
+  def localEither[R, E, A](e: Eff[R, A])(modify: E => E)(implicit m: Either[E, *] /= R): Eff[R, A] =
+    interceptNat(e)(new ~>[Either[E, *], Either[E, *]] {
       def apply[X](ex: E Either X): E Either X =
         ex.leftMap(modify)
     })
 
-  def EitherApplicative[E](implicit s: Semigroup[E]): Applicative[E Either *] = new Applicative[E Either *] {
+  def EitherApplicative[E](implicit s: Semigroup[E]): Applicative[Either[E, *]] = new Applicative[Either[E, *]] {
     def pure[A](a: A) = Right(a)
 
     def ap[A, B](ff: E Either (A => B))(fa: E Either A): E Either B =
@@ -152,10 +152,10 @@ trait EitherInterpretation {
 
 trait EitherImplicits {
 
-  implicit final def errorTranslate[R, E1, E2](implicit m: MemberIn[E1 Either *, R], map: E2 => E1): MemberIn[E2 Either *, R] =
+  implicit final def errorTranslate[R, E1, E2](implicit m: MemberIn[Either[E1, *], R], map: E2 => E1): MemberIn[Either[E2, *], R] =
     m.transform(errorTranslateNat(map))
 
-  final def errorTranslateNat[E1, E2](map: E2 => E1): (E2 Either *) ~> (E1 Either *) = new ((E2 Either *) ~> (E1 Either *)) {
+  final def errorTranslateNat[E1, E2](map: E2 => E1): Either[E2, *] ~> Either[E1, *] = new (Either[E2, *] ~> Either[E1, *]) {
     def apply[X](x2: E2 Either X): E1 Either X = x2.leftMap(map)
   }
 

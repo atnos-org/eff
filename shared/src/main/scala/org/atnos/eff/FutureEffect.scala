@@ -116,11 +116,9 @@ trait FutureInterpretation extends FutureTypes {
   def runSequential[R, A](e: Eff[R, A])(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     Eff.detach(Eff.effInto[R, Fx1[TimedFuture], A](e)).runNow(scheduler, exc)
 
-  import interpret.of
-
   final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, Throwable Either A] =
-    interpret.interceptNatM[R, TimedFuture, Throwable Either *, A](e,
-      new (TimedFuture ~> (TimedFuture of (Throwable Either *))#l) {
+    interpret.interceptNatM[R, TimedFuture, Either[Throwable, *], A](e,
+      new (TimedFuture ~> ({type l[a] = TimedFuture[Either[Throwable, a]]})#l) {
         override def apply[X](fa: TimedFuture[X]): TimedFuture[Throwable Either X] = attempt(fa)
       })
 
