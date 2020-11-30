@@ -206,6 +206,10 @@ lazy val commonScalacOptions = Def.setting {
         Seq(
           "-Ymacro-annotations"
         )
+      case Some((3, _)) =>
+        Seq(
+          "-Ykind-projector"
+        )
       case _ =>
         Seq(
           "-Xfatal-warnings",
