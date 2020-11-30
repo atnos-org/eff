@@ -1,0 +1,34 @@
+### prepare Scala 3
+
+- https://github.com/atnos-org/eff/commit/62161162a638f3d9e15dfc7ea6e5de7b597c7676
+- https://github.com/atnos-org/eff/commit/52686655cd1c7b7aefe943e2fde0c2697eb80d51
+- https://github.com/atnos-org/eff/commit/6a2b66f040e0f7268f973ea174ce68faaa55f059
+- https://github.com/atnos-org/eff/commit/250d896a181b2b2ff1b2fb4226837be93b397d2f
+
+### Dependency updates
+
+- [Update cats-effect to 2.3.0](https://github.com/atnos-org/eff/commit/ab972f08b147c31c236bf122ac3422a59204ee35)
+- [Update cats-core to 2.3.0 (#312)](https://github.com/atnos-org/eff/commit/4c75f57a8495bc2678338d8ae261a93b2ec5709c)
+- [Update doobie-core, doobie-h2 to 0.9.4](https://github.com/atnos-org/eff/commit/2c65623d420ec5d27bd65df2eaa91c42d1fbea4c)
+- [Scala 2.13.4](https://github.com/atnos-org/eff/commit/aacb66dce058626f9628ef391459f2ab4691b1a5)
+- [Update sbt-scalajs, scalajs-compiler, ... to 1.3.1](https://github.com/atnos-org/eff/commit/7ad065500a25655ac0e65ffcd531378a42ccb7d3)
+- [Update monix to 3.3.0](https://github.com/atnos-org/eff/commit/32598efa083d340483e47b005e16e18c756d826f)
+- [Update catbird-util to 20.10.0](https://github.com/atnos-org/eff/commit/77e8e52426187bdbe06f8ebba916e4d39ccd09f8)
+- [Update util-core to 20.10.0](https://github.com/atnos-org/eff/commit/a60360fd0e20015bdb256ec5eeb89856ca897495)
+- [Update specs2-core, specs2-html, ... to 4.10.5](https://github.com/atnos-org/eff/commit/f971f208cf1f412cbbd7da23da3832c9f4dd966c)
+- [Update kind-projector to 0.11.1](https://github.com/atnos-org/eff/commit/dbc899fc967fc2bbd3c0b807f103f71cf5a40b6e)
+
+### build changes
+
+- [auto push to gh-pages from GitHub Actions](https://github.com/atnos-org/eff/commit/b3369ef6e2decbd273baada1b2d1808eb8caf092)
+- [Update sbt to 1.4.4](https://github.com/atnos-org/eff/commit/9c065a772590dd4069fe6c1f011647ac012218c0)
+- [Bump actions/checkout from v1 to v2.3.4](https://github.com/atnos-org/eff/commit/1b6eee5b0983f506df0fd99dd8935ab0706c56af)
+- [Bump coursier/cache-action from v4.1 to v5](https://github.com/atnos-org/eff/commit/5703a9a1925ce8d8dcc63cc27bdc1b54178a1b35)
+- [Bump olafurpg/setup-scala from v7 to v10](https://github.com/atnos-org/eff/commit/1633b6fc358186a7950526eec60b0047e3c3d18c)
+- [timeout-minutes: 10](https://github.com/atnos-org/eff/commit/bb1c53ac1e3f284e7a5d68a5da7f8446ef1fdbe0)
+- [add dependabot.yml](https://github.com/atnos-org/eff/commit/fbe4d9851501c4588e89b8dfcf317c5bc9b08e8f)
+- [Update sbt-sonatype to 3.9.5](https://github.com/atnos-org/eff/commit/ce90279b09e8745af7a794528b4f328a1fc41ae1)
+- [Update sbt-site to 1.4.1](https://github.com/atnos-org/eff/commit/a9452982e72164afb8c3fd1aca22814322cc3310)
+- [use GitHub Actions](https://github.com/atnos-org/eff/commit/141d0ad9aa16cbf93c8561c2c2b4b07f205abf05)
+- [fix specs2 dependency setting](https://github.com/atnos-org/eff/commit/5d34aa6010f473f63795d658aede279b56506a53)
+- [Update DEV.md](https://github.com/atnos-org/eff/commit/13a186df3c50be6f4ff6285e42a9ca5adbaa561e)
