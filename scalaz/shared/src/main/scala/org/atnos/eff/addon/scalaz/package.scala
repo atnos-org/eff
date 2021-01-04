@@ -26,7 +26,7 @@ package object scalaz {
       Eff.EffMonad[R].flatMap(fa)(f)
 
     def tailrecM[A, B](a: A)(f: A => Eff[R, A \/ B]): Eff[R, B] =
-      Eff.EffMonad[R].tailRecM(a)(a1 => f(a1).map(_.fold(Left.apply, Right.apply)))
+      Eff.EffMonad[R].tailRecM(a)(a1 => f(a1).map(_.toEither))
   }
 
   def EffScalazApplicative[R]: Applicative[Eff[R, *]] = new Applicative[Eff[R, *]] {

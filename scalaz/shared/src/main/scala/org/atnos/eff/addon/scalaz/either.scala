@@ -8,7 +8,7 @@ object either extends either
 trait either {
 
   def fromDisjunction[R, E, A](ea: E \/ A)(implicit member: Either[E, *] |= R): Eff[R, A] =
-    org.atnos.eff.all.fromEither(ea.fold(Left.apply, Right.apply))
+    org.atnos.eff.all.fromEither(ea.toEither)
 
   def runDisjunction[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Either[E, *], R, U]): Eff[U, E \/ A] =
     org.atnos.eff.all.runEither(r).map(_.fold(\/.left, \/.right))
