@@ -12,20 +12,28 @@ enablePlugins(BuildInfoPlugin)
 
 def hash() = sys.process.Process("git rev-parse HEAD").lineStream_!.head
 
-lazy val eff = project.in(file("."))
-  .settings(moduleName := "root")
-  .settings(effSettings)
-  .settings(noPublishSettings)
-  .settings(commonJvmSettings ++ Seq(libraryDependencies ++= scalameter))
-  .aggregate(coreJVM, coreJS, doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalazJVM, scalazJS, twitter)
-  .dependsOn(coreJVM % "test->test;compile->compile", coreJS,
-    doobie, catsEffectJVM, catsEffectJS, macros, monixJVM, monixJS, scalazJVM, scalazJS, twitter)
+moduleName := "root"
+effSettings
+noPublishSettings
+commonJvmSettings
+libraryDependencies ++= scalameter
 
-lazy val core = crossProject(JSPlatform, JVMPlatform).in(file("."))
+dependsOn(
+  coreJVM % "test->test;compile->compile",
+  doobie,
+  catsEffectJVM,
+  macros,
+  monixJVM,
+  scalazJVM,
+  twitter,
+)
+
+lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file("."))
   .settings(moduleName := "eff")
   .jsSettings(commonJsSettings)
   .jvmSettings(commonJvmSettings)
   .jvmSettings(notesSettings)
+  .nativeSettings(commonNativeSettings)
   .settings(effSettings)
 
 lazy val coreJVM = core.jvm
@@ -82,7 +90,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
 lazy val monixJVM = monix.jvm
 lazy val monixJS =  monix.js
 
-lazy val scalaz = crossProject(JSPlatform, JVMPlatform).in(file("scalaz"))
+lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
   .dependsOn(core)
   .settings(
@@ -91,6 +99,7 @@ lazy val scalaz = crossProject(JSPlatform, JVMPlatform).in(file("scalaz"))
   .settings(effSettings)
   .jvmSettings(commonJvmSettings)
   .jsSettings(commonJsSettings)
+  .nativeSettings(commonNativeSettings)
 
 lazy val scalazJVM = scalaz.jvm
 lazy val scalazJS = scalaz.js
@@ -161,6 +170,14 @@ lazy val commonJvmSettings = Seq(
   cancelable in Global := true,
   (scalacOptions in Test) ~= (_.filterNot(_ == "-Xfatal-warnings")),
 ) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
+
+lazy val commonNativeSettings = Def.settings(
+  libraryDependencies --= specs2,
+  loadedTestFrameworks := Map.empty,
+  Test / sources := Nil,
+  test := {},
+  Test / testOnly := {},
+)
 
 lazy val effSettings =
   buildSettings ++ commonSettings ++ publishSettings ++ scoverageSettings
