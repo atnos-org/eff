@@ -1,14 +1,14 @@
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val catsVersion        = "2.3.1"
+lazy val catsVersion        = "2.4.0"
 lazy val monixVersion       = "3.3.0"
 lazy val scalazVersion      = "7.3.3"
 lazy val specs2Version      = "4.10.6"
 lazy val twitterUtilVersion = "21.1.0"
 lazy val catbirdVersion     = "20.10.0"
 lazy val doobieVersion      = "0.10.0"
-lazy val catsEffectVersion  = "2.3.1"
+lazy val catsEffectVersion  = "2.4.0"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)
