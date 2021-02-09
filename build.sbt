@@ -1,7 +1,6 @@
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val catsVersion        = "2.4.0"
 lazy val monixVersion       = "3.3.0"
 lazy val scalazVersion      = "7.3.3"
 lazy val specs2Version      = "4.10.6"
@@ -114,6 +113,7 @@ lazy val buildSettings = Seq(
 
 lazy val commonSettings = Seq(
   libraryDependencies ++= specs2,
+  libraryDependencies += "org.typelevel" %%% "cats-core" % "2.4.0",
   scalacOptions ++= commonScalacOptions.value,
   scalacOptions in (Compile, doc) ++= {
     Seq(
@@ -144,7 +144,6 @@ lazy val commonJsSettings = Seq(
     val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
     s"-P:scalajs:mapSourceURI:$a->$g/"
   },
-  libraryDependencies ++= catsJs.value,
   jsEnv := new NodeJSEnv()
 ) ++ disableTests
 
@@ -158,7 +157,6 @@ lazy val commonJvmSettings = Seq(
   fork in Test := true,
   cancelable in Global := true,
   (scalacOptions in Test) ~= (_.filterNot(_ == "-Xfatal-warnings")),
-  libraryDependencies ++= catsJvm,
 ) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
 
 lazy val effSettings =
@@ -273,12 +271,6 @@ lazy val prompt = shellPrompt in ThisBuild := { state =>
   val name = Project.extract(state).currentRef.project
   (if (name == "eff") "" else name) + "> "
 }
-
-lazy val catsJvm = Seq(
-  "org.typelevel" %% "cats-core" % catsVersion)
-
-lazy val catsJs = Def.setting(Seq(
-  "org.typelevel" %%% "cats-core" % catsVersion))
 
 lazy val doobieJvm = Seq(
   "org.tpolecat" %% "doobie-core" % doobieVersion,
