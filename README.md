@@ -27,7 +27,7 @@ Eff is published for Scala 2.12 and 2.13. `eff` core is available for the JVM an
 libraryDependencies += "org.atnos" %% "eff" % "5.13.0"
 
 // to write types like Reader[String, *]
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full)
 
 // to get types like Reader[String, *] (with more than one type parameter) correctly inferred for scala 2.12.x
 scalacOptions += "-Ypartial-unification"
