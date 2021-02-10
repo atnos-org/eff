@@ -1,13 +1,10 @@
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val monixVersion       = "3.3.0"
-lazy val scalazVersion      = "7.3.3"
 lazy val specs2Version      = "4.10.6"
 lazy val twitterUtilVersion = "21.1.0"
 lazy val catbirdVersion     = "20.10.0"
 lazy val doobieVersion      = "0.10.0"
-lazy val catsEffectVersion  = "2.3.1"
 
 enablePlugins(GhpagesPlugin)
 enablePlugins(SitePlugin)
@@ -43,8 +40,10 @@ lazy val doobie = project
 lazy val catsEffect = crossProject(JSPlatform, JVMPlatform).in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(core)
-  .settings(libraryDependencies ++= catsEffectJvm)
-  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= catsEffectJs.value))
+  .settings(
+    libraryDependencies += "org.typelevel" %%% "cats-effect" % "2.3.1",
+  )
+  .jsSettings(commonJsSettings)
   .jvmSettings(commonJvmSettings)
   .settings(effSettings)
 
@@ -73,10 +72,12 @@ lazy val macros = project.in(file("macros"))
 lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core)
-  .settings(libraryDependencies ++= monixLib)
+  .settings(
+    libraryDependencies += "io.monix" %%% "monix" % "3.3.0",
+  )
   .settings(effSettings)
   .jvmSettings(commonJvmSettings)
-  .jsSettings(commonJsSettings ++ Seq(libraryDependencies ++= monixJs.value))
+  .jsSettings(commonJsSettings)
 
 lazy val monixJVM = monix.jvm
 lazy val monixJS =  monix.js
@@ -84,7 +85,9 @@ lazy val monixJS =  monix.js
 lazy val scalaz = crossProject(JSPlatform, JVMPlatform).in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
   .dependsOn(core)
-  .settings(libraryDependencies ++= scalazCore.value)
+  .settings(
+    libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.3.3",
+  )
   .settings(effSettings)
   .jvmSettings(commonJvmSettings)
   .jsSettings(commonJsSettings)
@@ -275,21 +278,6 @@ lazy val prompt = shellPrompt in ThisBuild := { state =>
 lazy val doobieJvm = Seq(
   "org.tpolecat" %% "doobie-core" % doobieVersion,
   "org.tpolecat" %% "doobie-h2"   % doobieVersion % "test")
-
-lazy val catsEffectJvm = Seq(
-  "org.typelevel" %% "cats-effect" % catsEffectVersion)
-
-lazy val catsEffectJs = Def.setting(Seq(
-  "org.typelevel" %%% "cats-effect" % catsEffectVersion))
-
-lazy val monixLib = Seq(
-  "io.monix" %% "monix" % monixVersion)
-
-lazy val monixJs = Def.setting(Seq(
-  "io.monix" %%% "monix" % monixVersion))
-
-lazy val scalazCore = Def.setting(Seq(
-  "org.scalaz" %%% "scalaz-core" % scalazVersion))
 
 lazy val specs2 = Seq(
     "org.specs2" %% "specs2-core"
