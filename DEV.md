@@ -9,7 +9,7 @@ export GITHUB_OAUTH=<token>
 sbt> set every version := "new version"
 sbt> set every ghreleaseGithubToken := Some("GITHUB TOKEN")
 sbt> githubRelease <tag name>
-sbt> cd eff
+sbt> project eff
 sbt> +publishSigned
 sbt> sonatypeBundleRelease
 ```
