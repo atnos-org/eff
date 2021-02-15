@@ -17,6 +17,7 @@ effSettings
 noPublishSettings
 commonJvmSettings
 libraryDependencies ++= scalameter
+libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
 
 dependsOn(
   coreJVM % "test->test;compile->compile",
@@ -124,7 +125,6 @@ lazy val buildSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
-  libraryDependencies ++= specs2,
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.4.1",
   scalacOptions ++= commonScalacOptions.value,
   scalacOptions in (Compile, doc) ++= {
@@ -149,30 +149,23 @@ lazy val commonSettings = Seq(
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
-  scalaJSStage in Global := FastOptStage,
+  libraryDependencies ++= specs2.value,
   parallelExecution := false,
   scalacOptions += {
     val a = (baseDirectory in LocalRootProject).value.toURI.toString
     val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
     s"-P:scalajs:mapSourceURI:$a->$g/"
-  },
-  jsEnv := new NodeJSEnv()
-) ++ disableTests
-
-def disableTests = Seq(
-  test := {},
-  testQuick := {},
-  testOnly := {}
+  }
 )
 
 lazy val commonJvmSettings = Seq(
+  libraryDependencies ++= specs2.value,
   fork in Test := true,
   cancelable in Global := true,
   (scalacOptions in Test) ~= (_.filterNot(_ == "-Xfatal-warnings")),
 ) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
 
 lazy val commonNativeSettings = Def.settings(
-  libraryDependencies --= specs2,
   loadedTestFrameworks := Map.empty,
   Test / sources := Nil,
   test := {},
@@ -296,12 +289,11 @@ lazy val doobieJvm = Seq(
   "org.tpolecat" %% "doobie-core" % doobieVersion,
   "org.tpolecat" %% "doobie-h2"   % doobieVersion % "test")
 
-lazy val specs2 = Seq(
-    "org.specs2" %% "specs2-core"
-  , "org.specs2" %% "specs2-matcher-extra"
-  , "org.specs2" %% "specs2-scalacheck"
-  , "org.specs2" %% "specs2-html"
-  , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
+lazy val specs2 = Def.setting(Seq(
+    "org.specs2" %%% "specs2-core"
+  , "org.specs2" %%% "specs2-matcher-extra"
+  , "org.specs2" %%% "specs2-scalacheck"
+  , "org.specs2" %%% "specs2-junit").map(_ % specs2Version % "test"))
 
 lazy val scalameter = Seq(
   "com.storm-enroute" %% "scalameter" % "0.19" % "test")

@@ -165,8 +165,6 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     } yield x
     val v3: Eff[S, Int] = ValidateEffect.validateValue(condition = false, 6, "error2")
 
-    final case class Prod(x: Int, s: String, y: Int)
-
     val prod: Eff[S, Prod] = (v1, v2, v3).mapN(Prod)
     val v: Eff[S, String] = prod.map(_.toString)
 
@@ -204,3 +202,4 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
 
 }
 
+final case class Prod(x: Int, s: String, y: Int)
