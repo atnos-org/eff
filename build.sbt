@@ -6,8 +6,6 @@ lazy val twitterUtilVersion = "21.2.0"
 lazy val catbirdVersion     = "20.10.0"
 lazy val doobieVersion      = "0.10.0"
 
-enablePlugins(GhpagesPlugin)
-enablePlugins(SitePlugin)
 enablePlugins(BuildInfoPlugin)
 
 def hash() = sys.process.Process("git rev-parse HEAD").lineStream_!.head
@@ -237,15 +235,7 @@ lazy val sharedPublishSettings = Seq(
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
   publishTo := sonatypePublishToBundle.value,
-) ++ userGuideSettings ++ notesSettings ++ buildInfoSettings
-
-lazy val userGuideSettings =
-  Seq(
-    ghpagesNoJekyll := false,
-    siteSourceDirectory in makeSite := target.value / "specs2-reports" / "site",
-    includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
-    git.remoteRepo := "git@github.com:atnos-org/eff.git"
-  )
+) ++ notesSettings ++ buildInfoSettings
 
 lazy val notesSettings = Seq(
   ghreleaseRepoOrg := "atnos-org",
