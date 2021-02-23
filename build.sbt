@@ -125,15 +125,15 @@ lazy val buildSettings = Seq(
 lazy val commonSettings = Seq(
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.4.2",
   scalacOptions ++= commonScalacOptions.value,
-  scalacOptions in (Compile, doc) ++= {
+  (Compile / doc / scalacOptions) ++= {
     Seq(
       "-sourcepath",
-      (baseDirectory in LocalRootProject).value.getAbsolutePath,
+      (LocalRootProject / baseDirectory).value.getAbsolutePath,
       "-doc-source-url",
       s"https://github.com/atnos-org/eff/tree/${hash()}€{FILE_PATH}.scala"
     )
   },
-  scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
+  (Compile / doc / scalacOptions) := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
   libraryDependencies ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((3, _)) =>
@@ -150,7 +150,7 @@ lazy val commonJsSettings = Seq(
   libraryDependencies ++= specs2.value,
   parallelExecution := false,
   scalacOptions += {
-    val a = (baseDirectory in LocalRootProject).value.toURI.toString
+    val a = (LocalRootProject / baseDirectory).value.toURI.toString
     val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
     s"-P:scalajs:mapSourceURI:$a->$g/"
   }
@@ -158,10 +158,10 @@ lazy val commonJsSettings = Seq(
 
 lazy val commonJvmSettings = Seq(
   libraryDependencies ++= specs2.value,
-  fork in Test := true,
-  cancelable in Global := true,
-  (scalacOptions in Test) ~= (_.filterNot(_ == "-Xfatal-warnings")),
-) ++ Seq(scalacOptions in Test ++= Seq("-Yrangepos"))
+  Test / fork := true,
+  Global / cancelable := true,
+  Test / scalacOptions ~= (_.filterNot(_ == "-Xfatal-warnings")),
+) ++ Seq(Test / scalacOptions ++= Seq("-Yrangepos"))
 
 lazy val commonNativeSettings = Def.settings(
   loadedTestFrameworks := Map.empty,
@@ -232,7 +232,7 @@ lazy val commonScalacOptions = Def.setting {
 
 lazy val sharedPublishSettings = Seq(
   publishMavenStyle := true,
-  publishArtifact in Test := false,
+  Test / publishArtifact := false,
   pomIncludeRepository := Function.const(false),
   publishTo := sonatypePublishToBundle.value,
 ) ++ notesSettings ++ buildInfoSettings
@@ -258,8 +258,8 @@ lazy val buildInfoSettings = Seq(
 )
 
 lazy val warnUnusedImport = Seq(
-  scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+  Compile / console / scalacOptions ~= {_.filterNot("-Ywarn-unused-import" == _)},
+  (Test / console / scalacOptions) := (Compile / console / scalacOptions).value
 )
 
 lazy val credentialSettings = Seq(
@@ -270,7 +270,7 @@ lazy val credentialSettings = Seq(
   } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 )
 
-lazy val prompt = shellPrompt in ThisBuild := { state =>
+lazy val prompt = ThisBuild / shellPrompt := { state =>
   val name = Project.extract(state).currentRef.project
   (if (name == "eff") "" else name) + "> "
 }
