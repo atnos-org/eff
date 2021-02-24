@@ -3,7 +3,7 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 lazy val specs2Version      = "4.10.6"
 lazy val twitterUtilVersion = "21.2.0"
-lazy val catbirdVersion     = "20.10.0"
+lazy val catbirdVersion     = "21.2.0"
 lazy val doobieVersion      = "0.10.0"
 
 enablePlugins(BuildInfoPlugin)
