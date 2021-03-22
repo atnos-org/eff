@@ -221,7 +221,7 @@ trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
       asyncInstance.async(k)
 
     def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
-      asyncInstance.suspend(thunk)
+      asyncInstance.defer(thunk)
 
     def raiseError[A](e: Throwable): Eff[R, A] =
       asyncInstance.raiseError(e)
