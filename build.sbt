@@ -48,7 +48,7 @@ lazy val catsEffect = crossProject(JSPlatform, JVMPlatform).in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(core)
   .settings(
-    libraryDependencies += "org.typelevel" %%% "cats-effect" % "2.4.0",
+    libraryDependencies += "org.typelevel" %%% "cats-effect" % "3.0.0",
   )
   .jsSettings(commonJsSettings)
   .jvmSettings(commonJvmSettings)
