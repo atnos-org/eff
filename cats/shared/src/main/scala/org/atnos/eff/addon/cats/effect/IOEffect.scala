@@ -34,7 +34,7 @@ trait IOEffectCreation extends IOTypes {
     ioShift >> ioDelay(io)
 
   final def ioSuspend[R :_io, A](io: =>IO[Eff[R, A]]): Eff[R, A] =
-    IO.suspend(io).send[R].flatten
+    IO.defer(io).send[R].flatten
 
   final def ioShift[R :_io](implicit ec: ExecutionContext): Eff[R, Unit] =
     IO.shift(ec).send[R]

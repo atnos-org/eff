@@ -176,7 +176,7 @@ trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
       fromTask(taskAsyncInstance.bracketCase(runEff(acquire))(a => runEff(use(a)))((r, ec) => runEff(release(r, ec))))
 
     def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
-      fromTask(taskAsyncInstance.async(k))
+      fromTask(taskAsyncInstance.async_(k))
 
     def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
       fromTask(Task.apply(thunk)).flatten
@@ -218,7 +218,7 @@ trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
       taskEffectInstance.runAsync(runEff(fa))(cb)
 
     def async[A](k: (Either[Throwable, A] => Unit) => Unit): Eff[R, A] =
-      asyncInstance.async(k)
+      asyncInstance.async_(k)
 
     def suspend[A](thunk: =>Eff[R, A]): Eff[R, A] =
       asyncInstance.defer(thunk)

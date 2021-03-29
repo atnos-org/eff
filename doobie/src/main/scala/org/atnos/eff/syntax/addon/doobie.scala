@@ -2,9 +2,9 @@ package org.atnos.eff.syntax.addon
 
 import _root_.doobie.Transactor
 import _root_.doobie.free.connection.ConnectionIO
-import cats.effect.Bracket
 import org.atnos.eff.addon.doobie._
 import org.atnos.eff.{Eff, _}
+import cats.effect.MonadCancel
 
 trait doobie {
 
@@ -17,7 +17,7 @@ final class DoobieConnectionIOOps[R, A](private val e: Eff[R, A]) extends AnyVal
   def runConnectionIO[F[_], U, E, B](t: Transactor[F])(
     implicit mc: Member.Aux[ConnectionIO, R, U],
     mf: MemberInOut[F, U],
-    me: Bracket[F, Throwable]): Eff[U, A] = {
+    me: MonadCancel[F, Throwable]): Eff[U, A] = {
     DoobieConnectionIOInterpretation.runConnectionIO[R, U, F, E, A, B](e)(t)
   }
 }

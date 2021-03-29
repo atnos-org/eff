@@ -4,11 +4,11 @@ import java.sql.Connection
 
 import _root_.doobie.Transactor
 import _root_.doobie.free.connection.ConnectionIO
-import cats.effect.Bracket
 import cats.syntax.all._
 import cats.~>
 import org.atnos.eff._
 import org.atnos.eff.all._
+import cats.effect.MonadCancel
 
 trait DoobieConnectionIOTypes {
   type _connectionIO[R] = ConnectionIO |= R
@@ -25,7 +25,7 @@ trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
   def runConnectionIO[R, U, F[_], E, A, B](e: Eff[R, A])(t: Transactor[F])(
     implicit mc: Member.Aux[ConnectionIO, R, U],
              mf: F /= U,
-             me: Bracket[F, Throwable] ): Eff[U, A] = {
+             me: MonadCancel[F, Throwable] ): Eff[U, A] = {
 
     def getConnection: Eff[U, Connection] =
       send[F, U, Connection](t.connect(t.kernel).allocated.map(_._1))
