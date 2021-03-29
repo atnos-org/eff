@@ -123,7 +123,7 @@ lazy val buildSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
-  libraryDependencies += "org.typelevel" %%% "cats-core" % "2.4.2",
+  libraryDependencies += "org.typelevel" %%% "cats-core" % "2.5.0",
   scalacOptions ++= commonScalacOptions.value,
   (Compile / doc / scalacOptions) ++= {
     Seq(
