@@ -20,7 +20,6 @@ libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
 dependsOn(
   coreJVM % "test->test;compile->compile",
   doobie,
-  catsEffectJVM,
   macros,
   monixJVM,
   scalazJVM,
@@ -44,18 +43,16 @@ lazy val doobie = project
   .settings(libraryDependencies ++= doobieJvm)
   .settings(effSettings ++ commonJvmSettings)
 
-lazy val catsEffect = crossProject(JSPlatform, JVMPlatform).in(file("cats"))
+lazy val catsEffect = crossProject(JVMPlatform).in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(core)
   .settings(
-    libraryDependencies += "org.typelevel" %%% "cats-effect" % "2.4.1",
+    libraryDependencies += "org.typelevel" %%% "cats-effect" % "3.0.1",
   )
-  .jsSettings(commonJsSettings)
   .jvmSettings(commonJvmSettings)
   .settings(effSettings)
 
 lazy val catsEffectJVM = catsEffect.jvm
-lazy val catsEffectJS = catsEffect.js
 
 lazy val macros = project.in(file("macros"))
   .settings(moduleName := "eff-macros")

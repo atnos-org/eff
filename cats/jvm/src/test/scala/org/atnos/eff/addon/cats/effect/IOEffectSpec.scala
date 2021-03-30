@@ -1,6 +1,5 @@
 package org.atnos.eff.addon.cats.effect
 
-import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
@@ -8,6 +7,7 @@ import org.specs2.concurrent.ExecutionEnv
 
 import org.atnos.eff._
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import IOEffect._
 import org.atnos.eff.syntax.addon.cats.effect._
 import scala.concurrent.duration._
@@ -61,7 +61,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
 
   def e4 = {
     def action[R :_io :_option]: Eff[R, Int] = for {
-      a <- ioDelay(10).ioShift
+      a <- ioDelay(10)
       b <- ioDelay(20)
     } yield a + b
 
@@ -70,7 +70,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
 
   def e5 = {
     val action = (1 to 5000).toList.traverseA { i =>
-      if (i % 5 == 0) ioDelay(i).ioShift
+      if (i % 5 == 0) ioDelay(i)
       else            ioDelay(i)
     }
 

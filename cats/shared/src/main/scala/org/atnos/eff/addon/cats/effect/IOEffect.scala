@@ -1,12 +1,13 @@
 package org.atnos.eff.addon.cats.effect
 
-import cats.effect.{Async, IO}
+import cats.effect.{IO, LiftIO}
+import cats.effect.unsafe.IORuntime
 import cats.~>
 import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.Duration
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Either
 
 object IOEffect extends IOEffectCreation with IOInterpretation
@@ -30,14 +31,8 @@ trait IOEffectCreation extends IOTypes {
   final def ioDelay[R :_io, A](io: =>A): Eff[R, A] =
     IO(io).send[R]
 
-  final def ioFork[R :_io, A](io: =>A)(implicit ec: ExecutionContext): Eff[R, A] =
-    ioShift >> ioDelay(io)
-
   final def ioSuspend[R :_io, A](io: =>IO[Eff[R, A]]): Eff[R, A] =
-    IO.suspend(io).send[R].flatten
-
-  final def ioShift[R :_io](implicit ec: ExecutionContext): Eff[R, Unit] =
-    IO.shift(ec).send[R]
+    IO.defer(io).send[R].flatten
 
 }
 
@@ -45,22 +40,19 @@ object IOInterpretation extends IOInterpretation
 
 trait IOInterpretation extends IOTypes {
 
-  def runAsync[A](e: Eff[Fx1[IO], A])(cb: Either[Throwable, A] => IO[Unit]): IO[Unit] =
-    Eff.detach(e).runAsync(cb).to[IO]
-
-  def unsafeRunAsync[A](e: Eff[Fx1[IO], A])(cb: Either[Throwable, A] => Unit): Unit =
+  def unsafeRunAsync[A](e: Eff[Fx1[IO], A])(cb: Either[Throwable, A] => Unit)(implicit i: IORuntime): Unit =
     Eff.detach(e).unsafeRunAsync(cb)
 
-  def unsafeRunSync[A](e: Eff[Fx1[IO], A]): A =
+  def unsafeRunSync[A](e: Eff[Fx1[IO], A])(implicit i: IORuntime): A =
     Eff.detach(e).unsafeRunSync()
 
-  def unsafeRunTimed[A](e: Eff[Fx1[IO], A], limit: Duration): Option[A] =
+  def unsafeRunTimed[A](e: Eff[Fx1[IO], A], limit: FiniteDuration)(implicit i: IORuntime): Option[A] =
     Eff.detach(e).unsafeRunTimed(limit)
 
-  def unsafeToFuture[A](e: Eff[Fx1[IO], A]): Future[A] =
+  def unsafeToFuture[A](e: Eff[Fx1[IO], A])(implicit i: IORuntime): Future[A] =
     Eff.detach(e).unsafeToFuture()
 
-  def to[F[_], A](e: Eff[Fx1[IO], A])(implicit f: Async[F]): F[A] =
+  def to[F[_], A](e: Eff[Fx1[IO], A])(implicit f: LiftIO[F]): F[A] =
     Eff.detach[IO, Fx1[IO], A, Throwable](e).to[F]
 
   import interpret.of
