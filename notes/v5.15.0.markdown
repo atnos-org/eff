@@ -1,0 +1,7 @@
+- [cats-effect 3](https://github.com/atnos-org/eff/commit/5323ac8acf91597ed3756a78b133ccd9f8066fe0)
+- [Update util-core to 21.3.0](https://github.com/atnos-org/eff/commit/232eb4f97f3288646d2918325f719299d0a92fd5)
+- [Update cats-core to 2.5.0](https://github.com/atnos-org/eff/commit/afa28f5752e2d8b0ddb937c53c87d036c4a53f47)
+- [Update doobie-core, doobie-h2 to 0.12.1](https://github.com/atnos-org/eff/commit/82ac7ef72e22df04391f2c7c4c94bf647d87ee88)
+- [Update catbird-util to 21.2.0](https://github.com/atnos-org/eff/commit/1751853f82297abaa82a5c20b25974ddb34e89e7)
+- [Update Scala to 2.13.5](https://github.com/atnos-org/eff/commit/cdd588566e62da025f5deebc582a8c31d12e6703)
+- [Update sbt-scalajs, scalajs-compiler, ... to 1.5.0](https://github.com/atnos-org/eff/commit/ce98df198de85d7b854aa7c7cec74e7af58679ce)
