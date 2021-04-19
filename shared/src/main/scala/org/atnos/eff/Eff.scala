@@ -237,12 +237,12 @@ trait EffImplicits {
             case Impure(u1: Union[_, _], c1, last1) => ImpureAp(Unions(u, Vector(u1)),  Continuation.lift(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
             case ImpureAp(u1, c1, last1)            => ImpureAp(Unions(u, u1.unions), Continuation.lift(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
           }
-          
+
         case ImpureAp(unions, c, last) =>
           ff match {
             case Pure(f, last1)                    => ImpureAp(unions, c map f, last1 *> last)
             case Impure(NoEffect(f), c1, last1)    => ImpureAp(unions, c.append(x => c1(f).map(_(x)))).addLast(last1 *> last)
-            case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.lift(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
+            case Impure(u: Union[_, _], c1, last1) => ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.lift(ls => ap(???)(???)), c.onNone), last1 *> last)
             case ImpureAp(u, c1, last1)            => ImpureAp(u append unions, Continuation.lift({ xs =>
               val usize = u.size
               val (taken, dropped) = xs.splitAt(usize)

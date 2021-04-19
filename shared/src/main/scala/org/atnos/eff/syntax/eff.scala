@@ -3,6 +3,7 @@ package syntax
 
 import cats._
 import cats.data.Writer
+import scala.language.implicitConversions
 
 /**
   * Operations of Eff[R, A] values

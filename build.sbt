@@ -15,7 +15,7 @@ effSettings
 noPublishSettings
 commonJvmSettings
 libraryDependencies ++= scalameter
-libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
+//libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
 
 dependsOn(
   coreJVM % "test->test;compile->compile",
@@ -113,15 +113,17 @@ lazy val scoverageSettings = Seq(
   coverageExcludedPackages := "org\\.atnos\\.eff\\.bench\\..*"
 )
 
+
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := "2.12.13",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.5")
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.5", "3.0.0-RC2")
 )
 
 lazy val commonSettings = Seq(
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.5.0",
   scalacOptions ++= commonScalacOptions.value,
+  scalacOptions += "-no-indent",
   (Compile / doc / scalacOptions) ++= {
     Seq(
       "-sourcepath",
@@ -144,7 +146,7 @@ lazy val commonSettings = Seq(
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
-  libraryDependencies ++= specs2.value,
+//  libraryDependencies ++= specs2.value,
   parallelExecution := false,
   scalacOptions += {
     val a = (LocalRootProject / baseDirectory).value.toURI.toString
@@ -160,7 +162,7 @@ lazy val commonJsSettings = Seq(
 )
 
 lazy val commonJvmSettings = Seq(
-  libraryDependencies ++= specs2.value,
+//  libraryDependencies ++= specs2.value,
   Test / fork := true,
   Global / cancelable := true,
   Test / scalacOptions ~= (_.filterNot(_ == "-Xfatal-warnings")),
