@@ -137,7 +137,7 @@ lazy val commonSettings = Seq(
         Nil
       case _ =>
         Seq(
-          compilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full)
+          compilerPlugin("org.typelevel" %% "kind-projector" % "0.12.0" cross CrossVersion.full)
         )
     }
   }
