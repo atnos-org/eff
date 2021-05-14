@@ -77,7 +77,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core)
   .settings(
-    libraryDependencies += "io.monix" %%% "monix" % "3.3.0",
+    libraryDependencies += "io.monix" %%% "monix" % "3.4.0",
   )
   .settings(effSettings)
   .jvmSettings(commonJvmSettings)
