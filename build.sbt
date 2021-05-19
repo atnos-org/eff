@@ -116,12 +116,12 @@ lazy val scoverageSettings = Seq(
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "2.12.13",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.5", "3.0.0-RC2")
+  scalaVersion := "3.0.0",
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.5", "3.0.0")
 )
-
+˚
 lazy val commonSettings = Seq(
-  libraryDependencies += "org.typelevel" %%% "cats-core" % "2.5.0",
+  libraryDependencies += "org.typelevel" %%% "cats-core" % "2.6.1",
   scalacOptions ++= commonScalacOptions.value,
   scalacOptions += "-no-indent",
   (Compile / doc / scalacOptions) ++= {
