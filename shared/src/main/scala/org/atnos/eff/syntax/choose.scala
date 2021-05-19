@@ -1,5 +1,7 @@
 package org.atnos.eff.syntax
 
+import scala.language.implicitConversions
+
 import cats.Alternative
 import org.atnos.eff._
 
@@ -7,7 +9,7 @@ object choose extends choose
 
 trait choose {
   implicit final def toChooseEffectOps[R, A](e: Eff[R, A]): ChooseEffectOps[R, A] = new ChooseEffectOps(e)
-}
+}˚
 
 final class ChooseEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
