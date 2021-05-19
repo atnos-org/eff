@@ -208,11 +208,19 @@ lazy val commonScalacOptions = Def.setting {
     "-feature",
     "-language:_",
     "-unchecked",
-    "-Xlint",
-    "-Xlint:-nullary-unit",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-value-discard"
   ) ++ {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _)) =>
+        Seq(
+          "-Xlint",
+          "-Xlint:-nullary-unit",
+          "-Ywarn-numeric-widen",
+          "-Ywarn-value-discard",
+        )
+      case _ =>
+        Nil
+    }
+  } ++ {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, v)) if v >= 13 =>
         Seq(
