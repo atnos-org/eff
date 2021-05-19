@@ -1,5 +1,7 @@
 package org.atnos.eff.syntax
 
+import scala.language.implicitConversions
+
 import org.atnos.eff._
 import org.atnos.eff.concurrent.Scheduler
 
