@@ -25,7 +25,7 @@ trait Batch {
             // by using the Batched datastructure keeping track
             // of both unbatched and batch effects
             val result: Batched[T] = rest.foldLeft(Batched.single(e)) { case (batched, (effect, i)) =>
-              batchable.batch(batched.batchedEffect, effect) match {
+              batchable.batch(batched.batchedEffect.asInstanceOf[T[Any]], effect) match {
                 case Some(b) => batched.fuse(b, i)
                 case None    => batched.append(effect, i)
               }
@@ -36,7 +36,7 @@ trait Batch {
                 eff
 
               case e1 +: rest1 =>
-                ImpureAp(Unions(m.inject(e1), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
+                ImpureAp(Unions(m.inject(e1.asInstanceOf[T[Any]]), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
                   // the map operation has to reorder the results based on what could be batched or not
                   continuation.contramap(ls => reorder(ls, result.keys ++ collected.otherIndices)), last)
             }
@@ -98,7 +98,7 @@ private case class Composed[T[_]](unbatched: Vector[Batched[T]], batched: Single
   def batchedEffect: T[_] = batched.batchedEffect
 
   def append(ty: T[_], key: Int) =
-    copy(unbatched  = unbatched :+ Batched.single((ty, key)))
+    copy(unbatched  = unbatched :+ Batched.single((ty.asInstanceOf[T[Any]], key)))
 
   def fuse(ty: T[_], key: Int) =
     copy(batched = Single(ty, batched.keys :+ key))
@@ -109,7 +109,7 @@ private case class Single[T[_]](tx: T[_], keys: Vector[Int]) extends Batched[T] 
   def batchedEffect = tx
 
   def append(ty: T[_], key: Int): Batched[T] =
-    Composed(Vector(Batched.single((tx, key))), this)
+    Composed(Vector(Batched.single((tx.asInstanceOf[T[Any]], key))), this)
 
   def fuse(ty: T[_], key: Int): Batched[T] =
     Single(ty, keys :+ key)
