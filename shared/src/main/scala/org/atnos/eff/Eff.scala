@@ -223,6 +223,7 @@ trait EffImplicits {
           ff match {
             case Pure(f, last1)                   => Pure(f(a), last1 *> last)
             case Impure(NoEffect(f), c, last1)    => Impure(NoEffect[AnyRef, Any](f), c.append(f1 => pure(f1(a))).asInstanceOf[Continuation[Object, Any, A]], c.onNone).addLast(last1 *> last)
+              .asInstanceOf[Eff[AnyRef, B]]
             case Impure(u: Union[_, _], c, last1) => ImpureAp(Unions(u, Vector.empty), c.dimapEff((_:Vector[Any]).head)(_.map(_(a))), last1 *> last)
             case ImpureAp(u, c, last1)            => ImpureAp(u, c.map(_(a)), last1 *> last)
           }
