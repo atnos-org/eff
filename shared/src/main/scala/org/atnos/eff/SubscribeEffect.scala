@@ -104,12 +104,13 @@ object SubscribeEffect {
         memoizeSubsequence(key, sequenceKey, subSequenceKey, cache, c(a).addLast(last))
 
       case Impure(u: Union[_,_], c, last) =>
-        Impure(materialize(u), c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r)), last)
+        Impure(materialize(u.asInstanceOf[Union[SubscribeEffect.FS, Any]]), c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r))
+          .asInstanceOf[Continuation[Fx1[SubscribeEffect.Subscribe], Any, A]], last)
 
       case ImpureAp(unions, continuation, last) =>
 
         val materializedUnions =
-          Unions(materialize(unions.first), unions.rest.map(materialize))
+          Unions(materialize(unions.first.asInstanceOf[Union[Fx1[SubscribeEffect.Subscribe], Any]]), unions.rest.map(materialize))
 
         val continuation1 = continuation.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r))
         ImpureAp(materializedUnions, continuation1, last)
