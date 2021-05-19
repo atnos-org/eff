@@ -46,7 +46,7 @@ See https://monix.io/docs/2x/eval/task.html#blocking-for-a-result
 */
 import scala.concurrent.Await
 
-Await.result(action.runOption.runAsync.runToFuture, 1 second)
+Await.result(action.runOption.runAsync.runToFuture, 1.second)
 }.eval}
 
 """

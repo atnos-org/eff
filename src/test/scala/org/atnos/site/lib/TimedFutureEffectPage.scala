@@ -37,7 +37,7 @@ Then we need to pass a `Scheduler` and an `ExecutionContext` in to begin the com
 implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 import org.atnos.eff.syntax.future._
 
-Await.result(action.runOption.runSequential, 1 second)
+Await.result(action.runOption.runSequential, 1.second)
 }.eval}
 
 You can also use other `Future` or `Task` effects:

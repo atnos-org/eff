@@ -78,7 +78,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
     val run = futureDelay[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action)
     eventually(retries = 5, sleep = 0.seconds) {
       messages.clear()
-      Await.result(run.runOption.runAsync, 4 seconds)
+      Await.result(run.runOption.runAsync, 4.seconds)
 
       "the messages are ordered" ==> {
         messages.toList ==== delays.sorted
