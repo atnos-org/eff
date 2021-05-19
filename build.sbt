@@ -1,10 +1,10 @@
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val specs2Version      = "4.10.6"
-lazy val twitterUtilVersion = "21.3.0"
+lazy val specs2Version      = "4.11.0"
+lazy val twitterUtilVersion = "21.4.0"
 lazy val catbirdVersion     = "21.2.0"
-lazy val doobieVersion      = "0.12.1"
+lazy val doobieVersion      = "0.13.3"
 
 enablePlugins(BuildInfoPlugin)
 
@@ -47,7 +47,7 @@ lazy val catsEffect = crossProject(JVMPlatform).in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(core)
   .settings(
-    libraryDependencies += "org.typelevel" %%% "cats-effect" % "3.0.2",
+    libraryDependencies += "org.typelevel" %%% "cats-effect" % "3.1.1",
   )
   .jvmSettings(commonJvmSettings)
   .settings(effSettings)
@@ -77,7 +77,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core)
   .settings(
-    libraryDependencies += "io.monix" %%% "monix" % "3.3.0",
+    libraryDependencies += "io.monix" %%% "monix" % "3.4.0",
   )
   .settings(effSettings)
   .jvmSettings(commonJvmSettings)
@@ -117,7 +117,7 @@ lazy val scoverageSettings = Seq(
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := "3.0.0",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.5", "3.0.0")
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.6", "2.12.13")
 )
 
 lazy val commonSettings = Seq(
@@ -139,7 +139,7 @@ lazy val commonSettings = Seq(
         Nil
       case _ =>
         Seq(
-          compilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full)
+          compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.0" cross CrossVersion.full)
         )
     }
   }
