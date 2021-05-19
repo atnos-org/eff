@@ -116,14 +116,13 @@ lazy val scoverageSettings = Seq(
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "3.0.0",
+  scalaVersion := "3.0.1-RC1-bin-20210518-4bf2f04-NIGHTLY",
   crossScalaVersions := Seq(scalaVersion.value, "2.13.6", "2.12.13")
 )
 
 lazy val commonSettings = Seq(
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.6.1",
   scalacOptions ++= commonScalacOptions.value,
-  scalacOptions += "-no-indent",
   (Compile / doc / scalacOptions) ++= {
     Seq(
       "-sourcepath",
@@ -222,6 +221,7 @@ lazy val commonScalacOptions = Def.setting {
         )
       case Some((3, _)) =>
         Seq(
+          "-no-indent",
           "-Ykind-projector"
         )
       case _ =>
