@@ -324,7 +324,7 @@ val action: Eff[R, Int] =
 implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 import org.atnos.eff.syntax.future._
 
-Await.result(action.runOption.runSequential, 1 second)</code></pre>
+Await.result(action.runOption.runSequential, 1.second)</code></pre>
 <p><code class="prettyprint">&gt; Some(1)</code></p>
 <p>You can also use other <code class="prettyprint">Future</code> or <code class="prettyprint">Task</code> effects:</p>
 <ul>
