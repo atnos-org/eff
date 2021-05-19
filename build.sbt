@@ -119,7 +119,7 @@ lazy val buildSettings = Seq(
   scalaVersion := "3.0.0",
   crossScalaVersions := Seq(scalaVersion.value, "2.13.5", "3.0.0")
 )
-˚
+
 lazy val commonSettings = Seq(
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.6.1",
   scalacOptions ++= commonScalacOptions.value,
@@ -210,10 +210,10 @@ lazy val commonScalacOptions = Def.setting {
     "-feature",
     "-language:_",
     "-unchecked",
-    "-Xlint",
-    "-Xlint:-nullary-unit",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-value-discard"
+//    "-Xlint",
+//    "-Xlint:-nullary-unit",
+//    "-Ywarn-numeric-widen",
+//    "-Ywarn-value-discard"
   ) ++ {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, v)) if v >= 13 =>
