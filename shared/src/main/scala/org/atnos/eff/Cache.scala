@@ -207,7 +207,11 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
     map.values
   }
 
-  
+
+  def remove(x$0: Object, x$1: Object): Boolean = ???
+  def replace(x$0: K, x$1: V, x$2: V): Boolean = ???
+  def replace(x$0: K, x$1: V): V = ???
+
   private def purgeKeys: Unit = {
     var reference = queue.poll
     while (reference != null) {
