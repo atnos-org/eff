@@ -228,7 +228,9 @@ lazy val commonScalacOptions = Def.setting {
         )
       case Some((3, _)) =>
         Seq(
-          "-Ykind-projector"
+          "-Ykind-projector",
+          "-source",
+          "3.0-migration",
         )
       case _ =>
         Seq(
