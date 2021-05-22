@@ -1,7 +1,7 @@
 import org.scalajs.jsenv.nodejs._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-lazy val specs2Version      = "4.11.0"
+lazy val specs2Version      = "4.12.0"
 lazy val twitterUtilVersion = "21.4.0"
 lazy val catbirdVersion     = "21.2.0"
 lazy val doobieVersion      = "0.13.3"
@@ -292,11 +292,18 @@ lazy val doobieJvm = Seq(
   "org.tpolecat" %% "doobie-core" % doobieVersion,
   "org.tpolecat" %% "doobie-h2"   % doobieVersion % "test")
 
-lazy val specs2 = Def.setting(Seq(
-    "org.specs2" %%% "specs2-core"
-  , "org.specs2" %%% "specs2-matcher-extra"
-  , "org.specs2" %%% "specs2-scalacheck"
-  , "org.specs2" %%% "specs2-junit").map(_ % specs2Version % "test" cross CrossVersion.for3Use2_13))
+lazy val specs2 = Def.setting(
+  Seq(
+    "org.specs2" %%% "specs2-core",
+    "org.specs2" %%% "specs2-matcher-extra",
+    "org.specs2" %%% "specs2-scalacheck",
+    "org.specs2" %%% "specs2-junit",
+  ).map(
+    _ % specs2Version % "test" cross CrossVersion.for3Use2_13
+  ).map(
+    _.exclude("org.specs2", "xml_sjs1_" + scalaBinaryVersion.value)
+  )
+)
 
 lazy val scalameter = Seq(
   "com.storm-enroute" %% "scalameter" % "0.19" % "test")
