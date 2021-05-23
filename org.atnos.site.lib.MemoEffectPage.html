@@ -323,9 +323,9 @@ def expensive[R :_memo]: Eff[R, Int] =
 <li><p><code class="prettyprint">org.atnos.eff.ConcurrentWeakIdentityHashMapCache</code>: backed by a <code class="prettyprint">ConcurrentWeakIdentityHashMap</code> where the keys are <code class="prettyprint">System.identityHashCode</code> for the keys used to memoize the values. This cache is thread-safe and uses weak references which can be garbage collected when necessary.</p></li>
 </ul>
 <p>You can also use other, and better, cache implementations like <a href="https://github.com/ben-manes/caffeine">Caffeine</a> to get more functionalities like eviction policies, maximum size and so on. You will need to implement the <code class="prettyprint">Cache</code> interface for this</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">trait</span> Cache {</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> memo[V](key: AnyRef, value: =&gt;V): V</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">trait</span> Cache <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> memo<span class="op">[</span>V<span class="op">](</span>key<span class="op">:</span> <span class="bu">AnyRef</span><span class="op">,</span> value<span class="op">:</span> <span class="op">=&gt;</span>V<span class="op">):</span> V</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </div>
 
 <script>
