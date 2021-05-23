@@ -318,7 +318,7 @@
 
   (addKeys(&quot;key1&quot;, &quot;key2&quot;).runEither.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runEither.run)</code></pre>
 <p><code class="prettyprint">&gt; (Right(30),Left('missing' not found))</code></p>
-<p><em>Note</em>: the <code class="prettyprint">?</code> syntax comes from the <a href="https://github.com/typelevel/kind-projector">kind-projector</a> project and allows us to avoid type lambdas.</p>
+<p><em>Note</em>: the <code class="prettyprint">*</code> syntax comes from the <a href="https://github.com/typelevel/kind-projector">kind-projector</a> project and allows us to avoid type lambdas.</p>
 <p>A <code class="prettyprint">catchLeft</code> method can also be used to intercept an error and possibly recover from it:</p>
 <pre><code class="prettyprint">  case class TooBig(value: Int)
   type E = Fx.fx1[Either[TooBig, *]]
