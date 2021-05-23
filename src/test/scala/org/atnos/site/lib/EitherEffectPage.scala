@@ -24,7 +24,7 @@ The `Either` effect is similar to the `Option` effect but adds the possibility t
   (addKeys("key1", "key2").runEither.run, addKeys("key1", "missing").runEither.run)
 }.eval}
 
-*Note*: the `?` syntax comes from the [kind-projector](https://github.com/typelevel/kind-projector) project and allows us to avoid
+*Note*: the `*` syntax comes from the [kind-projector](https://github.com/typelevel/kind-projector) project and allows us to avoid
 type lambdas.
 
 A `catchLeft` method can also be used to intercept an error and possibly recover from it:${snippet{
