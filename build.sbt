@@ -309,9 +309,9 @@ lazy val scalameter = Seq(
   "com.storm-enroute" %% "scalameter" % "0.19" % "test")
 
 lazy val twitterUtilCore = Seq(
-  "com.twitter" %% "util-core" % twitterUtilVersion
+  "com.twitter" %% "util-core" % twitterUtilVersion cross CrossVersion.for3Use2_13
 )
 
 lazy val catbird = Seq(
-  "io.catbird" %% "catbird-util" % catbirdVersion
+  "io.catbird" %% "catbird-util" % catbirdVersion cross CrossVersion.for3Use2_13
 )
