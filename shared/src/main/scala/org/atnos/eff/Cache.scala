@@ -232,10 +232,10 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
   }
 
   private abstract class WeakSafeIterator[T, U](weakIterator: java.util.Iterator[U]) extends java.util.Iterator[T] {
-    advance
+    advance()
     private var strongNext: T = null.asInstanceOf[T]
 
-    def advance: Unit  = {
+    def advance(): Unit  = {
       while (weakIterator.hasNext) {
         val nextU = weakIterator.next
         strongNext = extract(nextU)
@@ -248,7 +248,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
 
     def next: T = {
       val next = strongNext
-      advance
+      advance()
       next
     }
 
