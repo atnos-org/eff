@@ -32,7 +32,19 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file(".
   .jvmSettings(commonJvmSettings)
   .jvmSettings(notesSettings)
   .nativeSettings(commonNativeSettings)
-  .settings(effSettings)
+  .settings(
+    effSettings,
+    (Compile / unmanagedSourceDirectories) ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) =>
+          Seq(
+            (LocalRootProject / baseDirectory).value / "shared/src/main/scala-2"
+          )
+        case _ =>
+          Nil
+      }
+    }
+  )
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
