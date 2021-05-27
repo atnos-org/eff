@@ -92,7 +92,7 @@ trait EitherInterpretation {
         }
 
       def onApplicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) = {
-        implicit val eitherAp = ap
+        implicit val eitherAp: Applicative[Either[E, *]] = ap
         Right(ms.sequence)
       }
     }
