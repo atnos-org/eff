@@ -125,10 +125,12 @@ lazy val scoverageSettings = Seq(
   coverageExcludedPackages := "org\\.atnos\\.eff\\.bench\\..*"
 )
 
+def Scala212 = "2.12.13"
+
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "2.12.13",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.6")
+  scalaVersion := Scala212,
+  crossScalaVersions := Seq(Scala212, "2.13.6")
 )
 
 lazy val commonSettings = Seq(
