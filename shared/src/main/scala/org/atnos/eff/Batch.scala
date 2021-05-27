@@ -1,5 +1,7 @@
 package org.atnos.eff
 
+import EffCompat.cast
+
 /**
  * This trait provides a way to rewrite applicative effects
  * when there is an operation allowing the batching of some effects based on the Batchable typeclass
@@ -25,7 +27,7 @@ trait Batch {
             // by using the Batched datastructure keeping track
             // of both unbatched and batch effects
             val result: Batched[T] = rest.foldLeft(Batched.single(e)) { case (batched, (effect, i)) =>
-              batchable.batch(batched.batchedEffect, effect) match {
+              batchable.batch(cast(batched.batchedEffect), effect) match {
                 case Some(b) => batched.fuse(b, i)
                 case None    => batched.append(effect, i)
               }
@@ -36,7 +38,7 @@ trait Batch {
                 eff
 
               case e1 +: rest1 =>
-                ImpureAp(Unions(m.inject(e1), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
+                ImpureAp(Unions(m.inject(cast(e1)), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
                   // the map operation has to reorder the results based on what could be batched or not
                   continuation.contramap(ls => reorder(ls, result.keys ++ collected.otherIndices)), last)
             }
@@ -98,7 +100,7 @@ private case class Composed[T[_]](unbatched: Vector[Batched[T]], batched: Single
   def batchedEffect: T[_] = batched.batchedEffect
 
   def append(ty: T[_], key: Int) =
-    copy(unbatched  = unbatched :+ Batched.single((ty, key)))
+    copy(unbatched  = unbatched :+ Batched.single((cast(ty), key)))
 
   def fuse(ty: T[_], key: Int) =
     copy(batched = Single(ty, batched.keys :+ key))
@@ -109,7 +111,7 @@ private case class Single[T[_]](tx: T[_], keys: Vector[Int]) extends Batched[T] 
   def batchedEffect = tx
 
   def append(ty: T[_], key: Int): Batched[T] =
-    Composed(Vector(Batched.single((tx, key))), this)
+    Composed(Vector(Batched.single((cast(tx), key))), this)
 
   def fuse(ty: T[_], key: Int): Batched[T] =
     Single(ty, keys :+ key)

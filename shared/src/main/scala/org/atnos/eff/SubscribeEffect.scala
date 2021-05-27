@@ -3,6 +3,7 @@ package org.atnos.eff
 import cats._
 
 import Eff._
+import EffCompat.cast
 import org.atnos.eff.either._
 import org.atnos.eff.syntax.all._
 
@@ -104,12 +105,12 @@ object SubscribeEffect {
         memoizeSubsequence(key, sequenceKey, subSequenceKey, cache, c(a).addLast(last))
 
       case Impure(u: Union[_,_], c, last) =>
-        Impure(materialize(u), c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r)), last)
+        Impure(materialize(cast(u)), cast(c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r))), last)
 
       case ImpureAp(unions, continuation, last) =>
 
         val materializedUnions =
-          Unions(materialize(unions.first), unions.rest.map(materialize))
+          Unions(materialize(cast(unions.first)), unions.rest.map(materialize))
 
         val continuation1 = continuation.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r))
         ImpureAp(materializedUnions, continuation1, last)
