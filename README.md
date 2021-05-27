@@ -20,7 +20,7 @@ You can also check out [this presentation](https://bit.ly/eff_flatmap_2016) at f
 
 ## Installation
 
-Eff is published for Scala 2.12 and 2.13. `eff` core is available for the JVM, ScalaJS and scala-native. Sbt dependency:
+Eff is published for Scala 2.12, 2.13 and 3. `eff` core is available for the JVM, ScalaJS and scala-native. Sbt dependency:
 
 ```scala
 // check maven badge above for latest version
