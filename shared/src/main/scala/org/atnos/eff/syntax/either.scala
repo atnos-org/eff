@@ -1,7 +1,5 @@
 package org.atnos.eff.syntax
 
-import scala.language.implicitConversions
-
 import cats.Semigroup
 import org.atnos.eff._
 

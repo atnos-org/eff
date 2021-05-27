@@ -1,8 +1,6 @@
 package org.atnos.eff
 package syntax
 
-import scala.language.implicitConversions
-
 import ErrorEffect._
 import scala.reflect.ClassTag
 
