@@ -230,6 +230,7 @@ lazy val commonScalacOptions = Def.setting {
         Seq(
           "-no-indent",
           "-Ykind-projector",
+          "-Xignore-scala2-macros", // TODO remove
           "-source",
           "3.0-migration",
         )
