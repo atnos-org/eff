@@ -15,6 +15,7 @@ import cats.data.Writer
 import cats.syntax.traverse._
 import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
+import org.atnos.eff.concurrent.Scheduler
 import org.atnos.eff.syntax.future._
 
 type WriterString[A] = Writer[String, A]
@@ -22,7 +23,7 @@ type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, TimedFuture, WriterString]
 
-implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
 def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
@@ -42,6 +43,7 @@ Await.result(action.runEval.runWriterLog.runSequential, 2.seconds)
 We can however run all those computations concurrently using the applicative execution for `Eff`:${snippet{
  // 8<--
 import org.atnos.eff._, all._, future._, syntax.all._
+import org.atnos.eff.concurrent.Scheduler
 import cats.Eval
 import cats.data.Writer
 import cats.instances.list._
@@ -51,7 +53,7 @@ type WriterString[A] = Writer[String, A]
 type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, TimedFuture, WriterString]
-implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
 def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {

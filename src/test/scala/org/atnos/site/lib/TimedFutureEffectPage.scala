@@ -15,6 +15,7 @@ Now, let's create some `TimedFuture` effects:${snippet{
 import org.atnos.eff._
 import org.atnos.eff.future._
 import org.atnos.eff.syntax.all._
+import org.atnos.eff.concurrent.Scheduler
 
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,7 +35,7 @@ val action: Eff[R, Int] =
 Then we need to pass a `Scheduler` and an `ExecutionContext` in to begin the computation.
 */
 
-implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 import org.atnos.eff.syntax.future._
 
 Await.result(action.runOption.runSequential, 1.second)
@@ -59,6 +60,7 @@ There are corresponding syntax imports to be able to call `runAsync` methods in:
 ${snippet{
 import cats.implicits._
 import org.atnos.eff._, future._, all._
+import org.atnos.eff.concurrent.Scheduler
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.syntax.future._
 import scala.concurrent._, duration._
@@ -71,7 +73,7 @@ def expensive[R :_Future :_memo]: Eff[R, Int] =
 
 type S = Fx.fx2[Memoized, TimedFuture]
 
-implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
 val futureMemo: Future[Int] =
   (expensive[S] >> expensive[S]).runFutureMemo(ConcurrentHashMapCache()).runSequential
