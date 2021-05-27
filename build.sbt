@@ -16,6 +16,7 @@ noPublishSettings
 commonJvmSettings
 libraryDependencies ++= scalameter
 libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
+disableScala3
 
 dependsOn(
   coreJVM % "test->test;compile->compile",
@@ -31,7 +32,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file(".
   .jsSettings(commonJsSettings)
   .jvmSettings(commonJvmSettings)
   .jvmSettings(notesSettings)
-  .nativeSettings(commonNativeSettings)
   .settings(
     effSettings,
     (Compile / unmanagedSourceDirectories) ++= {
@@ -45,6 +45,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file(".
       }
     }
   )
+  .nativeSettings(commonNativeSettings)
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
@@ -71,6 +72,7 @@ lazy val macros = project.in(file("macros"))
   .dependsOn(coreJVM)
   .settings(libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value)
   .settings(
+    disableScala3,
     libraryDependencies ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, v)) if v <= 12 =>
@@ -136,6 +138,14 @@ lazy val buildSettings = Seq(
 lazy val commonSettings = Seq(
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.6.1",
   scalacOptions ++= commonScalacOptions.value,
+  Test / test := {
+    // TODO await specs2 for Scala 3
+    if (scalaBinaryVersion.value == "3") {
+      ()
+    } else {
+      (Test / test).value
+    }
+  },
   (Compile / doc / scalacOptions) ++= {
     Seq(
       "-sourcepath",
@@ -181,6 +191,7 @@ lazy val commonJvmSettings = Seq(
 ) ++ Seq(Test / scalacOptions ++= Seq("-Yrangepos"))
 
 lazy val commonNativeSettings = Def.settings(
+  disableScala3,
   loadedTestFrameworks := Map.empty,
   Test / sources := Nil,
   test := {},
@@ -337,4 +348,24 @@ lazy val twitterUtilCore = Seq(
 
 lazy val catbird = Seq(
   "io.catbird" %% "catbird-util" % catbirdVersion cross CrossVersion.for3Use2_13
+)
+
+lazy val disableScala3 = Def.settings(
+  libraryDependencies := {
+    if (scalaBinaryVersion.value == "3") {
+      Nil
+    } else {
+      libraryDependencies.value
+    }
+  },
+  Seq(Compile, Test).map { x =>
+    (x / sources) := {
+      if (scalaBinaryVersion.value == "3") {
+        Nil
+      } else {
+        (x / sources).value
+      }
+    }
+  },
+  publish / skip := (scalaBinaryVersion.value == "3"),
 )

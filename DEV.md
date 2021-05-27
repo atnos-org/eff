@@ -11,6 +11,8 @@ sbt> set every ghreleaseGithubToken := Some("GITHUB TOKEN")
 sbt> githubRelease <tag name>
 sbt> project eff
 sbt> +publishSigned
+sbt> # set scala 3 version
+sbt> publishSigned
 sbt> sonatypeBundleRelease
 ```
 
