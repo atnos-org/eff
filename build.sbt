@@ -220,7 +220,7 @@ lazy val commonScalacOptions = Def.setting {
     "-deprecation",
     "-encoding", "UTF-8",
     "-feature",
-    "-language:_",
+    "-language:implicitConversions,higherKinds,existentials",
     "-unchecked",
   ) ++ {
     CrossVersion.partialVersion(scalaVersion.value) match {

@@ -3,6 +3,7 @@ package org.atnos.eff.macros
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox
+import scala.language.experimental.macros
 
 @compileTimeOnly("enable macro paradise to expand macro annotations")
 class eff extends StaticAnnotation {
