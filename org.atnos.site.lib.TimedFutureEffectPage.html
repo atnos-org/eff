@@ -303,6 +303,7 @@
 <pre><code class="prettyprint">import org.atnos.eff._
 import org.atnos.eff.future._
 import org.atnos.eff.syntax.all._
+import org.atnos.eff.concurrent.Scheduler
 
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -321,7 +322,7 @@ val action: Eff[R, Int] =
 </code></pre>
 <p>Then we need to pass a <code class="prettyprint">Scheduler</code> and an <code class="prettyprint">ExecutionContext</code> in to begin the computation.</p>
 <pre><code class="prettyprint">
-implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 import org.atnos.eff.syntax.future._
 
 Await.result(action.runOption.runSequential, 1.second)</code></pre>
@@ -344,6 +345,7 @@ Await.result(action.runOption.runSequential, 1.second)</code></pre>
 </ul>
 <pre><code class="prettyprint">import cats.implicits._
 import org.atnos.eff._, future._, all._
+import org.atnos.eff.concurrent.Scheduler
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.syntax.future._
 import scala.concurrent._, duration._
@@ -356,7 +358,7 @@ def expensive[R :_Future :_memo]: Eff[R, Int] =
 
 type S = Fx.fx2[Memoized, TimedFuture]
 
-implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
 val futureMemo: Future[Int] =
   (expensive[S] &gt;&gt; expensive[S]).runFutureMemo(ConcurrentHashMapCache()).runSequential

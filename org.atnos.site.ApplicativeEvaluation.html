@@ -306,6 +306,7 @@ import cats.data.Writer
 import cats.syntax.traverse._
 import cats.instances.list._
 import scala.concurrent._, duration._, ExecutionContext.Implicits.global
+import org.atnos.eff.concurrent.Scheduler
 import org.atnos.eff.syntax.future._
 
 type WriterString[A] = Writer[String, A]
@@ -313,7 +314,7 @@ type _writerString[R] = WriterString |= R
 
 type S = Fx.fx3[Eval, TimedFuture, WriterString]
 
-implicit val scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
 def execute[E :_eval :_writerString :_future](i: Int): Eff[E, Int] =
   for {
