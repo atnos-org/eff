@@ -75,7 +75,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
     read.runReader(initial).run === initial * 2
   }
 
-  def writerTwice = prop { _ : Int =>
+  def writerTwice = prop { (_ : Int) =>
     val write: Eff[WriterStringFx, Unit] =
       for {
         _ <- tell[WriterStringFx, String]("hello")
@@ -85,7 +85,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
     write.runWriter.run ==== (((), List("hello", "world")))
   }
 
-  def readerWriter = prop { init: Int =>
+  def readerWriter = prop { (init: Int) =>
 
     // define a Reader / Writer stack
     type S = Fx.fx2[WriterString, ReaderInt]

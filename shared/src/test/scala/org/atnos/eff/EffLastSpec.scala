@@ -28,7 +28,7 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
 
 """
 
-  def runLast = prop { xs: List[String] =>
+  def runLast = prop { (xs: List[String]) =>
     type R = Fx.fx2[Safe, Eval]
     val messages = new ListBuffer[String]
 
@@ -45,7 +45,7 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
     messages.toList ==== List("a", "b", "end")
   }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
 
-  def runLastSeveralTimes = prop { xs: List[String] =>
+  def runLastSeveralTimes = prop { (xs: List[String]) =>
     type R = Fx.fx2[Safe, Eval]
     val messages = new ListBuffer[String]
 
@@ -66,7 +66,7 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
     messages.toList ==== List("a", "b", "c", "d", "end2", "end1", "end3")
   }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
 
-  def runLastAtFirst = prop { xs: List[String] =>
+  def runLastAtFirst = prop { (xs: List[String]) =>
     type R = Fx.fx2[Safe, Eval]
     val messages = new ListBuffer[String]
 
@@ -87,7 +87,7 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
     messages.toList ==== List("a", "b", "c", "d", "end2", "end1", "end3")
   }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
 
-  def runLastFail = prop { xs: List[String] =>
+  def runLastFail = prop { (xs: List[String]) =>
     type R = Fx.fx2[Safe, Eval]
     val messages = new ListBuffer[String]
 

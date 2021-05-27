@@ -38,7 +38,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
 """
 
-  def EitherCreation = prop { stringOrInt: String Either Int =>
+  def EitherCreation = prop { (stringOrInt: String Either Int) =>
     type S = Fx.fx1[EitherString]
 
     val either1 = stringOrInt
@@ -100,7 +100,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     action.runEither.run ==== Right(list.map(_.toString))
   }
 
-  def leftToRight = prop { i: Int =>
+  def leftToRight = prop { (i: Int) =>
     sealed trait Err
     case class ValueErr(value: Int) extends Err
     case class ActionErr(value: Int) extends Err
@@ -125,7 +125,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     else        actual must beRight(i)
   }.setGen(Gen.choose(0, 15))
 
-  def handleLeft = prop { i: Int =>
+  def handleLeft = prop { (i: Int) =>
     case class Err(value: Int)
     type D[A] = Err Either A
     type R = Fx2[D, Eval]

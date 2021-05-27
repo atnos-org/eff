@@ -51,12 +51,12 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
 
   type S = Fx.fx1[Safe]
 
-  def safe1 = prop { n: Int =>
+  def safe1 = prop { (n: Int) =>
     protect[S, Int](action(n)).runSafe.run ====
       Either.cond(isEven(n), n, boom) -> List()
   }
 
-  def attempt1 = prop { n: Int =>
+  def attempt1 = prop { (n: Int) =>
     protect[S, Int](action(n)).attempt.runSafe.run ====
       (Right(Either.cond(isEven(n), n, boom)) -> List())
   }
@@ -117,7 +117,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
 
   }.setGens(genInt, genInt, genInt, genInt).noShrink
 
-  def finalize2 = prop { xs: List[Int] =>
+  def finalize2 = prop { (xs: List[Int]) =>
     val messages: ListBuffer[String] = new ListBuffer
 
     val program =
@@ -127,25 +127,25 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     messages.toList ==== List("out")
   }
 
-  def catchThrowable1 = prop { n: Int =>
+  def catchThrowable1 = prop { (n: Int) =>
     val program = protect[S, Int](action(n)).catchThrowable(identity, _ => pure(1))
 
     program.runSafe.run ==== (Right(if (isEven(n)) n else 1) -> List())
   }.setGen(genInt)
 
-  def catchThrowable2 = prop { n: Int =>
+  def catchThrowable2 = prop { (n: Int) =>
     val program = (protect[S, Int](action(n)) `finally` protect[S, Unit](throw finalBoom)).catchThrowable(identity, _ => pure(1))
 
     program.runSafe.run ==== (Right(if (isEven(n)) n else 1) -> List(finalBoom))
   }.setGen(genInt)
 
-  def catchThrowable3 = prop { n: Int =>
+  def catchThrowable3 = prop { (n: Int) =>
     val program = protect[S, Int](action(n)).catchThrowable(identity, _ => pure(1)) `finally` protect[S, Unit](throw finalBoom)
 
     program.runSafe.run ==== (Right(if (isEven(n)) n else 1) -> List(finalBoom))
   }.setGen(genInt)
 
-  def ignoreException1 = prop { n: Int =>
+  def ignoreException1 = prop { (n: Int) =>
     def runWithException(t: Throwable): Throwable Either Unit =
       protect[S, Int](throw t).ignoreException[IllegalArgumentException].execSafe.run
 
@@ -153,7 +153,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     runWithException(new IllegalArgumentException("ok")) must beRight[Unit]
   }
 
-  def whenThrowable1 = prop { n: Int =>
+  def whenThrowable1 = prop { (n: Int) =>
     def runWithException(t: Throwable): Throwable Either Int =
       protect[S, Int](throw t).whenThrowable {
         case _: IllegalArgumentException => pure(0)
@@ -165,7 +165,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     runWithException(new IllegalStateException("ok")) ==== Right(1)
   }
 
-  def mixedWithOtherEffects1 = prop { n: Int =>
+  def mixedWithOtherEffects1 = prop { (n: Int) =>
 
     type SOE = Fx.fx3[Safe, Option, Eval]
 

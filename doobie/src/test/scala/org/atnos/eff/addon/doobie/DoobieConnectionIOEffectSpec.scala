@@ -106,7 +106,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
 
   def queryTable(i: Int): ConnectionIO[Int] = sql"select $i".query[Int].unique
 
-  def withExceptionMessage(msg: String): ValueCheck[Throwable] = { err: Throwable =>
+  def withExceptionMessage(msg: String): ValueCheck[Throwable] = { (err: Throwable) =>
     err.getMessage must_== msg
   }
 }

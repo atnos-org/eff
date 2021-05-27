@@ -253,9 +253,9 @@ lazy val sharedPublishSettings = Seq(
 lazy val notesSettings = Seq(
   ghreleaseRepoOrg := "atnos-org",
   ghreleaseRepoName := "eff",
-  ghreleaseTitle := { tagName: TagName => s"eff ${tagName.replace("EFF-", "")}" },
-  ghreleaseIsPrerelease := { tagName: TagName => false },
-  ghreleaseNotes := { tagName: TagName =>
+  ghreleaseTitle := { (tagName: TagName) => s"eff ${tagName.replace("EFF-", "")}" },
+  ghreleaseIsPrerelease := { (tagName: TagName) => false },
+  ghreleaseNotes := { (tagName: TagName) =>
     // find the corresponding release notes
     val notesFilePath = s"notes/${tagName.replace("EFF-", "")}.markdown"
     try scala.io.Source.fromFile(notesFilePath).mkString
