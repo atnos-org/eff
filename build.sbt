@@ -317,7 +317,14 @@ lazy val specs2 = Def.setting(
   ).map(
     _ % specs2Version % "test" cross CrossVersion.for3Use2_13
   ).map(
-    _.exclude("org.specs2", "xml_sjs1_" + scalaBinaryVersion.value)
+    _.exclude(
+      "org.specs2",
+      if (scalaBinaryVersion.value == "3") {
+        "xml_sjs1_2.13"
+      } else {
+        "xml_sjs1_" + scalaBinaryVersion.value
+      }
+    )
   )
 )
 
