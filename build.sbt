@@ -127,7 +127,7 @@ lazy val scoverageSettings = Seq(
   coverageExcludedPackages := "org\\.atnos\\.eff\\.bench\\..*"
 )
 
-def Scala212 = "2.12.13"
+def Scala212 = "2.12.14"
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
