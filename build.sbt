@@ -1,5 +1,4 @@
 import org.scalajs.jsenv.nodejs._
-import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 lazy val specs2Version      = "4.12.0"
 lazy val twitterUtilVersion = "21.5.0"
