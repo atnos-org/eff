@@ -372,7 +372,8 @@ trait EffInterpretation {
         case Impure(NoEffect(a), c, Last(Some(l))) =>
           Eval.later(c(a)).flatMap(runEval).flatMap(res => runEval(l.value).as(res))
 
-        case other => sys.error("impossible: cannot run the effects in "+other)
+        case other =>
+          throw new EffImpossibleException("impossible: cannot run the effects in "+other)
       }
 
     runEval(eff).value

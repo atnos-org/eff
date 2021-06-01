@@ -29,7 +29,7 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
     new IntoPoly[NoFx, R] {
       val unionInto: UnionInto[NoFx, R] = new UnionInto[NoFx, R] {
         def apply[A](union: Union[NoFx, A]): Union[R, A] =
-          sys.error("impossible NoFx into R is only for pure values")
+          throw new EffImpossibleException("impossible NoFx into R is only for pure values")
       }
     }
 
@@ -39,8 +39,8 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
         def apply[A](union: Union[FxAppend[NoFx, R], A]): Union[R, A] =
           union match {
             case UnionAppendR(r)   => r
-            case UnionAppendL(l)   => sys.error("impossible - intoNoFxAppendL for UnionAppendL")
-            case UnionTagged(_, _) => sys.error("impossible - intoNoFxAppendL for UnionTagged")
+            case UnionAppendL(l)   => throw new EffImpossibleException("impossible - intoNoFxAppendL for UnionAppendL")
+            case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoNoFxAppendL for UnionTagged")
           }
       }
     }
@@ -51,8 +51,8 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
         def apply[A](union: Union[FxAppend[R, NoFx], A]): Union[R, A] =
           union match {
             case UnionAppendL(l)   => l
-            case UnionAppendR(r)   => sys.error("impossible - intoNoFxAppendR for UnionAppendR")
-            case UnionTagged(_, _) => sys.error("impossible - intoNoFxAppendR for UnionTagged")
+            case UnionAppendR(r)   => throw new EffImpossibleException("impossible - intoNoFxAppendR for UnionAppendR")
+            case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoNoFxAppendR for UnionTagged")
           }
       }
     }
@@ -78,7 +78,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           def apply[X](union: Union[FxAppend[Fx1[T2], R], X]) = union match {
             case UnionAppendL(l)   => UnionAppendL(l.tagged.increment)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible - intoAppendL2L for UnionTagged")
+            case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoAppendL2L for UnionTagged")
           }
         }
     }
@@ -90,7 +90,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           def apply[X](union: Union[FxAppend[Fx1[T1], R], X]) = union match {
             case UnionAppendL(l)   => UnionAppendL(l.forget)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible - intoAppendL2R for UnionTagged")
+            case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoAppendL2R for UnionTagged")
           }
         }
     }
@@ -102,7 +102,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           def apply[X](union: Union[FxAppend[Fx2[T2, T3], R], X]) = union match {
             case UnionAppendL(l)   => UnionAppendL(l.tagged.increment)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible - intoAppendL3L for UnionTagged")
+            case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoAppendL3L for UnionTagged")
           }
         }
     }
@@ -116,7 +116,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
               if (l.tagged.index == 1) UnionAppendL(l.tagged.forget)
               else                     UnionAppendL(l.tagged.increment)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible - intoAppendL3M for UnionTagged")
+            case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoAppendL3M for UnionTagged")
           }
         }
     }
@@ -128,7 +128,7 @@ trait IntoPolyLower2  extends IntoPolyLower3 {
           def apply[X](union: Union[FxAppend[Fx2[T1, T2], R], X]) = union match {
             case UnionAppendL(l)   => UnionAppendL(l.forget)
             case UnionAppendR(r)   => UnionAppendR(r)
-            case UnionTagged(_, _) => sys.error("impossible - intoAppendL3R for UnionTagged")
+            case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoAppendL3R for UnionTagged")
           }
         }
     }
