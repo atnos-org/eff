@@ -1,0 +1,6 @@
+- [fix `Cannot cast to scala.Nothing` error in Scala 3](https://github.com/atnos-org/eff/commit/2cefd3e82ecb3e6f5f3c5806227452ab2430e4d6)
+- [Scala 3.0.1-RC1](https://github.com/atnos-org/eff/commit/007efdc3f997b3938523e205e181f13cee946070)
+- [Update catbird-util to 21.5.0](https://github.com/atnos-org/eff/commit/cc304f4d9868999de0a18f2e0b9d8273dc5dbc96)
+- [avoid sys.error](https://github.com/atnos-org/eff/commit/b4acc2017d374cda12f1ba56711d9b59fd3d6714)
+- [Update util-core to 21.5.0](https://github.com/atnos-org/eff/commit/136cad2014952b0007de3b6939abfc28551bbe14)
+- [Update scala-library, scala-reflect to 2.12.14](https://github.com/atnos-org/eff/commit/f43de12b1f84af5d293be1424d9842b302c031cb)
