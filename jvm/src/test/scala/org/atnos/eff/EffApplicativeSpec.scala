@@ -3,7 +3,7 @@ package org.atnos.eff
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import org.specs2.{ScalaCheck, Specification}
-import cats.syntax.all._
+import cats.syntax.all.{ catsSyntaxEq => _, _ }
 import cats.Eq
 import org.atnos.eff.Batchable
 import org.atnos.eff.all._

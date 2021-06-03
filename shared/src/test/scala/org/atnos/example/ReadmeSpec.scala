@@ -2,7 +2,6 @@ package org.atnos.example
 
 import org.specs2.Specification
 import org.atnos.eff._
-import cats.syntax.all._
 import cats.data._
 import cats.Eval
 import ReaderEffect._
