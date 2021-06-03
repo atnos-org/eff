@@ -1,6 +1,9 @@
 package org.atnos.eff
 
 private[eff] object EffCompat {
-  inline def cast[A, B](inline value: A): B =
-    value.asInstanceOf[B]
+
+  extension [A](self: A) {
+    inline def cast[B]: B = self.asInstanceOf[B]
+  }
+
 }
