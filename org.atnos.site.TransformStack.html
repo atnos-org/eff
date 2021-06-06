@@ -409,8 +409,8 @@ sealed trait Authenticated[A]
 case class Authenticate(token: String) extends Authenticated[AccessRights]
 type _authenticate[U] = Authenticated |= U
 
-type AuthErroEither[A] = AuthError Either A
-type _error[U] = AuthErroEither |= U
+type AuthErrorEither[A] = AuthError Either A
+type _error[U] = AuthErrorEither |= U
 
 /**
  * The order of implicit parameters is really important for type inference!
