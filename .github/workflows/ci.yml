@@ -20,7 +20,7 @@ jobs:
             scala: 2
     steps:
     - uses: actions/checkout@v2.3.4
-    - uses: olafurpg/setup-scala@v10
+    - uses: olafurpg/setup-scala@v12
       with:
         java-version: "adopt@1.${{ matrix.java }}"
     - uses: coursier/cache-action@v6
@@ -50,7 +50,7 @@ jobs:
         wget https://github.com/jgm/pandoc/releases/download/2.13/pandoc-2.13-1-amd64.deb
         sudo dpkg -i pandoc-2.13-1-amd64.deb
         pandoc --version
-    - uses: olafurpg/setup-scala@v10
+    - uses: olafurpg/setup-scala@v12
       with:
         java-version: "adopt@1.8"
     - uses: actions/checkout@v2.3.4
