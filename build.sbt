@@ -33,14 +33,16 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file(".
   .jvmSettings(notesSettings)
   .settings(
     effSettings,
-    (Compile / unmanagedSourceDirectories) ++= {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, _)) =>
-          Seq(
-            (LocalRootProject / baseDirectory).value / "shared/src/main/scala-2"
-          )
-        case _ =>
-          Nil
+    Seq(Compile, Test).map { x =>
+      (x / unmanagedSourceDirectories) ++= {
+        CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, _)) =>
+            Seq(
+              (LocalRootProject / baseDirectory).value / ("shared/src/" + Defaults.nameForSrc(x.name) + "/scala-2")
+            )
+          case _ =>
+            Nil
+        }
       }
     }
   )
