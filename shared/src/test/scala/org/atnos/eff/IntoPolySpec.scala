@@ -1,5 +1,6 @@
 package org.atnos.eff
 
+import EffCompat._
 import cats.data._
 import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
@@ -90,7 +91,7 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
       case Impure(NoEffect(a), c, _) => runOption(c(a))
       case Impure(u: Union[_,_], c, _) =>
         m.project(u) match {
-          case Right(oa) => runOption(c(oa.a))
+          case Right(oa) => runOption(c.cast[Continuation[R, Any, Int]].apply(oa.a))
           case Left(u1) => Impure[U, u1.X, Int](u1, Continuation.lift(x => runOption(c(x))))
         }
       case a@ImpureAp(_,_,_) => runOption(a.toMonadic)

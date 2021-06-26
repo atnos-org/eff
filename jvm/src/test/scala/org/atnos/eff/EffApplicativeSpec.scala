@@ -5,6 +5,7 @@ import org.scalacheck._
 import org.specs2.{ScalaCheck, Specification}
 import cats.syntax.all.{ catsSyntaxEq => _, _ }
 import cats.Eq
+import org.atnos.eff.EffCompat._
 import org.atnos.eff.Batchable
 import org.atnos.eff.all._
 import org.atnos.eff.concurrent.Scheduler
@@ -123,12 +124,18 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
 
     def runDsl[A](eff: Eff[Fx1[UserDsl], A]): A =
       eff match {
-        case Pure(a, _) => a
-        case Impure(NoEffect(a), c, _)                  => runDsl(c(a))
-        case Impure(UnionTagged(GetUser(i), _), c, _)   => runDsl(c(getWebUser(i)))
-        case Impure(UnionTagged(GetUsers(is), _), c, _) => runDsl(c(getWebUsers(is)))
-        case ap @ ImpureAp(u, m, _)                     => runDsl(ap.toMonadic)
-        case Impure(_, _, _)                            => sys.error("this should not happen with just one effect. Got "+eff)
+        case Pure(a, _) =>
+          a
+        case Impure(NoEffect(a), c, _) =>
+          runDsl(c(a))
+        case Impure(UnionTagged(GetUser(i), _), c, _) =>
+          runDsl(c.cast[Continuation[Fx1[UserDsl], User, A]].apply(getWebUser(i)))
+        case Impure(UnionTagged(GetUsers(is), _), c, _) =>
+          runDsl(c.cast[Continuation[Fx1[UserDsl], List[User], A]].apply((getWebUsers(is))))
+        case ap @ ImpureAp(u, m, _) =>
+          runDsl(ap.toMonadic)
+        case Impure(_, _, _) =>
+          sys.error("this should not happen with just one effect. Got "+eff)
       }
 
     def action1[R :_userDsl] =
