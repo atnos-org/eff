@@ -3,7 +3,7 @@ package org.atnos.eff
 import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
 
-class MemberInstancesSpec extends Specification with ThrownExpectations { def is = s2"""
+class MemberInstancesSpec extends Specification with ThrownExpectations with Specs2Compat { def is = s2"""
 
  The MemberInOut and Member implicit definitions must create lawful instances:
 

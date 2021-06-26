@@ -9,7 +9,7 @@ import reader._
 import state._
 import syntax.all._
 
-class MemberSpec extends Specification with ScalaCheck { def is = s2"""
+class MemberSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
 
 for 3-element stacks:
 

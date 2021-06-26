@@ -15,7 +15,7 @@ import org.specs2.matcher.ThrownExpectations
 
 import scala.util.control._
 
-class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = sequential ^ s2"""
+class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = sequential ^ s2"""
 
  Future effects can work as normal values                      $e1
  Future effects can be attempted                               $e2
@@ -53,7 +53,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
       b <- futureDelay(20)
     } yield a + b
 
-    action[S].runOption.runSequential must beSome(30).await(retries = 5, timeout = 5.seconds)
+    Await.result(action[S].runOption.runSequential, 20.seconds) must_== Some(30)
   }
 
   def e2 = {
@@ -91,7 +91,8 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
     type U = Fx.prepend[Choose, S]
     val action = list.traverseA(i => chooseFrom[U, Int](List(1)) >> futureDelay[U, String](i.toString))
 
-    action.runChoose[List].runOption.map(_.map(_.flatten)).runSequential must beSome(list.map(_.toString)).await(retries = 5, timeout = 5.seconds)
+    val x = action.runChoose[List].runOption.map(_.map(_.flatten)).runSequential
+    Await.result(x, 20.seconds) must beSome(list.map(_.toString))
   }
 
   def e6 = {
@@ -111,7 +112,8 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   }
 
   def e8 = {
-    futureDelay({ sleepFor(10000.millis); 1 }, timeout = Some(50.millis)).futureAttempt.runSequential must beLeft.awaitFor(20.seconds)
+    val x = futureDelay({ sleepFor(10000.millis); 1 }, timeout = Some(50.millis)).futureAttempt.runSequential
+    Await.result(x, 20.seconds) must beLeft
   }
 
   def e9 = {
@@ -185,7 +187,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   def e15 = {
     val list = (1 to 5000).toList
     val action = list.traverse(i => futureDelay(i)).detachA(TimedFuture.ApplicativeTimedFuture)
-    action.runNow(scheduler, ec) must be_===(list).awaitFor(10.second)
+    Await.result(action.runNow(scheduler, ec), 10.seconds) must_== list
   }
 
   def retry1 = {

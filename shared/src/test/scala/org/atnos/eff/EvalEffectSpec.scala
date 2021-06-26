@@ -7,7 +7,7 @@ import org.atnos.eff.syntax.all._
 import cats.syntax.all._
 import cats.Eval
 
-class EvalEffectSpec extends Specification { def is = s2"""
+class EvalEffectSpec extends Specification with Specs2Compat { def is = s2"""
 
  run is stack safe with Eval               $stacksafeRun
  attempt is stack safe with Eval           $stacksafeAttempt

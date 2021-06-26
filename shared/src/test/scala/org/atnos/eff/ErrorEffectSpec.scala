@@ -10,7 +10,7 @@ import cats.Eval
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class ErrorEffectSpec extends Specification { def is = s2"""
+class ErrorEffectSpec extends Specification with Specs2Compat { def is = s2"""
 
  An action can be evaluated after another
    when the first action is ok   $andFinallyOk

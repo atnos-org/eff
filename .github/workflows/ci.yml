@@ -34,7 +34,8 @@ jobs:
           3)
             sbt -v -sbt-opts .github/workflows/.sbtopts \
             '++ 3.0.2-RC1-bin-20210625-3ecc0a8-NIGHTLY!' \
-            Test/compile
+            compile \
+            coreJVM/test
             ;;
           *)
             echo "unknown scala version"

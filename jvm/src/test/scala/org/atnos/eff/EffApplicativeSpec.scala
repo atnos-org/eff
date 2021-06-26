@@ -19,7 +19,7 @@ import scala.concurrent._
 import duration._
 import scala.collection.mutable.ListBuffer
 
-class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = s2"""
 
  *> uses the applicative "sequencing" whereas >> uses the monadic sequencing $operators
  This means that *> will discard the left result but can still run 2 actions concurrently
@@ -47,8 +47,8 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
       OptionEffect.some[S, Int](2) >>
       futureDelay[S, Int] { messages.append("action2"); 2 }
 
-    (action1 >> action2).runOption.runAsync must beSome.await
-    (action1 *> action2).runOption.runAsync must beSome.await
+    Await.result((action1 >> action2).runOption.runAsync, 10.seconds) must beSome
+    Await.result((action1 *> action2).runOption.runAsync, 10.seconds) must beSome
 
     messages.toList ==== List("action1", "action2", "action2", "action1")
 

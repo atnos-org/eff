@@ -14,7 +14,7 @@ import Member.{<=}
 import cats.Eval
 import org.specs2._
 
-class ActionSpec extends Specification with ScalaCheck { def is = s2"""
+class ActionSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
 
  The action stack can be used to
    compute values                      $computeValues

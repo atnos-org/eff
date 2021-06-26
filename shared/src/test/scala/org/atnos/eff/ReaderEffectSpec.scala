@@ -6,7 +6,7 @@ import cats.data._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class ReaderEffectSpec extends Specification { def is = s2"""
+class ReaderEffectSpec extends Specification with Specs2Compat { def is = s2"""
 
  local can be used to "zoom" on a configuration $localEffect
    localKleisli for the Kleisli effect $localKleisliEffect

@@ -8,7 +8,7 @@ import org.atnos.eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class StacksSpec extends Specification { def is = s2"""
+class StacksSpec extends Specification with Specs2Compat { def is = s2"""
 
  Some domains may use different effect stacks sharing some common effects.
  When we want to use functions from 2 different domains we want to unify all the effects into one stack.

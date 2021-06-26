@@ -6,7 +6,7 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2.{ScalaCheck, Specification}
 
-class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
+class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
 
  run the validate effect                     $validateOk
  run the validate effect with nothing        $validateKo
@@ -116,7 +116,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck { def is = s2"""
     type Comput = Fx.fx2[Validate[E, *], Writer[E, *]]
     type Check[A] = Eff[Comput, A]
 
-    val handle: E => Check[Unit] = { case e => tell[Comput, E](e).as(()) }
+    val handle: E => Check[Unit] = { case e => tell[Comput, E](e).map(_ => ()) }
 
     val comp1: Check[Int] = for {
       _ <- wrong[Comput, E]("1").catchFirstWrong(handle)

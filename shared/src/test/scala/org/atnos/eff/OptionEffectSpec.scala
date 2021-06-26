@@ -8,7 +8,7 @@ import Eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class OptionEffectSpec extends Specification with ScalaCheck { def is = s2"""
+class OptionEffectSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
 
  run the option monad                     $optionMonad
  run the option monad with nothing        $optionWithNothingMonad

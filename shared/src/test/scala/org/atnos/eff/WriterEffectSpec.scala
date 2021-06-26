@@ -9,7 +9,7 @@ import org.specs2.matcher.ThrownExpectations
 
 import scala.collection.mutable.ListBuffer
 
-class WriterEffectSpec extends Specification with ThrownExpectations { def is = s2"""
+class WriterEffectSpec extends Specification with ThrownExpectations with Specs2Compat { def is = s2"""
 
  A writer effect can use a side-effecting fold to be evaluated $sideEffecting
 

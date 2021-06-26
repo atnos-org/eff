@@ -12,7 +12,7 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2.matcher.ThrownExpectations
 
-class EffSpec extends Specification with ScalaCheck with ThrownExpectations { def is = s2"""
+class EffSpec extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = s2"""
 
  The Eff monad respects the laws            $laws
 
@@ -107,14 +107,14 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
     val list = (1 to 5000).toList
     val action = list.traverse(i => WriterEffect.tell[WriterStringFx, String](i.toString))
 
-    runWriter(action).run ==== ((list.as(()), list.map(_.toString)))
+    runWriter(action).run ==== ((list.map(_ => ()), list.map(_.toString)))
   }
 
   def stacksafeReader = {
     val list = (1 to 5000).toList
     val action = list.traverse(i => ReaderEffect.ask[ReaderStringFx, String])
 
-    action.runReader("h").run ==== list.as("h")
+    action.runReader("h").run ==== list.map(_ => "h")
   }
 
   def stacksafeReaderWriter = {
@@ -123,7 +123,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations { de
     val list = (1 to 5000).toList
     val action = list.traverse(i => ReaderEffect.ask[S, String] >>= WriterEffect.tell[S, String])
 
-    action.runReader("h").runWriter.run ==== ((list.as(()), list.as("h")))
+    action.runReader("h").runWriter.run ==== ((list.map(_ => ()), list.map(_ => "h")))
   }
 
   def tailrec = {

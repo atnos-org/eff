@@ -1,6 +1,12 @@
 import org.scalajs.jsenv.nodejs._
 
-lazy val specs2Version      = "4.12.2"
+lazy val specs2Version = Def.setting(
+  if (scalaBinaryVersion.value == "3") {
+    "5.0.0-ALPHA-03"
+  } else {
+    "4.12.2"
+  }
+)
 lazy val twitterUtilVersion = "21.6.0"
 lazy val catbirdVersion     = "21.5.0"
 lazy val doobieVersion      = "0.13.4"
@@ -14,7 +20,7 @@ effSettings
 noPublishSettings
 commonJvmSettings
 libraryDependencies ++= scalameter
-libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
+libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version.value % "test"
 disableScala3
 
 dependsOn(
@@ -136,17 +142,9 @@ lazy val buildSettings = Seq(
   crossScalaVersions := Seq(Scala212, "2.13.6")
 )
 
-lazy val commonSettings = Seq(
+lazy val commonSettings = Def.settings(
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.6.1",
   scalacOptions ++= commonScalacOptions.value,
-  Test / test := {
-    // TODO await specs2 for Scala 3
-    if (scalaBinaryVersion.value == "3") {
-      ()
-    } else {
-      (Test / test).value
-    }
-  },
   (Compile / doc / scalacOptions) ++= {
     Seq(
       "-sourcepath",
@@ -169,7 +167,13 @@ lazy val commonSettings = Seq(
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
-  libraryDependencies ++= specs2.value,
+  libraryDependencies ++= {
+    if (scalaBinaryVersion.value == "3") {
+      Nil
+    } else {
+      specs2.value
+    }
+  },
   parallelExecution := false,
   scalacOptions += {
     val a = (LocalRootProject / baseDirectory).value.toURI.toString
@@ -327,7 +331,7 @@ lazy val specs2 = Def.setting(
     "org.specs2" %%% "specs2-scalacheck",
     "org.specs2" %%% "specs2-junit",
   ).map(
-    _ % specs2Version % "test" cross CrossVersion.for3Use2_13
+    _ % specs2Version.value % "test"
   ).map(
     _.exclude(
       "org.specs2",

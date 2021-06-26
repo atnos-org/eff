@@ -6,7 +6,7 @@ import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
+class StateEffectSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
 
  The state monad can be used to put/get state $putGetState
  modify can be used to modify the current state $modifyState
@@ -51,7 +51,7 @@ class StateEffectSpec extends Specification with ScalaCheck { def is = s2"""
   def stacksafeState = {
 
     val list = (1 to 10000).toList
-    val action = list.traverse(i => StateEffect.put[SI, Int](i).as(i.toString))
+    val action = list.traverse(i => StateEffect.put[SI, Int](i).map(_ => i.toString))
 
     action.runState(0).run ==== ((list.map(_.toString), list.size))
   }
