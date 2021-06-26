@@ -1,7 +1,5 @@
 package org.atnos.eff
 
-import EffCompat._
-
 /**
  * This trait provides a way to rewrite applicative effects
  * when there is an operation allowing the batching of some effects based on the Batchable typeclass
@@ -38,7 +36,7 @@ trait Batch {
                 eff
 
               case (e1: T[_]) +: rest1 =>
-                ImpureAp(Unions(m.inject(e1.cast[T[Any]]), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
+                ImpureAp(Unions(m.inject(e1), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
                   // the map operation has to reorder the results based on what could be batched or not
                   continuation.contramap(ls => reorder(ls, result.keys ++ collected.otherIndices)), last)
             }
