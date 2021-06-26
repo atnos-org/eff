@@ -366,5 +366,12 @@ lazy val disableScala3 = Def.settings(
       }
     }
   },
+  Test / test := {
+    if (scalaBinaryVersion.value == "3") {
+      ()
+    } else {
+      (Test / test).value
+    }
+  },
   publish / skip := (scalaBinaryVersion.value == "3"),
 )
