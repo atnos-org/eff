@@ -16,7 +16,7 @@ def runInteract[R, A](effect: Eff[R, A])(implicit m: Interact <= R): Eff[m.Out, 
   recurse(effect)(new Recurser[Interact, m.Out, A, A] {
     def onPure(a: A): A = a
 
-    def onEffect[X](i: Interact[X]): X Either Eff[m.Out, A] = Left {
+    def onEffect[X](i: Interact[X]): X Either Eff[m.Out, A] = Left[X, Eff[m.Out, A]] {
       i match {
         case Ask(prompt) =>
           println(prompt)
@@ -41,7 +41,7 @@ def runDataOp[R, A](effect: Eff[R, A])(implicit m: DataOp <= R): Eff[m.Out, A] =
   recurse(effect)(new Recurser[DataOp, m.Out, A, A] {
     def onPure(a: A): A = a
 
-    def onEffect[X](i: DataOp[X]): X Either Eff[m.Out, A] = Left {
+    def onEffect[X](i: DataOp[X]): X Either Eff[m.Out, A] = Left[X, Eff[m.Out, A]] {
       i match {
         case AddCat(a)    => memDataSet.append(a); ()
         case GetAllCats() => memDataSet.toList

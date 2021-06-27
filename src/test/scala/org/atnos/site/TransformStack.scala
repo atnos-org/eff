@@ -322,9 +322,9 @@ You can find a fully working example of this approach in `src/test/org/atnos/exa
 }
 
 // 8<---
-trait T1[_]
-trait T2[_]
-trait T3[_]
-trait T4[_]
+trait T1[A]
+trait T2[A]
+trait T3[A]
+trait T4[A]
 // 8<---
 
