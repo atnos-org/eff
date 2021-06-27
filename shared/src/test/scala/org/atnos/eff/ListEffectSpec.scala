@@ -6,7 +6,7 @@ import org.atnos.eff.syntax.all._
 
 import cats.syntax.all._
 
-class ListEffectSpec extends Specification { def is = s2"""
+class ListEffectSpec extends Specification with Specs2Compat { def is = s2"""
 
  List effect example       $listEffect
  Empty list effect example $emptyList
@@ -41,7 +41,7 @@ class ListEffectSpec extends Specification { def is = s2"""
     val action: Eff[L, List[Int]] =
       list.traverse(i => singleton[L, Int](i))
 
-    action.runList.run.flatten must_== list
+    action.runList.run.flatMap(identity) must_== list
   }
 
 }
