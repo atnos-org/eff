@@ -35,7 +35,8 @@ jobs:
             sbt -v -sbt-opts .github/workflows/.sbtopts \
             '++ 3.0.2-RC1-bin-20210625-3ecc0a8-NIGHTLY!' \
             compile \
-            coreJVM/test
+            "all catsEffectJVM/Test/compile coreJVM/Test/compile doobie/Test/compile monixJVM/Test/compile scalazJVM/Test/compile twitter/Test/compile" \
+            "all catsEffectJVM/test coreJVM/test doobie/test scalazJVM/test twitter/test"
             ;;
           *)
             echo "unknown scala version"

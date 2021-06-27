@@ -15,7 +15,7 @@ import scala.concurrent._
 import duration._
 import org.specs2.matcher.ThrownExpectations
 
-class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations { def is = sequential ^ s2"""
+class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = sequential ^ s2"""
 
  Future effects can work as normal values                      $e1
  Future effects can be attempted                               $e2
