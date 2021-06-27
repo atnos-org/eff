@@ -59,7 +59,7 @@ lazy val coreJS = core.js
 
 lazy val doobie = project
   .settings(moduleName := "eff-doobie")
-  .dependsOn(coreJVM)
+  .dependsOn(coreJVM % "compile->compile;test->test")
   .settings(libraryDependencies ++= doobieJvm)
   .settings(effSettings ++ commonJvmSettings)
 
@@ -96,7 +96,7 @@ lazy val macros = project.in(file("macros"))
 
 lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
   .settings(moduleName := "eff-monix")
-  .dependsOn(core)
+  .dependsOn(core % "test->test;compile->compile")
   .settings(
     libraryDependencies += "io.monix" %%% "monix" % "3.4.0",
   )
@@ -109,7 +109,7 @@ lazy val monixJS =  monix.js
 
 lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
   .settings(
     libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.3.3" cross CrossVersion.for3Use2_13,
   )
@@ -123,7 +123,7 @@ lazy val scalazJS = scalaz.js
 
 lazy val twitter = project
   .settings(moduleName := "eff-twitter")
-  .dependsOn(coreJVM)
+  .dependsOn(coreJVM % "compile->compile;test->test")
   .settings(libraryDependencies ++= twitterUtilCore ++ catbird)
   .settings(effSettings ++ commonJvmSettings)
 

@@ -16,7 +16,7 @@ import org.atnos.eff.syntax.addon.monix.task._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "monix task".title ^ sequential ^ s2"""
+class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with Specs2Compat { def is = "monix task".title ^ sequential ^ s2"""
 
  Tasks can work as normal values                           $e1
  Task effects can be attempted                             $e2
@@ -58,7 +58,8 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       b <- taskDelay { boom; 20 }
     } yield a + b
 
-    action[S].taskAttempt.runOption.runSequential.runToFuture must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
+    val result = Await.result(action[S].taskAttempt.runOption.runSequential.runToFuture, 10.seconds)
+    result must_== Some(Left(boomException))
   }
 
   def e3 = {
@@ -95,7 +96,8 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   }
 
   def e6 = {
-    taskDelay({ sleepFor(10000.millis); 1 }, timeout = Some(50.millis)).taskAttempt.runSequential.runToFuture must beLeft[Throwable].awaitFor(20.seconds)
+    val result = Await.result(taskDelay({ sleepFor(10000.millis); 1 }, timeout = Some(50.millis)).taskAttempt.runSequential.runToFuture, 10.seconds)
+    result must beLeft
   }
 
   def e7 = {
@@ -147,7 +149,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       else
         taskMemo("only once", cache, taskDelay { invocationsNumber += 1; 1 })
 
-    makeRequest.taskAttempt.runSequential.runToFuture must beLeft[Throwable].await
+    Await.result(makeRequest.taskAttempt.runSequential.runToFuture, 10.seconds) must beLeft
     makeRequest.taskAttempt.runSequential.runToFuture must beRight(1).await
 
     invocationsNumber must be_==(1)

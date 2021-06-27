@@ -3,14 +3,14 @@ package org.atnos.eff.addon.doobie
 import org.specs2.Specification
 import doobie._, doobie.implicits._
 import cats.effect._
-import org.atnos.eff.{Eff, Fx}
+import org.atnos.eff.{Eff, Fx, Specs2Compat}
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.syntax.addon.doobie._
 import org.specs2.matcher.{ThrownExpectations, ValueCheck}
 import doobie.free.connection
 
 
-class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations { def is = sequential ^ s2"""
+class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations with Specs2Compat { def is = sequential ^ s2"""
   ConnectionIO effects can be converted to IO-like effects $t1
 
   Failures are properly handled

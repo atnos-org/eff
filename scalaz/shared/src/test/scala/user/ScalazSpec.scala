@@ -11,7 +11,7 @@ import scalaz._
 import Scalaz._
 import org.specs2._
 
-class ScalazSpec extends Specification { def is = s2"""
+class ScalazSpec extends Specification with Specs2Compat { def is = s2"""
 
  The Eff monad must be usable with Scalaz typeclasses
    for Monad, Applicative, Traverse $traverse
