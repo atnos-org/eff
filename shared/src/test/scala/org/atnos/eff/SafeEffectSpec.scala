@@ -11,7 +11,7 @@ import EitherEffect.{right => rightEffect, left => leftEffect}
 
 import scala.collection.mutable.ListBuffer
 
-class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectations { def is = isolated ^ s2"""
+class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = sequential ^ s2"""
 
   The Safe effect can be used to protect resources and computations
   in the presence of exceptions.
@@ -241,7 +241,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     invocationsNumber must be_==(1)
   }
 
-  var i = 0
+  private[this] var i = 0
 
   def bracket1 = checkRelease {
     rightEffect[U, String, Int](1) >>= (v => protect[U, Int](v))
@@ -294,7 +294,9 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
 
   def checkRelease(use: Eff[U, Int]) = {
     bracketAction(use).execSafe.flatMap(either => fromEither(either.leftMap(_.getMessage))).runEither.run
-    i ==== 0
+    val result = i ==== 0
+    i = 0
+    result
   }
 
   def bracketAction[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
