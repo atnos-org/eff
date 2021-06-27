@@ -19,7 +19,7 @@ moduleName := "root"
 effSettings
 noPublishSettings
 commonJvmSettings
-libraryDependencies ++= scalameter
+libraryDependencies ++= scalameter.value
 libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version.value % "test"
 disableScala3
 
@@ -344,8 +344,13 @@ lazy val specs2 = Def.setting(
   )
 )
 
-lazy val scalameter = Seq(
-  "com.storm-enroute" %% "scalameter" % "0.19" % "test")
+lazy val scalameter = Def.setting(
+  if (scalaBinaryVersion.value == "3") {
+    Nil
+  } else {
+    Seq("com.storm-enroute" %% "scalameter" % "0.19" % "test")
+  }
+)
 
 lazy val twitterUtilCore = Seq(
   "com.twitter" %% "util-core" % twitterUtilVersion cross CrossVersion.for3Use2_13
