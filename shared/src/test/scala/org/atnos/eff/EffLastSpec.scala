@@ -9,7 +9,7 @@ import org.scalacheck.Gen
 import EitherEffect.{left => leftE, right => rightE}
 import scala.collection.mutable.ListBuffer
 
-class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2"""
+class EffLastSpec extends Specification with ScalaCheck with Specs2Compat { def is = sequential ^ s2"""
 
   An action can run completely at the end, regardless of the number of flatmaps $runLast
     now with one very last action which fails, there should be no exception     $runLastFail
@@ -104,7 +104,7 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
     messages.toList ==== List("a", "b", "boom")
   }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
 
-  var i = 0
+  private[this] var i = 0
 
   def e1 = checkRelease {
     rightE[S, String, Int](1) >>= (v => protect[S, Int](v))
@@ -144,7 +144,9 @@ class EffLastSpec extends Specification with ScalaCheck { def is = isolated ^ s2
 
   def checkRelease(use: Eff[S, Int]) = {
     eff(use).execSafe.flatMap(either => fromEither(either.leftMap(_.getMessage))).runEither.run
-    i ==== 0
+    val result = i ==== 0
+    i = 0
+    result
   }
 
   def eff[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
