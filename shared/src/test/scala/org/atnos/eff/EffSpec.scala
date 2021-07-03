@@ -318,7 +318,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
         }
       }
 
-      runStored(action[Fx.fx2[Writer[String, *], Stored]].augment(wAugment)).runWriterLog.run ==== List("a", "b", "c")
+    runStored(action[Fx.fx2[Writer[String, *], Stored]].augment(wAugment)).runWriterLog.run ==== List("a", "b", "c")
   }
 
   def writeEffect = {
