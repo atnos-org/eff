@@ -28,7 +28,6 @@ dependsOn(
   macros,
   monixJVM,
   scalazJVM,
-  twitter,
 )
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file("."))
@@ -113,6 +112,16 @@ lazy val twitter = project
   .dependsOn(coreJVM % "compile->compile;test->test")
   .settings(libraryDependencies ++= twitterUtilCore)
   .settings(effSettings ++ commonJvmSettings)
+  .settings(
+    conflictWarning := {
+      if (scalaBinaryVersion.value == "3") {
+        // TODO
+        ConflictWarning("warn", Level.Warn, false)
+      } else {
+        conflictWarning.value
+      }
+    },
+  )
 
 lazy val scoverageSettings = Seq(
   coverageMinimum := 60,
