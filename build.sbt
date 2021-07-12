@@ -8,7 +8,6 @@ lazy val specs2Version = Def.setting(
   }
 )
 lazy val twitterUtilVersion = "21.6.0"
-lazy val catbirdVersion     = "21.5.0"
 lazy val doobieVersion      = "0.13.4"
 
 enablePlugins(BuildInfoPlugin)
@@ -112,7 +111,7 @@ lazy val scalazJS = scalaz.js
 lazy val twitter = project
   .settings(moduleName := "eff-twitter")
   .dependsOn(coreJVM % "compile->compile;test->test")
-  .settings(libraryDependencies ++= twitterUtilCore ++ catbird)
+  .settings(libraryDependencies ++= twitterUtilCore)
   .settings(effSettings ++ commonJvmSettings)
 
 lazy val scoverageSettings = Seq(
@@ -342,10 +341,6 @@ lazy val scalameter = Def.setting(
 
 lazy val twitterUtilCore = Seq(
   "com.twitter" %% "util-core" % twitterUtilVersion cross CrossVersion.for3Use2_13
-)
-
-lazy val catbird = Seq(
-  "io.catbird" %% "catbird-util" % catbirdVersion cross CrossVersion.for3Use2_13
 )
 
 lazy val disableScala3 = Def.settings(
