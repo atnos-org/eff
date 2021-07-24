@@ -64,6 +64,21 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
     map.remove(new WeakReference[K](key.asInstanceOf[K], null))
   }
 
+  override def remove(key: Any, value: Any): Boolean = {
+    purgeKeys()
+    map.remove(new WeakReference(key, null), value)
+  }
+
+  override def replace(key: K, oldValue: V, newValue: V): Boolean = {
+    purgeKeys()
+    map.replace(newKey(key), oldValue, newValue)
+  }
+
+  override def replace(key: K, value: V): V = {
+    purgeKeys()
+    map.replace(newKey(key), value)
+  }
+
   def size: Int = {
     purgeKeys()
     map.size
