@@ -29,15 +29,14 @@ jobs:
           2)
             sbt -v -sbt-opts .github/workflows/.sbtopts \
             "+ Test/compile" \
-            "+testOnly -- timefactor 5 exclude travis"
+            "+ test"
             ;;
           3)
             sbt -v -sbt-opts .github/workflows/.sbtopts \
             '++ 3.0.2-RC1!' \
             compile \
             "all catsEffectJVM/Test/compile coreJVM/Test/compile doobie/Test/compile monixJVM/Test/compile scalazJVM/Test/compile twitter/Test/compile" \
-            "all catsEffectJVM/test coreJVM/test doobie/test scalazJVM/test twitter/test" \
-            "monixJVM/testOnly -- timefactor 5 exclude travis"
+            "all catsEffectJVM/test coreJVM/test doobie/test scalazJVM/test twitter/test monixJVM/test"
             ;;
           *)
             echo "unknown scala version"

@@ -19,7 +19,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
  Future effects can work as normal values                      $e1
  Future effects can be attempted                               $e2
- Future effects can be executed concurrently                   $e3 ${tag("travis")}
+ Future effects can be executed concurrently                   $e3
  Future effects are stacksafe with recursion                   $e6
  An Future effect can be created from Either                   $e7
  An Future forked computation can be timed out                 $e8
@@ -76,12 +76,19 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
       }
 
     val run = futureDelay[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action)
-    eventually(retries = 5, sleep = 0.seconds) {
-      messages.clear()
-      Await.result(run.runOption.runAsync, 4.seconds)
 
-      "the messages are ordered" ==> {
-        messages.toList ==== delays.sorted
+    eventually(retries = 5, sleep = 0.seconds) {
+      val executor = java.util.concurrent.Executors.newFixedThreadPool(delays.size)
+      val ec = ExecutionContext.fromExecutor(executor)
+      try {
+        messages.clear()
+        Await.result(run.runOption.runAsync(scheduler = implicitly, exc = ec, m = implicitly), 4.seconds)
+
+        "the messages are ordered" ==> {
+          messages.toList ==== delays.sorted
+        }
+      } finally {
+        executor.shutdown()
       }
     }
   }

@@ -20,7 +20,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
  Tasks can work as normal values                           $e1
  Task effects can be attempted                             $e2
- Task effects can be executed concurrently                 $e3 ${tag("travis")}
+ Task effects can be executed concurrently                 $e3
  Task effects are stacksafe with recursion                 $e5
  A forked task computation can be timed out                $e6
 
@@ -75,11 +75,16 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val run = taskDelay[S, Unit](Thread.sleep(1000)) >> Eff.traverseA(delays)(action)
 
     eventually(retries = 5, sleep = 0.seconds) {
-      messages.clear()
-      Await.result(run.runOption.runAsync.runToFuture, 3.seconds)
-
-      "the messages are ordered" ==> {
-        messages.toList ==== delays.sorted
+      val executor = java.util.concurrent.Executors.newFixedThreadPool(delays.size)
+      val scheduler = monix.execution.Scheduler(scala.concurrent.ExecutionContext.fromExecutor(executor))
+      try {
+        messages.clear()
+        Await.result(run.runOption.runAsync.runToFuture(scheduler), 3.seconds)
+        "the messages are ordered" ==> {
+          messages.toList ==== delays.sorted
+        }
+      } finally {
+        executor.shutdown()
       }
     }
 
