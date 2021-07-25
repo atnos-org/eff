@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentMap
  */
 class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
 
-  private val map = new ConcurrentHashMap[WeakReference[K], V]
-  private val queue = new ReferenceQueue[K]
+  private[this] val map = new ConcurrentHashMap[WeakReference[K], V]
+  private[this] val queue = new ReferenceQueue[K]
 
   override def putIfAbsent(key: K, value: V): V = {
     purgeKeys()
@@ -155,7 +155,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
 
   private abstract class WeakSafeIterator[T, U](weakIterator: java.util.Iterator[U]) extends java.util.Iterator[T] {
     advance()
-    private var strongNext: T = null.asInstanceOf[T]
+    private[this] var strongNext: T = null.asInstanceOf[T]
 
     def advance(): Unit  = {
       while (weakIterator.hasNext) {
