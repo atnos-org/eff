@@ -368,7 +368,9 @@ def putAndTell[R :_stateInt :_writerString](i: Int): Eff[R, Int] =
 </table>
 <h3 id="packing-member-instances">“Packing” member instances</h3>
 <p>Some function signatures can be repetitive when they always require the same list of effects:</p>
-<p>def foo1<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int] def foo2<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int] def foo3<a href="i:%20Int">R :_foo :_bar :_baz</a>: Eff[R, Int]</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo1<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo2<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo3<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span></code></pre></div>
 <p>It is possible to “pack” them with the following <code class="prettyprint">_effects</code> type definition:</p>
 <pre><code class="prettyprint">import org.atnos.eff.Members.{&amp;:, &amp;&amp;:}
 
