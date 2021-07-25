@@ -142,7 +142,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
       var error: Option[Throwable] = None
 
       val traversed: T[X] = xs.map {
-        case FailedFinalizer(t) => failedFinalizers.append(t); ().asInstanceOf[X]
+        case FailedFinalizer(t) => failedFinalizers.append(t); ()
         case FailedValue(t)     => error = Some(t); ().asInstanceOf[X]
         case EvaluateValue(v)   =>
           error match {
