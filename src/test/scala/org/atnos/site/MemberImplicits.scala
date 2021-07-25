@@ -62,9 +62,11 @@ There are 3 different ways to declare that an effect is part of an effect stack 
 
 Some function signatures can be repetitive when they always require the same list of effects:
 
-   def foo1[R :_foo :_bar :_baz](i: Int): Eff[R, Int]
-   def foo2[R :_foo :_bar :_baz](i: Int): Eff[R, Int]
-   def foo3[R :_foo :_bar :_baz](i: Int): Eff[R, Int]
+```scala
+def foo1[R :_foo :_bar :_baz](i: Int): Eff[R, Int]
+def foo2[R :_foo :_bar :_baz](i: Int): Eff[R, Int]
+def foo3[R :_foo :_bar :_baz](i: Int): Eff[R, Int]
+```
 
 It is possible to "pack" them with the following `_effects` type definition:${snippet{
 
