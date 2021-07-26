@@ -68,7 +68,7 @@ trait TaskInterpretation extends TaskTypes {
     MonadError[Task, Throwable]
 
   private[this] val monixTaskApplicative = new Applicative[Task] {
-    override def ap[A, B](ff: Task[(A) => B])(fa: Task[A]): Task[B] = Task.mapBoth(ff, fa)(_ (_))
+    override def ap[A, B](ff: Task[A => B])(fa: Task[A]): Task[B] = Task.mapBoth(ff, fa)(_ (_))
 
     override def map2[A, B, Z](fa: Task[A], fb: Task[B])(f: (A, B) => Z): Task[Z] = Task.mapBoth(fa, fb)(f)
 
@@ -78,7 +78,7 @@ trait TaskInterpretation extends TaskTypes {
 
     override val unit: Task[Unit] = Task.unit
 
-    override def map[A, B](fa: Task[A])(f: (A) => B): Task[B] = fa.map(f)
+    override def map[A, B](fa: Task[A])(f: A => B): Task[B] = fa.map(f)
   }
 
   def runAsync[R, A](e: Eff[R, A])(implicit m: Member.Aux[Task, R, NoFx]): Task[A] =
