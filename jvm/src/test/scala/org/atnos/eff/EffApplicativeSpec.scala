@@ -77,16 +77,22 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
   def traverseAConcurrent = {
     val list = (1 to 5000).toList
     type S = Fx.fx2[Option, TimedFuture]
+    val lock = new Object
     val messages: ListBuffer[Int] = new ListBuffer[Int]
 
     val traversed: Eff[S, List[Int]] =
       list.traverseA { i =>
         OptionEffect.some[S, Int](i) >>
-          futureDelay[S, Int] { messages.append(i); i }
+          futureDelay[S, Int] {
+            lock.synchronized {
+              messages.append(i)
+            }
+            i
+          }
       }
 
     traversed.runOption.runAsync must beSome(list).awaitFor(20.seconds)
-
+    messages.size === list.size
     messages.toList must not(beEqualTo(messages.toList.sorted))
   }
 
