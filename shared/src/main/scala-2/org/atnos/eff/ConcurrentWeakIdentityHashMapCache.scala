@@ -9,8 +9,8 @@ case class ConcurrentWeakIdentityHashMapCache(
 
   def memo[V](key: AnyRef, value: =>V): V = {
     lazy val v = value
-    if (map.putIfAbsent(key.asInstanceOf[AnyRef], Eval.later(v).memoize) == null) v
-    else map.get(key.asInstanceOf[AnyRef]).value.asInstanceOf[V]
+    if (map.putIfAbsent(key, Eval.later(v).memoize) == null) v
+    else map.get(key).value.asInstanceOf[V]
   }
 
   def put[V](key: AnyRef, value: V): V =
