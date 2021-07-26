@@ -2,7 +2,6 @@ package org.atnos.eff
 
 import cats._, data._
 import cats.syntax.all._
-import org.atnos.eff.all._
 import Interpret._
 
 /**
@@ -38,15 +37,15 @@ trait ValidateCreation {
 
   /** create a failed value */
   def wrong[R, E](e: E)(implicit m: Validate[E, *] |= R): Eff[R, Unit] =
-    send[Validate[E, *], R, Unit](Wrong(e))
+    Eff.send[Validate[E, *], R, Unit](Wrong(e))
 
   /** create a correct value */
   def correct[R, E, A](a: A)(implicit m: Validate[E, *] |= R): Eff[R, A] =
-    send[Validate[E, *], R, Unit](Correct[E]()) >> Eff.EffMonad[R].pure(a)
+    Eff.send[Validate[E, *], R, Unit](Correct[E]()) >> Eff.EffMonad[R].pure(a)
 
   /** create a pure warning */
   def warning[R, E](e: E)(implicit m: Validate[E, *] |= R): Eff[R, Unit] =
-    send[Validate[E, *], R, Unit](Warning[E](e))
+    Eff.send[Validate[E, *], R, Unit](Warning[E](e))
 
   /** create a correct value with warning */
   def warning[R, E, A](a: A, e: E)(implicit m: Validate[E, *] |= R): Eff[R, A] =
