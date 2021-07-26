@@ -25,7 +25,7 @@ final case class TimedFuture[A](callback: (Scheduler, ExecutionContext) => Futur
 
 object TimedFuture {
 
-  final def ApplicativeTimedFuture: Applicative[TimedFuture] = new Applicative[TimedFuture] {
+  final val ApplicativeTimedFuture: Applicative[TimedFuture] = new Applicative[TimedFuture] {
     def pure[A](x: A): TimedFuture[A] =
       TimedFuture((_, _) => Future.successful(x))
 
@@ -41,7 +41,7 @@ object TimedFuture {
     override def toString = "Applicative[TimedFuture]"
   }
 
-  implicit final def MonadTimedFuture: MonadError[TimedFuture, Throwable] = new MonadError[TimedFuture, Throwable] {
+  implicit final val MonadTimedFuture: MonadError[TimedFuture, Throwable] = new MonadError[TimedFuture, Throwable] {
     def pure[A](x: A): TimedFuture[A] =
       TimedFuture((_, _) => Future.successful(x))
 
