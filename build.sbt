@@ -197,7 +197,14 @@ lazy val commonJvmSettings = Seq(
   Test / fork := true,
   Global / cancelable := true,
   Test / scalacOptions ~= (_.filterNot(_ == "-Xfatal-warnings")),
-) ++ Seq(Test / scalacOptions ++= Seq("-Yrangepos"))
+  Test / scalacOptions ++= {
+    if (scalaBinaryVersion.value == "3") {
+      Nil
+    } else {
+      Seq("-Yrangepos")
+    }
+  },
+)
 
 lazy val commonNativeSettings = Def.settings(
   disableScala3,
