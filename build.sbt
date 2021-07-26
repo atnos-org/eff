@@ -208,7 +208,7 @@ lazy val commonJvmSettings = Seq(
 
 lazy val commonNativeSettings = Def.settings(
   disableScala3,
-  loadedTestFrameworks := Map.empty,
+  Test / loadedTestFrameworks := Map.empty,
   Test / sources := Nil,
   test := {},
   Test / testOnly := {},
