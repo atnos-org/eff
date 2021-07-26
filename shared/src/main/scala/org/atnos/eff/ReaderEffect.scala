@@ -72,7 +72,7 @@ trait ReaderInterpretation {
    */
   def translateReader[R, U, S, B, A](e: Eff[R, A], getter: B => S)
                                     (implicit sr: Member.Aux[Reader[S, *], R, U],
-                                             br: (Reader[B, *]) |= U): Eff[U, A] =
+                                             br: Reader[B, *] |= U): Eff[U, A] =
     translate(e) {
       new Translate[Reader[S, *], U] {
         def apply[X](r: Reader[S, X]): Eff[U, X] =

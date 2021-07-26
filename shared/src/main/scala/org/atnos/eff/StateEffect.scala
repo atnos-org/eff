@@ -51,7 +51,7 @@ trait StateImplicits {
       State((s: S1) => (s, r.run(s)))
   }
 
-  def via[S, T](get: S => T, set: T => S => S): (State[T, *] ~> State[S, *]) =
+  def via[S, T](get: S => T, set: T => S => S): State[T, *] ~> State[S, *] =
     new (State[T, *] ~> State[S, *]) {
       def apply[X](s: State[T, X]) =
         State[S, X] { s1 =>

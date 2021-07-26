@@ -166,10 +166,10 @@ object Rand {
         }
       }
 
-    def flatMap[A, B](fa: Rand[A])(f: (A) => Rand[B]): Rand[B] =
+    def flatMap[A, B](fa: Rand[A])(f: A => Rand[B]): Rand[B] =
       Rand[B](rand => fa.run(rand).flatMap(f(_).run(rand)))
 
-    def tailRecM[A, B](a: A)(f: (A) => Rand[Either[A, B]]): Rand[B] =
+    def tailRecM[A, B](a: A)(f: A => Rand[Either[A, B]]): Rand[B] =
       Rand[B] { random =>
         Monad[Option].tailRecM(a)(f(_).run(random))
       }

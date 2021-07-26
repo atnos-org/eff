@@ -17,7 +17,7 @@ trait reader {
       ReaderInterpretation.runKleisli[R, U, S, A, F](env)(e)(mx, m)
 
     def translateReader[U, S, B](getter: B => S)(implicit m1: Member.Aux[Reader[S, *], R, U],
-                                                          m2: (Reader[B, *]) |= U): Eff[U, A] =
+                                                          m2: Reader[B, *] |= U): Eff[U, A] =
       ReaderInterpretation.translateReader[R, U, S, B, A](e, getter)(m1, m2)
 
     def zoomReader[R2, U, S, T](f: T => S)(implicit readerS: Member.Aux[Reader[S, *], R, U],

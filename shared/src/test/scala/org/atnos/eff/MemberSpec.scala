@@ -145,12 +145,12 @@ for 4-element stacks:
   type ReadStr[E] = Reader[String, *] /= E
   type StateStr[E] = State[String, *] /= E
 
-  implicit def readerStateNat[S1]: (Reader[S1, *] ~> State[S1, *]) = new (Reader[S1, *] ~> State[S1, *]) {
+  implicit def readerStateNat[S1]: Reader[S1, *] ~> State[S1, *] = new (Reader[S1, *] ~> State[S1, *]) {
     def apply[X](r: Reader[S1, X]): State[S1, X] =
       State((s: S1) => (s, r.run(s)))
   }
 
-  implicit def stateReaderNat[S1]: (State[S1, *] ~> Reader[S1, *]) = new (State[S1, *] ~> Reader[S1, *]) {
+  implicit def stateReaderNat[S1]: State[S1, *] ~> Reader[S1, *] = new (State[S1, *] ~> Reader[S1, *]) {
     def apply[X](state: State[S1, X]): Reader[S1, X] =
       Reader((s: S1) => state.runA(s).value)
   }

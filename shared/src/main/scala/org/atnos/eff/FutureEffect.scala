@@ -29,7 +29,7 @@ object TimedFuture {
     def pure[A](x: A): TimedFuture[A] =
       TimedFuture((_, _) => Future.successful(x))
 
-    def ap[A, B](ff: TimedFuture[(A) => B])(fa: TimedFuture[A]): TimedFuture[B] = {
+    def ap[A, B](ff: TimedFuture[A => B])(fa: TimedFuture[A]): TimedFuture[B] = {
       val newCallback = { (scheduler: Scheduler, ec: ExecutionContext) =>
         val ffRan = ff.runNow(scheduler, ec)
         val faRan = fa.runNow(scheduler, ec)
@@ -45,10 +45,10 @@ object TimedFuture {
     def pure[A](x: A): TimedFuture[A] =
       TimedFuture((_, _) => Future.successful(x))
 
-    def flatMap[A, B](fa: TimedFuture[A])(f: (A) => TimedFuture[B]): TimedFuture[B] =
+    def flatMap[A, B](fa: TimedFuture[A])(f: A => TimedFuture[B]): TimedFuture[B] =
       TimedFuture[B]((scheduler, ec) => fa.runNow(scheduler, ec).flatMap(f(_).runNow(scheduler, ec))(ec))
 
-    def tailRecM[A, B](a: A)(f: (A) => TimedFuture[Either[A, B]]): TimedFuture[B] =
+    def tailRecM[A, B](a: A)(f: A => TimedFuture[Either[A, B]]): TimedFuture[B] =
       TimedFuture[B]({ (scheduler, ec) =>
         def loop(va: A): Future[B] = f(va).runNow(scheduler, ec).flatMap {
           case Left(na) => loop(na)

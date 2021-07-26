@@ -178,7 +178,7 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** catch and handle possible wrong values */
   @deprecated("Use catchFirstWrong or more general catchWrongs instead", "5.4.2")
-  def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: (Validate[E, *]) <= R): Eff[R, A] =
+  def catchWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, *] <= R): Eff[R, A] =
     catchFirstWrong(effect)(handle)
 }
 

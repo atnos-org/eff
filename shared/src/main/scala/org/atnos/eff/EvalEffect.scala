@@ -76,10 +76,10 @@ trait EvalInterpretation extends EvalTypes {
     def pure[A](x: A): Eval[A] =
       m.pure(x)
 
-    def flatMap[A, B](fa: Eval[A])(f: (A) => Eval[B]) =
+    def flatMap[A, B](fa: Eval[A])(f: A => Eval[B]) =
       m.flatMap(fa)(f)
 
-    def tailRecM[A, B](a: A)(f: (A) => Eval[Either[A, B]]): Eval[B] =
+    def tailRecM[A, B](a: A)(f: A => Eval[Either[A, B]]): Eval[B] =
       m.tailRecM(a)(f)
 
     def raiseError[A](e: Throwable): Eval[A] =
