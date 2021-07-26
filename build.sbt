@@ -170,6 +170,14 @@ lazy val commonJsSettings = Seq(
       specs2.value
     }
   },
+  Test / sources := {
+    if (scalaBinaryVersion.value == "3") {
+      // TODO
+      Nil
+    } else {
+      (Test / sources).value
+    }
+  },
   parallelExecution := false,
   scalacOptions += {
     val a = (LocalRootProject / baseDirectory).value.toURI.toString
