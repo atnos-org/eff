@@ -33,7 +33,7 @@ object TwitterTimedFuture {
     def pure[A](x: A): TwitterTimedFuture[A] =
       TwitterTimedFuture((_, _) => Future.value(x))
 
-    def ap[A, B](ff: TwitterTimedFuture[(A) => B])(fa: TwitterTimedFuture[A]): TwitterTimedFuture[B] = {
+    def ap[A, B](ff: TwitterTimedFuture[A => B])(fa: TwitterTimedFuture[A]): TwitterTimedFuture[B] = {
       val newCallback = { (pool: FuturePool, scheduler: Scheduler) =>
         val ffRan = ff.runNow(pool, scheduler)
         val faRan = fa.runNow(pool, scheduler)
@@ -49,10 +49,10 @@ object TwitterTimedFuture {
     def pure[A](x: A): TwitterTimedFuture[A] =
       TwitterTimedFuture((_, _) => Future.value(x))
 
-    def flatMap[A, B](fa: TwitterTimedFuture[A])(f: (A) => TwitterTimedFuture[B]): TwitterTimedFuture[B] =
+    def flatMap[A, B](fa: TwitterTimedFuture[A])(f: A => TwitterTimedFuture[B]): TwitterTimedFuture[B] =
       TwitterTimedFuture[B]((pool, scheduler) => fa.runNow(pool, scheduler).flatMap(f(_).runNow(pool, scheduler)))
 
-    def tailRecM[A, B](a: A)(f: (A) => TwitterTimedFuture[Either[A, B]]): TwitterTimedFuture[B] =
+    def tailRecM[A, B](a: A)(f: A => TwitterTimedFuture[Either[A, B]]): TwitterTimedFuture[B] =
       TwitterTimedFuture[B]({ (pool, scheduler) =>
         def loop(va: A): Future[B] = f(va).runNow(pool, scheduler).flatMap {
           case Left(na) => loop(na)
