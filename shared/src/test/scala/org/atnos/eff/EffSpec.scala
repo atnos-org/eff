@@ -11,6 +11,7 @@ import cats.~>
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2.matcher.ThrownExpectations
+import scala.annotation.tailrec
 
 class EffSpec extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = s2"""
 
@@ -141,6 +142,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
   def safePureFlatMaps = {
     type S = Fx.fx1[Eval]
 
+    @tailrec
     def action(e: Eff[S, Int], i: Int = 0): Eff[S, Int] =
       if (i == 5000) e
       else action(e.flatMap(j => pure[S, Int](j + 1)), i + 1)
