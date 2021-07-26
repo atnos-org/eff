@@ -13,35 +13,16 @@ jobs:
       matrix:
         include:
           - java: 8
-            scala: 2
-          - java: 8
-            scala: 3
           - java: 11
-            scala: 2
     steps:
     - uses: actions/checkout@v2.3.4
     - uses: olafurpg/setup-scala@v12
       with:
         java-version: "adopt@1.${{ matrix.java }}"
     - uses: coursier/cache-action@v6
-    - run: |
-        case ${{ matrix.scala }} in
-          2)
-            sbt -v -sbt-opts .github/workflows/.sbtopts \
-            "+ Test/compile" \
-            "+ test"
-            ;;
-          3)
-            sbt -v -sbt-opts .github/workflows/.sbtopts \
-            '++ 3.0.2-RC1!' \
-            compile \
-            "all catsEffectJVM/Test/compile coreJVM/Test/compile doobie/Test/compile monixJVM/Test/compile scalazJVM/Test/compile twitter/Test/compile" \
-            "all catsEffectJVM/test coreJVM/test doobie/test scalazJVM/test twitter/test monixJVM/test"
-            ;;
-          *)
-            echo "unknown scala version"
-            exit 1
-        esac
+    - run: sbt -v -sbt-opts .github/workflows/.sbtopts
+           "+ Test/compile"
+           "+ test"
   push_gh_pages:
     needs: test
     timeout-minutes: 30
