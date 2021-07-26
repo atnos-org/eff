@@ -13,8 +13,6 @@ import scala.concurrent._
 import duration._
 import org.specs2.matcher.ThrownExpectations
 
-import scala.util.control._
-
 class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = sequential ^ s2"""
 
  Future effects can work as normal values                      $e1

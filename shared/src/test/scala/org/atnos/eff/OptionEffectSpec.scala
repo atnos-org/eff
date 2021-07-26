@@ -4,7 +4,6 @@ import org.specs2.{ScalaCheck, Specification}
 import org.scalacheck.Gen.posNum
 import cats.syntax.all.{ catsSyntaxEq => _, _ }
 import cats.data._
-import Eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
