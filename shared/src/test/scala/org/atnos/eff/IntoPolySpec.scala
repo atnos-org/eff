@@ -40,18 +40,18 @@ class IntoPolySpec extends Specification with ThrownExpectations { def is = s2""
     Eff.send[Option1, Fx1[Option1], Int](Option1(1)).into[Fx1[Option1]].runOpt.run === 1
 
   def into2 = {
-    Eff.send[Option1, Fx1[Option1], Int](Option1(1)).map(identity _).into[Fx2[Option1, Option2]].runOpt.runOpt.run === 1
-    Eff.send[Option2, Fx1[Option2], Int](Option2(1)).map(identity _).into[Fx2[Option1, Option2]].runOpt.runOpt.run === 1
+    Eff.send[Option1, Fx1[Option1], Int](Option1(1)).map(identity).into[Fx2[Option1, Option2]].runOpt.runOpt.run === 1
+    Eff.send[Option2, Fx1[Option2], Int](Option2(1)).map(identity).into[Fx2[Option1, Option2]].runOpt.runOpt.run === 1
   }
 
   def more = {
-    Eff.send[Option1, Fx2[Option2, Option1], Int](Option1(1)).map(identity _).into[Fx2[Option1, Option2]].runOpt.runOpt.run === 1
+    Eff.send[Option1, Fx2[Option2, Option1], Int](Option1(1)).map(identity).into[Fx2[Option1, Option2]].runOpt.runOpt.run === 1
 
-    Eff.send[Option1, Fx1[Option1], Int](Option1(1)).map(identity _).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
-    Eff.send[Option2, Fx1[Option2], Int](Option2(1)).map(identity _).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
-    Eff.send[Option3, Fx1[Option3], Int](Option3(1)).map(identity _).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
+    Eff.send[Option1, Fx1[Option1], Int](Option1(1)).map(identity).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
+    Eff.send[Option2, Fx1[Option2], Int](Option2(1)).map(identity).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
+    Eff.send[Option3, Fx1[Option3], Int](Option3(1)).map(identity).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
 
-    Eff.send[Option1, Fx2[Option1, Option2], Int](Option1(1)).map(identity _).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
+    Eff.send[Option1, Fx2[Option1, Option2], Int](Option1(1)).map(identity).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
 
     // make sure that flatMap works
     Eff.send[Option1, Fx2[Option1, Option2], Int](Option1(1)).flatMap(i => Eff.send(Option2(i))).into[Fx3[Option1, Option2, Option3]].runOpt.runOpt.runOpt.run === 1
