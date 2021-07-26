@@ -116,7 +116,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat
     type Comput = Fx.fx2[Validate[E, *], Writer[E, *]]
     type Check[A] = Eff[Comput, A]
 
-    val handle: E => Check[Unit] = { case e => tell[Comput, E](e).map(_ => ()) }
+    val handle: E => Check[Unit] = { e => tell[Comput, E](e).map(_ => ()) }
 
     val comp1: Check[Int] = for {
       _ <- wrong[Comput, E]("1").catchFirstWrong(handle)
