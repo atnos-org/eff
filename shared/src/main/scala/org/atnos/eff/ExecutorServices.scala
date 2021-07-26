@@ -17,8 +17,8 @@ case class ExecutorServices(executorServiceEval:   Eval[ExecutorService],
   /** note: shutdown only shuts down the executor services */
   def shutdown: Eval[Unit] = Eval.later {
     // careful: calling executorService.shutdown or scheduledExecutorService will deadlock!
-    try     executorServiceEval.value.shutdown
-    finally scheduledExecutorEval.value.shutdown
+    try     executorServiceEval.value.shutdown()
+    finally scheduledExecutorEval.value.shutdown()
   }
 
   implicit lazy val executorService: ExecutorService =
