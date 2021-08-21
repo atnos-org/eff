@@ -97,7 +97,7 @@ lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file(
   .settings(moduleName := "eff-scalaz")
   .dependsOn(core % "compile->compile;test->test")
   .settings(
-    libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.3.4" cross CrossVersion.for3Use2_13,
+    libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.3.5" cross CrossVersion.for3Use2_13,
   )
   .settings(effSettings)
   .jvmSettings(commonJvmSettings)
