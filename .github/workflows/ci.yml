@@ -16,11 +16,11 @@ jobs:
           - java: 11
     steps:
     - uses: actions/checkout@v2.3.4
-    - uses: olafurpg/setup-scala@v12
+    - uses: olafurpg/setup-scala@v13
       with:
         java-version: "adopt@1.${{ matrix.java }}"
     - uses: coursier/cache-action@v6
-    - run: sbt -v -sbt-opts .github/workflows/.sbtopts
+    - run: sbt -v
            "+ Test/compile"
            "+ test"
   push_gh_pages:
@@ -33,7 +33,7 @@ jobs:
         wget https://github.com/jgm/pandoc/releases/download/2.14.1/pandoc-2.14.1-1-amd64.deb
         sudo dpkg -i pandoc-2.14.1-1-amd64.deb
         pandoc --version
-    - uses: olafurpg/setup-scala@v12
+    - uses: olafurpg/setup-scala@v13
       with:
         java-version: "adopt@1.8"
     - uses: actions/checkout@v2.3.4
