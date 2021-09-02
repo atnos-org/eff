@@ -20,7 +20,7 @@ jobs:
       with:
         java-version: "adopt@1.${{ matrix.java }}"
     - uses: coursier/cache-action@v6
-    - run: sbt -v -sbt-opts .github/workflows/.sbtopts
+    - run: sbt -v
            "+ Test/compile"
            "+ test"
   push_gh_pages:
