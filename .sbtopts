@@ -1,4 +1,0 @@
--J-Xms4096M
--J-Xmx4096M
--J-Xss6M
--J-XX:+UseG1GC
