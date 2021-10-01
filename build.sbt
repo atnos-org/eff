@@ -363,7 +363,7 @@ lazy val scalameter = Def.setting(
 )
 
 lazy val twitterUtilCore = Seq(
-  "com.twitter" %% "util-core" % twitterUtilVersion cross CrossVersion.for3Use2_13
+  "com.twitter" %% "util-core" % twitterUtilVersion
 )
 
 lazy val disableScala3 = Def.settings(
