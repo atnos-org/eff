@@ -4,7 +4,7 @@ lazy val specs2Version = Def.setting(
   if (scalaBinaryVersion.value == "3") {
     "5.0.0-ALPHA-03"
   } else {
-    "4.12.3"
+    "4.12.12"
   }
 )
 lazy val twitterUtilVersion = "21.9.0"
