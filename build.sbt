@@ -2,7 +2,7 @@ import org.scalajs.jsenv.nodejs._
 
 lazy val specs2Version = Def.setting(
   if (scalaBinaryVersion.value == "3") {
-    "5.0.0-ALPHA-03"
+    "5.0.0-RC-11"
   } else {
     "4.12.3"
   }
