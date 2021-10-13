@@ -143,8 +143,8 @@ trait MemberInOutLower2 extends MemberInOutLower3 {
   implicit def MemberInOut3L[L[_], M[_], R[_]]: MemberInOut[L, Fx3[L, M, R]] =
     TaggedMemberInOut(1)
 
-  implicit def MemberInOutAppendL[T[_], L, R](implicit append: MemberInOut[T, L]): MemberInOut[T, FxAppend[L, R]] =
-    AppendMemberInOut(isRight = false, append)
+  implicit def MemberInOutAppendAnyL[T[_], R]: MemberInOut[T, FxAppend[Fx1[T], R]] =
+    AppendMemberInOut(isRight = false, TaggedMemberInOut(1))
 }
 
 trait MemberInOutLower3 extends MemberInOutLower4 {
@@ -164,8 +164,8 @@ trait MemberInOutLower4 extends MemberInOutLower5 {
 }
 
 trait MemberInOutLower5 {
-  implicit def MemberInOutAppendAnyL[T[_], R]: MemberInOut[T, FxAppend[Fx1[T], R]] =
-    AppendMemberInOut(isRight = false, TaggedMemberInOut(1))
+  implicit def MemberInOutAppendL[T[_], L, R](implicit append: MemberInOut[T, L]): MemberInOut[T, FxAppend[L, R]] =
+    AppendMemberInOut(isRight = false, append)
 
   implicit def MemberInOutAppendAnyR[T[_], L, R](implicit m: MemberInOut[T, R]): MemberInOut[T, FxAppend[L, R]] =
     AppendMemberInOut(isRight = true, m)
