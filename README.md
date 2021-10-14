@@ -24,7 +24,7 @@ Eff is published for Scala 2.12, 2.13 and 3. `eff` core is available for the JVM
 
 ```scala
 // check maven badge above for latest version
-libraryDependencies += "org.atnos" %% "eff" % "5.19.0"
+libraryDependencies += "org.atnos" %% "eff" % "5.21.0"
 
 // to write types like Reader[String, *]
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full)
