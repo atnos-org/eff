@@ -309,4 +309,13 @@ import org.atnos.eff.syntax.all._
   def withOptionEffect2[S: _Option]: Eff[S, Unit] =
     withOptionEffect[Fx.prepend[Reader[String, *], S]].runReader("hello")
 
+  type _OptionInOut[R] = Option /= R
+  type Fx1AppendFx6 = Fx.append[
+    Fx.fx1[Option],
+    Fx.fx6[List, Writer[String, *], Validate[String, *], Reader[String, *], State[Int, *], Either[Throwable, *]]
+  ]
+
+  def withOptionInOutEffect[S: _OptionInOut]: Eff[S, Unit] = ???
+  def fx1AppendFx6Action =
+    withOptionInOutEffect[Fx1AppendFx6].runOption
 }
