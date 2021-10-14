@@ -1,0 +1,8 @@
+- [Change `MemberInOut` instance priority](https://github.com/atnos-org/eff/commit/162db24ad5d747b11013b64bc87dc1d7a2477acc)
+- [Update sbt-git to 1.0.2](https://github.com/atnos-org/eff/commit/07674a0d1ee41c51dbe5703162cfd7b439158f50)
+- [Update sbt-scalajs, scalajs-compiler, ... to 1.7.1](https://github.com/atnos-org/eff/commit/dd53200da9c570414b26718cdbf92f06d31baf33)
+- [Update specs2-core, specs2-html, ... to 4.12.12](https://github.com/atnos-org/eff/commit/1c7837962f12dfad3705bb09db53eed4fd50f0d4)
+- [remove `CrossVersion.for3Use2_13`](https://github.com/atnos-org/eff/commit/511a5970284cff7b77d03c53a7440e6109daf60a)
+- [Update util-core to 21.9.0](https://github.com/atnos-org/eff/commit/f7653caa1049ef20b633281b2902449d2ff0c2a1)
+- [Update cats-effect to 3.2.9](https://github.com/atnos-org/eff/commit/c0cd6140fa174ac75b29866147e29b937751f31c)
+- [Update scala-library, scala-reflect to 2.12.15](https://github.com/atnos-org/eff/commit/8722c67c402e1e7b6db60b956818ed52ec05427b)
