@@ -7,7 +7,7 @@ lazy val specs2Version = Def.setting(
     "4.12.12"
   }
 )
-lazy val twitterUtilVersion = "21.9.0"
+lazy val twitterUtilVersion = "21.10.0"
 lazy val doobieVersion      = "0.13.4"
 
 enablePlugins(BuildInfoPlugin)
