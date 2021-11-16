@@ -90,7 +90,7 @@ trait StateInterpretation {
   /** run a state effect, with an initial value */
   def runState[R, U, S1, A](initial: S1)(w: Eff[R, A])(implicit m: Member.Aux[State[S1, *], R, U]): Eff[U, (A, S1)] =
     runInterpreter[R, U, State[S1, *], A, (A, S1)](w)(new Interpreter[State[S1, *], U, A, (A, S1)] {
-      var s: S1 = initial
+      private[this] var s: S1 = initial
 
       def onPure(a: A): Eff[U, (A, S1)] =
         Eff.pure((a, s))

@@ -62,7 +62,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
     safeInterpreter(None)
 
   def safeInterpreter[R, A](last: Option[(Eff[R, Unit], Safe /= R)]): Interpreter[Safe, R, A, Out[A]] = new Interpreter[Safe, R, A, Out[A]] {
-    var errors: Vector[Throwable] = Vector()
+    private[this] var errors: Vector[Throwable] = Vector()
 
     def onPure(a: A): Eff[R, Out[A]] =
       last match {
