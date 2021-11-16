@@ -35,8 +35,8 @@ jobs:
     steps:
     - name: Install pandoc
       run: |
-        wget https://github.com/jgm/pandoc/releases/download/2.14.1/pandoc-2.14.1-1-amd64.deb
-        sudo dpkg -i pandoc-2.14.1-1-amd64.deb
+        wget https://github.com/jgm/pandoc/releases/download/2.16.1/pandoc-2.16.1-1-amd64.deb
+        sudo dpkg -i pandoc-2.16.1-1-amd64.deb
         pandoc --version
     - uses: olafurpg/setup-scala@v13
       with:
