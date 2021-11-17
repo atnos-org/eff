@@ -95,7 +95,7 @@ sealed trait Eff[R, A] {
     addLast(Last.eff(l))
 
   /** add one last action to be executed after any computation chained to this Eff value */
-  private[eff] def addLast(l: Last[R]): Eff[R, A]
+  def addLast(l: Last[R]): Eff[R, A]
 
 }
 
