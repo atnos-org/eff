@@ -1,0 +1,6 @@
+- [Change `addLast` to public method](https://github.com/atnos-org/eff/commit/be9e3132b8ab8064ade018f650a73bc0efc4b259)
+- [add `private[this]`](https://github.com/atnos-org/eff/commit/9e5b759d0f6876cca4cc5f1a419f0e1ed2f4450f)
+- [Update scala-library, scala-reflect to 2.13.7](https://github.com/atnos-org/eff/commit/68108a122f74e7740dcc2be9a20e12acff1940ed)
+- [Update util-core to 21.10.0](https://github.com/atnos-org/eff/commit/f6fcec9a6921da0a48932f23c63d22661a87463b)
+- [Update auxlib, javalib, nativelib, nscplugin, ... to 0.4.1](https://github.com/atnos-org/eff/commit/4260df147a3455181648a212f59cfc05a2300a7c)
+- [Update scala3-library, ... to 3.1.0](https://github.com/atnos-org/eff/commit/f453361bc09a548351a7cad97495fdce54778097)
