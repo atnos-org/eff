@@ -1,17 +1,19 @@
 # Release Process
 
 ```
+# edit version.sbt and README.md
 # create and edit notes/"new version".markdown
 # git tag "new version"
 # git push git@github.com:atnos-org/eff.git "new version"
 
-export GITHUB_OAUTH=<token>
-sbt> set every version := "new version"
+sbt> project coreJVM
 sbt> set every ghreleaseGithubToken := Some("GITHUB TOKEN")
 sbt> githubRelease <tag name>
-sbt> project eff
+sbt> project /
 sbt> +publishSigned
 sbt> sonatypeBundleRelease
+
+# set SNAPSHOT version.sbt
 ```
 
 # Running the benchmarks
