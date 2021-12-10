@@ -179,6 +179,7 @@ lazy val commonJsSettings = Seq(
     }
   },
   parallelExecution := false,
+  scalacOptions += "-P:scalajs:nowarnGlobalExecutionContext",
   scalacOptions += {
     val a = (LocalRootProject / baseDirectory).value.toURI.toString
     val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
@@ -196,6 +197,7 @@ lazy val commonJvmSettings = Seq(
   libraryDependencies ++= specs2.value,
   Test / fork := true,
   Global / cancelable := true,
+  Test / scalacOptions ~= (_.filterNot(_ == "-Xfatal-warnings")),
   Test / scalacOptions ++= {
     if (scalaBinaryVersion.value == "3") {
       Nil
@@ -275,6 +277,7 @@ lazy val commonScalacOptions = Def.setting {
         )
       case _ =>
         Seq(
+          "-Xfatal-warnings",
           "-Yno-adapted-args",
           "-Ypartial-unification",
           "-Xfuture"
