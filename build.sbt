@@ -179,6 +179,13 @@ lazy val commonJsSettings = Seq(
     }
   },
   parallelExecution := false,
+  scalacOptions ++= {
+    if (scalaBinaryVersion.value == "3") {
+      Nil
+    } else {
+      Seq("-P:scalajs:nowarnGlobalExecutionContext")
+    }
+  },
   scalacOptions += {
     val a = (LocalRootProject / baseDirectory).value.toURI.toString
     val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
