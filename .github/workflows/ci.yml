@@ -22,10 +22,7 @@ jobs:
         java-version: ${{matrix.java}}
         distribution: temurin
     - uses: coursier/cache-action@v6
-    - shell: bash
-      name: install sbt
-      run: curl -Ls https://raw.githubusercontent.com/dwijnand/sbt-extras/787e7a6c0523cbd995708aec2815a21917315079/sbt > ./sbt && chmod 0755 ./sbt
-    - run: ./sbt -v
+    - run: sbt -v
            "+ Test/compile"
            "+ test"
   push_gh_pages:
