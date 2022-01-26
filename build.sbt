@@ -123,13 +123,6 @@ lazy val twitter = project
     },
   )
 
-lazy val scoverageSettings = Seq(
-  coverageMinimum := 60,
-  coverageFailOnMinimum := false,
-  coverageHighlighting := true,
-  coverageExcludedPackages := "org\\.atnos\\.eff\\.bench\\..*"
-)
-
 def Scala212 = "2.12.15"
 
 lazy val buildSettings = Seq(
@@ -222,7 +215,7 @@ lazy val commonNativeSettings = Def.settings(
 )
 
 lazy val effSettings =
-  buildSettings ++ commonSettings ++ publishSettings ++ scoverageSettings
+  buildSettings ++ commonSettings ++ publishSettings
 
 lazy val publishSettings =
   Seq(
