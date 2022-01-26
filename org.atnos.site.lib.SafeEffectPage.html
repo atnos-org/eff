@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -298,11 +318,14 @@
 <h1>Safe</h1>
 <div id="tipue_search_content"></div>
 
-<p>The Safe effect is useful to handle resources which must be closed even in the presence of exceptions. The main operations are</p>
+<p>The Safe effect is useful to handle resources which must be closed
+even in the presence of exceptions. The main operations are</p>
 <ul>
-<li><code class="prettyprint">finally</code> to create an action which must always be executed after another one, even if the first one fails</li>
+<li><code class="prettyprint">finally</code> to create an action which must always be
+executed after another one, even if the first one fails</li>
 <li><code class="prettyprint">catchThrowable</code> to handle a thrown exception</li>
-<li><code class="prettyprint">bracket(open)(step)(close)</code> to open a resource, use it and then close it safely. The <code class="prettyprint">close</code> part is a “finalizer”
+<li><code class="prettyprint">bracket(open)(step)(close)</code> to open a resource, use it
+and then close it safely. The <code class="prettyprint">close</code> part is a “finalizer”
 <p/></li>
 </ul>
 <p>Let’s see an example for the protection of a resource:</p>
@@ -335,9 +358,16 @@ def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
 <pre><code class="prettyprint">&gt; Results
 Without exception: Right(55), finalizers exceptions: no exceptions, resource is closed: true
 With exception   : Left(boo), finalizers exceptions: no exceptions, resource is closed: true</code></pre>
-<p>As you can see in the signature of <code class="prettyprint">program</code> the return value of <code class="prettyprint">runSafe</code> is <code class="prettyprint">(Throwable Either A, List[Throwable])</code>. The first part is the result of your program, which may end with an exception, and the second part is the list of possible exceptions thrown by the finalizers which can themselves fail.</p>
-<p>A simpler version of <code class="prettyprint">bracket</code> is <code class="prettyprint">finally</code>.</p>
-<p>This example show how to use <code class="prettyprint">finally</code> but also what happens if a finalizer fails:</p>
+<p>As you can see in the signature of <code class="prettyprint">program</code> the return
+value of <code class="prettyprint">runSafe</code> is <code class="prettyprint">(Throwable Either A,
+List[Throwable])</code>. The first part is the result of your program,
+which may end with an exception, and the second part is the list of
+possible exceptions thrown by the finalizers which can themselves
+fail.</p>
+<p>A simpler version of <code class="prettyprint">bracket</code> is
+<code class="prettyprint">finally</code>.</p>
+<p>This example show how to use <code class="prettyprint">finally</code> but also what
+happens if a finalizer fails:</p>
 <pre><code class="prettyprint">import org.atnos.eff.syntax.all._
 import org.atnos.eff._, all._
 
@@ -359,7 +389,9 @@ Computation ok, finalizer ok: Right(55), finalizers exceptions: no exceptions
 Computation ok, finalizer ko: Right(55), finalizers exceptions: List(failed!!)
 Computation ko, finalizer ok: Left(boo), finalizers exceptions: no exceptions
 Computation ko, finalizer ko: Left(boo), finalizers exceptions: List(failed!!)</code></pre>
-<p>Finally (no pun intended!) note that you can use <code class="prettyprint">execSafe</code> if you are not interested in the result of the finalizers.</p>
+<p>Finally (no pun intended!) note that you can use
+<code class="prettyprint">execSafe</code> if you are not interested in the result of the
+finalizers.</p>
 </div>
 
 <script>

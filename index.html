@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -298,23 +318,46 @@
 <h1>eff</h1>
 <div id="tipue_search_content"></div>
 
-<p>Extensible effects are an alternative to monad transformers for computing with effects in a functional way. This library is based on the “free-er” monad and an “open union” of effects described by Oleg Kiselyov in <a href="http://okmij.org/ftp/Haskell/extensible/more.pdf">Freer monads, more extensible effects</a>.</p>
-<p>You can learn more in the following sections, it is recommended to read them in order if you are new to <code class="prettyprint">eff</code>:</p>
+<p>Extensible effects are an alternative to monad transformers for
+computing with effects in a functional way. This library is based on the
+“free-er” monad and an “open union” of effects described by Oleg
+Kiselyov in <a
+href="http://okmij.org/ftp/Haskell/extensible/more.pdf">Freer monads,
+more extensible effects</a>.</p>
+<p>You can learn more in the following sections, it is recommended to
+read them in order if you are new to <code class="prettyprint">eff</code>:</p>
 <ol type="1">
-<li><link class="ok"><a href="org.atnos.site.Installation.html" tooltip="" class="ok">installation and imports</a></link></li>
-<li><link class="ok"><a href="org.atnos.site.Introduction.html" tooltip="" class="ok">your first effects</a></link></li>
-<li><link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">standard effects in eff</a></link>: <code class="prettyprint">Reader</code>, <code class="prettyprint">Writer</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">State</code>,…</li>
+<li><link class="ok"><a href="org.atnos.site.Installation.html" tooltip="" class="ok">installation
+and imports</a></link></li>
+<li><link class="ok"><a href="org.atnos.site.Introduction.html" tooltip="" class="ok">your
+first effects</a></link></li>
+<li><link class="ok"><a href="org.atnos.site.OutOfTheBox.html" tooltip="" class="ok">standard
+effects in eff</a></link>: <code class="prettyprint">Reader</code>, <code class="prettyprint">Writer</code>,
+<code class="prettyprint">Eval</code>, <code class="prettyprint">State</code>,…</li>
 <li><link class="ok"><a href="org.atnos.site.Tutorial.html" tooltip="" class="ok">tutorial</a></link></li>
-<li><link class="ok"><a href="org.atnos.site.CreateEffects.html" tooltip="" class="ok">create your own effects</a></link></li>
-<li><link class="ok"><a href="org.atnos.site.TransformStack.html" tooltip="" class="ok">interpret and manipulate effect stacks</a></link></li>
-<li><link class="ok"><a href="org.atnos.site.MemberImplicits.html" tooltip="" class="ok">use Member implicits</a></link></li>
-<li><link class="ok"><a href="org.atnos.site.ApplicativeEvaluation.html" tooltip="" class="ok">use an applicative evaluation</a></link></li>
-<li><link class="ok"><a href="org.atnos.site.Cookbook.html" tooltip="" class="ok">tips and tricks</a></link></li>
-<li><link class="ok"><a href="org.atnos.site.CommunityResources.html" tooltip="" class="ok">community resources</a></link></li>
+<li><link class="ok"><a href="org.atnos.site.CreateEffects.html" tooltip="" class="ok">create
+your own effects</a></link></li>
+<li><link class="ok"><a href="org.atnos.site.TransformStack.html" tooltip="" class="ok">interpret
+and manipulate effect stacks</a></link></li>
+<li><link class="ok"><a href="org.atnos.site.MemberImplicits.html" tooltip="" class="ok">use
+Member implicits</a></link></li>
+<li><link class="ok"><a href="org.atnos.site.ApplicativeEvaluation.html" tooltip="" class="ok">use
+an applicative evaluation</a></link></li>
+<li><link class="ok"><a href="org.atnos.site.Cookbook.html" tooltip="" class="ok">tips
+and tricks</a></link></li>
+<li><link class="ok"><a href="org.atnos.site.CommunityResources.html" tooltip="" class="ok">community
+resources</a></link></li>
 </ol>
 <h3 id="contributing">Contributing</h3>
-<p><code class="prettyprint">eff</code> is a <a href="https://typelevel.org">Typelevel</a> project. This means we embrace pure, typeful, functional programming, and provide a safe and friendly environment for teaching, learning, and contributing as described in the <a href="https://www.scala-lang.org/conduct/">Scala Code of Conduct</a>.</p>
-<p>Feel free to open an issue if you notice a bug, have an idea for a feature, or have a question about the code. Pull requests are also gladly accepted.</p>
+<p><code class="prettyprint">eff</code> is a <a href="https://typelevel.org">Typelevel</a>
+project. This means we embrace pure, typeful, functional programming,
+and provide a safe and friendly environment for teaching, learning, and
+contributing as described in the <a
+href="https://www.scala-lang.org/conduct/">Scala Code of
+Conduct</a>.</p>
+<p>Feel free to open an issue if you notice a bug, have an idea for a
+feature, or have a question about the code. Pull requests are also
+gladly accepted.</p>
 </div>
 
 <script>

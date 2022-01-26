@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -298,14 +318,23 @@
 <h1>Cookbook</h1>
 <div id="tipue_search_content"></div>
 
-<p>A collection of examples of how to solve particular problems with Eff</p>
+<p>A collection of examples of how to solve particular problems with
+Eff</p>
 <h3 id="partial-interpretation">Partial Interpretation</h3>
-<p>It’s common to want to use different effects in different parts of a program. Some effects, like error handling or logging, may extend through the whole of our program. However we may want to include additional effects, like state, within one part.</p>
+<p>It’s common to want to use different effects in different parts of a
+program. Some effects, like error handling or logging, may extend
+through the whole of our program. However we may want to include
+additional effects, like state, within one part.</p>
 <p>The example below shows how we can do this</p>
 <ul>
-<li><p>the <code class="prettyprint">incrementNTimes</code> methods uses an additional <code class="prettyprint">State</code> effect for its implementation (necessary to call <code class="prettyprint">incrementCounter</code>)</p></li>
-<li><p>the additional <code class="prettyprint">State</code> effect is added to <code class="prettyprint">R</code> with the <code class="prettyprint">prepend</code> method: <code class="prettyprint">Fx.prepend[StateInt, R]</code></p></li>
-<li><p><code class="prettyprint">runState</code> is called within <code class="prettyprint">incrementNTimes</code> to finally interpret that effect</p></li>
+<li><p>the <code class="prettyprint">incrementNTimes</code> methods uses an additional
+<code class="prettyprint">State</code> effect for its implementation (necessary to call
+<code class="prettyprint">incrementCounter</code>)</p></li>
+<li><p>the additional <code class="prettyprint">State</code> effect is added to
+<code class="prettyprint">R</code> with the <code class="prettyprint">prepend</code> method:
+<code class="prettyprint">Fx.prepend[StateInt, R]</code></p></li>
+<li><p><code class="prettyprint">runState</code> is called within
+<code class="prettyprint">incrementNTimes</code> to finally interpret that effect</p></li>
 </ul>
 <pre><code class="prettyprint">import cats._, data._
 import cats.implicits._
@@ -364,7 +393,8 @@ def incrementNTimes[R :_err :_log](start: Int, times: Int): Eff[R, Int] = for {
 type Stack = Fx.fx2[EitherString, WriterString]
 
 incrementNTimes[Stack](3, 2).runWriter.runEither.run</code></pre>
-<p><code class="prettyprint">&gt; Right((6,List(counter == 4, counter == 5, counter == 6)))</code></p>
+<p><code class="prettyprint">&gt; Right((6,List(counter == 4, counter == 5, counter ==
+6)))</code></p>
 </div>
 
 <script>

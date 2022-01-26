@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -298,20 +318,33 @@
 <h1>Error</h1>
 <div id="tipue_search_content"></div>
 
-<p>The <code class="prettyprint">Error</code> effect is both an <code class="prettyprint">Eval</code> effect and a <code class="prettyprint">Either</code> one with <code class="prettyprint">Throwable Either F</code> on the “left” side. The idea is to represent computations which can fail, either with an exception or a failure. You can:</p>
+<p>The <code class="prettyprint">Error</code> effect is both an <code class="prettyprint">Eval</code> effect and
+a <code class="prettyprint">Either</code> one with <code class="prettyprint">Throwable Either F</code> on the
+“left” side. The idea is to represent computations which can fail,
+either with an exception or a failure. You can:</p>
 <ul>
 <li><p>create delayed computations with <code class="prettyprint">ok</code></p></li>
-<li><p>fail with <code class="prettyprint">fail(f: F)</code> where <code class="prettyprint">F</code> is the failure type</p></li>
+<li><p>fail with <code class="prettyprint">fail(f: F)</code> where <code class="prettyprint">F</code> is the
+failure type</p></li>
 <li><p>throw an exception with <code class="prettyprint">exception</code></p></li>
 </ul>
 <p>Other useful combinators are available:</p>
 <ul>
-<li><p><code class="prettyprint">andFinally(last)</code> registers an action to be executed even in case of an exception or a failure</p></li>
-<li><p><code class="prettyprint">orElse</code> runs an action and then run another one if the first is not successful</p></li>
-<li><p><code class="prettyprint">whenFailed</code> does the same thing than <code class="prettyprint">orElse</code> but uses the error for <code class="prettyprint">action1</code> to decide which action to run next</p></li>
+<li><p><code class="prettyprint">andFinally(last)</code> registers an action to be executed
+even in case of an exception or a failure</p></li>
+<li><p><code class="prettyprint">orElse</code> runs an action and then run another one if
+the first is not successful</p></li>
+<li><p><code class="prettyprint">whenFailed</code> does the same thing than
+<code class="prettyprint">orElse</code> but uses the error for <code class="prettyprint">action1</code> to
+decide which action to run next</p></li>
 </ul>
-<p>When you run an <code class="prettyprint">Error</code> effect you get back an <code class="prettyprint">Error Either A</code> where <code class="prettyprint">Error</code> is a type alias for <code class="prettyprint">Throwable Either Failure</code>.</p>
-<p>The <code class="prettyprint">Error</code> object implements this effect with <code class="prettyprint">String</code> as the <code class="prettyprint">Failure</code> type but you are encouraged to create our own failure datatype and extend the <code class="prettyprint">Error[MyFailureDatatype]</code> trait.</p>
+<p>When you run an <code class="prettyprint">Error</code> effect you get back an <code class="prettyprint">Error
+Either A</code> where <code class="prettyprint">Error</code> is a type alias for
+<code class="prettyprint">Throwable Either Failure</code>.</p>
+<p>The <code class="prettyprint">Error</code> object implements this effect with
+<code class="prettyprint">String</code> as the <code class="prettyprint">Failure</code> type but you are
+encouraged to create our own failure datatype and extend the
+<code class="prettyprint">Error[MyFailureDatatype]</code> trait.</p>
 </div>
 
 <script>

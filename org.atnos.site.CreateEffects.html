@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -299,11 +319,14 @@
 <div id="tipue_search_content"></div>
 
 <h3 id="creation">Creation</h3>
-<p>New effects can be added to the library pretty easily. Let’s create an Effect for a new “optional” type.</p>
+<p>New effects can be added to the library pretty easily. Let’s create
+an Effect for a new “optional” type.</p>
 <p>We need:</p>
 <ul>
-<li><p>a base type. We use a <code class="prettyprint">Maybe</code> data type with 2 cases <code class="prettyprint">Just</code> and <code class="prettyprint">Nothing</code></p></li>
-<li><p>a method to send values of type <code class="prettyprint">A</code> into <code class="prettyprint">Eff[R, A]</code></p></li>
+<li><p>a base type. We use a <code class="prettyprint">Maybe</code> data type with 2 cases
+<code class="prettyprint">Just</code> and <code class="prettyprint">Nothing</code></p></li>
+<li><p>a method to send values of type <code class="prettyprint">A</code> into <code class="prettyprint">Eff[R,
+A]</code></p></li>
 <li><p>an interpreter</p></li>
 </ul>
 <pre><code class="prettyprint">import cats._, implicits._
@@ -351,11 +374,18 @@ object MaybeEffect {
 </code></pre>
 <p>In the code above:</p>
 <ul>
-<li><p>the <code class="prettyprint">just</code> and <code class="prettyprint">nothing</code> methods use <code class="prettyprint">Eff.send</code> to “send” values into a larger sum of effects <code class="prettyprint">Eff[R, A]</code></p></li>
-<li><p><code class="prettyprint">runMaybe</code> runs the <code class="prettyprint">Maybe</code> effect by using the <code class="prettyprint">interpret.recurse</code> and a <code class="prettyprint">Recurser</code> to translate <code class="prettyprint">Maybe</code> values into <code class="prettyprint">Option</code> values</p></li>
+<li><p>the <code class="prettyprint">just</code> and <code class="prettyprint">nothing</code> methods use
+<code class="prettyprint">Eff.send</code> to “send” values into a larger sum of effects
+<code class="prettyprint">Eff[R, A]</code></p></li>
+<li><p><code class="prettyprint">runMaybe</code> runs the <code class="prettyprint">Maybe</code> effect by using
+the <code class="prettyprint">interpret.recurse</code> and a <code class="prettyprint">Recurser</code> to
+translate <code class="prettyprint">Maybe</code> values into <code class="prettyprint">Option</code>
+values</p></li>
 </ul>
 <h3 id="compiler-limitation">Compiler limitation</h3>
-<p>When you create an effect you can define a sealed trait and case classes to represent different possibilities for that effect. For example for interacting with a database you might create:</p>
+<p>When you create an effect you can define a sealed trait and case
+classes to represent different possibilities for that effect. For
+example for interacting with a database you might create:</p>
 <pre><code class="prettyprint">trait DatabaseEffect {
 
   case class Record(fields: List[String])
@@ -364,13 +394,31 @@ object MaybeEffect {
   case class Get[A](id: Int) extends Db[Record]
   case class Update[A](id: Int, record: Record) extends Db[Record]
 }</code></pre>
-<p>It is recommended to create the <code class="prettyprint">Db</code> types <strong>outside</strong> of the <code class="prettyprint">DatabaseEffect</code> trait. Indeed, during <code class="prettyprint">Member</code> implicit resolution, depending on how you import the <code class="prettyprint">Db</code> effect type (if it is inherited from an object or not) you could experience compiler crashes :-(.</p>
+<p>It is recommended to create the <code class="prettyprint">Db</code> types
+<strong>outside</strong> of the <code class="prettyprint">DatabaseEffect</code> trait.
+Indeed, during <code class="prettyprint">Member</code> implicit resolution, depending on how
+you import the <code class="prettyprint">Db</code> effect type (if it is inherited from an
+object or not) you could experience compiler crashes :-(.</p>
 <h3 id="interpreter">Interpreter</h3>
-<p>Interpreting a given effect generally means knowing what to do with a value of type <code class="prettyprint">M[X]</code> where <code class="prettyprint">M</code> is the effect. If the interpreter can “execute” the effect: produce logs (<code class="prettyprint">Writer</code>), execute asynchronously (<code class="prettyprint">Future</code>), check the value (<code class="prettyprint">Either</code>),… then extract a value <code class="prettyprint">X</code>, then we can call a continuation to get the next effect and interpret it as well.</p>
-<p>The <code class="prettyprint">org.atnos.eff.interpret</code> object offers several support traits and functions to write interpreters. In this example we use a <code class="prettyprint">Recurser</code> which will be used to “extract” a value <code class="prettyprint">X</code> from <code class="prettyprint">Maybe[X]</code> or just give up with <code class="prettyprint">Eff.pure(None)</code></p>
-<p>The <code class="prettyprint">runMaybe</code> method needs an implicit <code class="prettyprint">Member.Aux[Maybe, R, U]</code>. This must be read in the following way:</p>
+<p>Interpreting a given effect generally means knowing what to do with a
+value of type <code class="prettyprint">M[X]</code> where <code class="prettyprint">M</code> is the effect. If
+the interpreter can “execute” the effect: produce logs
+(<code class="prettyprint">Writer</code>), execute asynchronously (<code class="prettyprint">Future</code>),
+check the value (<code class="prettyprint">Either</code>),… then extract a value
+<code class="prettyprint">X</code>, then we can call a continuation to get the next effect
+and interpret it as well.</p>
+<p>The <code class="prettyprint">org.atnos.eff.interpret</code> object offers several
+support traits and functions to write interpreters. In this example we
+use a <code class="prettyprint">Recurser</code> which will be used to “extract” a value
+<code class="prettyprint">X</code> from <code class="prettyprint">Maybe[X]</code> or just give up with
+<code class="prettyprint">Eff.pure(None)</code></p>
+<p>The <code class="prettyprint">runMaybe</code> method needs an implicit
+<code class="prettyprint">Member.Aux[Maybe, R, U]</code>. This must be read in the following
+way:</p>
 <ul>
-<li><code class="prettyprint">Maybe</code> must be member of the effect stack <code class="prettyprint">R</code> and its removal from <code class="prettyprint">R</code> should be the effect stack <code class="prettyprint">U</code></li>
+<li><code class="prettyprint">Maybe</code> must be member of the effect stack <code class="prettyprint">R</code>
+and its removal from <code class="prettyprint">R</code> should be the effect stack
+<code class="prettyprint">U</code></li>
 </ul>
 <p><br/></p>
 <p>Then we can use this effect in a computation:</p>

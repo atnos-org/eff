@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -298,7 +318,11 @@
 <h1>Memo</h1>
 <div id="tipue_search_content"></div>
 
-<p>The Memo effect allows the caching of expensive computations. Computations are “stored” with a given key, so that the next computation with the same key will return the previously computed value. When interpreting those computations a <code class="prettyprint">Cache</code> must be provided:</p>
+<p>The Memo effect allows the caching of expensive computations.
+Computations are “stored” with a given key, so that the next computation
+with the same key will return the previously computed value. When
+interpreting those computations a <code class="prettyprint">Cache</code> must be
+provided:</p>
 <pre><code class="prettyprint">import cats.Eval
 import cats.implicits._
 import org.atnos.eff._, memo._
@@ -317,13 +341,25 @@ def expensive[R :_memo]: Eff[R, Int] =
 
 &quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
 <p><code class="prettyprint">&gt; there is only one invocation &lt;=&gt; true</code></p>
-<p>There are 2 cache implementations provided in this library to support the Memo effect:</p>
+<p>There are 2 cache implementations provided in this library to support
+the Memo effect:</p>
 <ul>
-<li><p><code class="prettyprint">org.atnos.eff.ConcurrentHashMapCache</code>: backed by a <code class="prettyprint">java.util.concurrent.ConcurrentHashMap</code> where the keys are hashcodes for the keys used to memoize the values. This cache is thread-safe but unbounded so use with care!</p></li>
-<li><p><code class="prettyprint">org.atnos.eff.ConcurrentWeakIdentityHashMapCache</code>: backed by a <code class="prettyprint">ConcurrentWeakIdentityHashMap</code> where the keys are <code class="prettyprint">System.identityHashCode</code> for the keys used to memoize the values. This cache is thread-safe and uses weak references which can be garbage collected when necessary.</p></li>
+<li><p><code class="prettyprint">org.atnos.eff.ConcurrentHashMapCache</code>: backed by a
+<code class="prettyprint">java.util.concurrent.ConcurrentHashMap</code> where the keys are
+hashcodes for the keys used to memoize the values. This cache is
+thread-safe but unbounded so use with care!</p></li>
+<li><p><code class="prettyprint">org.atnos.eff.ConcurrentWeakIdentityHashMapCache</code>:
+backed by a <code class="prettyprint">ConcurrentWeakIdentityHashMap</code> where the keys
+are <code class="prettyprint">System.identityHashCode</code> for the keys used to memoize
+the values. This cache is thread-safe and uses weak references which can
+be garbage collected when necessary.</p></li>
 </ul>
-<p>You can also use other, and better, cache implementations like <a href="https://github.com/ben-manes/caffeine">Caffeine</a> to get more functionalities like eviction policies, maximum size and so on. You will need to implement the <code class="prettyprint">Cache</code> interface for this</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">trait</span> Cache <span class="op">{</span></span>
+<p>You can also use other, and better, cache implementations like <a
+href="https://github.com/ben-manes/caffeine">Caffeine</a> to get more
+functionalities like eviction policies, maximum size and so on. You will
+need to implement the <code class="prettyprint">Cache</code> interface for this</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode scala"><code class="sourceCode scala"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">trait</span> Cache <span class="op">{</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> memo<span class="op">[</span>V<span class="op">](</span>key<span class="op">:</span> <span class="bu">AnyRef</span><span class="op">,</span> value<span class="op">:</span> <span class="op">=&gt;</span>V<span class="op">):</span> V</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </div>

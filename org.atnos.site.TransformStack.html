@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -299,8 +319,12 @@
 <div id="tipue_search_content"></div>
 
 <h3 id="what-is-an-effect-stack">What is an “effect stack”?</h3>
-<p>There is an abuse of language here. The name “stack” comes from “monad stack” used when talking about monad transformers. With <code class="prettyprint">Eff</code> though, effects are modelled differently, as a tree of effects.</p>
-<p>For example the type level representation of four effects <code class="prettyprint">T1, T2, T3, T4</code> is represented as:</p>
+<p>There is an abuse of language here. The name “stack” comes from
+“monad stack” used when talking about monad transformers. With
+<code class="prettyprint">Eff</code> though, effects are modelled differently, as a tree of
+effects.</p>
+<p>For example the type level representation of four effects <code class="prettyprint">T1,
+T2, T3, T4</code> is represented as:</p>
 <pre><code class="prettyprint">Fx.fx4[T1, T2, T3, T4]
 
 // or
@@ -309,7 +333,9 @@ FxAppend[
   Fx1[T1],
   Fx3[T2, T3, T4]
 ]</code></pre>
-<p>So every-time we manipulate effects at the type level we modify a tree of effects. For example, interpreting the effect <code class="prettyprint">T3</code> would leave us with the tree:</p>
+<p>So every-time we manipulate effects at the type level we modify a
+tree of effects. For example, interpreting the effect <code class="prettyprint">T3</code>
+would leave us with the tree:</p>
 <pre><code class="prettyprint">FxAppend[
   Fx1[T1],
   Fx2[T2, T4]
@@ -318,7 +344,10 @@ FxAppend[
 <pre><code class="prettyprint">// for now the following implicit summoning crashes the compiler
   //val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]] =
   //  implicitly[Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]]]</code></pre>
-<p>Unfortunately the compiler has some difficulties with it, so you can either get the member value by using the implicit definitions “manually” or you can just summon the member instance without the <code class="prettyprint">Aux</code> part:</p>
+<p>Unfortunately the compiler has some difficulties with it, so you can
+either get the member value by using the implicit definitions “manually”
+or you can just summon the member instance without the <code class="prettyprint">Aux</code>
+part:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 
 // so you need to explicitly define the implicit
@@ -328,7 +357,9 @@ val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1
 // but this works
 val member: Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]] =
   implicitly[Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]]]</code></pre>
-<p>More importantly the compiler is still able to track the right types resulting of the interpretation of a given effect so the following compiles ok:</p>
+<p>More importantly the compiler is still able to track the right types
+resulting of the interpretation of a given effect so the following
+compiles ok:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 
 def runT3[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T3, R, U]): Eff[U, A] = ???
@@ -339,9 +370,14 @@ def runT4[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T4, R, U]): Eff[U, A] = 
 type S = FxAppend[Fx1[T1], Fx3[T2, T3, T4]]
 
 runT1(runT4(runT2(runT3(Eff.send[T3, S, Int](???)))))</code></pre>
-<h3 id="transform-an-effect-to-another">Transform an effect to another</h3>
+<h3 id="transform-an-effect-to-another">Transform an effect to
+another</h3>
 <h4 id="change-the-effect">Change the effect</h4>
-<p>A typical use case for this is to transform a stack having a <code class="prettyprint">Reader[S, *]</code> effect to a stack having a <code class="prettyprint">Reader[B, *]</code> effect where <code class="prettyprint">S</code> is “contained” in <code class="prettyprint">B</code> (meaning that there is a mapping from <code class="prettyprint">B</code>, “big”, to <code class="prettyprint">S</code>, “small”). Here is an example:</p>
+<p>A typical use case for this is to transform a stack having a
+<code class="prettyprint">Reader[S, *]</code> effect to a stack having a <code class="prettyprint">Reader[B,
+*]</code> effect where <code class="prettyprint">S</code> is “contained” in <code class="prettyprint">B</code>
+(meaning that there is a mapping from <code class="prettyprint">B</code>, “big”, to
+<code class="prettyprint">S</code>, “small”). Here is an example:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._
 import org.atnos.eff.syntax.all._
 import cats._
@@ -382,16 +418,27 @@ val action: Eff[SS, String] = for {
 
 action.runReader(Conf(&quot;www.me.com&quot;, 8080)).runOption.run</code></pre>
 <p><code class="prettyprint">&gt; Some(hello world)</code></p>
-<p>There are also specialized versions of <code class="prettyprint">transform</code> for <code class="prettyprint">Reader</code> and <code class="prettyprint">State</code>:</p>
+<p>There are also specialized versions of <code class="prettyprint">transform</code> for
+<code class="prettyprint">Reader</code> and <code class="prettyprint">State</code>:</p>
 <ul>
-<li><code class="prettyprint">ReaderEffect.localReader</code> takes a “getter” <code class="prettyprint">B =&gt; A</code> to transform a stack with a <code class="prettyprint">Reader[A, *]</code> into a stack with a <code class="prettyprint">Reader[B, *]</code></li>
-<li><code class="prettyprint">StateEffect.lensState</code> takes a “getter” <code class="prettyprint">S =&gt; T</code> and a “setter” <code class="prettyprint">(S, T) =&gt; S</code> to to transform a stack with a <code class="prettyprint">State[T, *]</code> into a stack with a <code class="prettyprint">State[S, *]</code></li>
+<li><code class="prettyprint">ReaderEffect.localReader</code> takes a “getter” <code class="prettyprint">B =&gt;
+A</code> to transform a stack with a <code class="prettyprint">Reader[A, *]</code> into a
+stack with a <code class="prettyprint">Reader[B, *]</code></li>
+<li><code class="prettyprint">StateEffect.lensState</code> takes a “getter” <code class="prettyprint">S =&gt;
+T</code> and a “setter” <code class="prettyprint">(S, T) =&gt; S</code> to to transform a
+stack with a <code class="prettyprint">State[T, *]</code> into a stack with a <code class="prettyprint">State[S,
+*]</code></li>
 </ul>
-<h3 id="translate-an-effect-into-multiple-others">Translate an effect into multiple others</h3>
-<p>A common thing to do is to translate effects (a webservice DSL for example) into multiple others (<code class="prettyprint">TimedFuture</code>, <code class="prettyprint">Eval</code>, <code class="prettyprint">Either</code>, etc…).</p>
+<h3 id="translate-an-effect-into-multiple-others">Translate an effect
+into multiple others</h3>
+<p>A common thing to do is to translate effects (a webservice DSL for
+example) into multiple others (<code class="prettyprint">TimedFuture</code>,
+<code class="prettyprint">Eval</code>, <code class="prettyprint">Either</code>, etc…).</p>
 <p>For example you might have this stack:</p>
 <pre><code class="prettyprint">type S = Fx.fx3[Authenticated, TimedFuture, Either[AuthError, *]]</code></pre>
-<p>And you want to write an interpreter which will translate authentication actions into <code class="prettyprint">TimedFuture</code> and <code class="prettyprint">Either</code>:</p>
+<p>And you want to write an interpreter which will translate
+authentication actions into <code class="prettyprint">TimedFuture</code> and
+<code class="prettyprint">Either</code>:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
 import org.atnos.eff.future._
@@ -442,9 +489,16 @@ type S1 = Fx.fx3[Authenticated, Either[AuthError, *], TimedFuture]
 type R1 = Fx.fx2[Either[AuthError, *], TimedFuture]
 
 val result: Eff[R1, AccessRights] = runAuth(authenticate[S1](&quot;faketoken&quot;))</code></pre>
-<p>The call to <code class="prettyprint">send</code> above needs to send an <code class="prettyprint">TimedFuture</code> value in the stack <code class="prettyprint">U</code>. This is possible because <code class="prettyprint">TimedFuture</code> is an effect in <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">future</code>.</p>
-<p>Furthermore, <code class="prettyprint">authenticate</code> returns an <code class="prettyprint">Either[AuthError, *]</code> value. We can “collapse” it into <code class="prettyprint">U</code> because <code class="prettyprint">Either[AuthError, *]</code> is an effect of <code class="prettyprint">U</code> as evidenced by <code class="prettyprint">either</code>.</p>
-<p>You might wonder why we don’t use a more direct type signature like:</p>
+<p>The call to <code class="prettyprint">send</code> above needs to send an
+<code class="prettyprint">TimedFuture</code> value in the stack <code class="prettyprint">U</code>. This is
+possible because <code class="prettyprint">TimedFuture</code> is an effect in <code class="prettyprint">U</code>
+as evidenced by <code class="prettyprint">future</code>.</p>
+<p>Furthermore, <code class="prettyprint">authenticate</code> returns an
+<code class="prettyprint">Either[AuthError, *]</code> value. We can “collapse” it into
+<code class="prettyprint">U</code> because <code class="prettyprint">Either[AuthError, *]</code> is an effect of
+<code class="prettyprint">U</code> as evidenced by <code class="prettyprint">either</code>.</p>
+<p>You might wonder why we don’t use a more direct type signature
+like:</p>
 <pre><code class="prettyprint">def runAuth2[R, U :_future :_error, A](e: Eff[R, A])(
   implicit authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A]</code></pre>
 <p>The reason is that scalac desugars this to:</p>
@@ -452,7 +506,8 @@ val result: Eff[R1, AccessRights] = runAuth(authenticate[S1](&quot;faketoken&quo
   implicit future:        _future[U],
            either:        _error[U],
            authenticated: Member.Aux[Authenticated, R, U]): Eff[U, A] =</code></pre>
-<p>And then <code class="prettyprint">authenticated</code> is last in the list of implicits parameters and can not be used to guide type inference.</p>
+<p>And then <code class="prettyprint">authenticated</code> is last in the list of implicits
+parameters and can not be used to guide type inference.</p>
 <h3 id="interpret-an-effect-locally">Interpret an effect “locally”</h3>
 <p>Let’s say you have a method to run database queries</p>
 <pre><code class="prettyprint">import org.atnos.eff._
@@ -466,13 +521,19 @@ def runDb[R, U, A](queries: Eff[R, A])(
   implicit db:     Member.Aux[Db, R, U],
            eval:   _eval[U],
            writer: _writerString[U]): Eff[U, A] = ???</code></pre>
-<p>The database queries (the <code class="prettyprint">Db</code> effect) are being executed by the <code class="prettyprint">runDb</code> method inside the <code class="prettyprint">Eval</code> effect, and they use a <code class="prettyprint">WriterString</code> effect to log what is being executed.</p>
-<p>However you know that some clients of your component don’t care about the logs and they don’t want to have the <code class="prettyprint">WriterString</code> effect. that they consider an implementation detail.</p>
+<p>The database queries (the <code class="prettyprint">Db</code> effect) are being executed
+by the <code class="prettyprint">runDb</code> method inside the <code class="prettyprint">Eval</code> effect,
+and they use a <code class="prettyprint">WriterString</code> effect to log what is being
+executed.</p>
+<p>However you know that some clients of your component don’t care about
+the logs and they don’t want to have the <code class="prettyprint">WriterString</code>
+effect. that they consider an implementation detail.</p>
 <p>So you’d like to provide this additional method:</p>
 <pre><code class="prettyprint">def executeOnDb[R, U, A](queries: Eff[R, A])(
   implicit db:   Member.Aux[Db, R, U],
            eval: _eval[U]): Eff[U, A] = ???</code></pre>
-<p>How can you implement <code class="prettyprint">executeOnDb</code> with <code class="prettyprint">runDb</code>?</p>
+<p>How can you implement <code class="prettyprint">executeOnDb</code> with
+<code class="prettyprint">runDb</code>?</p>
 <pre><code class="prettyprint">import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
@@ -484,9 +545,15 @@ type S = Fx.prepend[WriterString, R]
   runDb(queries.into[S]).runWriterNoLog[String]
 
 }</code></pre>
-<p>You create a “local” stack containing the <code class="prettyprint">WriterString</code> effect using the <code class="prettyprint">prepend</code> method. You now run the <code class="prettyprint">Db</code> effect and discard the logs to finally return only <code class="prettyprint">Eff[U, A]</code>.</p>
+<p>You create a “local” stack containing the <code class="prettyprint">WriterString</code>
+effect using the <code class="prettyprint">prepend</code> method. You now run the
+<code class="prettyprint">Db</code> effect and discard the logs to finally return only
+<code class="prettyprint">Eff[U, A]</code>.</p>
 <h3 id="merge-stacks">Merge stacks</h3>
-<p>We can create effects for a given effect stack, for example to interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster. We can also define another stack, for storing and retrieving data on <a href="https://aws.amazon.com/s3">S3</a>.</p>
+<p>We can create effects for a given effect stack, for example to
+interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster.
+We can also define another stack, for storing and retrieving data on <a
+href="https://aws.amazon.com/s3">S3</a>.</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._
 import cats.data._
 import cats.Eval
@@ -529,14 +596,17 @@ object S3Stack {
     ReaderEffect.runReader(conf)(e)
 }
 </code></pre>
-<p>So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share some common effects, so the resulting stack we want to work with is:</p>
+<p>So what happens when you want to both use S3 and Hadoop? As you can
+see from the definition above those 2 stacks share some common effects,
+so the resulting stack we want to work with is:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
   import cats.Eval
   import HadoopStack._
   import S3Stack.{WriterString=&gt;_,_}
 
   type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]</code></pre>
-<p>Then we can use the <code class="prettyprint">into</code> method to inject effects from each stack into this common stack:</p>
+<p>Then we can use the <code class="prettyprint">into</code> method to inject effects from
+each stack into this common stack:</p>
 <pre><code class="prettyprint">import S3Stack._
 import HadoopStack._
 // this imports the `into` and runXXX syntax
@@ -552,8 +622,10 @@ val action = for {
 
   // and we can run the composite action
   action.runReader(S3Conf(&quot;bucket&quot;)).runReader(HadoopConf(10)).runWriter.runEval.run</code></pre>
-<p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket: 10))</code></p>
-<p>You can find a fully working example of this approach in <code class="prettyprint">src/test/org/atnos/example/StacksSpec</code>.</p>
+<p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket:
+10))</code></p>
+<p>You can find a fully working example of this approach in
+<code class="prettyprint">src/test/org/atnos/example/StacksSpec</code>.</p>
 </div>
 
 <script>

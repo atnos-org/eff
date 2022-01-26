@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -299,7 +319,10 @@
 <div id="tipue_search_content"></div>
 
 <h3 id="concurrent-evaluation">Concurrent evaluation</h3>
-<p>The default interpretation of <code class="prettyprint">Eff</code> values is “monadic” meaning that effectful values are being evaluated in order. This becomes clear when traversing a list of values with the <code class="prettyprint">FutureEffect</code>:</p>
+<p>The default interpretation of <code class="prettyprint">Eff</code> values is “monadic”
+meaning that effectful values are being evaluated in order. This becomes
+clear when traversing a list of values with the
+<code class="prettyprint">FutureEffect</code>:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, future._, syntax.all._
 import cats.Eval
 import cats.data.Writer
@@ -328,15 +351,20 @@ val action: Eff[S, List[Int]] =
 
 Await.result(action.runEval.runWriterLog.runSequential, 2.seconds)</code></pre>
 <p><code class="prettyprint">&gt; List(1000, 500, 50)</code></p>
-<p>We can however run all those computations concurrently using the applicative execution for <code class="prettyprint">Eff</code>:</p>
+<p>We can however run all those computations concurrently using the
+applicative execution for <code class="prettyprint">Eff</code>:</p>
 <pre><code class="prettyprint">val action: Eff[S, List[Int]] =
   List(1000, 500, 50).traverseA(execute[S])
 
 Await.result(Eff.detachA(action.runEval.runWriterLog[String])(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(scheduler, global), 2.seconds)</code></pre>
 <p><code class="prettyprint">&gt; List(1000, 500, 50)</code></p>
-<p>This uses now <code class="prettyprint">traverseA</code> (instead of <code class="prettyprint">traverse</code>) to do an applicative traversal and execute futures concurrently and the fastest actions finish first.</p>
+<p>This uses now <code class="prettyprint">traverseA</code> (instead of
+<code class="prettyprint">traverse</code>) to do an applicative traversal and execute
+futures concurrently and the fastest actions finish first.</p>
 <h3 id="batching">Batching</h3>
-<p>Another advantage of applicative effects is that we can intercept them individual requests and “batch” them into one single request. For example:</p>
+<p>Another advantage of applicative effects is that we can intercept
+them individual requests and “batch” them into one single request. For
+example:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 import cats.implicits._
 
@@ -374,7 +402,9 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
 }
 
 </code></pre>
-<p>We can also optimise a <code class="prettyprint">UserDsl</code> program by providing a <code class="prettyprint">Batchable</code> instance describing how to “batch” 2 calls into 1:</p>
+<p>We can also optimise a <code class="prettyprint">UserDsl</code> program by providing a
+<code class="prettyprint">Batchable</code> instance describing how to “batch” 2 calls into
+1:</p>
 <pre><code class="prettyprint">implicit def BatchableUserDsl: Batchable[UserDsl] = new Batchable[UserDsl] {
   type Z = List[User]
   type E = User
@@ -392,7 +422,8 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
 }
 
 </code></pre>
-<p>Now let’s create a program using the <code class="prettyprint">User</code> DSL with applicative calls which can be optimised:</p>
+<p>Now let’s create a program using the <code class="prettyprint">User</code> DSL with
+applicative calls which can be optimised:</p>
 <pre><code class="prettyprint">def program[R :_userDsl]: Eff[R, List[User]] =
   Eff.traverseA(List(1, 2, 3))(i =&gt; getUser(i))
 
@@ -402,7 +433,8 @@ def runDsl[A](eff: Eff[Fx1[UserDsl], A]): (A, Vector[String]) = {
   program.batch
 
 </code></pre>
-<p>Running the optimised and non-optimised version of the program must yield the same results:</p>
+<p>Running the optimised and non-optimised version of the program must
+yield the same results:</p>
 <pre><code class="prettyprint">show(runDsl(program[Fx1[UserDsl]]), runDsl(optimised[Fx1[UserDsl]]))</code></pre>
 <pre><code class="prettyprint">original:  User(1), User(2), User(3)
   trace: getWebUser, getWebUser, getWebUser

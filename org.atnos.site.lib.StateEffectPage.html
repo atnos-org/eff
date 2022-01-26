@@ -186,21 +186,31 @@
                 <li id="org-atnos-site-tutorial"><a href="org.atnos.site.Tutorial.html" title="Tutorial">Tutorial</a>
       <ul><ul><li><a href="org.atnos.site.Tutorial.html#study-your-topic" title="Study your topic">Study your topic</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt-representing-your-grammar" title="Create an ADT representing your grammar">Create an ADT r...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-an-adt
+representing-your-grammar" title="Create an ADT
+representing your grammar">Create an ADT
+r...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#free-your-adt" title="Free your ADT">Free your ADT</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#create-smart-constructors-using-eff.send" title="Create smart constructors using Eff.send">Create smart co...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#create-smart
+constructors-using-eff.send" title="Create smart
+constructors using Eff.send">Create smart
+co...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#build-a-program" title="Build a program">Build a program</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for-your-program" title="Write an interpreter for your program">Write an interp...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#write-an-interpreter-for
+your-program" title="Write an interpreter for
+your program">Write an interp...</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#run-your-program" title="Run your program">Run your program</a>
           
         </li><li><a href="org.atnos.site.Tutorial.html#add-some-syntax" title="Add some syntax">Add some syntax</a>
           
-        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff-monad" title="Composing ADTs with the Eff monad">Composing ADTs ...</a>
+        </li><li><a href="org.atnos.site.Tutorial.html#composing-adts-with-the-eff
+monad" title="Composing ADTs with the Eff
+monad">Composing ADTs ...</a>
           
         </li></ul></ul>
       <ul>
@@ -224,11 +234,15 @@
                 <li id="org-atnos-site-transformstack"><a href="org.atnos.site.TransformStack.html" title="Transform stacks">Transform stacks</a>
       <ul><ul><li><a href="org.atnos.site.TransformStack.html#what-is-an-“effect-stack”?" title="What is an “effect stack”?">What is an “eff...</a>
           
-        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to-another" title="Transform an effect to another">Transform an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#transform-an-effect-to
+another" title="Transform an effect to
+another">Transform an ef...</a>
           <ul><li><a href="org.atnos.site.TransformStack.html#change-the-effect" title="Change the effect">Change the effect</a>
           
         </li></ul>
-        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect-into-multiple-others" title="Translate an effect into multiple others">Translate an ef...</a>
+        </li><li><a href="org.atnos.site.TransformStack.html#translate-an-effect
+into-multiple-others" title="Translate an effect
+into multiple others">Translate an ef...</a>
           
         </li><li><a href="org.atnos.site.TransformStack.html#interpret-an-effect-“locally”" title="Interpret an effect “locally”">Interpret an ef...</a>
           
@@ -241,11 +255,17 @@
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects-with-several-type-parameters" title="Running effects with several type parameters">Running effects...</a>
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
+with-several-type-parameters" title="Running effects
+with several type parameters">Running effects...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type-aliases" title="Use context bounds and type aliases">Use context bou...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+aliases" title="Use context bounds and type
+aliases">Use context bou...</a>
           
-        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member-typeclasses" title="Know your Member typeclasses">Know your Membe...</a>
+        </li><li><a href="org.atnos.site.MemberImplicits.html#know-your-member
+typeclasses" title="Know your Member
+typeclasses">Know your Membe...</a>
           
         </li><li><a href="org.atnos.site.MemberImplicits.html#“packing”-member-instances" title="“Packing” member instances">“Packing” membe...</a>
           
@@ -298,12 +318,14 @@
 <h1>State</h1>
 <div id="tipue_search_content"></div>
 
-<p>A <code class="prettyprint">State</code> effect can be seen as the combination of both a <code class="prettyprint">Reader</code> and a <code class="prettyprint">Writer</code> with these operations:</p>
+<p>A <code class="prettyprint">State</code> effect can be seen as the combination of both a
+<code class="prettyprint">Reader</code> and a <code class="prettyprint">Writer</code> with these operations:</p>
 <ul>
 <li><p><code class="prettyprint">get</code> get the current state</p></li>
 <li><p><code class="prettyprint">put</code> set a new state</p></li>
 </ul>
-<p>Let’s see an example showing that we can also use tags to track different states at the same time:</p>
+<p>Let’s see an example showing that we can also use tags to track
+different states at the same time:</p>
 <pre><code class="prettyprint">import cats.data._
   import org.atnos.eff._, all._, syntax.all._
 
@@ -323,8 +345,13 @@
 
   swapVariables.evalState(10).evalState(&quot;hello&quot;).run</code></pre>
 <p><code class="prettyprint">&gt; initial: (10,hello), final: (5,10)</code></p>
-<p>In the example above we have used an <code class="prettyprint">eval</code> method to get the <code class="prettyprint">A</code> in <code class="prettyprint">Eff[R, A]</code> but it is also possible to get both the value and the state with <code class="prettyprint">run</code> or only the state with <code class="prettyprint">exec</code>.</p>
-<p>Instead of tagging state effects it is also possible to transform a State effect acting on a “small” state into a State effect acting on a “bigger” state:</p>
+<p>In the example above we have used an <code class="prettyprint">eval</code> method to get
+the <code class="prettyprint">A</code> in <code class="prettyprint">Eff[R, A]</code> but it is also possible to
+get both the value and the state with <code class="prettyprint">run</code> or only the state
+with <code class="prettyprint">exec</code>.</p>
+<p>Instead of tagging state effects it is also possible to transform a
+State effect acting on a “small” state into a State effect acting on a
+“bigger” state:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 import cats.data.State
 
