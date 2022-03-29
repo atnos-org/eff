@@ -1,12 +1,6 @@
 import org.scalajs.jsenv.nodejs._
 
-lazy val specs2Version = Def.setting(
-  if (scalaBinaryVersion.value == "3") {
-    "5.0.0-ALPHA-03"
-  } else {
-    "4.15.0"
-  }
-)
+lazy val specs2Version = Def.setting("4.15.0")
 lazy val twitterUtilVersion = "22.2.0"
 lazy val doobieVersion      = "0.13.4"
 
