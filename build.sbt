@@ -150,22 +150,8 @@ lazy val commonSettings = Def.settings(
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
-  libraryDependencies ++= {
-    if (scalaBinaryVersion.value == "3") {
-      Nil
-    } else {
-      specs2.value
-    }
-  },
-  Test / sources := {
-    if (scalaBinaryVersion.value == "3") {
-      // TODO
-      Nil
-    } else {
-      (Test / sources).value
-    }
-  },
   parallelExecution := false,
+  libraryDependencies ++= specs2.value,
   scalacOptions ++= {
     if (scalaBinaryVersion.value == "3") {
       Nil
@@ -339,11 +325,7 @@ lazy val specs2 = Def.setting(
   ).map(
     _.exclude(
       "org.specs2",
-      if (scalaBinaryVersion.value == "3") {
-        "xml_sjs1_2.13"
-      } else {
-        "xml_sjs1_" + scalaBinaryVersion.value
-      }
+      "xml_sjs1_" + scalaBinaryVersion.value
     )
   )
 )
