@@ -1,6 +1,7 @@
 package org.atnos.eff.syntax
 
-import cats.{Eval, Monoid}
+import cats.Eval
+import cats.Monoid
 import cats.data.Writer
 import org.atnos.eff._
 
@@ -45,5 +46,3 @@ trait writer {
   }
 
 }
-
-

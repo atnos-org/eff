@@ -3,7 +3,8 @@ package org.atnos.site
 import org.atnos.site.snippets._
 import tutorial._
 
-object Tutorial extends UserGuidePage { def is = "Tutorial".title ^ s2"""
+object Tutorial extends UserGuidePage {
+  def is = "Tutorial".title ^ s2"""
 
 This tutorial is intentionally structured like the [Free monad tutorial for cats](https://typelevel.org/cats/datatypes/freemonad.html)
  so that a side-by-side comparison of the 2 approaches is possible.
@@ -60,7 +61,9 @@ Each method requires the `KVStore` effect to be a member of an "effect stack" `R
 
 ### Build a program
 
-Now that we can construct values with `KVStore` effects we can use our DSL to write "programs" using a for-comprehension: ${definition[AdtUsageSnippet]}
+Now that we can construct values with `KVStore` effects we can use our DSL to write "programs" using a for-comprehension: ${definition[
+      AdtUsageSnippet
+    ]}
 
 This looks like a monadic flow. However, it just builds a recursive data structure representing the sequence of operations.
 
@@ -118,20 +121,20 @@ The final step is naturally running your program after interpreting it to anothe
  - call a final `run` to get an `A` value
 <p/>
 
-Like this: ${snippet{
+Like this: ${snippet {
 // 8<---
-import AdtSnippet._
-import AdtUsageSnippet._
-import AdtInterpreterSnippet._
+      import AdtSnippet._
+      import AdtUsageSnippet._
+      import AdtInterpreterSnippet._
 
 // 8<---
 
-import org.atnos.eff._, syntax.all._
+      import org.atnos.eff._, syntax.all._
 
 // run the program with the unsafe interpreter
-runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run
+      runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run
 
-}.eval}
+    }.eval}
 
 With the safe interpreter, the process is the same and we need to
 
@@ -140,55 +143,57 @@ With the safe interpreter, the process is the same and we need to
  - call interpreters for all the other effects, including the final `NoFx` effect with `run`
 <p/>
 
-Like that: ${snippet{
+Like that: ${snippet {
 // 8<---
-import AdtSnippet._
-import AdtUsageSnippet._
-import AdtInterpreterSafeSnippet._
+      import AdtSnippet._
+      import AdtUsageSnippet._
+      import AdtInterpreterSafeSnippet._
 // 8<---
-import org.atnos.eff._, syntax.all._
-import cats._, data._
+      import org.atnos.eff._, syntax.all._
+      import cats._, data._
 
 // run the program with the safe interpreter
-type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
+      type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
 
-val (result, logs) =
-  runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
+      val (result, logs) =
+        runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
 
-(result.toString +: logs).mkString("\n")
-}.eval}
+      (result.toString +: logs).mkString("\n")
+    }.eval}
 
 ### Add some syntax
 
 It is nice to be able to "chain" `run` methods with this additional piece of syntax: ${snippet {
 // 8<---
-import AdtSnippet._
-import AdtUsageSnippet._
-import AdtInterpreterSafeSnippet._
-import org.atnos.eff._, all._, syntax.all._
-import cats._, data._
+      import AdtSnippet._
+      import AdtUsageSnippet._
+      import AdtInterpreterSafeSnippet._
+      import org.atnos.eff._, all._, syntax.all._
+      import cats._, data._
 
-type _writerString[R] = Writer[String, *] |= R
-type _stateMap[R]     = State[Map[String, Any], *] |= R
+      type _writerString[R] = Writer[String, *] |= R
+      type _stateMap[R] = State[Map[String, Any], *] |= R
 
-type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
+      type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
 
 // 8<---
 
-implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
-  def runStore[U](implicit m: Member.Aux[KVStore, R, U],
-                  throwable:_throwableEither[U],
-                  writer:_writerString[U],
-                  state:_stateMap[U]): Eff[U, A] =
-    runKVStore(effects)
-}
+      implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
+        def runStore[U](implicit
+          m: Member.Aux[KVStore, R, U],
+          throwable: _throwableEither[U],
+          writer: _writerString[U],
+          state: _stateMap[U]
+        ): Eff[U, A] =
+          runKVStore(effects)
+      }
 
-val (result, logs) =
-  program[Stack].runStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
+      val (result, logs) =
+        program[Stack].runStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
 
-(result.toString +: logs).mkString("\n")
+      (result.toString +: logs).mkString("\n")
 
-}.eval}
+    }.eval}
 
 ### Composing ADTs with the Eff monad
 
@@ -202,18 +207,18 @@ Then you simply require your program to have `MemberIn` instances for those effe
 
 Finally we write one interpreter per ADT:${definition[UserInteractionInterpretersSnippet]}
 
-Now if we run our program for a Stack combining both effects and type in "snuggles" when prompted, we see something like this:${snippet{
+Now if we run our program for a Stack combining both effects and type in "snuggles" when prompted, we see something like this:${snippet {
 // 8<--
-import UserInteractionSnippet._
-import UserInteractionInterpretersSnippet._
-import UserInteractionProgramSnippet._
-import org.atnos.eff._
+      import UserInteractionSnippet._
+      import UserInteractionInterpretersSnippet._
+      import UserInteractionProgramSnippet._
+      import org.atnos.eff._
 // 8<--
 
-type Stack = Fx.fx2[Interact, DataOp]
+      type Stack = Fx.fx2[Interact, DataOp]
 
-runInteract(runDataOp(program[Stack]))
-}}
+      runInteract(runDataOp(program[Stack]))
+    }}
 ```
 What's the kitty's name?
 Current cats: snuggles
@@ -221,6 +226,4 @@ Current cats: snuggles
 
 """
 
-
 }
-

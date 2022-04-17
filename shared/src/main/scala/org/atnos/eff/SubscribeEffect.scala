@@ -1,12 +1,10 @@
 package org.atnos.eff
 
 import cats._
-
 import Eff._
 import EffCompat._
 import org.atnos.eff.either._
 import org.atnos.eff.syntax.all._
-
 import scala.util.control.NonFatal
 
 /**
@@ -31,7 +29,8 @@ object SubscribeEffect {
       s"SimpleSubscribe(<subscribe>, $memoizeKey)"
   }
 
-  case class AttemptedSubscribe[A](subscribe: Callback[Throwable Either A] => Unit, memoizeKey: Option[(AnyRef, Cache)] = None) extends Subscribe[Throwable Either A] {
+  case class AttemptedSubscribe[A](subscribe: Callback[Throwable Either A] => Unit, memoizeKey: Option[(AnyRef, Cache)] = None)
+      extends Subscribe[Throwable Either A] {
     def apply(cb: Callback[Throwable Either A]): Unit = subscribe(cb)
 
     def unmemoize: AttemptedSubscribe[A] =
@@ -54,29 +53,36 @@ object SubscribeEffect {
   def subscribeAttempt[A](e: Eff[FS, A]): Eff[FS, ThrowableEither[A]] = {
     type U = Fx.prepend[ThrowableEither, FS]
 
-    interpret.translateInto[FS, Subscribe, U, A](e)(new Translate[Subscribe, U] {
-      def apply[X](sx: Subscribe[X]): Eff[U, X] = {
+    interpret
+      .translateInto[FS, Subscribe, U, A](e)(new Translate[Subscribe, U] {
+        def apply[X](sx: Subscribe[X]): Eff[U, X] = {
 
-        send[Subscribe, U, ThrowableEither[X]](AttemptedSubscribe((c: Callback[Throwable Either X]) => {
-          sx.apply((tx: Throwable Either X) =>
-            try {
-              c(Right(tx))
-            } catch {
-              case NonFatal(t) => c(Right(Left(t)))
-            }
-          )
-        }, sx.memoizeKey)).
-            flatMap {
-              case Left(t)  => left[U, Throwable, X](t)
-              case Right(x) => right[U, Throwable, X](x)
-            }
-      }
-    }).runEither[Throwable].into[FS]
+          send[Subscribe, U, ThrowableEither[X]](
+            AttemptedSubscribe(
+              (c: Callback[Throwable Either X]) => {
+                sx.apply((tx: Throwable Either X) =>
+                  try {
+                    c(Right(tx))
+                  } catch {
+                    case NonFatal(t) => c(Right(Left(t)))
+                  }
+                )
+              },
+              sx.memoizeKey
+            )
+          ).flatMap {
+            case Left(t) => left[U, Throwable, X](t)
+            case Right(x) => right[U, Throwable, X](x)
+          }
+        }
+      })
+      .runEither[Throwable]
+      .into[FS]
   }
 
   def memoizeSubscribe[A](key: AnyRef, cache: Cache, e: Subscribe[A]): Subscribe[A] =
     e match {
-      case SimpleSubscribe(s, _)    => SimpleSubscribe(s, Option((key, cache)))
+      case SimpleSubscribe(s, _) => SimpleSubscribe(s, Option((key, cache)))
       case AttemptedSubscribe(s, _) => AttemptedSubscribe(s, Option((key, cache)))
     }
 
@@ -88,7 +94,7 @@ object SubscribeEffect {
     var sub = subSequenceKey
 
     def cacheKey =
-      key.toString+"-"+sequenceKey+"-"+sub
+      key.toString + "-" + sequenceKey + "-" + sub
 
     def materialize(u: Union[FS, Any]): Union[FS, Any] = {
       val tagged = u.tagged
@@ -104,11 +110,14 @@ object SubscribeEffect {
       case Impure(NoEffect(a), c, last) =>
         memoizeSubsequence(key, sequenceKey, subSequenceKey, cache, c(a).addLast(last))
 
-      case Impure(u: Union[_,_], c, last) =>
-        Impure(materialize(u.cast[Union[FS, Any]]), c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r)).cast[Continuation[Fx1[Subscribe], Any, A]], last)
+      case Impure(u: Union[_, _], c, last) =>
+        Impure(
+          materialize(u.cast[Union[FS, Any]]),
+          c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r)).cast[Continuation[Fx1[Subscribe], Any, A]],
+          last
+        )
 
       case ImpureAp(unions, continuation, last) =>
-
         val materializedUnions =
           Unions(materialize(unions.first.cast[Union[FS, Any]]), unions.rest.map(materialize))
 
@@ -117,4 +126,3 @@ object SubscribeEffect {
     }
   }
 }
-

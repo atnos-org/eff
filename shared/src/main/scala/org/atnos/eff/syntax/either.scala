@@ -32,10 +32,9 @@ final class EitherEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def catchLeftCombine[E](handle: E => Eff[R, A])(implicit member: Either[E, *] /= R, s: Semigroup[E]): Eff[R, A] =
     EitherInterpretation.catchLeftCombine(e)(handle)(member, s)
 
-  def zoomEither[BR, U1, U2, C, B](getter: C => B)(
-    implicit m1: Member.Aux[Either[C, *], R, U1],
-             m2: Member.Aux[Either[B, *], BR, U2],
-             into: IntoPoly[U1, U2]): Eff[BR, A] =
+  def zoomEither[BR, U1, U2, C, B](
+    getter: C => B
+  )(implicit m1: Member.Aux[Either[C, *], R, U1], m2: Member.Aux[Either[B, *], BR, U2], into: IntoPoly[U1, U2]): Eff[BR, A] =
     EitherInterpretation.zoomEither[R, BR, U1, U2, C, B, A](e, getter)
 
   def translateEither[U, C, B](getter: C => B)(implicit sr: Member.Aux[Either[C, *], R, U], br: Either[B, *] |= U): Eff[U, A] =
@@ -44,4 +43,3 @@ final class EitherEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def localEither[E](modify: E => E)(implicit m: Either[E, *] /= R): Eff[R, A] =
     EitherInterpretation.localEither[R, E, A](e)(modify)
 }
-

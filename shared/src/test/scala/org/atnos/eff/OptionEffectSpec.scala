@@ -1,13 +1,15 @@
 package org.atnos.eff
 
-import org.specs2.{ScalaCheck, Specification}
+import org.specs2.ScalaCheck
+import org.specs2.Specification
 import org.scalacheck.Gen.posNum
-import cats.syntax.all.{ catsSyntaxEq => _, _ }
+import cats.syntax.all.{catsSyntaxEq => _, _}
 import cats.data._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class OptionEffectSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
+class OptionEffectSpec extends Specification with ScalaCheck with Specs2Compat {
+  def is = s2"""
 
  run the option monad                     $optionMonad
  run the option monad with nothing        $optionWithNothingMonad
@@ -42,12 +44,11 @@ class OptionEffectSpec extends Specification with ScalaCheck with Specs2Compat {
   }
 
   def optionReader = prop { (init: Int, someValue: Int) =>
-
     // define a Reader / Option stack
     type S = Fx.fx2[Option, ReaderInt]
 
     // create actions
-    def readOption[R :_option :_readerInt]: Eff[R, Int] =
+    def readOption[R: _option: _readerInt]: Eff[R, Int] =
       for {
         j <- OptionEffect.some(someValue)
         i <- ask
@@ -56,7 +57,6 @@ class OptionEffectSpec extends Specification with ScalaCheck with Specs2Compat {
     // run effects
     readOption[S].runOption.runReader(init).run must_== Some(init + someValue)
   }.setGens(posNum[Int], posNum[Int]).set(minTestsOk = 1)
-
 
   def stacksafeOption = {
     val list = (1 to 5000).toList

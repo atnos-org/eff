@@ -3,11 +3,11 @@ package org.atnos.eff
 import org.specs2.Specification
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-
 import cats.syntax.all._
 import cats.Eval
 
-class EvalEffectSpec extends Specification with Specs2Compat { def is = s2"""
+class EvalEffectSpec extends Specification with Specs2Compat {
+  def is = s2"""
 
  run is stack safe with Eval               $stacksafeRun
  attempt is stack safe with Eval           $stacksafeAttempt
@@ -34,10 +34,9 @@ class EvalEffectSpec extends Specification with Specs2Compat { def is = s2"""
       if (i == 0) {
         Eval.now(Eff.pure(1))
       } else {
-        Eval.now(org.atnos.eff.eval.defer(loop(i - 1)).map(_  + 1))
+        Eval.now(org.atnos.eff.eval.defer(loop(i - 1)).map(_ + 1))
       }
 
     loop(100000).value.runEval.run ==== 100001
   }
 }
-

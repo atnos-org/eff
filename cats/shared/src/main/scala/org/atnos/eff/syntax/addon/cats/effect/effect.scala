@@ -1,10 +1,11 @@
 package org.atnos.eff.syntax.addon.cats
 
-import cats.effect.{IO, LiftIO}
+import cats.effect.IO
+import cats.effect.LiftIO
 import cats.effect.unsafe.IORuntime
 import org.atnos.eff._
-import org.atnos.eff.addon.cats.effect.{IOEffect, IOInterpretation}
-
+import org.atnos.eff.addon.cats.effect.IOEffect
+import org.atnos.eff.addon.cats.effect.IOInterpretation
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import org.atnos.eff.Eff

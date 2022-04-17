@@ -8,7 +8,8 @@ import org.atnos.eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class StacksSpec extends Specification with Specs2Compat { def is = s2"""
+class StacksSpec extends Specification with Specs2Compat {
+  def is = s2"""
 
  Some domains may use different effect stacks sharing some common effects.
  When we want to use functions from 2 different domains we want to unify all the effects into one stack.
@@ -37,7 +38,7 @@ class StacksSpec extends Specification with Specs2Compat { def is = s2"""
   def togetherOpen = {
 
     import HadoopOpenStack._
-    import S3OpenStack.{WriterString=>_,_}
+    import S3OpenStack.{WriterString => _, _}
 
     type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 
@@ -52,13 +53,13 @@ class StacksSpec extends Specification with Specs2Compat { def is = s2"""
 
   def together = {
     import HadoopClosedStack._
-    import S3ClosedStack.{WriterString=>_,_}
+    import S3ClosedStack.{WriterString => _, _}
 
     type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 
     val action = for {
       s <- readFile("/tmp/data").into[HadoopS3]
-      _ <- writeFile("key", s)  .into[HadoopS3]
+      _ <- writeFile("key", s).into[HadoopS3]
     } yield ()
 
     run(runEval(runWriter(runHadoopReader(HadoopConf(10))(runS3Reader(S3Conf("bucket"))(action))))) ====
@@ -81,7 +82,7 @@ class StacksSpec extends Specification with Specs2Compat { def is = s2"""
     def readFile[R](path: String)(implicit r: HadoopReader |= R, w: WriterString |= R): Eff[R, String] =
       for {
         c <- ask[R, HadoopConf](r)
-        _ <- tell[R, String]("Reading from "+path)(w)
+        _ <- tell[R, String]("Reading from " + path)(w)
       } yield c.mappers.toString
 
     def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(implicit m: Member.Aux[HadoopReader, R, U]): Eff[U, A] =
@@ -101,7 +102,7 @@ class StacksSpec extends Specification with Specs2Compat { def is = s2"""
     def writeFile[R](key: String, content: String)(implicit r: S3Reader |= R, w: WriterString |= R): Eff[R, Unit] =
       for {
         c <- ask[R, S3Conf](r)
-        _ <- tell[R, String]("Writing to bucket "+c.bucket+": "+content)(w)
+        _ <- tell[R, String]("Writing to bucket " + c.bucket + ": " + content)(w)
       } yield ()
 
     def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(implicit m: Member.Aux[S3Reader, R, U]): Eff[U, A] =
@@ -117,11 +118,10 @@ class StacksSpec extends Specification with Specs2Compat { def is = s2"""
 
     type Hadoop = Fx.fx3[HadoopReader, WriterString, Eval]
 
-
     def readFile(path: String): Eff[Hadoop, String] =
       for {
         c <- ask[Hadoop, HadoopConf]
-        _ <- tell[Hadoop, String]("Reading from "+path)
+        _ <- tell[Hadoop, String]("Reading from " + path)
       } yield c.mappers.toString
 
     def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(implicit m: Member.Aux[HadoopReader, R, U]): Eff[U, A] =
@@ -141,7 +141,7 @@ class StacksSpec extends Specification with Specs2Compat { def is = s2"""
     def writeFile(key: String, content: String): Eff[S3, Unit] =
       for {
         c <- ask[S3, S3Conf]
-        _ <- tell[S3, String]("Writing to bucket "+c.bucket+": "+content)
+        _ <- tell[S3, String]("Writing to bucket " + c.bucket + ": " + content)
       } yield ()
 
     def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(implicit m: Member.Aux[S3Reader, R, U]): Eff[U, A] =

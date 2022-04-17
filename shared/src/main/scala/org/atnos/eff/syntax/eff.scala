@@ -33,9 +33,7 @@ final class EffOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def into[U](implicit f: IntoPoly[R, U]): Eff[U, A] =
     Eff.effInto(e)(f)
 
-  def transform[BR, U, M[_], N[_]](t: ~>[M, N])(
-    implicit m: Member.Aux[M, R, U],
-             n: Member.Aux[N, BR, U]): Eff[BR, A] =
+  def transform[BR, U, M[_], N[_]](t: ~>[M, N])(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, BR, U]): Eff[BR, A] =
     Interpret.transform(e, t)(m, n, IntoPoly.intoSelf[U])
 
   def translate[M[_], U](t: Translate[M, U])(implicit m: Member.Aux[M, R, U]): Eff[U, A] =

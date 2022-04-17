@@ -4,23 +4,24 @@ import org.specs2._
 import org.specs2.execute._
 import runner._
 
-class Website extends Specification { def is = s2"""
+class Website extends Specification {
+  def is = s2"""
 
   Generate the website
     the user guide $userGuide
 
 """
   val pages = Seq(
-    "ApplicativeEvaluation"
-  , "CreateEffects"
-  , "MemberImplicits"
-  , "Introduction"
-  , "OutOfTheBox"
-  , "Tutorial"
-  , "TransformStack"
-  , "Cookbook"
-  , "CommunityResources"
-  ).map("org.atnos.site."+_) :+ "index"
+    "ApplicativeEvaluation",
+    "CreateEffects",
+    "MemberImplicits",
+    "Introduction",
+    "OutOfTheBox",
+    "Tutorial",
+    "TransformStack",
+    "Cookbook",
+    "CommunityResources"
+  ).map("org.atnos.site." + _) :+ "index"
 
   def userGuide = {
     Result.foreach(pages) { page =>

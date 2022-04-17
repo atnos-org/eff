@@ -13,7 +13,7 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
   def size: Int =
     rest.size + 1
 
-  def unions: Vector[Union[R, Any]]=
+  def unions: Vector[Union[R, Any]] =
     first.asInstanceOf[Union[R, Any]] +: rest
 
   def append[B](others: Unions[R, B]): Unions[R, A] =
@@ -24,15 +24,18 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
    * if the first effect of this Unions object is interpreted
    */
   def continueWith[B](continuation: Continuation[R, Vector[Any], B]): Continuation[R, A, B] =
-    Continuation.lift({ (x: X) =>
-      rest match {
-        case v if v.isEmpty =>
-          continuation(x +: Vector.empty)
+    Continuation.lift(
+      { (x: X) =>
+        rest match {
+          case v if v.isEmpty =>
+            continuation(x +: Vector.empty)
 
-        case h +: t =>
-          ImpureAp[R, h.X, B](Unions[R, h.X](h, t), continuation.contramap(x +: _))
-      }
-    }, continuation.onNone)
+          case h +: t =>
+            ImpureAp[R, h.X, B](Unions[R, h.X](h, t), continuation.contramap(x +: _))
+        }
+      },
+      continuation.onNone
+    )
 
   def into[S](f: UnionInto[R, S]): Unions[S, A] =
     Unions[S, A](f(first), rest.map(f.apply))
@@ -49,19 +52,20 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
    * in the same stack
    */
   def extract[M[_]](implicit m: M /= R): CollectedUnions[M, R, R] =
-    collect[M, R](u => m.extract(u) match {
-      case Some(mx) => Right(mx)
-      case None     => Left(u)
-    })
+    collect[M, R](u =>
+      m.extract(u) match {
+        case Some(mx) => Right(mx)
+        case None => Left(u)
+      }
+    )
 
   private def collect[M[_], U](collect: Union[R, Any] => Union[U, Any] Either M[Any]): CollectedUnions[M, R, U] = {
     val (effectsAndIndices, othersAndIndices) =
-      unions.iterator.zipWithIndex.foldLeft((Vector[(M[Any], Int)](), Vector[(Union[U, Any], Int)]())) {
-        case ((es, os), (u, i)) =>
-          collect(u) match {
-            case Right(mx) => (es :+ ((mx, i)), os)
-            case Left(o) => (es, os :+ ((o, i)))
-          }
+      unions.iterator.zipWithIndex.foldLeft((Vector[(M[Any], Int)](), Vector[(Union[U, Any], Int)]())) { case ((es, os), (u, i)) =>
+        collect(u) match {
+          case Right(mx) => (es :+ ((mx, i)), os)
+          case Left(o) => (es, os :+ ((o, i)))
+        }
       }
 
     val (effects, indices) = effectsAndIndices.unzip
@@ -86,7 +90,12 @@ object Unions {
  * Collection of effects of a given type from a Unions objects
  *
  */
-case class CollectedUnions[M[_], R, U](effects: Vector[M[Any]], otherEffects: Vector[Union[U, Any]], indices: Vector[Int], otherIndices: Vector[Int]) {
+case class CollectedUnions[M[_], R, U](
+  effects: Vector[M[Any]],
+  otherEffects: Vector[Union[U, Any]],
+  indices: Vector[Int],
+  otherIndices: Vector[Int]
+) {
 
   def continuation[A](continueWith: Continuation[R, Vector[Any], A], m: Member.Aux[M, R, U]): Continuation[R, Vector[Any], A] =
     otherEffects match {
@@ -94,8 +103,10 @@ case class CollectedUnions[M[_], R, U](effects: Vector[M[Any]], otherEffects: Ve
         continueWith
 
       case o +: rest =>
-        Continuation.lift[R, Vector[Any], A](ls =>
-          ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), continueWith.contramap(reorder(ls, _))), continueWith.onNone)
+        Continuation.lift[R, Vector[Any], A](
+          ls => ImpureAp[R, Any, A](Unions(m.accept(o), rest.map(m.accept)), continueWith.contramap(reorder(ls, _))),
+          continueWith.onNone
+        )
     }
 
   def continuation[A](continueWith: Continuation[U, Vector[Any], A]): Continuation[U, Vector[Any], A] =
@@ -104,8 +115,7 @@ case class CollectedUnions[M[_], R, U](effects: Vector[M[Any]], otherEffects: Ve
         continueWith
 
       case o +: rest =>
-        Continuation.lift[U, Vector[Any], A](ls =>
-          ImpureAp[U, Any, A](Unions(o, rest), continueWith.contramap(reorder(ls, _)), continueWith.onNone))
+        Continuation.lift[U, Vector[Any], A](ls => ImpureAp[U, Any, A](Unions(o, rest), continueWith.contramap(reorder(ls, _)), continueWith.onNone))
     }
 
   def othersEff[A](continueWith: Continuation[U, Vector[Any], A]): Eff[U, A] =

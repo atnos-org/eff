@@ -6,18 +6,18 @@ import AdtSnippet._
 trait AdtInterpreterSafeSnippet {
 // 8<---
 
-import org.atnos.eff._
-import org.atnos.eff.either._
-import org.atnos.eff.writer._
-import org.atnos.eff.state._
-import org.atnos.eff.interpret._
-import cats.implicits._
-import cats.data._
+  import org.atnos.eff._
+  import org.atnos.eff.either._
+  import org.atnos.eff.writer._
+  import org.atnos.eff.state._
+  import org.atnos.eff.interpret._
+  import cats.implicits._
+  import cats.data._
 
-type _writerString[R] = Writer[String, *] |= R
-type _stateMap[R]     = State[Map[String, Any], *] |= R
+  type _writerString[R] = Writer[String, *] |= R
+  type _stateMap[R] = State[Map[String, Any], *] |= R
 
-/**
+  /**
  * Safe interpreter for KVStore effects
  *
  * It uses the following effects:
@@ -44,38 +44,36 @@ type _stateMap[R]     = State[Map[String, Any], *] |= R
  *   implicit m: Member.Aux[KVStore, R, U]): Eff[U, A] = {
  *
  */
-def runKVStore[R, U, A](effects: Eff[R, A])
-  (implicit m: Member.Aux[KVStore, R, U],
-            throwable:_throwableEither[U],
-            writer:_writerString[U],
-            state:_stateMap[U]): Eff[U, A] = {
+  def runKVStore[R, U, A](
+    effects: Eff[R, A]
+  )(implicit m: Member.Aux[KVStore, R, U], throwable: _throwableEither[U], writer: _writerString[U], state: _stateMap[U]): Eff[U, A] = {
 
-  translate(effects)(new Translate[KVStore, U] {
-    def apply[X](kv: KVStore[X]): Eff[U, X] =
-      kv match {
-        case Put(key, value) =>
-          for {
-            _ <- tell(s"put($key, $value)")
-            _ <- modify((map: Map[String, Any]) => map.updated(key, value))
-            r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
-          } yield r
+    translate(effects)(new Translate[KVStore, U] {
+      def apply[X](kv: KVStore[X]): Eff[U, X] =
+        kv match {
+          case Put(key, value) =>
+            for {
+              _ <- tell(s"put($key, $value)")
+              _ <- modify((map: Map[String, Any]) => map.updated(key, value))
+              r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
+            } yield r
 
-        case Get(key) =>
-          for {
-            _ <- tell(s"get($key)")
-            m <- get[U, Map[String, Any]]
-            r <- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
-          } yield r
+          case Get(key) =>
+            for {
+              _ <- tell(s"get($key)")
+              m <- get[U, Map[String, Any]]
+              r <- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
+            } yield r
 
-        case Delete(key) =>
-          for {
-            _ <- tell(s"delete($key)")
-            u <- modify((map: Map[String, Any]) => map - key)
-            r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
-          } yield r
-      }
-  })
-}
+          case Delete(key) =>
+            for {
+              _ <- tell(s"delete($key)")
+              u <- modify((map: Map[String, Any]) => map - key)
+              r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
+            } yield r
+        }
+    })
+  }
 
 // 8<---
 }

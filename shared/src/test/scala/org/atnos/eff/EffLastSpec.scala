@@ -6,10 +6,12 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import cats.syntax.all._
 import org.scalacheck.Gen
-import EitherEffect.{left => leftE, right => rightE}
+import EitherEffect.{left => leftE}
+import EitherEffect.{right => rightE}
 import scala.collection.mutable.ListBuffer
 
-class EffLastSpec extends Specification with ScalaCheck with Specs2Compat { def is = sequential ^ s2"""
+class EffLastSpec extends Specification with ScalaCheck with Specs2Compat {
+  def is = sequential ^ s2"""
 
   An action can run completely at the end, regardless of the number of flatmaps $runLast
     now with one very last action which fails, there should be no exception     $runLastFail
@@ -95,7 +97,7 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat { def 
     import org.atnos.eff.syntax.all._
 
     val act = for {
-      _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit]{ messages.append("boom"); throw new Exception("boom")})
+      _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit] { messages.append("boom"); throw new Exception("boom") })
       _ <- protect[R, Unit](messages.append("b"))
     } yield ()
 
@@ -127,8 +129,7 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat { def 
 
     val action =
       (protect[S, Int](1) >>
-       thenFinally(leftE[S, String, Int]("Error"), protect[S, Unit]({i = 1}))).
-        map(i => i)
+        thenFinally(leftE[S, String, Int]("Error"), protect[S, Unit] { i = 1 })).map(i => i)
 
     action.execSafe.runEither.run
     i ==== 1
@@ -139,8 +140,8 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat { def 
    */
   type _eitherString[R] = Either[String, *] |= R
 
-  def acquire[R :_Safe]: Eff[R, Int] = protect[R, Int] { i += 1; i }
-  def release[R :_Safe]: Int => Eff[R, Int] = (_: Int) => protect[R, Int] { i -= 1; i }
+  def acquire[R: _Safe]: Eff[R, Int] = protect[R, Int] { i += 1; i }
+  def release[R: _Safe]: Int => Eff[R, Int] = (_: Int) => protect[R, Int] { i -= 1; i }
 
   def checkRelease(use: Eff[S, Int]) = {
     eff(use).execSafe.flatMap(either => fromEither(either.leftMap(_.getMessage))).runEither.run
@@ -149,7 +150,7 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat { def 
     result
   }
 
-  def eff[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
+  def eff[R: _Safe: _eitherString](use: Eff[R, Int]): Eff[R, Int] =
     bracketLast(acquire[R])(_ => use)(release[R])
 
   type S = Fx.fx2[Safe, Either[String, *]]

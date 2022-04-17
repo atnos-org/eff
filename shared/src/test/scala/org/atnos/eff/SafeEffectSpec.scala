@@ -5,13 +5,15 @@ import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
-import org.specs2.matcher.{Matcher, ThrownExpectations}
+import org.specs2.matcher.Matcher
+import org.specs2.matcher.ThrownExpectations
 import org.scalacheck.Gen
-import EitherEffect.{right => rightEffect, left => leftEffect}
-
+import EitherEffect.{right => rightEffect}
+import EitherEffect.{left => leftEffect}
 import scala.collection.mutable.ListBuffer
 
-class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = sequential ^ s2"""
+class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
+  def is = sequential ^ s2"""
 
   The Safe effect can be used to protect resources and computations
   in the presence of exceptions.
@@ -63,12 +65,11 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
 
   def attempt2 = {
     var evaluated = false
-    protect[S, Unit]({evaluated = true}).attempt
+    protect[S, Unit] { evaluated = true }.attempt
     evaluated must beFalse
   }
 
   def finalize1 = prop { (n1: Int, n2: Int, n3: Int, n4: Int) =>
-
     val messages: ListBuffer[String] = new ListBuffer
 
     def program =
@@ -103,8 +104,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
           else ls must haveSize(2)
 
           messages.toList ==== List("finalizer1", "finalizer2")
-        }
-        else {
+        } else {
           if (isEven(n3)) ls must beEmpty
           else ls must haveSize(1)
 
@@ -166,7 +166,6 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   }
 
   def mixedWithOtherEffects1 = prop { (n: Int) =>
-
     type SOE = Fx.fx3[Safe, Option, Eval]
 
     def filter(x: Int): Option[Int] = if (x == 10) None else Some(x)
@@ -179,8 +178,8 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     val program = for {
       dn <- EvalEffect.delay[SOE, Int](n)
       fdn <- OptionEffect.fromOption[SOE, Int](filter(dn))
-      pdn <- protect[SOE, Int](action(fdn)).whenThrowable {
-        case _: IllegalArgumentException => pure(-1)
+      pdn <- protect[SOE, Int](action(fdn)).whenThrowable { case _: IllegalArgumentException =>
+        pure(-1)
       }
     } yield pdn
 
@@ -289,8 +288,8 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   // to check finalization with other effects
   type _eitherString[R] = Either[String, *] |= R
 
-  def acquire[R :_Safe]: Eff[R, Int] = protect[R, Int] { i += 1; i }
-  def release[R :_Safe]: Int => Eff[R, Int] = (_: Int) => protect[R, Int] { i -= 1; i }
+  def acquire[R: _Safe]: Eff[R, Int] = protect[R, Int] { i += 1; i }
+  def release[R: _Safe]: Int => Eff[R, Int] = (_: Int) => protect[R, Int] { i -= 1; i }
 
   def checkRelease(use: Eff[U, Int]) = {
     bracketAction(use).execSafe.flatMap(either => fromEither(either.leftMap(_.getMessage))).runEither.run
@@ -299,11 +298,9 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     result
   }
 
-  def bracketAction[R :_Safe :_eitherString](use: Eff[R, Int]): Eff[R, Int] =
+  def bracketAction[R: _Safe: _eitherString](use: Eff[R, Int]): Eff[R, Int] =
     bracket(acquire[R])(_ => use)(release[R])
 
   type U = Fx.fx2[Safe, Either[String, *]]
-
-
 
 }

@@ -10,11 +10,12 @@ import EvalEffect._
 import WarningsEffect._
 import ConsoleEffect._
 import ErrorEffect._
-import Member.{<=}
+import Member.<=
 import cats.Eval
 import org.specs2._
 
-class ActionSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
+class ActionSpec extends Specification with ScalaCheck with Specs2Compat {
+  def is = s2"""
 
  The action stack can be used to
    compute values                      $computeValues
@@ -46,9 +47,9 @@ class ActionSpec extends Specification with ScalaCheck with Specs2Compat { def i
     import ActionImplicits._
 
     val action = for {
-       i <- EvalEffect.delay[ActionStack, Int](1)
-       _ <- Action.warnAndFail[ActionStack, String]("hmm", "let's stop")
-      } yield i
+      i <- EvalEffect.delay[ActionStack, Int](1)
+      _ <- Action.warnAndFail[ActionStack, String]("hmm", "let's stop")
+    } yield i
 
     runAction(action)._1 must beLeft
   }
@@ -81,11 +82,11 @@ class ActionSpec extends Specification with ScalaCheck with Specs2Compat { def i
     import ActionImplicits._
     for {
       x <- delay(i)
-      _ <- log("got the value "+x)
+      _ <- log("got the value " + x)
       y <- delay(j)
-      _ <- log("got the value "+y)
+      _ <- log("got the value " + y)
       s <- if (x + y > 10) fail("too big") else ErrorEffect.ok(x + y)
-      _ <- if (s >= 5) warn("the sum is big: "+s) else Eff.unit[ActionStack]
+      _ <- if (s >= 5) warn("the sum is big: " + s) else Eff.unit[ActionStack]
     } yield s
   }
 
@@ -93,18 +94,18 @@ class ActionSpec extends Specification with ScalaCheck with Specs2Compat { def i
    * "open" effects version of the same actions
    * this one can be reused with more effects
    */
-  def unboundActions[R](i: Int, j: Int)(
-    implicit m1: Eval <= R,
-             m2: Console <= R,
-             m3: Warnings <= R,
-             m4: ErrorOrOk <= R
+  def unboundActions[R](i: Int, j: Int)(implicit
+    m1: Eval <= R,
+    m2: Console <= R,
+    m3: Warnings <= R,
+    m4: ErrorOrOk <= R
   ): Eff[R, Int] = for {
     x <- delay(i)
-    _ <- log("got the value "+x)
+    _ <- log("got the value " + x)
     y <- delay(j)
-    _ <- log("got the value "+y)
+    _ <- log("got the value " + y)
     s <- if (x + y > 10) fail("too big") else ErrorEffect.ok(x + y)
-    _ <- if (s >= 5) warn("the sum is big: "+s) else Eff.unit[R]
+    _ <- if (s >= 5) warn("the sum is big: " + s) else Eff.unit[R]
   } yield s
 
 }

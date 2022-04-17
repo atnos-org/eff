@@ -1,7 +1,6 @@
 package org.atnos.eff.syntax
 
 import org.atnos.eff._
-
 import scala.reflect.ClassTag
 
 object safe extends safe
@@ -40,9 +39,8 @@ trait safe {
     def attempt(implicit m: Safe /= R): Eff[R, Throwable Either A] =
       SafeEffect.attempt(e)
 
-    def ignoreException[E <: Throwable : ClassTag](implicit m: Safe /= R): Eff[R, Unit] =
+    def ignoreException[E <: Throwable: ClassTag](implicit m: Safe /= R): Eff[R, Unit] =
       SafeEffect.ignoreException[R, E, A](e)
   }
 
 }
-

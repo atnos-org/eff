@@ -36,8 +36,7 @@ import Eff._
  */
 trait Interpret {
 
-  def runInterpreter[R, U, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, U, A, B])
-                                                    (implicit m: Member.Aux[T, R, U]): Eff[U, B] = {
+  def runInterpreter[R, U, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, U, A, B])(implicit m: Member.Aux[T, R, U]): Eff[U, B] = {
 
     def interpretContinuation[X](c: Continuation[R, X, A]): Continuation[U, X, B] =
       Continuation.lift((x: X) => runInterpreter(c(x))(interpreter), interpretLast(c.onNone))
@@ -53,9 +52,10 @@ trait Interpret {
         case Impure(NoEffect(a), c, last1) =>
           interpretLastEff(c(a).addLast(last1))
 
-        case Impure(u: Union[_,_], c, last1) =>
+        case Impure(u: Union[_, _], c, last1) =>
           m.project(u) match {
-            case Right(tu)   => interpreter.onLastEffect(tu, Continuation.lift((x: u.X) => interpretLastEff(c(x).addLast(last1)), interpretLast(c.onNone)))
+            case Right(tu) =>
+              interpreter.onLastEffect(tu, Continuation.lift((x: u.X) => interpretLastEff(c(x).addLast(last1)), interpretLast(c.onNone)))
             case Left(other) => Impure(other, Continuation.lift((x: u.X) => interpretLastEff(c(x)), interpretLast(c.onNone)), interpretLast(last1))
           }
 
@@ -65,7 +65,7 @@ trait Interpret {
 
     def interpretLast(last: Last[R]): Last[U] =
       last.value match {
-        case None    => Last.none[U]
+        case None => Last.none[U]
         case Some(l) => Last.eff(interpretLastEff(l.value))
       }
 
@@ -76,9 +76,9 @@ trait Interpret {
       case Impure(NoEffect(a), c, last) =>
         Impure(NoEffect(a), interpretContinuation(c), interpretLast(last))
 
-      case Impure(u: Union[_,_], c, last) =>
+      case Impure(u: Union[_, _], c, last) =>
         m.project(u) match {
-          case Right(tu)   => interpreter.onEffect(tu, interpretContinuationWithLast(c, last))
+          case Right(tu) => interpreter.onEffect(tu, interpretContinuationWithLast(c, last))
           case Left(other) => Impure(other, interpretContinuation(c), interpretLast(last))
         }
 
@@ -95,21 +95,20 @@ trait Interpret {
   /**
    * Interpret an effect with a Recurser
    */
-  def recurse[R, U, T[_], A, B](e: Eff[R, A])
-                               (recurser: Recurser[T, U, A, B])
-                               (implicit m: Member.Aux[T, R, U]): Eff[U, B] =
+  def recurse[R, U, T[_], A, B](e: Eff[R, A])(recurser: Recurser[T, U, A, B])(implicit m: Member.Aux[T, R, U]): Eff[U, B] =
     runInterpreter(e)(Interpreter.fromRecurser(recurser))
 
   /**
    * transform an effect into another one
    * using a natural transformation, leaving the rest of the stack untouched
    */
-  def transform[SR, BR, U1, U2, TS[_], TB[_], A](effect: Eff[SR, A], nat: TS ~> TB)
-                                               (implicit sr: Member.Aux[TS, SR, U1],
-                                                         br: Member.Aux[TB, BR, U2],
-                                                         into: IntoPoly[U1, U2]): Eff[BR, A] = {
+  def transform[SR, BR, U1, U2, TS[_], TB[_], A](effect: Eff[SR, A], nat: TS ~> TB)(implicit
+    sr: Member.Aux[TS, SR, U1],
+    br: Member.Aux[TB, BR, U2],
+    into: IntoPoly[U1, U2]
+  ): Eff[BR, A] = {
     val m: Member.Aux[TS, SR, BR] = new Member[TS, SR] {
-     type Out = BR
+      type Out = BR
 
       def inject[V](tv: TS[V]): Union[SR, V] =
         sr.inject(tv)
@@ -120,7 +119,7 @@ trait Interpret {
       def project[V](union: Union[SR, V]): Union[Out, V] Either TS[V] =
         sr.project(union) match {
           case Right(u) => Right(u)
-          case Left(o)  => Left(br.accept(into.unionInto(o)))
+          case Left(o) => Left(br.accept(into.unionInto(o)))
         }
 
     }
@@ -159,7 +158,7 @@ trait Interpret {
       def project[V](union: Union[R, V]): Union[Out, V] Either T[V] =
         t.extract(union) match {
           case Some(u) => Right(u)
-          case None    => Left(into.unionInto(union))
+          case None => Left(into.unionInto(union))
         }
     }
 
@@ -167,32 +166,30 @@ trait Interpret {
   }
 
   /** interpret an effect by running side-effects */
-  def interpretUnsafe[R, U, T[_], A](effect: Eff[R, A])(sideEffect: SideEffect[T])
-                                    (implicit m: Member.Aux[T, R, U]): Eff[U, A] =
+  def interpretUnsafe[R, U, T[_], A](effect: Eff[R, A])(sideEffect: SideEffect[T])(implicit m: Member.Aux[T, R, U]): Eff[U, A] =
     runInterpreter[R, U, T, A, A](effect)(Interpreter.fromSideEffect(sideEffect))
 
-  def intercept[R, T[_], A, B](e: Eff[R, A])
-                              (interpreter: Interpreter[T, R, A, B])
-                              (implicit m: T /= R): Eff[R, B] =
+  def intercept[R, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, R, A, B])(implicit m: T /= R): Eff[R, B] =
     runInterpreter[R, R, T, A, B](e)(interpreter)(m.toMember)
 
   /**
    * Intercept the values for one effect and transform them into
    * other values for the same effect
    */
-  def interceptNat[R, T[_], A](effect: Eff[R, A])
-                              (nat: T ~> T)
-                              (implicit m: T /= R): Eff[R, A] =
+  def interceptNat[R, T[_], A](effect: Eff[R, A])(nat: T ~> T)(implicit m: T /= R): Eff[R, A] =
     intercept(effect)(Interpreter.fromNat(nat))
 
-  type of[F[_], G[_]] = {type l[A] = F[G[A]]}
+  type of[F[_], G[_]] = { type l[A] = F[G[A]] }
 
   /**
    * Intercept the values for one effect,
    * emitting new values for the same effect inside a monad which is interleaved in
    */
-  def interceptNatM[R, M[_], F[_], A](effect: Eff[R, A], nat: M ~> (M `of` F)#l)
-                                     (implicit m: MemberInOut[M, R], FT: Traverse[F], FM: Monad[F]): Eff[R, F[A]] =
+  def interceptNatM[R, M[_], F[_], A](effect: Eff[R, A], nat: M ~> (M `of` F)#l)(implicit
+    m: MemberInOut[M, R],
+    FT: Traverse[F],
+    FM: Monad[F]
+  ): Eff[R, F[A]] =
     intercept[R, M, A, F[A]](effect)(new Interpreter[M, R, A, F[A]] {
       def onPure(a: A): Eff[R, F[A]] =
         Eff.pure(FM.pure(a))
@@ -203,10 +200,13 @@ trait Interpret {
       def onLastEffect[X](mx: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
         Impure(m.inject(nat(mx)), Continuation.lift((fx: F[X]) => Eff.flatTraverseA(fx)(x => continuation(x).map(FM.pure)).void, continuation.onNone))
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], F[A]]): Eff[R, F[A]] = {
+      def onApplicativeEffect[X, T[_]: Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], F[A]]): Eff[R, F[A]] = {
         val xss = xs.toList.map(mx => nat(mx)).toVector.map(m.inject)
-        ImpureAp(Unions(xss.head, xss.tail.asInstanceOf[Vector[Union[R, Any]]]), Continuation.lift((tfx: Vector[Any]) =>
-          FT.map(tfx.asInstanceOf[T[F[X]]].sequence)(continuation).sequence.map(_.flatten), continuation.onNone))
+        ImpureAp(
+          Unions(xss.head, xss.tail.asInstanceOf[Vector[Union[R, Any]]]),
+          Continuation
+            .lift((tfx: Vector[Any]) => FT.map(tfx.asInstanceOf[T[F[X]]].sequence)(continuation).sequence.map(_.flatten), continuation.onNone)
+        )
       }
 
     })
@@ -214,7 +214,7 @@ trait Interpret {
   /**
    * Interpret the effect T with a side-effect O (see the write method below)
    */
-  def augment[R, T[_], O[_], A](eff: Eff[R, A])(w: Augment[T, O])(implicit memberT: MemberInOut[T, R], memberO: MemberIn[O, R]): Eff[R, A] =  {
+  def augment[R, T[_], O[_], A](eff: Eff[R, A])(w: Augment[T, O])(implicit memberT: MemberInOut[T, R], memberO: MemberIn[O, R]): Eff[R, A] = {
     translateInto(eff)(new Translate[T, R] {
       def apply[X](tx: T[X]): Eff[R, X] = send[O, R, Unit](w(tx)) >> send[T, R, X](tx)
     })
@@ -223,8 +223,8 @@ trait Interpret {
   /**
    * For each effect T add some "log statements" O using the Writer effect
    */
-  def write[R, T[_], O, A](eff: Eff[R, A])(w: Write[T, O])(implicit memberT: MemberInOut[T, R], memberW: MemberIn[Writer[O, *], R]): Eff[R, A] =  {
-    augment[R, T, Writer[O, *], A](eff)(new Augment[T, Writer[O, *]]{
+  def write[R, T[_], O, A](eff: Eff[R, A])(w: Write[T, O])(implicit memberT: MemberInOut[T, R], memberW: MemberIn[Writer[O, *], R]): Eff[R, A] = {
+    augment[R, T, Writer[O, *], A](eff)(new Augment[T, Writer[O, *]] {
       def apply[X](tx: T[X]) = Writer.tell[O](w(tx))
     })
   }
@@ -281,7 +281,7 @@ trait Interpreter[M[_], R, A, B] {
    * if the value X can be extracted call the continuation to get the next Eff[R, B] value
    * otherwise provide a Eff[R, B] value
    */
-  def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B]
+  def onApplicativeEffect[X, T[_]: Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B]
 }
 
 object Interpreter {
@@ -296,13 +296,13 @@ object Interpreter {
 
       def onEffect[X](mx: M[X], continuation: Continuation[R, X, B]): Eff[R, B] =
         recurser.onEffect(mx) match {
-          case Left(x)  => Eff.impure(x, continuation)
+          case Left(x) => Eff.impure(x, continuation)
           case Right(b) => continuation.runOnNone >> b
         }
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B] =
+      def onApplicativeEffect[X, T[_]: Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], B]): Eff[R, B] =
         recurser.onApplicative(xs) match {
-          case Left(x)   => Eff.impure(x, continuation)
+          case Left(x) => Eff.impure(x, continuation)
           case Right(mx) => onEffect(mx, continuation)
         }
     }
@@ -318,7 +318,7 @@ object Interpreter {
       def onLastEffect[X](x: M[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
         whenStopped(translate(x).flatMap(continuation), continuation.onNone)
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
+      def onApplicativeEffect[X, T[_]: Traverse](xs: T[M[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
         whenStopped(Eff.traverseA(xs)(translate.apply).flatMap(continuation), continuation.onNone)
     }
 
@@ -340,7 +340,6 @@ object Interpreter {
         Left(ms.map(sideEffect.apply))
     })
 }
-
 
 /**
  * Helper trait for computations
@@ -367,7 +366,7 @@ trait Translate[T[_], U] {
 
 trait SideEffect[T[_]] {
   def apply[X](tx: T[X]): X
-  def applicative[X, Tr[_] : Traverse](ms: Tr[T[X]]): Tr[X]
+  def applicative[X, Tr[_]: Traverse](ms: Tr[T[X]]): Tr[X]
 }
 
 trait Augment[T[_], O[_]] {
@@ -377,4 +376,3 @@ trait Augment[T[_], O[_]] {
 trait Write[T[_], O] {
   def apply[X](tx: T[X]): O
 }
-

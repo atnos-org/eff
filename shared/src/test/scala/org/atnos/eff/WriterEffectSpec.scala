@@ -6,10 +6,10 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
-
 import scala.collection.mutable.ListBuffer
 
-class WriterEffectSpec extends Specification with ThrownExpectations with Specs2Compat { def is = s2"""
+class WriterEffectSpec extends Specification with ThrownExpectations with Specs2Compat {
+  def is = s2"""
 
  A writer effect can use a side-effecting fold to be evaluated $sideEffecting
 
@@ -53,4 +53,3 @@ class WriterEffectSpec extends Specification with ThrownExpectations with Specs2
   }
 
 }
-

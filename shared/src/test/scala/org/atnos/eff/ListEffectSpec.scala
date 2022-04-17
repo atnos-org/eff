@@ -3,10 +3,10 @@ package org.atnos.eff
 import org.specs2._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-
 import cats.syntax.all._
 
-class ListEffectSpec extends Specification with Specs2Compat { def is = s2"""
+class ListEffectSpec extends Specification with Specs2Compat {
+  def is = s2"""
 
  List effect example       $listEffect
  Empty list effect example $emptyList
@@ -18,7 +18,7 @@ class ListEffectSpec extends Specification with Specs2Compat { def is = s2"""
   type L = Fx.fx1[List]
 
   def listEffect = {
-    def action[R :_list]: Eff[R, Int] = for {
+    def action[R: _list]: Eff[R, Int] = for {
       a <- singleton(2)
       b <- fromList((1 to a).toList)
       c <- singleton(3)
@@ -29,7 +29,7 @@ class ListEffectSpec extends Specification with Specs2Compat { def is = s2"""
   }
 
   def emptyList = {
-    def action[R :_list]: Eff[R, Int] =
+    def action[R: _list]: Eff[R, Int] =
       (fromList((1 to 0).toList), fromList((1 to 0).toList)).mapN(_ + _)
 
     action[L].runList.run ==== List()
@@ -45,4 +45,3 @@ class ListEffectSpec extends Specification with Specs2Compat { def is = s2"""
   }
 
 }
-

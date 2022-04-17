@@ -16,9 +16,7 @@ import Interpret._
  *  - accumulate values in a list
  *
  */
-trait WriterEffect extends
-  WriterCreation with
-  WriterInterpretation
+trait WriterEffect extends WriterCreation with WriterInterpretation
 
 object WriterEffect extends WriterEffect
 
@@ -59,7 +57,7 @@ trait WriterInterpretation {
         def onLastEffect[X](x: Writer[O, X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
           Eff.pure(())
 
-        def onApplicativeEffect[X, T[_] : Traverse](xs: T[Writer[O, X]], continuation: Continuation[U, T[X], (A, fold.S)]): Eff[U, (A, fold.S)] = {
+        def onApplicativeEffect[X, T[_]: Traverse](xs: T[Writer[O, X]], continuation: Continuation[U, T[X], (A, fold.S)]): Eff[U, (A, fold.S)] = {
           val os = new collection.mutable.ListBuffer[O]
           val values = xs.map { w =>
             val (o, x) = w.run
@@ -86,7 +84,7 @@ trait WriterInterpretation {
         x
       }
 
-      def applicative[X, Tr[_] : Traverse](ms: Tr[Writer[O, X]]): Tr[X] =
+      def applicative[X, Tr[_]: Traverse](ms: Tr[Writer[O, X]]): Tr[X] =
         ms.map(apply)
     })
 
@@ -113,7 +111,7 @@ trait WriterInterpretation {
     def finalize(s: M): M = s
   }
 
-  def MonoidFold[A : Monoid]: RightFold[A, A] =
+  def MonoidFold[A: Monoid]: RightFold[A, A] =
     IntoMonoidFold(identity)
 
   def EvalFold[A](f: A => Eval[Unit]): RightFold[A, Eval[Unit]] = new RightFold[A, Eval[Unit]] {

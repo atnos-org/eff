@@ -6,17 +6,13 @@ import Scalaz._
 
 package object scalaz {
 
-  object all extends
-    either with
-    eval   with
-    safe   with
-    validate
+  object all extends either with eval with safe with validate
 
   /**
    * Monad implementation for the Eff[R, *] type
    */
   implicit final def EffScalazMonad[R]: Monad[Eff[R, *]] with BindRec[Eff[R, *]] = new Monad[Eff[R, *]] with BindRec[Eff[R, *]] {
-    def point[A](a: =>A): Eff[R, A] =
+    def point[A](a: => A): Eff[R, A] =
       Eff.EffMonad[R].pure(a)
 
     override def map[A, B](fa: Eff[R, A])(f: A => B): Eff[R, B] =
@@ -30,10 +26,10 @@ package object scalaz {
   }
 
   def EffScalazApplicative[R]: Applicative[Eff[R, *]] = new Applicative[Eff[R, *]] {
-    def point[A](a: =>A): Eff[R, A] =
+    def point[A](a: => A): Eff[R, A] =
       Eff.EffApplicative[R].pure(a)
 
-    def ap[A, B](fa: =>Eff[R, A])(ff: =>Eff[R, A => B]): Eff[R, B] =
+    def ap[A, B](fa: => Eff[R, A])(ff: => Eff[R, A => B]): Eff[R, B] =
       Eff.EffApplicative[R].ap(ff)(fa)
   }
 
@@ -43,10 +39,10 @@ package object scalaz {
 
   object EffScalaz {
 
-    def traverseA[R, F[_] : Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
+    def traverseA[R, F[_]: Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
       Traverse[F].traverse(fs)(f)(EffScalazApplicative[R])
 
-    def sequenceA[R, F[_] : Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
+    def sequenceA[R, F[_]: Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
       Traverse[F].sequence(fs)(EffScalazApplicative[R])
 
     def flatTraverseA[R, F[_], A, B](fs: F[A])(f: A => Eff[R, F[B]])(implicit FT: Traverse[F], FM: Bind[F]): Eff[R, F[B]] =
@@ -59,7 +55,7 @@ package object scalaz {
     def detach[M[_], A](eff: Eff[Fx1[M], A])(implicit m: Monad[M], b: BindRec[M]): M[A] =
       BindRec[M].tailrecM[Eff[Fx1[M], A], A](eff) {
         case Pure(a, Last(Some(l))) => Monad[M].point(-\/(l.value.as(a)))
-        case Pure(a, Last(None))    => Monad[M].point(\/-(a))
+        case Pure(a, Last(None)) => Monad[M].point(\/-(a))
 
         case Impure(NoEffect(a), continuation, last) =>
           Monad[M].point(-\/(continuation(a).addLast(last)))
@@ -70,7 +66,7 @@ package object scalaz {
             case UnionTagged(ta: M[Nothing] @unchecked, _) =>
               last match {
                 case Last(Some(l)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
-                case Last(None)    => Monad[M].map(ta)(x => -\/(continuation(x)))
+                case Last(None) => Monad[M].map(ta)(x => -\/(continuation(x)))
               }
           }
 
@@ -81,7 +77,7 @@ package object scalaz {
     def detachA[M[_], A](eff: Eff[Fx1[M], A])(implicit monad: Monad[M], bindRec: BindRec[M], applicative: Applicative[M]): M[A] =
       BindRec[M].tailrecM[Eff[Fx1[M], A], A](eff) {
         case Pure(a, Last(Some(l))) => monad.point(-\/(l.value.as(a)))
-        case Pure(a, Last(None))    => monad.point(\/-(a))
+        case Pure(a, Last(None)) => monad.point(\/-(a))
 
         case Impure(NoEffect(a), continuation, last) =>
           monad.point(-\/(continuation(a).addLast(last)))
@@ -92,7 +88,7 @@ package object scalaz {
             case UnionTagged(ta: M[Nothing] @unchecked, _) =>
               last match {
                 case Last(Some(l)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
-                case Last(None)    => Monad[M].map(ta)(x => -\/(continuation(x)))
+                case Last(None) => Monad[M].map(ta)(x => -\/(continuation(x)))
               }
           }
 
@@ -102,7 +98,7 @@ package object scalaz {
 
           last match {
             case Last(Some(l)) => Monad[M].map(sequenced)(x => -\/(continuation(x).addLast(last)))
-            case Last(None)    => Monad[M].map(sequenced)(x => -\/(continuation(x)))
+            case Last(None) => Monad[M].map(sequenced)(x => -\/(continuation(x)))
           }
       }
   }

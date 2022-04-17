@@ -23,6 +23,8 @@ jobs:
         distribution: temurin
     - uses: coursier/cache-action@v6
     - run: sbt -v
+           scalafmtSbtCheck
+           "+ scalafmtCheckAll"
            "+ Test/compile"
            "+ test"
   push_gh_pages:

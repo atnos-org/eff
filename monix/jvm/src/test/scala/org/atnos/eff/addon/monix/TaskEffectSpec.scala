@@ -5,18 +5,17 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
-
 import scala.collection.mutable.ListBuffer
 import monix.execution.Scheduler.Implicits.global
 import monix.eval.Task
 import org.atnos.eff._
 import org.atnos.eff.addon.monix.task._
 import org.atnos.eff.syntax.addon.monix.task._
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with Specs2Compat { def is = "monix task".title ^ sequential ^ s2"""
+class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with Specs2Compat {
+  def is = "monix task".title ^ sequential ^ s2"""
 
  Tasks can work as normal values                           $e1
  Task effects can be attempted                             $e2
@@ -44,7 +43,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   type S = Fx.fx2[Task, Option]
 
   def e1 = {
-    def action[R :_task :_option]: Eff[R, Int] = for {
+    def action[R: _task: _option]: Eff[R, Int] = for {
       a <- taskDelay(10)
       b <- taskDelay(20)
     } yield a + b
@@ -53,7 +52,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   }
 
   def e2 = {
-    def action[R :_task :_option]: Eff[R, Int] = for {
+    def action[R: _task: _option]: Eff[R, Int] = for {
       a <- taskDelay(10)
       b <- taskDelay { boom; 20 }
     } yield a + b
@@ -108,7 +107,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   def e7 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }))
+    def makeRequest = taskMemo("only once", cache, taskDelay { invocationsNumber += 1; 1 })
 
     (makeRequest >> makeRequest).runSequential.runToFuture must be_==(1).await
     invocationsNumber must be_==(1)
@@ -117,7 +116,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   def e8 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = taskMemo("only once", cache, taskDelay({ invocationsNumber += 1; 1 }))
+    def makeRequest = taskMemo("only once", cache, taskDelay { invocationsNumber += 1; 1 })
 
     (makeRequest >> makeRequest).taskAttempt.runSequential.runToFuture must beRight(1).await
     invocationsNumber must be_==(1)
@@ -137,7 +136,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
     val cache = ConcurrentHashMapCache()
 
     def makeRequest = taskDelay({ invocationsNumber += 1; 1 }, timeout = Option(10000.millis)).taskMemo("only once", cache)
-      (makeRequest >> makeRequest).taskAttempt.runSequential.runToFuture must beRight(1).await
+    (makeRequest >> makeRequest).taskAttempt.runSequential.runToFuture must beRight(1).await
 
     invocationsNumber must be_==(1)
   }
@@ -150,7 +149,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
 
     def makeRequest =
       if (firstTime)
-        taskMemo("only once", cache, taskDelay { firstTime = false; throw new Exception("") } >> taskDelay({ invocationsNumber += 1; 1 }))
+        taskMemo("only once", cache, taskDelay { firstTime = false; throw new Exception("") } >> taskDelay { invocationsNumber += 1; 1 })
       else
         taskMemo("only once", cache, taskDelay { invocationsNumber += 1; 1 })
 
@@ -161,7 +160,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   }
 
   def e12 = {
-    def action[R :_task :_option]: Eff[R, Int] = for {
+    def action[R: _task: _option]: Eff[R, Int] = for {
       a <- taskDelay(10).asyncBoundary
       b <- taskDelay(20)
     } yield a + b
@@ -210,7 +209,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
   val boomException: Throwable = new Exception("boom")
 
   def sleepFor(duration: FiniteDuration) =
-    try Thread.sleep(duration.toMillis) catch { case t: Throwable => () }
+    try Thread.sleep(duration.toMillis)
+    catch { case t: Throwable => () }
 
 }
-

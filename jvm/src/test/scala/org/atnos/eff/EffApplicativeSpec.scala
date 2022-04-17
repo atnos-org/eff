@@ -2,7 +2,8 @@ package org.atnos.eff
 
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
-import org.specs2.{ScalaCheck, Specification}
+import org.specs2.ScalaCheck
+import org.specs2.Specification
 import cats.Eq
 import org.atnos.eff.EffCompat._
 import org.atnos.eff.Batchable
@@ -13,12 +14,12 @@ import org.atnos.eff.syntax.all._
 import org.atnos.eff.syntax.future._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.ThrownExpectations
-
 import scala.concurrent._
 import duration._
 import scala.collection.mutable.ListBuffer
 
-class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = s2"""
+class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
+  def is = s2"""
 
  *> uses the applicative "sequencing" whereas >> uses the monadic sequencing $operators
  This means that *> will discard the left result but can still run 2 actions concurrently
@@ -40,11 +41,11 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
 
     val action1: Eff[S, Unit] =
       OptionEffect.some[S, Int](1) >>
-      futureDelay[S, Unit] { Thread.sleep(200); messages.append("action1") }
+        futureDelay[S, Unit] { Thread.sleep(200); messages.append("action1") }
 
     val action2: Eff[S, Int] =
       OptionEffect.some[S, Int](2) >>
-      futureDelay[S, Int] { messages.append("action2"); 2 }
+        futureDelay[S, Int] { messages.append("action2"); 2 }
 
     Await.result((action1 >> action2).runOption.runAsync, 10.seconds) must beSome
     Await.result((action1 *> action2).runOption.runAsync, 10.seconds) must beSome
@@ -61,7 +62,7 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
       List(1, 2, 3).flatTraverseA(i => OptionEffect.some(List(i, i + 1)))
 
     traversed.runOption.run === Option(List(1, 2, 3)) &&
-      flatTraversed.runOption.run === Option(List(1, 2, 2, 3, 3, 4))
+    flatTraversed.runOption.run === Option(List(1, 2, 2, 3, 3, 4))
   }
 
   def traverseAStacksafe = {
@@ -113,15 +114,15 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
 
       def batch[X, Y](tx: UserDsl[X], ty: UserDsl[Y]): Option[UserDsl[Z]] = Option {
         (tx, ty) match {
-          case (GetUser(i),   GetUser(j))   => GetUsers(List(i, j))
-          case (GetUser(i),   GetUsers(is)) => GetUsers(i :: is)
-          case (GetUsers(is), GetUser(i))   => GetUsers(is :+ i)
+          case (GetUser(i), GetUser(j)) => GetUsers(List(i, j))
+          case (GetUser(i), GetUsers(is)) => GetUsers(i :: is)
+          case (GetUsers(is), GetUser(i)) => GetUsers(is :+ i)
           case (GetUsers(is), GetUsers(js)) => GetUsers(is ++ js)
         }
       }
     }
 
-    def getUser[R :_userDsl](i: Int): Eff[R, User] =
+    def getUser[R: _userDsl](i: Int): Eff[R, User] =
       send[UserDsl, R, User](GetUser(i))
 
     def getWebUser(i: Int): User = User(i)
@@ -140,10 +141,10 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
         case ap @ ImpureAp(u, m, _) =>
           runDsl(ap.toMonadic)
         case Impure(_, _, _) =>
-          sys.error("this should not happen with just one effect. Got "+eff)
+          sys.error("this should not happen with just one effect. Got " + eff)
       }
 
-    def action1[R :_userDsl] =
+    def action1[R: _userDsl] =
       Eff.traverseA(List(1, 2))(i => getUser(i))
 
     val action = action1
@@ -158,16 +159,14 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
 
   def interleavedApplicative1 = {
     type S = Fx2[Option, Either[String, *]]
-    val action = (1 to 4).toList.traverseA(i =>
-      if (i % 2 == 0) OptionEffect.some[S, Int](i) else EitherEffect.right[S, String, Int](i))
+    val action = (1 to 4).toList.traverseA(i => if (i % 2 == 0) OptionEffect.some[S, Int](i) else EitherEffect.right[S, String, Int](i))
 
     action.runOption.runEither.run ==== Right(Some(List(1, 2, 3, 4)))
   }
 
   def interleavedApplicative2 = {
     type S = Fx2[Option, TimedFuture]
-    val action = (1 to 4).toList.traverseA(i =>
-      if (i % 2 == 0) OptionEffect.some[S, Int](i) else FutureEffect.futureDelay[S, Int](i))
+    val action = (1 to 4).toList.traverseA(i => if (i % 2 == 0) OptionEffect.some[S, Int](i) else FutureEffect.futureDelay[S, Int](i))
 
     FutureEffect.futureAttempt(action).runOption.runAsync must beSome(Right(List(1, 2, 3, 4)): Either[Throwable, List[Int]]).await
   }
@@ -195,7 +194,7 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
   }
 
   implicit val eqEffInt3: Eq[F[(Int, Int, Int)]] = new Eq[F[(Int, Int, Int)]] {
-    def eqv(x: F[(Int, Int, Int)], y:F[(Int, Int, Int)]): Boolean =
+    def eqv(x: F[(Int, Int, Int)], y: F[(Int, Int, Int)]): Boolean =
       runOption(x).run == runOption(y).run
   }
 

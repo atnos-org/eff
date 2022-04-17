@@ -1,8 +1,8 @@
 package org.atnos.eff
 
 import org.specs2.Specification
-import ErrorEffect.{ok => OK, ErrorOrOk}
-
+import ErrorEffect.{ok => OK}
+import ErrorEffect.ErrorOrOk
 import scala.collection.mutable.ListBuffer
 import cats.data._
 import cats.syntax.all._
@@ -10,7 +10,8 @@ import cats.Eval
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class ErrorEffectSpec extends Specification with Specs2Compat { def is = s2"""
+class ErrorEffectSpec extends Specification with Specs2Compat {
+  def is = s2"""
 
  An action can be evaluated after another
    when the first action is ok   $andFinallyOk
@@ -71,7 +72,7 @@ class ErrorEffectSpec extends Specification with Specs2Compat { def is = s2"""
       action.orElse(OK { messages.append("second"); 2 })
 
     (all.runError.run ==== Right(1)) and
-    (messages.toList ==== List("first"))
+      (messages.toList ==== List("first"))
   }
 
   def orElse2 = {
@@ -84,7 +85,7 @@ class ErrorEffectSpec extends Specification with Specs2Compat { def is = s2"""
       action.orElse(OK { messages.append("second"); 2 })
 
     (all.runError.run ==== Right(2)) and
-    (messages.toList ==== List("second"))
+      (messages.toList ==== List("second"))
   }
 
   def logException = {
@@ -103,7 +104,7 @@ class ErrorEffectSpec extends Specification with Specs2Compat { def is = s2"""
       action.runError.runWriter.runEval.run
 
     (result._2 ==== List("start")) and
-    (result._1.toErrorSimpleMessage ==== Option("Error[java.lang.Exception] boom"))
+      (result._1.toErrorSimpleMessage ==== Option("Error[java.lang.Exception] boom"))
   }
 
   def ignored = {
@@ -149,4 +150,3 @@ class ErrorEffectSpec extends Specification with Specs2Compat { def is = s2"""
   }
 
 }
-

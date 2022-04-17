@@ -1,16 +1,20 @@
 package org.atnos.eff.addon.doobie
 
 import org.specs2.Specification
-import doobie._, doobie.implicits._
+import doobie._
+import doobie.implicits._
 import cats.effect._
-import org.atnos.eff.{Eff, Fx, Specs2Compat}
+import org.atnos.eff.Eff
+import org.atnos.eff.Fx
+import org.atnos.eff.Specs2Compat
 import org.atnos.eff.syntax.all._
 import org.atnos.eff.syntax.addon.doobie._
-import org.specs2.matcher.{ThrownExpectations, ValueCheck}
+import org.specs2.matcher.ThrownExpectations
+import org.specs2.matcher.ValueCheck
 import doobie.free.connection
 
-
-class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations with Specs2Compat { def is = sequential ^ s2"""
+class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations with Specs2Compat {
+  def is = sequential ^ s2"""
   ConnectionIO effects can be converted to IO-like effects $t1
 
   Failures are properly handled
@@ -98,7 +102,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
   /**
    * HELPERS
    */
-  
+
   implicit class RunConnectionOps[A](e: Eff[Stack, A]) {
     def runConnection(xa: Transactor[IO]): Throwable Either A =
       e.runConnectionIO(xa).detach.attempt.unsafeRunSync()

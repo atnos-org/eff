@@ -14,4 +14,3 @@ final class BatchOps[R, A](private val e: Eff[R, A]) extends AnyVal {
     Batch.batch[R, T, A](e)(batchable, member)
 
 }
-

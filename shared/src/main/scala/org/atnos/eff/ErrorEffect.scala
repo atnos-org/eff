@@ -5,7 +5,6 @@ import cats._
 import cats.syntax.all._
 import Eff._
 import Interpret._
-
 import scala.reflect.ClassTag
 
 /**
@@ -17,9 +16,7 @@ import scala.reflect.ClassTag
  * The type F is used to represent the failure type.
  *
  */
-trait ErrorEffect[F] extends
-  ErrorCreation[F] with
-  ErrorInterpretation[F]
+trait ErrorEffect[F] extends ErrorCreation[F] with ErrorInterpretation[F]
 
 trait ErrorTypes[F] {
 
@@ -37,24 +34,25 @@ trait ErrorTypes[F] {
 }
 
 trait ErrorCreation[F] extends ErrorTypes[F] {
+
   /** create an Eff value from a computation */
-  def ok[R :_errorOrOk, A](a: => A): Eff[R, A] =
+  def ok[R: _errorOrOk, A](a: => A): Eff[R, A] =
     send[ErrorOrOk, R, A](Evaluate.ok[F, A](a))
 
   /** create an Eff value from a computation */
-  def eval[R :_errorOrOk , A](a: Eval[A]): Eff[R, A] =
+  def eval[R: _errorOrOk, A](a: Eval[A]): Eff[R, A] =
     send[ErrorOrOk, R, A](Evaluate.eval[F, A](a))
 
   /** create an Eff value from an error */
-  def error[R :_errorOrOk, A](error: Error): Eff[R, A] =
+  def error[R: _errorOrOk, A](error: Error): Eff[R, A] =
     send[ErrorOrOk, R, A](Evaluate.error[F, A](error))
 
   /** create an Eff value from a failure */
-  def fail[R :_errorOrOk, A](failure: F): Eff[R, A] =
+  def fail[R: _errorOrOk, A](failure: F): Eff[R, A] =
     error(Right(failure))
 
   /** create an Eff value from an exception */
-  def exception[R :_errorOrOk, A](t: Throwable): Eff[R, A] =
+  def exception[R: _errorOrOk, A](t: Throwable): Eff[R, A] =
     error(Left(t))
 }
 
@@ -95,7 +93,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
 
       def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: Continuation[R, T[X], B]): Eff[R, B] =
         ms.traverse(_.run) match {
-          case Left(e)   => onError(e)
+          case Left(e) => onError(e)
           case Right(ls) =>
             try Eff.impure(ls.map(_.value), continuation)
             catch { case NonFatal(t) => onError(Left(t)) }
@@ -108,30 +106,30 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    * Execute a second action whether the first is successful or not
    */
   def andFinally[R, A](action: Eff[R, A], lastAction: Eff[R, Unit])(implicit m: ErrorOrOk /= R): Eff[R, A] =
-     intercept(action)(new Interpreter[ErrorOrOk, R, A, A] {
-       def onPure(a: A): Eff[R, A] =
-         lastAction.as(a)
+    intercept(action)(new Interpreter[ErrorOrOk, R, A, A] {
+      def onPure(a: A): Eff[R, A] =
+        lastAction.as(a)
 
-       def onEffect[X](ex: ErrorOrOk[X], continuation: Continuation[R, X, A]): Eff[R, A] =
-         ex.run match {
-           case Left(e) => continuation.runOnNone >> lastAction.flatMap(_ => outer.error[R, A](e))
-           case Right(x) =>
-             try   Eff.impure(x.value, continuation)
-             catch { case NonFatal(t) => continuation.runOnNone >> lastAction.flatMap(_ => outer.exception[R, A](t)) }
-         }
+      def onEffect[X](ex: ErrorOrOk[X], continuation: Continuation[R, X, A]): Eff[R, A] =
+        ex.run match {
+          case Left(e) => continuation.runOnNone >> lastAction.flatMap(_ => outer.error[R, A](e))
+          case Right(x) =>
+            try Eff.impure(x.value, continuation)
+            catch { case NonFatal(t) => continuation.runOnNone >> lastAction.flatMap(_ => outer.exception[R, A](t)) }
+        }
 
-       def onLastEffect[X](x: ErrorOrOk[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
-         Eff.pure(())
+      def onLastEffect[X](x: ErrorOrOk[X], continuation: Continuation[R, X, Unit]): Eff[R, Unit] =
+        Eff.pure(())
 
-       def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
-         ms.map(_.run).sequence match {
-           case Left(e)   => continuation.runOnNone >> lastAction.flatMap(_ => outer.error[R, A](e))
-           case Right(ls) =>
-             try Eff.impure(ls.map(_.value), continuation)
-             catch { case NonFatal(t) => continuation.runOnNone >> lastAction.flatMap(_ => outer.exception[R, A](t)) }
-         }
+      def onApplicativeEffect[X, T[_]: Traverse](ms: T[ErrorOrOk[X]], continuation: Continuation[R, T[X], A]): Eff[R, A] =
+        ms.map(_.run).sequence match {
+          case Left(e) => continuation.runOnNone >> lastAction.flatMap(_ => outer.error[R, A](e))
+          case Right(ls) =>
+            try Eff.impure(ls.map(_.value), continuation)
+            catch { case NonFatal(t) => continuation.runOnNone >> lastAction.flatMap(_ => outer.exception[R, A](t)) }
+        }
 
-     })
+    })
 
   /**
    * evaluate 1 action possibly having error effects
@@ -154,41 +152,52 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
   /**
    * ignore one possible exception that could be thrown
    */
-  def ignoreException[R, E <: Throwable : ClassTag, A](action: Eff[R, A])(implicit m: ErrorOrOk /= R): Eff[R, Unit] =
-    catchError[R, A, Unit](action, (a: A) => (), {
-      case Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
-        EffMonad[R].pure(())
-      case other => outer.error(other)
-    })
+  def ignoreException[R, E <: Throwable: ClassTag, A](action: Eff[R, A])(implicit m: ErrorOrOk /= R): Eff[R, Unit] =
+    catchError[R, A, Unit](
+      action,
+      (a: A) => (),
+      {
+        case Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
+          EffMonad[R].pure(())
+        case other => outer.error(other)
+      }
+    )
 
   /**
    * Lift a computation over a "small" error (for a subsystem) into
    * a computation over a "bigger" error (for the full application)
    */
-  def localError[SR, BR, U1, U2, F1, F2, A](r: Eff[SR, A], getter: F1 => F2)
-                                           (implicit sr: Member.Aux[Evaluate[F1, *], SR, U1],
-                                                     br: Member.Aux[Evaluate[F2, *], BR, U2],
-                                                     into: IntoPoly[U1, U2]): Eff[BR, A] =
-    transform[SR, BR, U1, U2, Evaluate[F1, *], Evaluate[F2, *], A](r,
+  def localError[SR, BR, U1, U2, F1, F2, A](r: Eff[SR, A], getter: F1 => F2)(implicit
+    sr: Member.Aux[Evaluate[F1, *], SR, U1],
+    br: Member.Aux[Evaluate[F2, *], BR, U2],
+    into: IntoPoly[U1, U2]
+  ): Eff[BR, A] =
+    transform[SR, BR, U1, U2, Evaluate[F1, *], Evaluate[F2, *], A](
+      r,
       new ~>[Evaluate[F1, *], Evaluate[F2, *]] {
-      def apply[X](r: Evaluate[F1, X]): Evaluate[F2, X] =
-        Evaluate(r.run.leftMap(e => e.map(getter)))
-    })
+        def apply[X](r: Evaluate[F1, X]): Evaluate[F2, X] =
+          Evaluate(r.run.leftMap(e => e.map(getter)))
+      }
+    )
 
   /**
     * Translate an error effect to another one in the same stack
     * a computation over a "bigger" error (for the full application)
     */
-  def runLocalError[R, U, F1, F2, A](r: Eff[R, A], getter: F1 => F2)
-                                  (implicit sr: Member.Aux[Evaluate[F1, *], R, U], br: Evaluate[F2, *] |= U): Eff[U, A] =
-    translate[R, U, Evaluate[F1, *], A](r) { new Translate[Evaluate[F1, *], U] {
-      def apply[X](ex: Evaluate[F1, X]): Eff[U, X] =
-        ex.run match {
-          case Left(Left(t))   => send[Evaluate[F2, *], U, X](Evaluate.exception[F2, X](t))
-          case Left(Right(e1)) => send[Evaluate[F2, *], U, X](Evaluate.fail[F2, X](getter(e1)))
-          case Right(x)            => send[Evaluate[F2, *], U, X](Evaluate.eval[F2, X](x))
-        }
-    }}
+  def runLocalError[R, U, F1, F2, A](r: Eff[R, A], getter: F1 => F2)(implicit
+    sr: Member.Aux[Evaluate[F1, *], R, U],
+    br: Evaluate[F2, *] |= U
+  ): Eff[U, A] =
+    translate[R, U, Evaluate[F1, *], A](r) {
+      new Translate[Evaluate[F1, *], U] {
+        def apply[X](ex: Evaluate[F1, X]): Eff[U, X] =
+          ex.run match {
+            case Left(Left(t)) => send[Evaluate[F2, *], U, X](Evaluate.exception[F2, X](t))
+            case Left(Right(e1)) => send[Evaluate[F2, *], U, X](Evaluate.fail[F2, X](getter(e1)))
+            case Right(x) => send[Evaluate[F2, *], U, X](Evaluate.eval[F2, X](x))
+          }
+      }
+    }
 
 }
 
@@ -199,7 +208,7 @@ object ErrorEffect extends ErrorEffect[String] {
 
   def render(t: Throwable): String =
     s"Error[${t.getClass.getName}]" + (Option(t.getMessage) match {
-      case None          => ""
+      case None => ""
       case Some(message) => s" $message"
     })
 
@@ -211,7 +220,7 @@ object ErrorEffect extends ErrorEffect[String] {
        |============================================================
        |""".stripMargin
 
-  def trace(t: Throwable): String =  {
+  def trace(t: Throwable): String = {
     val out = new java.io.StringWriter
     t.printStackTrace(new java.io.PrintWriter(out))
     out.toString
@@ -224,10 +233,9 @@ object ErrorEffect extends ErrorEffect[String] {
 case class Evaluate[F, A](run: (Throwable Either F) Either cats.Eval[A])
 
 object Evaluate {
-  def ok[F, A](a: =>A)                = Evaluate[F, A](Right(cats.Eval.later(a)))
-  def eval[F, A](a: Eval[A])          = Evaluate[F, A](Right(a))
+  def ok[F, A](a: => A) = Evaluate[F, A](Right(cats.Eval.later(a)))
+  def eval[F, A](a: Eval[A]) = Evaluate[F, A](Right(a))
   def error[F, A](a: Throwable Either F) = Evaluate[F, A](Left(a))
-  def fail[F, A](f: F)                = error[F, A](Right(f))
-  def exception[F, A](t: Throwable)   = error[F, A](Left(t))
+  def fail[F, A](f: F) = error[F, A](Right(f))
+  def exception[F, A](t: Throwable) = error[F, A](Left(t))
 }
-

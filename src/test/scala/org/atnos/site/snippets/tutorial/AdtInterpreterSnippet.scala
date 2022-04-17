@@ -6,13 +6,13 @@ import AdtSnippet._
 trait AdtInterpreterSnippet {
 // 8<---
 
-import org.atnos.eff._, interpret._
-import cats.Traverse
-import cats.implicits._
-import scala.collection.mutable._
+  import org.atnos.eff._
+  import interpret._
+  import cats.Traverse
+  import cats.implicits._
+  import scala.collection.mutable._
 
-
-/**
+  /**
  * Unsafe interpreter for KVStore effects
  *
  * the program will crash if a type is incorrectly specified.
@@ -30,34 +30,34 @@ import scala.collection.mutable._
  * The resulting effect stack is m.Out which is R without the KVStore effects
  *
  */
-def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore <= R): Eff[m.Out, A] = {
-  // a very simple (and imprecise) key-value store
-  val kvs = Map.empty[String, Any]
+  def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore <= R): Eff[m.Out, A] = {
+    // a very simple (and imprecise) key-value store
+    val kvs = Map.empty[String, Any]
 
-  val sideEffect = new SideEffect[KVStore] {
-    def apply[X](kv: KVStore[X]): X =
-      kv match {
-        case Put(key, value) =>
-          println(s"put($key, $value)")
-          kvs.put(key, value)
-          ().asInstanceOf[X]
+    val sideEffect = new SideEffect[KVStore] {
+      def apply[X](kv: KVStore[X]): X =
+        kv match {
+          case Put(key, value) =>
+            println(s"put($key, $value)")
+            kvs.put(key, value)
+            ().asInstanceOf[X]
 
-        case Get(key) =>
-          println(s"get($key)")
-          kvs.get(key).asInstanceOf[X]
+          case Get(key) =>
+            println(s"get($key)")
+            kvs.get(key).asInstanceOf[X]
 
-        case Delete(key) =>
-          println(s"delete($key)")
-          kvs.remove(key)
-          ().asInstanceOf[X]
-      }
+          case Delete(key) =>
+            println(s"delete($key)")
+            kvs.remove(key)
+            ().asInstanceOf[X]
+        }
 
-    def applicative[X, Tr[_] : Traverse](ms: Tr[KVStore[X]]): Tr[X] =
-      ms.map(apply)
+      def applicative[X, Tr[_]: Traverse](ms: Tr[KVStore[X]]): Tr[X] =
+        ms.map(apply)
+    }
+    interpretUnsafe(effects)(sideEffect)(m)
+
   }
-  interpretUnsafe(effects)(sideEffect)(m)
-
-}
 
   // 8<---
 }

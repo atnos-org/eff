@@ -1,8 +1,12 @@
 package org.atnos.eff.syntax
 
-import cats.data.{Ior, IorNel, NonEmptyList, ValidatedNel}
+import cats.data.Ior
+import cats.data.IorNel
+import cats.data.NonEmptyList
+import cats.data.ValidatedNel
 import org.atnos.eff._
-import cats.{Applicative, Semigroup}
+import cats.Applicative
+import cats.Semigroup
 
 object validate extends validate
 
@@ -13,13 +17,13 @@ trait validate {
     def runNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, NonEmptyList[E] Either A] =
       ValidateInterpretation.runNel(e)(m.aux)
 
-    def runMap[E, L : Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, L Either A] =
+    def runMap[E, L: Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, L Either A] =
       ValidateInterpretation.runMap(e)(map)(Semigroup[L], m.aux)
 
     def runValidatedNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, ValidatedNel[E, A]] =
       ValidateInterpretation.runValidatedNel(e)(m.aux)
 
-    def runIorMap[E, L : Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, L Ior A] =
+    def runIorMap[E, L: Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, L Ior A] =
       ValidateInterpretation.runIorMap(e)(map)(Semigroup[L], m.aux)
 
     def runIorNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, E IorNel A] =

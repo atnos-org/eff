@@ -1,10 +1,10 @@
 package org.atnos.eff.syntax.addon.twitter
 
-import com.twitter.util.{Future, FuturePool}
+import com.twitter.util.Future
+import com.twitter.util.FuturePool
 import org.atnos.eff.addon.twitter._
 import org.atnos.eff._
 import org.atnos.eff.concurrent.Scheduler
-
 import scala.concurrent.duration.FiniteDuration
 
 trait future {
@@ -17,8 +17,7 @@ object future extends future
 
 final class TwitterFutureOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
-  def runTwitterFutureMemo[U](cache: Cache)(implicit memMember: Member.Aux[Memoized, R, U],
-                                            futMember: TwitterTimedFuture |= U): Eff[U, A] =
+  def runTwitterFutureMemo[U](cache: Cache)(implicit memMember: Member.Aux[Memoized, R, U], futMember: TwitterTimedFuture |= U): Eff[U, A] =
     TwitterFutureEffect.runFutureMemo(cache)(e)(memMember, futMember)
 
   def twitterFutureAttempt(implicit future: TwitterTimedFuture /= R): Eff[R, Throwable Either A] =

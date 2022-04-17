@@ -3,7 +3,8 @@ package org.atnos.site
 import org.atnos.site.snippets.MaybeEffectSnippet
 import MaybeEffectSnippet._
 
-object CreateEffects extends UserGuidePage { def is = "Creating effects".title ^ s2"""
+object CreateEffects extends UserGuidePage {
+  def is = "Creating effects".title ^ s2"""
 
 ### Creation
 
@@ -28,16 +29,16 @@ In the code above:
 ### Compiler limitation
 
 When you create an effect you can define a sealed trait and case classes to represent different possibilities for that effect.
-For example for interacting with a database you might create: ${snippet{
-trait DatabaseEffect {
+For example for interacting with a database you might create: ${snippet {
+      trait DatabaseEffect {
 
-  case class Record(fields: List[String])
+        case class Record(fields: List[String])
 
-  sealed trait Db[A]
-  case class Get[A](id: Int) extends Db[Record]
-  case class Update[A](id: Int, record: Record) extends Db[Record]
-}
-}}
+        sealed trait Db[A]
+        case class Get[A](id: Int) extends Db[Record]
+        case class Update[A](id: Int, record: Record) extends Db[Record]
+      }
+    }}
 
 It is recommended to create the `Db` types **outside** of the `DatabaseEffect` trait. Indeed, during `Member` implicit resolution,
 depending on how you import the `Db` effect type (if it is inherited from an object or not) you could experience compiler
@@ -58,23 +59,21 @@ The `runMaybe` method needs an implicit `Member.Aux[Maybe, R, U]`. This must be 
 
 <br/>
 
-Then we can use this effect in a computation:${snippet{
-import org.atnos.eff._
-import org.atnos.eff.eff._
-import MaybeEffect._
+Then we can use this effect in a computation:${snippet {
+      import org.atnos.eff._
+      import org.atnos.eff.eff._
+      import MaybeEffect._
 
-val action: Eff[Fx.fx1[Maybe], Int] =
-  for {
-    a <- just(2)
-    b <- just(3)
-  } yield a + b
+      val action: Eff[Fx.fx1[Maybe], Int] =
+        for {
+          a <- just(2)
+          b <- just(3)
+        } yield a + b
 
-run(runMaybe(action))
-}.eval}
+      run(runMaybe(action))
+    }.eval}
 
 ----
 """
 
-
 }
-

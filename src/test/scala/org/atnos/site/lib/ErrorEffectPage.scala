@@ -1,7 +1,8 @@
 package org.atnos.site
 package lib
 
-object ErrorEffectPage extends UserGuidePage { def is = "Error".title ^ s2"""
+object ErrorEffectPage extends UserGuidePage {
+  def is = "Error".title ^ s2"""
 
 The `Error` effect is both an `Eval` effect and a `Either` one with `Throwable Either F` on the "left" side.
   The idea is to represent computations which can fail, either with an exception or a failure. You can:

@@ -4,7 +4,6 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
-
 import org.atnos.eff._
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
@@ -12,7 +11,8 @@ import IOEffect._
 import org.atnos.eff.syntax.addon.cats.effect._
 import scala.concurrent.duration._
 
-class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck { def is = "io".title ^ sequential ^ s2"""
+class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck {
+  def is = "io".title ^ sequential ^ s2"""
 
  IO effects can work as normal values                    $e1
  IO effects can be attempted                             $e2
@@ -32,7 +32,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
   type S = Fx.fx2[IO, Option]
 
   def e1 = {
-    def action[R :_io :_option]: Eff[R, Int] = for {
+    def action[R: _io: _option]: Eff[R, Int] = for {
       a <- ioDelay(10)
       b <- ioDelay(20)
     } yield a + b
@@ -41,7 +41,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
   }
 
   def e2 = {
-    def action[R :_io :_option]: Eff[R, Int] = for {
+    def action[R: _io: _option]: Eff[R, Int] = for {
       a <- ioDelay(10)
       b <- ioDelay { boom; 20 }
     } yield a + b
@@ -60,7 +60,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
   }
 
   def e4 = {
-    def action[R :_io :_option]: Eff[R, Int] = for {
+    def action[R: _io: _option]: Eff[R, Int] = for {
       a <- ioDelay(10)
       b <- ioDelay(20)
     } yield a + b
@@ -71,7 +71,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
   def e5 = {
     val action = (1 to 5000).toList.traverseA { i =>
       if (i % 5 == 0) ioDelay(i)
-      else            ioDelay(i)
+      else ioDelay(i)
     }
 
     action.unsafeRunAsync(_ => ()) must not(throwA[Throwable])
@@ -80,7 +80,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
   def e6 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = ioMemo("only once", cache, ioDelay({ invocationsNumber += 1; 1 }))
+    def makeRequest = ioMemo("only once", cache, ioDelay { invocationsNumber += 1; 1 })
 
     (makeRequest >> makeRequest).unsafeRunSync must be_==(1)
     invocationsNumber must be_==(1)
@@ -89,7 +89,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
   def e7 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = ioMemo("only once", cache, ioDelay({ invocationsNumber += 1; 1 }))
+    def makeRequest = ioMemo("only once", cache, ioDelay { invocationsNumber += 1; 1 })
 
     (makeRequest >> makeRequest).ioAttempt.unsafeRunSync must beRight(1)
     invocationsNumber must be_==(1)
@@ -98,7 +98,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
   def e8 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = ioMemo("only once", cache, ioDelay({ invocationsNumber += 1; 1 }))
+    def makeRequest = ioMemo("only once", cache, ioDelay { invocationsNumber += 1; 1 })
 
     (makeRequest >> makeRequest).unsafeRunSync must be_==(1)
     invocationsNumber must be_==(1)
@@ -108,7 +108,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
 
-    def makeRequest = ioDelay({ invocationsNumber += 1; 1 }).ioMemo("only once", cache)
+    def makeRequest = ioDelay { invocationsNumber += 1; 1 }.ioMemo("only once", cache)
     (makeRequest >> makeRequest).ioAttempt.unsafeRunSync must beRight(1)
 
     invocationsNumber must be_==(1)
@@ -122,7 +122,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
 
     def makeRequest =
       if (firstTime)
-        ioMemo("only once", cache, ioDelay { firstTime = false; throw new Exception("") } >> ioDelay({ invocationsNumber += 1; 1 }))
+        ioMemo("only once", cache, ioDelay { firstTime = false; throw new Exception("") } >> ioDelay { invocationsNumber += 1; 1 })
       else
         ioMemo("only once", cache, ioDelay { invocationsNumber += 1; 1 })
 
@@ -139,7 +139,7 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
   val boomException: Throwable = new Exception("boom")
 
   def sleepFor(duration: FiniteDuration) =
-    try Thread.sleep(duration.toMillis) catch { case t: Throwable => () }
+    try Thread.sleep(duration.toMillis)
+    catch { case t: Throwable => () }
 
 }
-

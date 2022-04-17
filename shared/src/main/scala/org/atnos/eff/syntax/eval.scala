@@ -19,4 +19,3 @@ final class EvalEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
     EvalInterpretation.attemptEval(e)(member.aux)
 
 }
-

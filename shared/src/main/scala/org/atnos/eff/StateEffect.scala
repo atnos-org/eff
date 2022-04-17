@@ -12,9 +12,7 @@ import data._
  * Internally backed up by cats.data.State
  *
  */
-trait StateEffect extends
-  StateCreation with
-  StateInterpretation
+trait StateEffect extends StateCreation with StateInterpretation
 
 object StateEffect extends StateEffect
 
@@ -67,8 +65,9 @@ object StateImplicits extends StateImplicits
 object StateCreation extends StateCreation
 
 trait StateInterpretation {
+
   /** run a state effect, with a Monoidal state */
-  def evalStateZero[R, U, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, *], R, U]): Eff[U, A] =
+  def evalStateZero[R, U, S: Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, *], R, U]): Eff[U, A] =
     evalState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value, return only the value */
@@ -76,7 +75,7 @@ trait StateInterpretation {
     runState(initial)(w).map(_._1)
 
   /** run a state effect, with a monoidal state, return only the state */
-  def execStateZero[R, U, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, *], R, U]): Eff[U, S] =
+  def execStateZero[R, U, S: Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, *], R, U]): Eff[U, S] =
     execState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value, return only the state */
@@ -84,7 +83,7 @@ trait StateInterpretation {
     runState(initial)(w).map(_._2)
 
   /** run a state effect, with an initial value */
-  def runStateZero[R, U, S : Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, *], R, U]): Eff[U, (A, S)] =
+  def runStateZero[R, U, S: Monoid, A](w: Eff[R, A])(implicit m: Member.Aux[State[S, *], R, U]): Eff[U, (A, S)] =
     runState(Monoid[S].empty)(w)
 
   /** run a state effect, with an initial value */
@@ -115,26 +114,31 @@ trait StateInterpretation {
    * Lift a computation over a "small" state (for a subsystem) into
    * a computation over a "bigger" state (for the full application state)
    */
-  def lensState[TS, SS, U, T, S, A](state: Eff[TS, A], getter: S => T, setter: (S, T) => S)
-                                        (implicit ts: Member.Aux[State[T, *], TS, U],
-                                                  ss: Member.Aux[State[S, *], SS, U]): Eff[SS, A] =
+  def lensState[TS, SS, U, T, S, A](state: Eff[TS, A], getter: S => T, setter: (S, T) => S)(implicit
+    ts: Member.Aux[State[T, *], TS, U],
+    ss: Member.Aux[State[S, *], SS, U]
+  ): Eff[SS, A] =
     intoState(state, getter, setter)
 
   /**
    * General lifting of a state effect into another
    * from one stack to another. This will require a type annotation
    */
-  def intoState[TS, SS, U1, U2, T, S, A](state: Eff[TS, A], getter: S => T, setter: (S, T) => S)
-                                        (implicit ts: Member.Aux[State[T, *], TS, U1],
-                                                  ss: Member.Aux[State[S, *], SS, U2],
-                                                  into: IntoPoly[U1, U2]): Eff[SS, A] =
-    Interpret.transform[TS, SS, U1, U2, State[T, *], State[S, *], A](state, new ~>[State[T, *], State[S, *]] {
-      def apply[X](tstate: State[T, X]): State[S, X] =
-        State { (s: S) =>
-          val (t, x) = tstate.run(getter(s)).value
-          (setter(s, t), x)
-        }
-    })
+  def intoState[TS, SS, U1, U2, T, S, A](state: Eff[TS, A], getter: S => T, setter: (S, T) => S)(implicit
+    ts: Member.Aux[State[T, *], TS, U1],
+    ss: Member.Aux[State[S, *], SS, U2],
+    into: IntoPoly[U1, U2]
+  ): Eff[SS, A] =
+    Interpret.transform[TS, SS, U1, U2, State[T, *], State[S, *], A](
+      state,
+      new ~>[State[T, *], State[S, *]] {
+        def apply[X](tstate: State[T, X]): State[S, X] =
+          State { (s: S) =>
+            val (t, x) = tstate.run(getter(s)).value
+            (setter(s, t), x)
+          }
+      }
+    )
 
   /**
    * Update the state value, the stack of the Eff computation stays the same
@@ -148,4 +152,3 @@ trait StateInterpretation {
 }
 
 object StateInterpretation extends StateInterpretation
-
