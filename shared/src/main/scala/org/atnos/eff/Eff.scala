@@ -151,9 +151,6 @@ object Eff extends EffCreation with EffInterpretation with EffImplicits
 
 trait EffImplicits {
 
-  @deprecated(message = "use EffMonad", since = "")
-  final def effMonadUnsafe: Monad[Eff[AnyRef, *]] = effMonadUnsafeImpl
-
   /**
     * Monad implementation for the Eff[R, *] type
     */
@@ -203,9 +200,6 @@ trait EffImplicits {
           ImpureAp(u, Continuation.lift(x => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
       }
   }
-
-  @deprecated(message = "use EffApplicative", since = "")
-  final def effApplicativeUnsafe: Applicative[Eff[AnyRef, *]] = effApplicativeUnsafeImpl
 
   private[this] final val effApplicativeUnsafeImpl: Applicative[Eff[AnyRef, *]] = new Applicative[Eff[AnyRef, *]] {
 
