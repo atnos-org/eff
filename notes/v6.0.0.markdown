@@ -1,0 +1,8 @@
+- [remove deprecated methods](https://github.com/atnos-org/eff/commit/f33a49f8560d9ac5ab72963ebdca0cbfa488b0e5)
+- [avoid package object if possible](https://github.com/atnos-org/eff/commit/8f2815b9c04116d6530294b0bcbfdef86c016fbf)
+- [scalafmt](https://github.com/atnos-org/eff/commit/ce672f930a4ae81d3c8c53a5b1bd562cf7992c52)
+- [Update scala3-library, ... to 3.1.2](https://github.com/atnos-org/eff/commit/4b4ae85671c73e10b27682014b33172077c874a0)
+- [Update cats-effect to 3.3.11](https://github.com/atnos-org/eff/commit/b190b7f97c17d9836694559978027eff88ba2100)
+- [Update sbt-scalajs, scalajs-compiler, ... to 1.10.0](https://github.com/atnos-org/eff/commit/835b42fed8270dfd63f100a97c6f0c447be65e73)
+- [Update twitter util-core to 22.3.0](https://github.com/atnos-org/eff/commit/db4ca5414eee78a1f20e74ca743308e996fb298d)
+- [Update scala-native to 0.4.4](https://github.com/atnos-org/eff/commit/db6d04652e55bad0f4bed9fbe06c6d6eeff173e8)
