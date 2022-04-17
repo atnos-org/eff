@@ -324,22 +324,22 @@ with the same key will return the previously computed value. When
 interpreting those computations a <code class="prettyprint">Cache</code> must be
 provided:</p>
 <pre><code class="prettyprint">import cats.Eval
-import cats.implicits._
-import org.atnos.eff._, memo._
-import org.atnos.eff.syntax.memo._
-import org.atnos.eff.syntax.eval._
-import org.atnos.eff.syntax.eff._
+      import cats.implicits._
+      import org.atnos.eff._, memo._
+      import org.atnos.eff.syntax.memo._
+      import org.atnos.eff.syntax.eval._
+      import org.atnos.eff.syntax.eff._
 
-type S = Fx.fx2[Memoized, Eval]
+      type S = Fx.fx2[Memoized, Eval]
 
-var i = 0
+      var i = 0
 
-def expensive[R :_memo]: Eff[R, Int] =
-  memoize(&quot;key&quot;, { i += 1; 10 * 10 })
+      def expensive[R: _memo]: Eff[R, Int] =
+        memoize(&quot;key&quot;, { i += 1; 10 * 10 })
 
-(expensive[S] &gt;&gt; expensive[S]).runMemo(ConcurrentHashMapCache()).runEval.run === 100
+      (expensive[S] &gt;&gt; expensive[S]).runMemo(ConcurrentHashMapCache()).runEval.run === 100
 
-&quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
+      &quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
 <p><code class="prettyprint">&gt; there is only one invocation &lt;=&gt; true</code></p>
 <p>There are 2 cache implementations provided in this library to support
 the Memo effect:</p>

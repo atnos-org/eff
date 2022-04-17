@@ -330,31 +330,29 @@ and then close it safely. The <code class="prettyprint">close</code> part is a â
 </ul>
 <p>Letâ€™s see an example for the protection of a resource:</p>
 <pre><code class="prettyprint">import org.atnos.eff.syntax.all._
-import org.atnos.eff._, all._
+      import org.atnos.eff._, all._
 
 // let&#39;s represent a resource which can be in use
-case class Resource(values: List[Int] = (1 to 10).toList, inUse: Boolean = false) {
-  def isClosed = !inUse
-}
+      case class Resource(values: List[Int] = (1 to 10).toList, inUse: Boolean = false) {
+        def isClosed = !inUse
+      }
 
-var resource = Resource()
+      var resource = Resource()
 
 // our stack of effects, with safe evaluation
-type S = Fx.fx1[Safe]
+      type S = Fx.fx1[Safe]
 
-def openResource: Eff[S, Resource] =
-  protect { resource = resource.copy(inUse = true); resource }
+      def openResource: Eff[S, Resource] =
+        protect { resource = resource.copy(inUse = true); resource }
 
-def closeResource(r: Resource): Eff[S, Unit] =
-  protect { resource = r.copy(inUse = false) }
+      def closeResource(r: Resource): Eff[S, Unit] =
+        protect { resource = r.copy(inUse = false) }
 
-def useResource(ok: Boolean) = (r: Resource) =&gt;
-  protect[S, Int](if (ok) r.values.sum else throw new Exception(&quot;boo&quot;))
+      def useResource(ok: Boolean) = (r: Resource) =&gt; protect[S, Int](if (ok) r.values.sum else throw new Exception(&quot;boo&quot;))
 
 // this program uses the resource safely even if there is an exception
-def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
-  bracket(openResource)(useResource(ok))(closeResource).
-    runSafe.run</code></pre>
+      def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
+        bracket(openResource)(useResource(ok))(closeResource).runSafe.run</code></pre>
 <pre><code class="prettyprint">&gt; Results
 Without exception: Right(55), finalizers exceptions: no exceptions, resource is closed: true
 With exception   : Left(boo), finalizers exceptions: no exceptions, resource is closed: true</code></pre>
@@ -369,20 +367,19 @@ fail.</p>
 <p>This example show how to use <code class="prettyprint">finally</code> but also what
 happens if a finalizer fails:</p>
 <pre><code class="prettyprint">import org.atnos.eff.syntax.all._
-import org.atnos.eff._, all._
+      import org.atnos.eff._, all._
 
 // our stack of effects, with safe evaluation
-type S = Fx.fx1[Safe]
+      type S = Fx.fx1[Safe]
 
-var sumDone: Boolean = false
+      var sumDone: Boolean = false
 
-def setDone(ok: Boolean): Eff[S, Unit] =
-  protect[S, Unit](if (ok) sumDone = true else throw new Exception(&quot;failed!!&quot;))
+      def setDone(ok: Boolean): Eff[S, Unit] =
+        protect[S, Unit](if (ok) sumDone = true else throw new Exception(&quot;failed!!&quot;))
 
 // this program tries to set sumDone to true when the computation is done
-def program(ok: Boolean, finalizeOk: Boolean): (Throwable Either Int, List[Throwable]) =
-  (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception(&quot;boo&quot;)) `finally` setDone(finalizeOk)).
-    runSafe.run
+      def program(ok: Boolean, finalizeOk: Boolean): (Throwable Either Int, List[Throwable]) =
+        (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception(&quot;boo&quot;)) `finally` setDone(finalizeOk)).runSafe.run
 </code></pre>
 <pre><code class="prettyprint">&gt; Results
 Computation ok, finalizer ok: Right(55), finalizers exceptions: no exceptions

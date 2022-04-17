@@ -349,12 +349,12 @@ triggering some effects when evaluated.</p>
 <p>The effects <code class="prettyprint">R</code> are modelled by a type-level list of
 “effect constructors”, for example:</p>
 <pre><code class="prettyprint">import cats._, data._
-import org.atnos.eff._
+      import org.atnos.eff._
 
-type ReaderInt[A] = Reader[Int, A]
-type WriterString[A] = Writer[String, A]
+      type ReaderInt[A] = Reader[Int, A]
+      type WriterString[A] = Writer[String, A]
 
-type Stack = Fx.fx3[WriterString, ReaderInt, Eval]</code></pre>
+      type Stack = Fx.fx3[WriterString, ReaderInt, Eval]</code></pre>
 <p>The stack <code class="prettyprint">Stack</code> above declares 3 effects:</p>
 <ul>
 <li><p>a <code class="prettyprint">ReaderInt</code> effect to access some configuration
@@ -368,30 +368,30 @@ bit like lazy values)</p></li>
 operations provided by <code class="prettyprint">ReaderEffect</code>,
 <code class="prettyprint">WriterEffect</code> and <code class="prettyprint">EvalEffect</code>:</p>
 <pre><code class="prettyprint">import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
+      import org.atnos.eff.syntax.all._
 
 // useful type aliases showing that the ReaderInt and the WriterString effects are &quot;members&quot; of R
 // note that R could have more effects
-type _readerInt[R]    = ReaderInt |= R
-type _writerString[R] = WriterString |= R
+      type _readerInt[R] = ReaderInt |= R
+      type _writerString[R] = WriterString |= R
 
-def program[R :_readerInt :_writerString :_eval]: Eff[R, Int] = for {
-  // get the configuration
-  n &lt;- ask[R, Int]
+      def program[R: _readerInt: _writerString: _eval]: Eff[R, Int] = for {
+        // get the configuration
+        n &lt;- ask[R, Int]
 
-  // log the current configuration value
-  _ &lt;- tell(&quot;the required power is &quot;+n)
+        // log the current configuration value
+        _ &lt;- tell(&quot;the required power is &quot; + n)
 
-  // compute the nth power of 2
-  a &lt;- delay(math.pow(2, n.toDouble).toInt)
+        // compute the nth power of 2
+        a &lt;- delay(math.pow(2, n.toDouble).toInt)
 
-  // log the result
-  _ &lt;- tell(&quot;the result is &quot;+a)
-} yield a
+        // log the result
+        _ &lt;- tell(&quot;the result is &quot; + a)
+      } yield a
 
 // run the action with all the interpreters
 // each interpreter running one effect
-program[Stack].runReader(6).runWriter.runEval.run</code></pre>
+      program[Stack].runReader(6).runWriter.runEval.run</code></pre>
 <p><code class="prettyprint">&gt; (64,List(the required power is 6, the result is
 64))</code></p>
 <p>As you can see, all the effects of the <code class="prettyprint">Stack</code> type are

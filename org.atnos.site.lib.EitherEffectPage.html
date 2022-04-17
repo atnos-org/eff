@@ -323,43 +323,43 @@ effect but adds the possibility to specify why a computation
 stopped:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 
-  /**
+      /**
    * Stack declaration
    */
-  type S = Fx.fx1[Either[String, *]]
+      type S = Fx.fx1[Either[String, *]]
 
-  // compute with this stack
-  val map: Map[String, Int] =
-    Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
+      // compute with this stack
+      val map: Map[String, Int] =
+        Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
 
-  // get 2 keys from the map and add the corresponding values
-  def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-    a &lt;- optionEither(map.get(key1), s&quot;&#39;$key1&#39; not found&quot;)
-    b &lt;- optionEither(map.get(key2), s&quot;&#39;$key2&#39; not found&quot;)
-  } yield a + b
+      // get 2 keys from the map and add the corresponding values
+      def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+        a &lt;- optionEither(map.get(key1), s&quot;&#39;$key1&#39; not found&quot;)
+        b &lt;- optionEither(map.get(key2), s&quot;&#39;$key2&#39; not found&quot;)
+      } yield a + b
 
-  (addKeys(&quot;key1&quot;, &quot;key2&quot;).runEither.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runEither.run)</code></pre>
+      (addKeys(&quot;key1&quot;, &quot;key2&quot;).runEither.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runEither.run)</code></pre>
 <p><code class="prettyprint">&gt; (Right(30),Left('missing' not found))</code></p>
 <p><em>Note</em>: the <code class="prettyprint">*</code> syntax comes from the <a
 href="https://github.com/typelevel/kind-projector">kind-projector</a>
 project and allows us to avoid type lambdas.</p>
 <p>A <code class="prettyprint">catchLeft</code> method can also be used to intercept an
 error and possibly recover from it:</p>
-<pre><code class="prettyprint">  case class TooBig(value: Int)
-  type E = Fx.fx1[Either[TooBig, *]]
+<pre><code class="prettyprint">      case class TooBig(value: Int)
+      type E = Fx.fx1[Either[TooBig, *]]
 
-  val i = 7
+      val i = 7
 
-  val value: Eff[E, Int] =
-    if (i &gt; 5) left[E, TooBig, Int](TooBig(i))
-    else       right[E, TooBig, Int](i)
+      val value: Eff[E, Int] =
+        if (i &gt; 5) left[E, TooBig, Int](TooBig(i))
+        else right[E, TooBig, Int](i)
 
-  val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =&gt;
-    if (k &lt; 10) right[E, TooBig, Int](k)
-    else        left[E, TooBig, Int](TooBig(k))
-  }
+      val action: Eff[E, Int] = catchLeft[E, TooBig, Int](value) { case TooBig(k) =&gt;
+        if (k &lt; 10) right[E, TooBig, Int](k)
+        else left[E, TooBig, Int](TooBig(k))
+      }
 
-  action.runEither.run ==== Right(7)</code></pre>
+      action.runEither.run ==== Right(7)</code></pre>
 <p><em>Note</em>: the type annotations on <code class="prettyprint">left</code> and
 <code class="prettyprint">right</code> can be avoided by adding an implicit declaration in
 scope. You can learn more about this in the

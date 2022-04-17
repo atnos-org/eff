@@ -324,22 +324,22 @@ computations when necessary. If you create a value with
 <code class="prettyprint">none</code> all computations will stop:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 
-/**
+      /**
  * Stack declaration
  */
-type S = Fx.fx1[Option]
+      type S = Fx.fx1[Option]
 
 // compute with this stack
-val map: Map[String, Int] =
-  Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
+      val map: Map[String, Int] =
+        Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
 
 // get 2 keys from the map and add the corresponding values
-def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-  a &lt;- fromOption(map.get(key1))
-  b &lt;- fromOption(map.get(key2))
-} yield a + b
+      def addKeys(key1: String, key2: String): Eff[S, Int] = for {
+        a &lt;- fromOption(map.get(key1))
+        b &lt;- fromOption(map.get(key2))
+      } yield a + b
 
-(addKeys(&quot;key1&quot;, &quot;key2&quot;).runOption.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runOption.run)</code></pre>
+      (addKeys(&quot;key1&quot;, &quot;key2&quot;).runOption.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runOption.run)</code></pre>
 <p><code class="prettyprint">&gt; (Some(30),None)</code></p>
 </div>
 

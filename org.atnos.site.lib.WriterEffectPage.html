@@ -321,34 +321,33 @@ typeclasses">Know your Membe...</a>
 <p>You can then define your own custom <code class="prettyprint">Fold</code> to log the
 values to a file:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-import cats.data.Writer
-import java.io.PrintWriter
-import scala.io
+      import cats.data.Writer
+      import java.io.PrintWriter
+      import scala.io
 
-type S = Fx.fx1[Writer[String, *]]
+      type S = Fx.fx1[Writer[String, *]]
 
-val action: Eff[S, Int] = for {
-  a &lt;- pure[S, Int](1)
-  _ &lt;- tell(&quot;first value &quot;+a)
-  b &lt;- pure[S, Int](2)
-  _ &lt;- tell(&quot;second value &quot;+b)
+      val action: Eff[S, Int] = for {
+        a &lt;- pure[S, Int](1)
+        _ &lt;- tell(&quot;first value &quot; + a)
+        b &lt;- pure[S, Int](2)
+        _ &lt;- tell(&quot;second value &quot; + b)
 
-} yield a + b
+      } yield a + b
 
 // define a fold to output values
-def fileFold(path: String) = new RightFold[String, Unit] {
-  type S = PrintWriter
-  val init: S = new PrintWriter(path)
+      def fileFold(path: String) = new RightFold[String, Unit] {
+        type S = PrintWriter
+        val init: S = new PrintWriter(path)
 
-  def fold(a: String, s: S): S =
-  { s.println(a); s }
+        def fold(a: String, s: S): S = { s.println(a); s }
 
-  def finalize(s: S): Unit =
-    s.close
-}
+        def finalize(s: S): Unit =
+          s.close
+      }
 
-action.runWriterFold(fileFold(&quot;target/log&quot;)).run
-io.Source.fromFile(&quot;target/log&quot;).getLines().toList</code></pre>
+      action.runWriterFold(fileFold(&quot;target/log&quot;)).run
+      io.Source.fromFile(&quot;target/log&quot;).getLines().toList</code></pre>
 <p><code class="prettyprint">&gt; List(second value 2, first value 1)</code></p>
 </div>
 

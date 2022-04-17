@@ -326,20 +326,20 @@ providing a value for the environment with the <code class="prettyprint">runRead
 method.</p>
 <p>You can also inject a “local” reader into a “bigger” one:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-import cats.data._
+      import cats.data._
 
-case class Conf(host: String, port: Int)
+      case class Conf(host: String, port: Int)
 
-type R1[A] = Reader[Int, A]
-type R2[A] = Reader[Conf, A]
+      type R1[A] = Reader[Int, A]
+      type R2[A] = Reader[Conf, A]
 
-type S = Fx.fx2[R1, R2]
+      type S = Fx.fx2[R1, R2]
 
-def getPort[R](implicit r: Reader[Int, *] |= R): Eff[R, String] = for {
-  p1 &lt;- ask[R, Int]
-} yield &quot;the port is &quot; + p1
+      def getPort[R](implicit r: Reader[Int, *] |= R): Eff[R, String] = for {
+        p1 &lt;- ask[R, Int]
+      } yield &quot;the port is &quot; + p1
 
-getPort[S].translateReader((_: Conf).port).runReader(Conf(&quot;prod&quot;, 80)).run</code></pre>
+      getPort[S].translateReader((_: Conf).port).runReader(Conf(&quot;prod&quot;, 80)).run</code></pre>
 <p><code class="prettyprint">&gt; the port is 80</code></p>
 </div>
 

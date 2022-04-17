@@ -329,48 +329,49 @@ an Effect for a new “optional” type.</p>
 A]</code></p></li>
 <li><p>an interpreter</p></li>
 </ul>
-<pre><code class="prettyprint">import cats._, implicits._
-import org.atnos.eff._
-import all._
-import org.atnos.eff.interpret._
+<pre><code class="prettyprint">  import cats._
+  import implicits._
+  import org.atnos.eff._
+  import all._
+  import org.atnos.eff.interpret._
 
-sealed trait Maybe[A]
-case class Just[A](a: A) extends Maybe[A]
-case class Nothing[A]() extends Maybe[A]
+  sealed trait Maybe[A]
+  case class Just[A](a: A) extends Maybe[A]
+  case class Nothing[A]() extends Maybe[A]
 
-object MaybeEffect {
-  type _maybe[R] = Maybe |= R
+  object MaybeEffect {
+    type _maybe[R] = Maybe |= R
 
-  def just[R :_maybe, A](a: A): Eff[R, A] =
-    send[Maybe, R, A](Just(a))
+    def just[R: _maybe, A](a: A): Eff[R, A] =
+      send[Maybe, R, A](Just(a))
 
-  def nothing[R :_maybe, A]: Eff[R, A] =
-    send[Maybe, R, A](Nothing())
+    def nothing[R: _maybe, A]: Eff[R, A] =
+      send[Maybe, R, A](Nothing())
 
-  def runMaybe[R, U, A, B](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
-    recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
-      def onPure(a: A) = Some(a)
+    def runMaybe[R, U, A, B](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
+      recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
+        def onPure(a: A) = Some(a)
 
-      def onEffect[X](m: Maybe[X]): X Either Eff[U, Option[A]] =
-        m match {
-          case Just(x)   =&gt; Left(x)
-          case Nothing() =&gt; Right(Eff.pure(None))
+        def onEffect[X](m: Maybe[X]): X Either Eff[U, Option[A]] =
+          m match {
+            case Just(x) =&gt; Left(x)
+            case Nothing() =&gt; Right(Eff.pure(None))
+          }
+
+        def onApplicative[X, T[_]: Traverse](ms: T[Maybe[X]]): T[X] Either Maybe[T[X]] =
+          Right(ms.sequence)
+      })
+
+    implicit val applicativeMaybe: Applicative[Maybe] = new Applicative[Maybe] {
+      def pure[A](a: A): Maybe[A] = Just(a)
+
+      def ap[A, B](ff: Maybe[A =&gt; B])(fa: Maybe[A]): Maybe[B] =
+        (fa, ff) match {
+          case (Just(a), Just(f)) =&gt; Just(f(a))
+          case _ =&gt; Nothing()
         }
-
-      def onApplicative[X, T[_]: Traverse](ms: T[Maybe[X]]): T[X] Either Maybe[T[X]] =
-        Right(ms.sequence)
-    })
-
-  implicit val applicativeMaybe: Applicative[Maybe] = new Applicative[Maybe] {
-    def pure[A](a: A): Maybe[A] = Just(a)
-
-    def ap[A, B](ff: Maybe[A =&gt; B])(fa: Maybe[A]): Maybe[B] =
-      (fa, ff) match {
-        case (Just(a), Just(f)) =&gt; Just(f(a))
-        case _                  =&gt; Nothing()
-      }
+    }
   }
-}
 </code></pre>
 <p>In the code above:</p>
 <ul>
@@ -388,12 +389,12 @@ classes to represent different possibilities for that effect. For
 example for interacting with a database you might create:</p>
 <pre><code class="prettyprint">trait DatabaseEffect {
 
-  case class Record(fields: List[String])
+        case class Record(fields: List[String])
 
-  sealed trait Db[A]
-  case class Get[A](id: Int) extends Db[Record]
-  case class Update[A](id: Int, record: Record) extends Db[Record]
-}</code></pre>
+        sealed trait Db[A]
+        case class Get[A](id: Int) extends Db[Record]
+        case class Update[A](id: Int, record: Record) extends Db[Record]
+      }</code></pre>
 <p>It is recommended to create the <code class="prettyprint">Db</code> types
 <strong>outside</strong> of the <code class="prettyprint">DatabaseEffect</code> trait.
 Indeed, during <code class="prettyprint">Member</code> implicit resolution, depending on how
@@ -423,16 +424,16 @@ and its removal from <code class="prettyprint">R</code> should be the effect sta
 <p><br/></p>
 <p>Then we can use this effect in a computation:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
-import org.atnos.eff.eff._
-import MaybeEffect._
+      import org.atnos.eff.eff._
+      import MaybeEffect._
 
-val action: Eff[Fx.fx1[Maybe], Int] =
-  for {
-    a &lt;- just(2)
-    b &lt;- just(3)
-  } yield a + b
+      val action: Eff[Fx.fx1[Maybe], Int] =
+        for {
+          a &lt;- just(2)
+          b &lt;- just(3)
+        } yield a + b
 
-run(runMaybe(action))</code></pre>
+      run(runMaybe(action))</code></pre>
 <p><code class="prettyprint">&gt; Some(5)</code></p>
 <hr />
 </div>

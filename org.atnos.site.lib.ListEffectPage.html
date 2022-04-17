@@ -322,18 +322,19 @@ typeclasses">Know your Membe...</a>
 return several values. A simple example using this effect would be</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 
-type S = Fx.fx1[List]
+      type S = Fx.fx1[List]
 
 // create all the possible pairs for a given list
 // where the sum is greater than a value
-def pairsBiggerThan[R :_list](list: List[Int], n: Int): Eff[R, (Int, Int)] = for {
-  a &lt;- values(list:_*)
-  b &lt;- values(list:_*)
-  found &lt;- if (a + b &gt; n) singleton((a, b))
-  else           empty
-} yield found
+      def pairsBiggerThan[R: _list](list: List[Int], n: Int): Eff[R, (Int, Int)] = for {
+        a &lt;- values(list: _*)
+        b &lt;- values(list: _*)
+        found &lt;-
+          if (a + b &gt; n) singleton((a, b))
+          else empty
+      } yield found
 
-pairsBiggerThan[S](List(1, 2, 3, 4), 5).runList.run</code></pre>
+      pairsBiggerThan[S](List(1, 2, 3, 4), 5).runList.run</code></pre>
 <p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
 </div>
 

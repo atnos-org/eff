@@ -351,11 +351,11 @@ closed set of types which can be combined to build up complex, recursive
 values.</p>
 <p>We need to create an ADT to represent our key-value operations:</p>
 <pre><code class="prettyprint">// the type parameter A can be read as the type of value returned by the operation
-sealed trait KVStore[+A]
+  sealed trait KVStore[+A]
 
-case class Put[T](key: String, value: T) extends KVStore[Unit]
-case class Get[T](key: String) extends KVStore[Option[T]]
-case class Delete(key: String) extends KVStore[Unit]
+  case class Put[T](key: String, value: T) extends KVStore[Unit]
+  case class Get[T](key: String) extends KVStore[Option[T]]
+  case class Delete(key: String) extends KVStore[Unit]
 </code></pre>
 <h3 id="free-your-adt">Free your ADT</h3>
 <p>There are four basic steps to “freeing” the ADT:</p>
@@ -371,31 +371,31 @@ case class Delete(key: String) extends KVStore[Unit]
 constructors using <code class="prettyprint">Eff.send</code></h3>
 <p>These methods will let you create <code class="prettyprint">Eff</code> values for your
 key-value store “Effect”:</p>
-<pre><code class="prettyprint">import org.atnos.eff._
+<pre><code class="prettyprint">  import org.atnos.eff._
 
 // T |= R is an alias for MemberIn[T, R]
 // stating that effects of type T[_] can be injected in the effect stack R
 // It is also equivalent to MemberIn[KVStore, R]
-type _kvstore[R] = KVStore |= R
+  type _kvstore[R] = KVStore |= R
 
-/** store returns nothing (i.e. Unit) */
-def store[T, R :_kvstore](key: String, value: T): Eff[R, Unit] =
-  Eff.send[KVStore, R, Unit](Put(key, value))
+  /** store returns nothing (i.e. Unit) */
+  def store[T, R: _kvstore](key: String, value: T): Eff[R, Unit] =
+    Eff.send[KVStore, R, Unit](Put(key, value))
 
-/** find returns a T value if the key exists */
-def find[T, R :_kvstore](key: String): Eff[R, Option[T]] =
-  Eff.send[KVStore, R, Option[T]](Get(key))
+  /** find returns a T value if the key exists */
+  def find[T, R: _kvstore](key: String): Eff[R, Option[T]] =
+    Eff.send[KVStore, R, Option[T]](Get(key))
 
-/** delete returns nothing (i.e. Unit) */
-def delete[T, R :_kvstore](key: String): Eff[R, Unit] =
-  Eff.send(Delete(key))
+  /** delete returns nothing (i.e. Unit) */
+  def delete[T, R: _kvstore](key: String): Eff[R, Unit] =
+    Eff.send(Delete(key))
 
-/** update composes get and put, and returns nothing. */
-def update[T, R :_kvstore](key: String, f: T =&gt; T): Eff[R, Unit] =
-  for {
-    ot &lt;- find[T, R](key)
-    _  &lt;- ot.map(t =&gt; store[T, R](key, f(t))).getOrElse(Eff.pure(()))
-  } yield ()
+  /** update composes get and put, and returns nothing. */
+  def update[T, R: _kvstore](key: String, f: T =&gt; T): Eff[R, Unit] =
+    for {
+      ot &lt;- find[T, R](key)
+      _ &lt;- ot.map(t =&gt; store[T, R](key, f(t))).getOrElse(Eff.pure(()))
+    } yield ()
 </code></pre>
 <p>Each method requires the <code class="prettyprint">KVStore</code> effect to be a member
 of an “effect stack” <code class="prettyprint">R</code>. The return values are of type
@@ -405,16 +405,16 @@ yielding values of type <code class="prettyprint">A</code>.</p>
 <h3 id="build-a-program">Build a program</h3>
 <p>Now that we can construct values with <code class="prettyprint">KVStore</code> effects we
 can use our DSL to write “programs” using a for-comprehension:</p>
-<pre><code class="prettyprint">import org.atnos.eff._
+<pre><code class="prettyprint">  import org.atnos.eff._
 
-def program[R :_kvstore]: Eff[R, Option[Int]] =
-  for {
-    _ &lt;- store(&quot;wild-cats&quot;, 2)
-    _ &lt;- update[Int, R](&quot;wild-cats&quot;, _ + 12)
-    _ &lt;- store(&quot;tame-cats&quot;, 5)
-    n &lt;- find[Int, R](&quot;wild-cats&quot;)
-    _ &lt;- delete(&quot;tame-cats&quot;)
-  } yield n
+  def program[R: _kvstore]: Eff[R, Option[Int]] =
+    for {
+      _ &lt;- store(&quot;wild-cats&quot;, 2)
+      _ &lt;- update[Int, R](&quot;wild-cats&quot;, _ + 12)
+      _ &lt;- store(&quot;tame-cats&quot;, 5)
+      n &lt;- find[Int, R](&quot;wild-cats&quot;)
+      _ &lt;- delete(&quot;tame-cats&quot;)
+    } yield n
 </code></pre>
 <p>This looks like a monadic flow. However, it just builds a recursive
 data structure representing the sequence of operations.</p>
@@ -430,13 +430,13 @@ language!</p>
 abstract language into concrete values.</p>
 <p>To do this, we will use an interpreter transforming our
 <code class="prettyprint">KVStore</code> effects using a simple mutable map:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, interpret._
-import cats.Traverse
-import cats.implicits._
-import scala.collection.mutable._
+<pre><code class="prettyprint">  import org.atnos.eff._
+  import interpret._
+  import cats.Traverse
+  import cats.implicits._
+  import scala.collection.mutable._
 
-
-/**
+  /**
  * Unsafe interpreter for KVStore effects
  *
  * the program will crash if a type is incorrectly specified.
@@ -454,34 +454,34 @@ import scala.collection.mutable._
  * The resulting effect stack is m.Out which is R without the KVStore effects
  *
  */
-def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff[m.Out, A] = {
-  // a very simple (and imprecise) key-value store
-  val kvs = Map.empty[String, Any]
+  def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff[m.Out, A] = {
+    // a very simple (and imprecise) key-value store
+    val kvs = Map.empty[String, Any]
 
-  val sideEffect = new SideEffect[KVStore] {
-    def apply[X](kv: KVStore[X]): X =
-      kv match {
-        case Put(key, value) =&gt;
-          println(s&quot;put($key, $value)&quot;)
-          kvs.put(key, value)
-          ().asInstanceOf[X]
+    val sideEffect = new SideEffect[KVStore] {
+      def apply[X](kv: KVStore[X]): X =
+        kv match {
+          case Put(key, value) =&gt;
+            println(s&quot;put($key, $value)&quot;)
+            kvs.put(key, value)
+            ().asInstanceOf[X]
 
-        case Get(key) =&gt;
-          println(s&quot;get($key)&quot;)
-          kvs.get(key).asInstanceOf[X]
+          case Get(key) =&gt;
+            println(s&quot;get($key)&quot;)
+            kvs.get(key).asInstanceOf[X]
 
-        case Delete(key) =&gt;
-          println(s&quot;delete($key)&quot;)
-          kvs.remove(key)
-          ().asInstanceOf[X]
-      }
+          case Delete(key) =&gt;
+            println(s&quot;delete($key)&quot;)
+            kvs.remove(key)
+            ().asInstanceOf[X]
+        }
 
-    def applicative[X, Tr[_] : Traverse](ms: Tr[KVStore[X]]): Tr[X] =
-      ms.map(apply)
+      def applicative[X, Tr[_]: Traverse](ms: Tr[KVStore[X]]): Tr[X] =
+        ms.map(apply)
+    }
+    interpretUnsafe(effects)(sideEffect)(m)
+
   }
-  interpretUnsafe(effects)(sideEffect)(m)
-
-}
 </code></pre>
 <p>Please note this interpreter is impure – it mutates <code class="prettyprint">kvs</code>
 and also produces logging output using <code class="prettyprint">println</code>. The whole
@@ -496,18 +496,18 @@ delegate the results to other effects in the same stack:</p>
 <li><code class="prettyprint">Either[E, *]</code> for type errors
 <p/></li>
 </ul>
-<pre><code class="prettyprint">import org.atnos.eff._
-import org.atnos.eff.either._
-import org.atnos.eff.writer._
-import org.atnos.eff.state._
-import org.atnos.eff.interpret._
-import cats.implicits._
-import cats.data._
+<pre><code class="prettyprint">  import org.atnos.eff._
+  import org.atnos.eff.either._
+  import org.atnos.eff.writer._
+  import org.atnos.eff.state._
+  import org.atnos.eff.interpret._
+  import cats.implicits._
+  import cats.data._
 
-type _writerString[R] = Writer[String, *] |= R
-type _stateMap[R]     = State[Map[String, Any], *] |= R
+  type _writerString[R] = Writer[String, *] |= R
+  type _stateMap[R] = State[Map[String, Any], *] |= R
 
-/**
+  /**
  * Safe interpreter for KVStore effects
  *
  * It uses the following effects:
@@ -534,38 +534,36 @@ type _stateMap[R]     = State[Map[String, Any], *] |= R
  *   implicit m: Member.Aux[KVStore, R, U]): Eff[U, A] = {
  *
  */
-def runKVStore[R, U, A](effects: Eff[R, A])
-  (implicit m: Member.Aux[KVStore, R, U],
-            throwable:_throwableEither[U],
-            writer:_writerString[U],
-            state:_stateMap[U]): Eff[U, A] = {
+  def runKVStore[R, U, A](
+    effects: Eff[R, A]
+  )(implicit m: Member.Aux[KVStore, R, U], throwable: _throwableEither[U], writer: _writerString[U], state: _stateMap[U]): Eff[U, A] = {
 
-  translate(effects)(new Translate[KVStore, U] {
-    def apply[X](kv: KVStore[X]): Eff[U, X] =
-      kv match {
-        case Put(key, value) =&gt;
-          for {
-            _ &lt;- tell(s&quot;put($key, $value)&quot;)
-            _ &lt;- modify((map: Map[String, Any]) =&gt; map.updated(key, value))
-            r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
-          } yield r
+    translate(effects)(new Translate[KVStore, U] {
+      def apply[X](kv: KVStore[X]): Eff[U, X] =
+        kv match {
+          case Put(key, value) =&gt;
+            for {
+              _ &lt;- tell(s&quot;put($key, $value)&quot;)
+              _ &lt;- modify((map: Map[String, Any]) =&gt; map.updated(key, value))
+              r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
+            } yield r
 
-        case Get(key) =&gt;
-          for {
-            _ &lt;- tell(s&quot;get($key)&quot;)
-            m &lt;- get[U, Map[String, Any]]
-            r &lt;- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
-          } yield r
+          case Get(key) =&gt;
+            for {
+              _ &lt;- tell(s&quot;get($key)&quot;)
+              m &lt;- get[U, Map[String, Any]]
+              r &lt;- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
+            } yield r
 
-        case Delete(key) =&gt;
-          for {
-            _ &lt;- tell(s&quot;delete($key)&quot;)
-            u &lt;- modify((map: Map[String, Any]) =&gt; map - key)
-            r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
-          } yield r
-      }
-  })
-}
+          case Delete(key) =&gt;
+            for {
+              _ &lt;- tell(s&quot;delete($key)&quot;)
+              u &lt;- modify((map: Map[String, Any]) =&gt; map - key)
+              r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
+            } yield r
+        }
+    })
+  }
 </code></pre>
 <p><code class="prettyprint">Eff</code> is just a recursive structure that can be seen as
 sequence of operations producing other operations, with potentially
@@ -610,10 +608,10 @@ stack)</li>
 <p/></li>
 </ul>
 <p>Like this:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, syntax.all._
+<pre><code class="prettyprint">      import org.atnos.eff._, syntax.all._
 
 // run the program with the unsafe interpreter
-runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run</code></pre>
+      runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run</code></pre>
 <p><code class="prettyprint">&gt; Some(14)</code></p>
 <p>With the safe interpreter, the process is the same and we need to</p>
 <ul>
@@ -624,16 +622,16 @@ runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run</code></pre>
 <p/></li>
 </ul>
 <p>Like that:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, syntax.all._
-import cats._, data._
+<pre><code class="prettyprint">      import org.atnos.eff._, syntax.all._
+      import cats._, data._
 
 // run the program with the safe interpreter
-type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
+      type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
 
-val (result, logs) =
-  runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
+      val (result, logs) =
+        runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
 
-(result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
+      (result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
 <pre><code class="prettyprint">&gt; Right(Some(14))
 put(wild-cats, 2)
 get(wild-cats)
@@ -644,18 +642,20 @@ delete(tame-cats)</code></pre>
 <h3 id="add-some-syntax">Add some syntax</h3>
 <p>It is nice to be able to “chain” <code class="prettyprint">run</code> methods with this
 additional piece of syntax:</p>
-<pre><code class="prettyprint">implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
-  def runStore[U](implicit m: Member.Aux[KVStore, R, U],
-                  throwable:_throwableEither[U],
-                  writer:_writerString[U],
-                  state:_stateMap[U]): Eff[U, A] =
-    runKVStore(effects)
-}
+<pre><code class="prettyprint">      implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
+        def runStore[U](implicit
+          m: Member.Aux[KVStore, R, U],
+          throwable: _throwableEither[U],
+          writer: _writerString[U],
+          state: _stateMap[U]
+        ): Eff[U, A] =
+          runKVStore(effects)
+      }
 
-val (result, logs) =
-  program[Stack].runStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
+      val (result, logs) =
+        program[Stack].runStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
 
-(result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
+      (result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
 <pre><code class="prettyprint">&gt; Right(Some(14))
 put(wild-cats, 2)
 get(wild-cats)
@@ -671,104 +671,105 @@ us compose different algebras in the context of <code class="prettyprint">Eff</c
 <p>Let’s see a trivial example of unrelated ADT’s getting composed that
 can form a more complex program. First you define your ADTs with smart
 constructors:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, all._
+<pre><code class="prettyprint">  import org.atnos.eff._
+  import all._
 
-sealed trait Interact[A]
+  sealed trait Interact[A]
 
-case class Ask(prompt: String) extends Interact[String]
-case class Tell(msg: String) extends Interact[Unit]
+  case class Ask(prompt: String) extends Interact[String]
+  case class Tell(msg: String) extends Interact[Unit]
 
-type _interact[R] = Interact |= R
+  type _interact[R] = Interact |= R
 
-def askUser[R :_interact](prompt: String): Eff[R, String] =
-  send(Ask(prompt))
+  def askUser[R: _interact](prompt: String): Eff[R, String] =
+    send(Ask(prompt))
 
-def tellUser[R :_interact](message: String): Eff[R, Unit] =
-  send(Tell(message))
+  def tellUser[R: _interact](message: String): Eff[R, Unit] =
+    send(Tell(message))
 
-sealed trait DataOp[A]
+  sealed trait DataOp[A]
 
-type _dataOp[R] = DataOp |= R
+  type _dataOp[R] = DataOp |= R
 
-case class AddCat(a: String) extends DataOp[Unit]
-case class GetAllCats() extends DataOp[List[String]]
+  case class AddCat(a: String) extends DataOp[Unit]
+  case class GetAllCats() extends DataOp[List[String]]
 
-def addCat[R :_dataOp](a: String): Eff[R, Unit] =
-  send(AddCat(a))
+  def addCat[R: _dataOp](a: String): Eff[R, Unit] =
+    send(AddCat(a))
 
-def getAllCats[R :_dataOp]: Eff[R, List[String]] =
-  send(GetAllCats())
-
+  def getAllCats[R: _dataOp]: Eff[R, List[String]] =
+    send(GetAllCats())
 </code></pre>
 <p>Then you simply require your program to have <code class="prettyprint">MemberIn</code>
 instances for those effects:</p>
-<pre><code class="prettyprint">import org.atnos.eff._
+<pre><code class="prettyprint">  import org.atnos.eff._
 
-def program[R :_interact :_dataOp]: Eff[R, Unit] =
-  for {
-    cat  &lt;- askUser(&quot;What&#39;s the kitty&#39;s name?&quot;)
-    _    &lt;- addCat(cat)
-    cats &lt;- getAllCats
-    _    &lt;- tellUser(&quot;Current cats: &quot;+cats.mkString(&quot;, &quot;))
-  } yield ()</code></pre>
+  def program[R: _interact: _dataOp]: Eff[R, Unit] =
+    for {
+      cat &lt;- askUser(&quot;What&#39;s the kitty&#39;s name?&quot;)
+      _ &lt;- addCat(cat)
+      cats &lt;- getAllCats
+      _ &lt;- tellUser(&quot;Current cats: &quot; + cats.mkString(&quot;, &quot;))
+    } yield ()</code></pre>
 <p>Finally we write one interpreter per ADT:</p>
-<pre><code class="prettyprint">import cats._
-import cats.implicits._
-import org.atnos.eff._, interpret._
+<pre><code class="prettyprint">  import cats._
+  import cats.implicits._
+  import org.atnos.eff._
+  import interpret._
 
-def readLine(): String =
-  &quot;snuggles&quot;
+  def readLine(): String =
+    &quot;snuggles&quot;
 
-def runInteract[R, A](effect: Eff[R, A])(implicit m: Interact &lt;= R): Eff[m.Out, A] =
-  recurse(effect)(new Recurser[Interact, m.Out, A, A] {
-    def onPure(a: A): A = a
+  def runInteract[R, A](effect: Eff[R, A])(implicit m: Interact &lt;= R): Eff[m.Out, A] =
+    recurse(effect)(new Recurser[Interact, m.Out, A, A] {
+      def onPure(a: A): A = a
 
-    def onEffect[X](i: Interact[X]): X Either Eff[m.Out, A] = Left[X, Eff[m.Out, A]] {
-      i match {
-        case Ask(prompt) =&gt;
-          println(prompt)
-          readLine()
+      def onEffect[X](i: Interact[X]): X Either Eff[m.Out, A] = Left[X, Eff[m.Out, A]] {
+        i match {
+          case Ask(prompt) =&gt;
+            println(prompt)
+            readLine()
 
-        case Tell(msg) =&gt;
-          println(msg)
+          case Tell(msg) =&gt;
+            println(msg)
+        }
       }
-    }
 
-    def onApplicative[X, T[_] : Traverse](ms: T[Interact[X]]): T[X] Either Interact[T[X]] =
-      Left(ms.map {
-        case Ask(prompt) =&gt; println(prompt); readLine()
-        case Tell(msg)   =&gt; println(msg)
-      })
+      def onApplicative[X, T[_]: Traverse](ms: T[Interact[X]]): T[X] Either Interact[T[X]] =
+        Left(ms.map {
+          case Ask(prompt) =&gt; println(prompt); readLine()
+          case Tell(msg) =&gt; println(msg)
+        })
 
-  })(m)
+    })(m)
 
-def runDataOp[R, A](effect: Eff[R, A])(implicit m: DataOp &lt;= R): Eff[m.Out, A] = {
-  val memDataSet = new scala.collection.mutable.ListBuffer[String]
+  def runDataOp[R, A](effect: Eff[R, A])(implicit m: DataOp &lt;= R): Eff[m.Out, A] = {
+    val memDataSet = new scala.collection.mutable.ListBuffer[String]
 
-  recurse(effect)(new Recurser[DataOp, m.Out, A, A] {
-    def onPure(a: A): A = a
+    recurse(effect)(new Recurser[DataOp, m.Out, A, A] {
+      def onPure(a: A): A = a
 
-    def onEffect[X](i: DataOp[X]): X Either Eff[m.Out, A] = Left[X, Eff[m.Out, A]] {
-      i match {
-        case AddCat(a)    =&gt; memDataSet.append(a); ()
-        case GetAllCats() =&gt; memDataSet.toList
+      def onEffect[X](i: DataOp[X]): X Either Eff[m.Out, A] = Left[X, Eff[m.Out, A]] {
+        i match {
+          case AddCat(a) =&gt; memDataSet.append(a); ()
+          case GetAllCats() =&gt; memDataSet.toList
+        }
       }
-    }
 
-    def onApplicative[X, T[_]: Traverse](ms: T[DataOp[X]]): T[X] Either DataOp[T[X]] =
-      Left(ms.map {
-        case AddCat(a)    =&gt; memDataSet.append(a); ()
-        case GetAllCats() =&gt; memDataSet.toList
-      })
-  })(m)
+      def onApplicative[X, T[_]: Traverse](ms: T[DataOp[X]]): T[X] Either DataOp[T[X]] =
+        Left(ms.map {
+          case AddCat(a) =&gt; memDataSet.append(a); ()
+          case GetAllCats() =&gt; memDataSet.toList
+        })
+    })(m)
 
-}
+  }
 </code></pre>
 <p>Now if we run our program for a Stack combining both effects and type
 in “snuggles” when prompted, we see something like this:</p>
-<pre><code class="prettyprint">type Stack = Fx.fx2[Interact, DataOp]
+<pre><code class="prettyprint">      type Stack = Fx.fx2[Interact, DataOp]
 
-runInteract(runDataOp(program[Stack]))</code></pre>
+      runInteract(runDataOp(program[Stack]))</code></pre>
 <pre><code class="prettyprint">What&#39;s the kitty&#39;s name?
 Current cats: snuggles</code></pre>
 </div>

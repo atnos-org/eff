@@ -322,21 +322,21 @@ typeclasses">Know your Membe...</a>
 <code class="prettyprint">Either</code> effect but let you accumulate failures:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 
-  /**
+      /**
    * Stack declaration
    */
-  type S = Fx.fx1[Validate[String, *]]
+      type S = Fx.fx1[Validate[String, *]]
 
-  def checkPositiveInt(i: Int): Eff[S, Unit] =
-  validateCheck(i &gt;= 0, s&quot;$i is not positive&quot;)
+      def checkPositiveInt(i: Int): Eff[S, Unit] =
+        validateCheck(i &gt;= 0, s&quot;$i is not positive&quot;)
 
-  def checkPositiveInts(a: Int, b: Int, c: Int): Eff[S, (Int, Int, Int)] = for {
-  _ &lt;- checkPositiveInt(a)
-  _ &lt;- checkPositiveInt(b)
-  _ &lt;- checkPositiveInt(c)
-} yield (a, b, c)
+      def checkPositiveInts(a: Int, b: Int, c: Int): Eff[S, (Int, Int, Int)] = for {
+        _ &lt;- checkPositiveInt(a)
+        _ &lt;- checkPositiveInt(b)
+        _ &lt;- checkPositiveInt(c)
+      } yield (a, b, c)
 
-  checkPositiveInts(1, -3, -2).runNel.run</code></pre>
+      checkPositiveInts(1, -3, -2).runNel.run</code></pre>
 <p><code class="prettyprint">&gt; Left(NonEmptyList(-3 is not positive, -2 is not
 positive))</code></p>
 </div>

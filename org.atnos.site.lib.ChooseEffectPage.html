@@ -333,20 +333,21 @@ instance you use when running <code class="prettyprint">Choose</code>.</p>
 before, we get the list of all the accepted pairs:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
 
-type S = Fx.fx1[Choose]
+      type S = Fx.fx1[Choose]
 
 // create all the possible pairs for a given list
 // where the sum is greater than a value
-def pairsBiggerThan[R :_choose](list: List[Int], n: Int): Eff[R, (Int, Int)] = for {
-  a &lt;- chooseFrom(list)
-  b &lt;- chooseFrom(list)
-  found &lt;- if (a + b &gt; n) EffMonad[R].pure((a, b))
-  else           zero
-} yield found
+      def pairsBiggerThan[R: _choose](list: List[Int], n: Int): Eff[R, (Int, Int)] = for {
+        a &lt;- chooseFrom(list)
+        b &lt;- chooseFrom(list)
+        found &lt;-
+          if (a + b &gt; n) EffMonad[R].pure((a, b))
+          else zero
+      } yield found
 
-import cats.instances.list._
+      import cats.instances.list._
 
-pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose.run</code></pre>
+      pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose.run</code></pre>
 <p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
 </div>
 

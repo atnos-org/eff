@@ -337,62 +337,62 @@ additional effects, like state, within one part.</p>
 <code class="prettyprint">incrementNTimes</code> to finally interpret that effect</p></li>
 </ul>
 <pre><code class="prettyprint">import cats._, data._
-import cats.implicits._
-import org.atnos.eff._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
+      import cats.implicits._
+      import org.atnos.eff._
+      import org.atnos.eff.all._
+      import org.atnos.eff.syntax.all._
 
 // Some type definitions for the effects we will use
-type EitherString[A] = Either[String, A]
-type WriterString[A] = Writer[String, A]
-type StateInt[A]     = State[Int, A]
+      type EitherString[A] = Either[String, A]
+      type WriterString[A] = Writer[String, A]
+      type StateInt[A] = State[Int, A]
 
-type _err[R] = EitherString |= R
-type _log[R] = WriterString |= R
-type _count[R] = StateInt |= R
+      type _err[R] = EitherString |= R
+      type _log[R] = WriterString |= R
+      type _count[R] = StateInt |= R
 
-/**
+      /**
  * In module 1, some utility methods
  */
 
 // repeat a side-effect n times
-def repeatM[M[_] : Monad](n: Int, computation: M[Unit]): M[Unit] =
-  if (n &lt;= 0) computation
-  else computation &gt;&gt; repeatM(n - 1, computation)
+      def repeatM[M[_]: Monad](n: Int, computation: M[Unit]): M[Unit] =
+        if (n &lt;= 0) computation
+        else computation &gt;&gt; repeatM(n - 1, computation)
 
 // check a condition and abort computations with a message if the condition is false
-def assert[R :_err](condition: Boolean, msg: String): Eff[R, Unit] =
-  if (!condition) left(msg) else right(())
+      def assert[R: _err](condition: Boolean, msg: String): Eff[R, Unit] =
+        if (!condition) left(msg) else right(())
 
 // increment a counter and log the new value
-def incrementCounter[R :_log :_count]: Eff[R, Unit] = for {
-  c &lt;- get
-  c2 = c + 1
-  _ &lt;- tell(s&quot;counter == $c2&quot;)
-  _ &lt;- put(c2)
-} yield ()
+      def incrementCounter[R: _log: _count]: Eff[R, Unit] = for {
+        c &lt;- get
+        c2 = c + 1
+        _ &lt;- tell(s&quot;counter == $c2&quot;)
+        _ &lt;- put(c2)
+      } yield ()
 
-/**
+      /**
  * In module 2 your &quot;business&quot; logic
  */
 
 // increment a value n times (n need to be positive)
-def incrementNTimes[R :_err :_log](start: Int, times: Int): Eff[R, Int] = for {
-  // this call uses the stack R
-  _ &lt;- assert(times &gt;= 0, s&quot;$times is negative&quot;)
+      def incrementNTimes[R: _err: _log](start: Int, times: Int): Eff[R, Int] = for {
+        // this call uses the stack R
+        _ &lt;- assert(times &gt;= 0, s&quot;$times is negative&quot;)
 
-  // the call uses the stack R plus an additional StateInt effect which is interpreted right away.
-  // The other effects remain
-  result &lt;- repeatM(times, incrementCounter[Fx.prepend[StateInt, R]]).execState(start)
-} yield result
+        // the call uses the stack R plus an additional StateInt effect which is interpreted right away.
+        // The other effects remain
+        result &lt;- repeatM(times, incrementCounter[Fx.prepend[StateInt, R]]).execState(start)
+      } yield result
 
-/**
+      /**
  * A top-level call
  */
 
-type Stack = Fx.fx2[EitherString, WriterString]
+      type Stack = Fx.fx2[EitherString, WriterString]
 
-incrementNTimes[Stack](3, 2).runWriter.runEither.run</code></pre>
+      incrementNTimes[Stack](3, 2).runWriter.runEither.run</code></pre>
 <p><code class="prettyprint">&gt; Right((6,List(counter == 4, counter == 5, counter ==
 6)))</code></p>
 </div>
