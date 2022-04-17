@@ -2,7 +2,6 @@ package org.atnos.eff
 package addon.scalaz
 
 import cats.Eval
-
 import scalaz._
 
 object eval extends eval

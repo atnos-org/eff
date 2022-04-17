@@ -2,7 +2,6 @@ package org.atnos.eff
 
 import cats._
 import cats.syntax.all._
-
 import scala.util.control.NonFatal
 
 /**
@@ -19,17 +18,17 @@ case class Last[R](value: Option[Eval[Eff[R, Unit]]]) {
 
   def <*(last: Last[R]): Last[R] =
     (value, last.value) match {
-      case (None, None)       => this
-      case (Some(r), None)    => this
-      case (None, Some(l))    => last
+      case (None, None) => this
+      case (Some(r), None) => this
+      case (None, Some(l)) => last
       case (Some(r), Some(l)) => Last(Option(r.map2(l)((a, b) => b <* a)))
     }
 
   def *>(last: Last[R]): Last[R] =
     (value, last.value) match {
-      case (None, None)       => this
-      case (Some(r), None)    => this
-      case (None, Some(l))    => last
+      case (None, None) => this
+      case (Some(r), None) => this
+      case (None, Some(l)) => last
       case (Some(r), Some(l)) => Last(Option(r.map2(l)(_ *> _)))
     }
 }
@@ -39,14 +38,15 @@ object Last {
   def none[R]: Last[R] =
     Last(None)
 
-  def eff[R](e: =>Eff[R, Unit]): Last[R] =
+  def eff[R](e: => Eff[R, Unit]): Last[R] =
     Last(Option(Eval.later(evaluate(e))))
 
-  def evaluate[R](e: =>Eff[R, Unit]): Eff[R, Unit] =
+  def evaluate[R](e: => Eff[R, Unit]): Eff[R, Unit] =
     try e
-    catch { case NonFatal(t) =>
-       if (sys.props.isDefinedAt("eff.debuglast"))
-         println("executing one last eff action failed\n"+t.getStackTrace.mkString("\n"))
+    catch {
+      case NonFatal(t) =>
+        if (sys.props.isDefinedAt("eff.debuglast"))
+          println("executing one last eff action failed\n" + t.getStackTrace.mkString("\n"))
         Eff.pure[R, Unit](())
     }
 

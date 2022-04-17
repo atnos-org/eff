@@ -2,12 +2,13 @@ package org.atnos.eff
 
 import org.specs2.Specification
 
-class MemberImplicitsSpec extends Specification { def is = s2"""
+class MemberImplicitsSpec extends Specification {
+  def is = s2"""
 
   tests for member implicits
 
 """
-/*
+  /*
 import cats.data._
 import org.atnos.eff.syntax.all._
 
@@ -236,9 +237,11 @@ import org.atnos.eff.syntax.all._
   option1[SD3].runN.runN.runN
   option2[SD3].runN.runN.runN
   option3[SD3].runN.runN.runN
-*/
+   */
   // PERMUTATIONS OF 4 effects
   import cats.data._
+  import org.atnos.eff.syntax.all._
+  import org.atnos.eff.option._
 
   type StateString[A] = State[String, A]
   type ReaderString[A] = Reader[String, A]
@@ -246,11 +249,10 @@ import org.atnos.eff.syntax.all._
 
   type C = Fx.fx4[ReaderString, StateString, Choose, ValidateString]
 
-  type Check[A] = Eff[C,A]
+  type Check[A] = Eff[C, A]
 
-  val value : Check[Int] = Eff.pure(3)
-  import org.atnos.eff.syntax.all._
-//
+  val value: Check[Int] = Eff.pure(3)
+  //
   val c1 = value.runChoose[Vector].runReader("foo").runState("baz").runNel.run
   val c2 = value.runChoose[Vector].runReader("foo").runNel.runState("baz").run
   val c3 = value.runChoose[Vector].runState("foo").runReader("baz").runNel.run
@@ -279,8 +281,6 @@ import org.atnos.eff.syntax.all._
   val n5 = value.runNel.runState("baz").runReader("foo").runChoose[Vector].run
   val n6 = value.runNel.runState("baz").runChoose[Vector].runReader("foo").run
 
-
-
   // APPEND to an arbitrary stack
 
   def action[R]: Eff[R, Int] =
@@ -300,10 +300,7 @@ import org.atnos.eff.syntax.all._
   def actionA4[S] = action[SAppend[S]].runState(1).runEither.runOption.runReader("foo")
   def actionA5[S] = action[SAppend[S]].runState(1).runReader("foo").runEither.runOption
   def actionA6[S] = action[SAppend[S]].runState(1).runReader("foo").runOption.runEither
-  def actionA7    = action[SAppend[NoFx]].runState(1).runReader("foo").runOption.runEither
-
-
-  import org.atnos.eff.option._
+  def actionA7 = action[SAppend[NoFx]].runState(1).runReader("foo").runOption.runEither
 
   def withOptionEffect[S: _Option]: Eff[S, Unit] = ???
   def withOptionEffect2[S: _Option]: Eff[S, Unit] =

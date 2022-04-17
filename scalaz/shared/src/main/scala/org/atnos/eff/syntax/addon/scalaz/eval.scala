@@ -2,7 +2,6 @@ package org.atnos.eff
 package syntax.addon.scalaz
 
 import cats.Eval
-
 import scalaz._
 
 object eval extends org.atnos.eff.syntax.eval with eval

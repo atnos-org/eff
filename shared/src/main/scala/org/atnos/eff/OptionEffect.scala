@@ -8,9 +8,7 @@ import cats._
 /**
  * Effect for optional computations
  */
-trait OptionEffect extends
-  OptionCreation with
-  OptionInterpretation
+trait OptionEffect extends OptionCreation with OptionInterpretation
 
 object OptionEffect extends OptionEffect
 
@@ -19,21 +17,22 @@ trait OptionCreation {
   type _option[R] = Option |= R
 
   /** create an Option effect from a single Option value */
-  def fromOption[R :_option, A](o: Option[A]): Eff[R, A] =
+  def fromOption[R: _option, A](o: Option[A]): Eff[R, A] =
     send[Option, R, A](o)
 
   /** no value returned */
-  def none[R :_option, A]: Eff[R, A] =
+  def none[R: _option, A]: Eff[R, A] =
     send[Option, R, A](None)
 
   /** a value is returned */
-  def some[R :_option, A](a: A): Eff[R, A] =
+  def some[R: _option, A](a: A): Eff[R, A] =
     send[Option, R, A](Some(a))
 }
 
 object OptionCreation extends OptionCreation
 
 trait OptionInterpretation {
+
   /**
    * Interpret the Option effect
    *
@@ -46,9 +45,9 @@ trait OptionInterpretation {
 
       def onEffect[X](m: Option[X]): X Either Eff[U, Option[A]] =
         m match {
-          case None    => Right(Eff.pure(None))
+          case None => Right(Eff.pure(None))
           case Some(x) => Left(x)
-         }
+        }
 
       def onApplicative[X, T[_]: Traverse](ms: T[Option[X]]): T[X] Either Option[T[X]] =
         Right(ms.sequence)
@@ -57,4 +56,3 @@ trait OptionInterpretation {
 }
 
 object OptionInterpretation extends OptionInterpretation
-

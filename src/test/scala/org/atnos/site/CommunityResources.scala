@@ -1,6 +1,7 @@
 package org.atnos.site
 
-object CommunityResources extends UserGuidePage { def is = "Community resources".title ^ s2"""
+object CommunityResources extends UserGuidePage {
+  def is = "Community resources".title ^ s2"""
 
 A collection of resources related to Eff.
 

@@ -1,6 +1,7 @@
 import org.atnos.site._
 
-object index extends UserGuidePage { def is = "eff".title ^ s2"""
+object index extends UserGuidePage {
+  def is = "eff".title ^ s2"""
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
 This library is based on the "free-er" monad and an "open union" of effects described by
@@ -14,7 +15,7 @@ You can learn more in the following sections, it is recommended to read them in 
  1. ${"tutorial" ~ Tutorial}
  1. ${"create your own effects" ~ CreateEffects}
  1. ${"interpret and manipulate effect stacks" ~ TransformStack}
- 1. ${"use Member implicits" ~ MemberImplicits }
+ 1. ${"use Member implicits" ~ MemberImplicits}
  1. ${"use an applicative evaluation" ~ ApplicativeEvaluation}
  1. ${"tips and tricks" ~ Cookbook}
  1. ${"community resources" ~ CommunityResources}

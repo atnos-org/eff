@@ -3,7 +3,8 @@ package org.atnos.eff
 import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
 
-class MemberInstancesSpec extends Specification with ThrownExpectations with Specs2Compat { def is = s2"""
+class MemberInstancesSpec extends Specification with ThrownExpectations with Specs2Compat {
+  def is = s2"""
 
  The MemberInOut and Member implicit definitions must create lawful instances:
 
@@ -37,9 +38,9 @@ class MemberInstancesSpec extends Specification with ThrownExpectations with Spe
 
 """
 
-  def memberInOutOut1    = checkMemberInOutLaw(MemberInOut.MemberInOutOut1[T1], t1)
-  def memberInOut2L      = checkMemberInOutLaw(MemberInOut.MemberInOut2L[T1, T2], t1)
-  def memberInOut3L      = checkMemberInOutLaw(MemberInOut.MemberInOut3L[T1, T2, T3], t1)
+  def memberInOutOut1 = checkMemberInOutLaw(MemberInOut.MemberInOutOut1[T1], t1)
+  def memberInOut2L = checkMemberInOutLaw(MemberInOut.MemberInOut2L[T1, T2], t1)
+  def memberInOut3L = checkMemberInOutLaw(MemberInOut.MemberInOut3L[T1, T2, T3], t1)
   def memberInOutAppendL = checkMemberInOutLaw(MemberInOut.MemberInOutAppendL[T1, Fx1[T1], Fx1[T3]], t1)
 
   def member1 = checkMemberLaw(Member.Member1[T1], union1)
@@ -124,9 +125,15 @@ class MemberInstancesSpec extends Specification with ThrownExpectations with Spe
 
   def memberAppendL = {
     Member.MemberAppendL[T1, Fx2[T1, T2], Fx2[T3, T4], Fx1[T2]].project(Union.appendL(Union.twoL(t1))) must beRight(t1)
-    Member.MemberAppendL[T1, Fx2[T1, T2], Fx2[T3, T4], Fx1[T2]].project(Union.appendL(Union.twoR(t2))) must beLeft(Union.appendL[Fx1[T2], Fx2[T3, T4], Int](Union.one(t2)))
-    Member.MemberAppendL[T1, Fx2[T1, T2], Fx2[T3, T4], Fx1[T2]].project(Union.appendR(Union.twoL(t3))) must beLeft(Union.appendR[Fx1[T2], Fx2[T3, T4], Int](Union.twoL(t3)))
-    Member.MemberAppendL[T1, Fx2[T1, T2], Fx2[T3, T4], Fx1[T2]].project(Union.appendR(Union.twoR(t4))) must beLeft(Union.appendR[Fx1[T2], Fx2[T3, T4], Int](Union.twoR(t4)))
+    Member.MemberAppendL[T1, Fx2[T1, T2], Fx2[T3, T4], Fx1[T2]].project(Union.appendL(Union.twoR(t2))) must beLeft(
+      Union.appendL[Fx1[T2], Fx2[T3, T4], Int](Union.one(t2))
+    )
+    Member.MemberAppendL[T1, Fx2[T1, T2], Fx2[T3, T4], Fx1[T2]].project(Union.appendR(Union.twoL(t3))) must beLeft(
+      Union.appendR[Fx1[T2], Fx2[T3, T4], Int](Union.twoL(t3))
+    )
+    Member.MemberAppendL[T1, Fx2[T1, T2], Fx2[T3, T4], Fx1[T2]].project(Union.appendR(Union.twoR(t4))) must beLeft(
+      Union.appendR[Fx1[T2], Fx2[T3, T4], Int](Union.twoR(t4))
+    )
 
     checkMemberLaw(Member.MemberAppendL[T1, Fx1[T1], Fx3[T2, T3, T4], NoFx], unionS4_1)
     checkMemberLaw(Member.MemberAppendL[T1, Fx1[T1], Fx3[T2, T3, T4], NoFx], unionS4_2)
@@ -135,10 +142,16 @@ class MemberInstancesSpec extends Specification with ThrownExpectations with Spe
   }
 
   def member2R = {
-    Member.MemberAppend2R[T1, T2, Fx2[T3, T4]].project(Union.appendL(Union.twoL(t1))) must beLeft(Union.appendL[Fx1[T1], Fx2[T3, T4], Int](Union.one(t1)))
+    Member.MemberAppend2R[T1, T2, Fx2[T3, T4]].project(Union.appendL(Union.twoL(t1))) must beLeft(
+      Union.appendL[Fx1[T1], Fx2[T3, T4], Int](Union.one(t1))
+    )
     Member.MemberAppend2R[T1, T2, Fx2[T3, T4]].project(Union.appendL(Union.twoR(t2))) must beRight(t2)
-    Member.MemberAppend2R[T1, T2, Fx2[T3, T4]].project(Union.appendR(Union.twoL(t3))) must beLeft(Union.appendR[Fx1[T1], Fx2[T3, T4], Int](Union.twoL(t3)))
-    Member.MemberAppend2R[T1, T2, Fx2[T3, T4]].project(Union.appendR(Union.twoR(t4))) must beLeft(Union.appendR[Fx1[T1], Fx2[T3, T4], Int](Union.twoR(t4)))
+    Member.MemberAppend2R[T1, T2, Fx2[T3, T4]].project(Union.appendR(Union.twoL(t3))) must beLeft(
+      Union.appendR[Fx1[T1], Fx2[T3, T4], Int](Union.twoL(t3))
+    )
+    Member.MemberAppend2R[T1, T2, Fx2[T3, T4]].project(Union.appendR(Union.twoR(t4))) must beLeft(
+      Union.appendR[Fx1[T1], Fx2[T3, T4], Int](Union.twoR(t4))
+    )
 
     checkMemberLaw(Member.Member2R[T1, T2], unionS2_1)
     checkMemberLaw(Member.Member2R[T1, T2], unionS2_2)
@@ -155,16 +168,32 @@ class MemberInstancesSpec extends Specification with ThrownExpectations with Spe
   }
 
   def memberAppendR = {
-    Member.MemberAppendR[T3, Fx2[T1, T2], Fx2[T3, T4], Fx1[T4]].project(Union.appendL(Union.twoL(t1))) must beLeft(Union.appendL[Fx2[T1, T2], Fx1[T4], Int](Union.twoL(t1)))
-    Member.MemberAppendR[T3, Fx2[T1, T2], Fx2[T3, T4], Fx1[T4]].project(Union.appendL(Union.twoR(t2))) must beLeft(Union.appendL[Fx2[T1, T2], Fx1[T4], Int](Union.twoR(t2)))
+    Member.MemberAppendR[T3, Fx2[T1, T2], Fx2[T3, T4], Fx1[T4]].project(Union.appendL(Union.twoL(t1))) must beLeft(
+      Union.appendL[Fx2[T1, T2], Fx1[T4], Int](Union.twoL(t1))
+    )
+    Member.MemberAppendR[T3, Fx2[T1, T2], Fx2[T3, T4], Fx1[T4]].project(Union.appendL(Union.twoR(t2))) must beLeft(
+      Union.appendL[Fx2[T1, T2], Fx1[T4], Int](Union.twoR(t2))
+    )
     Member.MemberAppendR[T3, Fx2[T1, T2], Fx2[T3, T4], Fx1[T4]].project(Union.appendR(Union.twoL(t3))) must beRight(t3)
-    Member.MemberAppendR[T3, Fx2[T1, T2], Fx2[T3, T4], Fx1[T4]].project(Union.appendR(Union.twoR(t4))) must beLeft(Union.appendR[Fx2[T1, T2], Fx1[T4], Int](Union.one(t4)))
+    Member.MemberAppendR[T3, Fx2[T1, T2], Fx2[T3, T4], Fx1[T4]].project(Union.appendR(Union.twoR(t4))) must beLeft(
+      Union.appendR[Fx2[T1, T2], Fx1[T4], Int](Union.one(t4))
+    )
 
-    Member.MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5]).project(Union.appendL(Union.twoL(t1))) must beLeft(Union.appendL[Fx2[T1, T2], Fx2[T3, T4], Int](Union.twoL(t1)))
-    Member.MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5]).project(Union.appendL(Union.twoR(t2))) must beLeft(Union.appendL[Fx2[T1, T2], Fx2[T3, T4], Int](Union.twoR(t2)))
-    Member.MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5]).project(Union.appendR(Union.threeL(t3))) must beLeft(Union.appendR[Fx2[T1, T2], Fx2[T3, T4], Int](Union.twoL(t3)))
-    Member.MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5]).project(Union.appendR(Union.threeM(t4))) must beLeft(Union.appendR[Fx2[T1, T2], Fx2[T3, T4], Int](Union.twoR(t4)))
-    Member.MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5]).project(Union.appendR(Union.threeR(t5))) must beRight(t5)
+    Member
+      .MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5])
+      .project(Union.appendL(Union.twoL(t1))) must beLeft(Union.appendL[Fx2[T1, T2], Fx2[T3, T4], Int](Union.twoL(t1)))
+    Member
+      .MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5])
+      .project(Union.appendL(Union.twoR(t2))) must beLeft(Union.appendL[Fx2[T1, T2], Fx2[T3, T4], Int](Union.twoR(t2)))
+    Member
+      .MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5])
+      .project(Union.appendR(Union.threeL(t3))) must beLeft(Union.appendR[Fx2[T1, T2], Fx2[T3, T4], Int](Union.twoL(t3)))
+    Member
+      .MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5])
+      .project(Union.appendR(Union.threeM(t4))) must beLeft(Union.appendR[Fx2[T1, T2], Fx2[T3, T4], Int](Union.twoR(t4)))
+    Member
+      .MemberAppendR[T5, Fx2[T1, T2], Fx3[T3, T4, T5], Fx2[T3, T4]](Member.Member3R[T3, T4, T5])
+      .project(Union.appendR(Union.threeR(t5))) must beRight(t5)
 
     checkMemberLaw(Member.MemberAppendR[T2, Fx1[T1], Fx3[T2, T3, T4], Fx2[T3, T4]], unionS4_1)
     checkMemberLaw(Member.MemberAppendR[T2, Fx1[T1], Fx3[T2, T3, T4], Fx2[T3, T4]], unionS4_2)

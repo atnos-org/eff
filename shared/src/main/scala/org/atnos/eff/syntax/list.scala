@@ -14,4 +14,3 @@ trait list {
   }
 
 }
-

@@ -1,12 +1,14 @@
 package org.atnos.eff
 
-import org.specs2.{ScalaCheck, Specification}
+import org.specs2.ScalaCheck
+import org.specs2.Specification
 import cats.data._
 import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class StateEffectSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
+class StateEffectSpec extends Specification with ScalaCheck with Specs2Compat {
+  def is = s2"""
 
  The state monad can be used to put/get state $putGetState
  modify can be used to modify the current state $modifyState
@@ -25,24 +27,24 @@ class StateEffectSpec extends Specification with ScalaCheck with Specs2Compat { 
 
   def putGetState = {
 
-    def action[R:_stateInt]: Eff[R, String] = for {
+    def action[R: _stateInt]: Eff[R, String] = for {
       a <- get
       h <- EffMonad.pure("hello")
       _ <- put(a + 5)
       b <- get
       _ <- put(b + 10)
       w <- EffMonad.pure("world")
-    } yield h+" "+w
+    } yield h + " " + w
 
     action[SI].runState(5).run ==== (("hello world", 20))
   }
 
   def modifyState = {
 
-    def action[R :_stateInt]: Eff[R, String] = for {
-       a <- get
-       _ <- put(a + 1)
-       _ <- modify((_:Int) + 10)
+    def action[R: _stateInt]: Eff[R, String] = for {
+      a <- get
+      _ <- put(a + 1)
+      _ <- modify((_: Int) + 10)
     } yield a.toString
 
     action[SI].execStateZero[Int].run ==== 11
@@ -63,7 +65,6 @@ class StateEffectSpec extends Specification with ScalaCheck with Specs2Compat { 
     (stateAction *> stateAction).runState(0).run ====
       (stateAction >> stateAction).runState(0).run
   }
-
 
   def lensedState = {
     type StateIntPair[A] = State[(Int, Int), A]
@@ -127,7 +128,7 @@ class StateEffectSpec extends Specification with ScalaCheck with Specs2Compat { 
     def updatePerson[E: PerS: Err]: Eff[E, Unit] =
       for {
         bad <- isBadPerson
-        _   <- updateAddress
+        _ <- updateAddress
       } yield ()
 
     updatePerson[Fx.fx2[Either[String, *], State[Person, *]]].evalState(Person(Address("here"))).runEither.run ==== Right(())

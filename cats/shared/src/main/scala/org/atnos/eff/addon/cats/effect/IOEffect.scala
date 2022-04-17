@@ -1,11 +1,11 @@
 package org.atnos.eff.addon.cats.effect
 
-import cats.effect.{IO, LiftIO}
+import cats.effect.IO
+import cats.effect.LiftIO
 import cats.effect.unsafe.IORuntime
 import cats.~>
 import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
-
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Either
@@ -19,19 +19,18 @@ trait IOTypes {
 
 }
 
-
 trait IOEffectCreation extends IOTypes {
 
-  final def fromIO[R :_io, A](io: IO[A]): Eff[R, A] =
+  final def fromIO[R: _io, A](io: IO[A]): Eff[R, A] =
     io.send[R]
 
-  final def ioRaiseError[R :_io, A](t: Throwable): Eff[R, A] =
+  final def ioRaiseError[R: _io, A](t: Throwable): Eff[R, A] =
     IO.raiseError(t).send[R]
 
-  final def ioDelay[R :_io, A](io: =>A): Eff[R, A] =
+  final def ioDelay[R: _io, A](io: => A): Eff[R, A] =
     IO(io).send[R]
 
-  final def ioSuspend[R :_io, A](io: =>IO[Eff[R, A]]): Eff[R, A] =
+  final def ioSuspend[R: _io, A](io: => IO[Eff[R, A]]): Eff[R, A] =
     IO.defer(io).send[R].flatten
 
 }
@@ -59,11 +58,13 @@ trait IOInterpretation extends IOTypes {
 
   def ioAttempt[R, A](e: Eff[R, A])(implicit m: MemberInOut[IO, R]): Eff[R, Throwable Either A] = {
 
-    interpret.interceptNatM[R, IO, Either[Throwable, *], A](e,
+    interpret.interceptNatM[R, IO, Either[Throwable, *], A](
+      e,
       new (IO ~> (IO of Either[Throwable, *])#l) {
         def apply[X](io: IO[X]): IO[Throwable Either X] =
           io.attempt
-      })
+      }
+    )
   }
 
   /** memoize the io result using a cache */
@@ -118,5 +119,3 @@ trait IOInterpretation extends IOTypes {
   }
 
 }
-
-

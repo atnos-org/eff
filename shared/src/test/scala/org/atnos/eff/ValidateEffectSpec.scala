@@ -4,9 +4,11 @@ import cats.data._
 import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-import org.specs2.{ScalaCheck, Specification}
+import org.specs2.ScalaCheck
+import org.specs2.Specification
 
-class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
+class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat {
+  def is = s2"""
 
  run the validate effect                     $validateOk
  run the validate effect with nothing        $validateKo

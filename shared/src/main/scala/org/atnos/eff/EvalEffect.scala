@@ -10,10 +10,7 @@ import Eff._
  *
  * uses cats.Eval as a supporting data structure
  */
-trait EvalEffect extends
-  EvalTypes with
-  EvalCreation with
-  EvalInterpretation
+trait EvalEffect extends EvalTypes with EvalCreation with EvalInterpretation
 
 object EvalEffect extends EvalEffect
 
@@ -25,13 +22,13 @@ trait EvalTypes {
 object EvalTypes extends EvalTypes
 
 trait EvalCreation extends EvalTypes {
-  def now[R :_eval, A](a: A): Eff[R, A] =
+  def now[R: _eval, A](a: A): Eff[R, A] =
     pure(a)
 
-  def delay[R :_eval, A](a: => A): Eff[R, A] =
+  def delay[R: _eval, A](a: => A): Eff[R, A] =
     send(cats.Eval.later(a))
 
-  def defer[R :_eval, A](eff: =>Eval[Eff[R, A]]): Eff[R, A] = {
+  def defer[R: _eval, A](eff: => Eval[Eff[R, A]]): Eff[R, A] = {
     send(cats.Eval.defer(eff)).flatten
   }
 }
@@ -49,7 +46,7 @@ trait EvalInterpretation extends EvalTypes {
       def onLastEffect[X](x: Eval[X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
         Eff.impure(x.value, continuation)
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Eval[X]], continuation: Continuation[U, T[X], A]): Eff[U, A] =
+      def onApplicativeEffect[X, T[_]: Traverse](xs: T[Eval[X]], continuation: Continuation[U, T[X], A]): Eff[U, A] =
         Eff.impure(xs.map(_.value), continuation)
     })
 
@@ -65,14 +62,17 @@ trait EvalInterpretation extends EvalTypes {
       def onLastEffect[X](x: Eval[X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
         Eff.impure(x.value, continuation)
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Eval[X]], continuation: Continuation[U, T[X], Throwable Either A]): Eff[U, Throwable Either A] =
+      def onApplicativeEffect[X, T[_]: Traverse](
+        xs: T[Eval[X]],
+        continuation: Continuation[U, T[X], Throwable Either A]
+      ): Eff[U, Throwable Either A] =
         Eff.impure(xs.map(_.value), continuation)
     })
 
   /** the monad error instance for Eval is useful for using detach on Eff[Fx1[Eval], A] */
   implicit final val monadErrorEval: MonadError[Eval, Throwable] = new MonadError[Eval, Throwable] {
     private[this] val m: Monad[Eval] = Eval.catsBimonadForEval
-    
+
     def pure[A](x: A): Eval[A] =
       m.pure(x)
 
@@ -88,7 +88,7 @@ trait EvalInterpretation extends EvalTypes {
     def handleErrorWith[A](fa: Eval[A])(f: Throwable => Eval[A]): Eval[A] =
       Eval.later {
         try Eval.now(fa.value)
-        catch { case t: Throwable => f(t)}
+        catch { case t: Throwable => f(t) }
       }.flatten
 
   }
@@ -96,4 +96,3 @@ trait EvalInterpretation extends EvalTypes {
 }
 
 object EvalInterpretation extends EvalInterpretation
-

@@ -34,7 +34,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
     map.putIfAbsent(newKey(key), value)
   }
 
-  def get(key: Object): V =  {
+  def get(key: Object): V = {
     purgeKeys()
     map.get(new WeakReference[Object](key, null))
   }
@@ -84,7 +84,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
     map.size
   }
 
-  def put(key: K, value: V): V =  {
+  def put(key: K, value: V): V = {
     purgeKeys()
     map.put(newKey(key), value)
   }
@@ -104,11 +104,11 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
 
   }
 
-  def entrySet(): java.util.Set[java.util.Map.Entry[K,V]] =     new util.AbstractSet[java.util.Map.Entry[K,V]] {
-    def iterator: java.util.Iterator[java.util.Map.Entry[K,V]] = {
+  def entrySet(): java.util.Set[java.util.Map.Entry[K, V]] = new util.AbstractSet[java.util.Map.Entry[K, V]] {
+    def iterator: java.util.Iterator[java.util.Map.Entry[K, V]] = {
       purgeKeys()
-      new WeakSafeIterator[java.util.Map.Entry[K,V], java.util.Map.Entry[WeakReference[K], V]](map.entrySet.iterator) {
-        def extract(u: java.util.Map.Entry[WeakReference[K], V]): java.util.Map.Entry[K,V] = {
+      new WeakSafeIterator[java.util.Map.Entry[K, V], java.util.Map.Entry[WeakReference[K], V]](map.entrySet.iterator) {
+        def extract(u: java.util.Map.Entry[WeakReference[K], V]): java.util.Map.Entry[K, V] = {
           val key = u.getKey.get
           if (key == null) null
           else new java.util.AbstractMap.SimpleEntry(key, u.getValue)
@@ -129,7 +129,6 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
     map.values
   }
 
-
   private def purgeKeys(): Unit = {
     var reference = queue.poll
     while (reference != null) {
@@ -138,7 +137,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
     }
   }
 
-  private def newKey(key: K): WeakReference[K] =  {
+  private def newKey(key: K): WeakReference[K] = {
     new WeakReference[K](key, queue)
   }
 
@@ -157,7 +156,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
     advance()
     private[this] var strongNext: T = null.asInstanceOf[T]
 
-    def advance(): Unit  = {
+    def advance(): Unit = {
       while (weakIterator.hasNext) {
         val nextU = weakIterator.next
         strongNext = extract(nextU)

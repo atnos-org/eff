@@ -23,7 +23,7 @@ final class ErrorEffectOps[R, A](private val action: Eff[R, A]) extends AnyVal {
   def orElse(action2: Eff[R, A])(implicit m: ErrorOrOk <= R): Eff[R, A] =
     ErrorEffect.orElse(action, action2)
 
-  def ignore[E <: Throwable : ClassTag](implicit m: ErrorOrOk <= R): Eff[R, Unit] =
+  def ignore[E <: Throwable: ClassTag](implicit m: ErrorOrOk <= R): Eff[R, Unit] =
     ErrorEffect.ignoreException(action)
 }
 
@@ -54,5 +54,3 @@ final class ErrorOps(private val e: Error) extends AnyVal {
       case Right(m) => m
     }
 }
-
-

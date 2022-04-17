@@ -17,9 +17,8 @@ object EffBenchmark extends Bench.OfflineReport {
     size <- sizes
   } yield (0 until size).toList
 
-  def simpleSend[R, V](v: =>V)(implicit m: Member[Eval, R]) =
+  def simpleSend[R, V](v: => V)(implicit m: Member[Eval, R]) =
     delay(v)
-
 
   performance of "send" in {
     measure method "simple send" in {
@@ -35,4 +34,3 @@ object EffBenchmark extends Bench.OfflineReport {
   }
 
 }
-

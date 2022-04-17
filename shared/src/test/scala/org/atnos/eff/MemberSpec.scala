@@ -1,6 +1,7 @@
 package org.atnos.eff
 
-import cats.{Eval, ~>}
+import cats.Eval
+import cats.~>
 import cats.data._
 import org.specs2._
 import org.scalacheck._
@@ -9,7 +10,8 @@ import reader._
 import state._
 import syntax.all._
 
-class MemberSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
+class MemberSpec extends Specification with ScalaCheck with Specs2Compat {
+  def is = s2"""
 
 for 3-element stacks:
 
@@ -101,9 +103,9 @@ for 4-element stacks:
   def evalMember4: Member.Aux[Eval, FxAppend[S3, NoFx], FxAppend[Fx2[WriterString, ReaderInt], NoFx]] =
     Member.MemberAppendL(evalMember3)
 
-  val read1  = Reader((i: Int) => "hey")
+  val read1 = Reader((i: Int) => "hey")
   val write1 = Writer[String, String]("hey", "hey")
-  val eval1  = Eval.later("hey")
+  val eval1 = Eval.later("hey")
 
   trait SMember3 {
     type T[_]
@@ -116,28 +118,24 @@ for 4-element stacks:
   }
 
   def genUnion3: Gen[Union[S3, String]] =
-    Gen.oneOf(
-      writerMember3.inject(write1),
-      evalMember3.inject(eval1),
-      readerMember3.inject(read1))
+    Gen.oneOf(writerMember3.inject(write1), evalMember3.inject(eval1), readerMember3.inject(read1))
 
   def genMember3[T[_]]: Gen[SMember3] =
     Gen.oneOf(
-      new SMember3 { type T[A] = WriterString[A]; val member = writerMember3 } ,
-      new SMember3 { type T[A] = Eval[A];         val member = evalMember3 } ,
-      new SMember3 { type T[A] = ReaderInt[A];    val member = readerMember3 })
+      new SMember3 { type T[A] = WriterString[A]; val member = writerMember3 },
+      new SMember3 { type T[A] = Eval[A]; val member = evalMember3 },
+      new SMember3 { type T[A] = ReaderInt[A]; val member = readerMember3 }
+    )
 
   def genUnion4: Gen[Union[S4, String]] =
-    Gen.oneOf(
-      writerMember4.inject(write1),
-      evalMember4.inject(eval1),
-      readerMember4.inject(read1))
+    Gen.oneOf(writerMember4.inject(write1), evalMember4.inject(eval1), readerMember4.inject(read1))
 
   def genMember4[T[_]]: Gen[SMember4] =
     Gen.oneOf(
-      new SMember4 { type T[A] = WriterString[A]; val member = writerMember4 } ,
-      new SMember4 { type T[A] = Eval[A];         val member = evalMember4 } ,
-      new SMember4 { type T[A] = ReaderInt[A];    val member = readerMember4 })
+      new SMember4 { type T[A] = WriterString[A]; val member = writerMember4 },
+      new SMember4 { type T[A] = Eval[A]; val member = evalMember4 },
+      new SMember4 { type T[A] = ReaderInt[A]; val member = readerMember4 }
+    )
 
   type readStr[E] = Reader[String, *] |= E
   type stateStr[E] = State[String, *] |= E

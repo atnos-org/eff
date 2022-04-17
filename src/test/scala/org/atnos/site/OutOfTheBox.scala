@@ -2,7 +2,8 @@ package org.atnos.site
 
 import lib._
 
-object OutOfTheBox extends UserGuidePage { def is = "Out of the box".title ^ s2"""
+object OutOfTheBox extends UserGuidePage {
+  def is = "Out of the box".title ^ s2"""
 
 This library comes with the following effects:
 
@@ -34,6 +35,4 @@ Other modules listed in $Installation provide additional effects (Twitter Future
 Now you can learn how to  ${"create your own effects" ~/ CreateEffects}!
 """
 
-
 }
-

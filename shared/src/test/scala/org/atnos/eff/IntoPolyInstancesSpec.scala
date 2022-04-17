@@ -2,7 +2,8 @@ package org.atnos.eff
 
 import org.specs2.Specification
 
-class IntoPolyInstancesSpec extends Specification with Specs2Compat { def is = s2"""
+class IntoPolyInstancesSpec extends Specification with Specs2Compat {
+  def is = s2"""
 
  The IntoPoly implicit definitions must create lawful instances:
 
@@ -77,8 +78,8 @@ class IntoPolyInstancesSpec extends Specification with Specs2Compat { def is = s
 
   def unions[R, A](e: Eff[R, A]): List[Any] =
     e match {
-      case Pure(_, _)        => List()
-      case Impure(u, _, _)   => List(u)
+      case Pure(_, _) => List()
+      case Impure(u, _, _) => List(u)
       case ImpureAp(u, _, _) => List(u.unions.toList)
     }
 

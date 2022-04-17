@@ -14,29 +14,28 @@ object ConsoleEffect {
 
   def log[R](message: String, doIt: Boolean = true)(implicit m: Member[Console, R]): Eff[R, Unit] =
     if (doIt) WriterEffect.tell(ConsoleString(message))
-    else      EffMonad.pure(())
+    else EffMonad.pure(())
 
   def logThrowable[R](t: Throwable, doIt: Boolean = true)(implicit m: Member[Console, R]): Eff[R, Unit] =
     if (doIt) logThrowable(t)
-    else      EffMonad.pure(())
+    else EffMonad.pure(())
 
   def logThrowable[R](t: Throwable)(implicit m: Member[Console, R]): Eff[R, Unit] =
     log(t.getMessage, doIt = true)(m) >>
-    log(t.getStackTrace.mkString("\n"), doIt = true) >>
+      log(t.getStackTrace.mkString("\n"), doIt = true) >>
       (if (t.getCause != null) logThrowable(t.getCause)
-       else                    EffMonad.pure(()))
-
+       else EffMonad.pure(()))
 
   /**
    * This interpreter prints messages to the console
    */
-  def runConsole[R, U, A](w: Eff[R, A])(implicit m : Member.Aux[Console, R, U]): Eff[U, A] =
+  def runConsole[R, U, A](w: Eff[R, A])(implicit m: Member.Aux[Console, R, U]): Eff[U, A] =
     runConsoleToPrinter(m => println(m))(w)
 
   /**
    * This interpreter prints messages to a printing function
    */
-  def runConsoleToPrinter[R, U, A](printer: String => Unit)(w: Eff[R, A])(implicit m : Member.Aux[Console, R, U]) =
+  def runConsoleToPrinter[R, U, A](printer: String => Unit)(w: Eff[R, A])(implicit m: Member.Aux[Console, R, U]) =
     recurse(w)(new Recurser[Console, U, A, A] {
       def onPure(a: A) = a
       def onEffect[X](cx: Console[X]): X Either Eff[U, A] =

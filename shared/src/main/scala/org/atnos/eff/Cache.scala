@@ -13,7 +13,7 @@ trait Cache {
   /**
    * store a value for a given key, subsequent calls to memo will return the same value
    */
-  def memo[V](key: AnyRef, value: =>V): V
+  def memo[V](key: AnyRef, value: => V): V
 
   /**
    * put a value for a given key and override the previous value if present
@@ -38,7 +38,7 @@ trait Cache {
  */
 trait SequenceCached[M[_]] {
   def get[X](cache: Cache, key: AnyRef): M[Option[X]]
-  def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: =>M[X]): M[X]
+  def apply[X](cache: Cache, key: AnyRef, sequenceKey: Int, tx: => M[X]): M[X]
   def reset(cache: Cache, key: AnyRef): M[Unit]
 }
 
@@ -46,7 +46,7 @@ case class ConcurrentHashMapCache(map: ConcurrentHashMap[AnyRef, Eval[Any]] = ne
 
   type C = Cache
 
-  def memo[V](key: AnyRef, value: =>V): V = {
+  def memo[V](key: AnyRef, value: => V): V = {
     lazy val v = value
     if (map.putIfAbsent(key, Eval.later(v).memoize) == null) v
     else map.get(key).value.asInstanceOf[V]

@@ -2,7 +2,8 @@ package org.atnos.eff
 
 import cats.Eval
 import org.scalacheck.Gen.posNum
-import org.specs2.{ScalaCheck, Specification}
+import org.specs2.ScalaCheck
+import org.specs2.Specification
 import cats.data._
 import cats.syntax.all._
 import org.atnos.eff.all._
@@ -10,7 +11,8 @@ import org.atnos.eff.syntax.all._
 import org.scalacheck.Gen
 import org.specs2.matcher.EitherMatchers
 
-class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers with Specs2Compat { def is = s2"""
+class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers with Specs2Compat {
+  def is = s2"""
 
  an Either value can be injected in the stack    $EitherCreation
 
@@ -71,7 +73,6 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
   }
 
   def EitherReader = prop { (init: Long, someValue: Int) =>
-
     // define a Reader / Either stack
     type ReaderLong[A] = Reader[Long, A]
     type S = Fx.fx2[EitherString, ReaderLong]
@@ -109,12 +110,12 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
     val value: Eff[R, Int] =
       if (i > 5) EitherEffect.left[R, Err, Int](ValueErr(i))
-      else       EitherEffect.right[R, Err, Int](i)
+      else EitherEffect.right[R, Err, Int](i)
 
     val action: Eff[R, Int] = catchLeft[R, Err, Int](value) {
       case ValueErr(k) =>
         if (k > 10) EitherEffect.left[R, Err, Int](ActionErr(k))
-        else        EitherEffect.right[R, Err, Int](k)
+        else EitherEffect.right[R, Err, Int](k)
       case ActionErr(_) =>
         sys.error("should not reach here")
     }
@@ -122,7 +123,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     val actual: Err Either Int = action.runEither.run
 
     if (i > 10) actual must beLeft(ActionErr(i))
-    else        actual must beRight(i)
+    else actual must beRight(i)
   }.setGen(Gen.choose(0, 15))
 
   def handleLeft = prop { (i: Int) =>
@@ -132,11 +133,11 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
     val value: Eff[R, Int] =
       if (i > 5) EitherEffect.left[R, Err, Int](Err(i))
-      else       EitherEffect.right[R, Err, Int](i)
+      else EitherEffect.right[R, Err, Int](i)
 
     val action = runEitherCatchLeft[R, Fx1[Eval], Err, Int](value) { case Err(k) =>
       if (k > 10) EvalEffect.delay[Fx1[Eval], Int](k + 100)
-      else        EvalEffect.delay[Fx1[Eval], Int](k)
+      else EvalEffect.delay[Fx1[Eval], Int](k)
     }
 
     val actual: Int = action.runEval.run
@@ -189,7 +190,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
   def handleFromCatchNonFatal = {
     val newException = new Exception("bam")
-    val caught = EitherEffect.fromCatchNonFatal { throw new Exception("boom"); 1 } ((t: Throwable) => newException)
+    val caught = EitherEffect.fromCatchNonFatal { throw new Exception("boom"); 1 }((t: Throwable) => newException)
 
     caught.runEither.run must beLeft(newException)
   }
@@ -205,8 +206,8 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     type R = Fx1[Either[String, *]]
     val action =
       EitherEffect.left[R, String, Int]("a") *>
-      EitherEffect.left[R, String, Int]("b") *>
-      EitherEffect.left[R, String, Int]("c")
+        EitherEffect.left[R, String, Int]("b") *>
+        EitherEffect.left[R, String, Int]("c")
 
     action.runEitherCombine.run must beLeft("abc")
   }
@@ -231,4 +232,3 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     e1 === Right(Right(3)) && e2 === Right(Right(3))
   }
 }
-

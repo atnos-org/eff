@@ -6,12 +6,9 @@ import eff._
 import interpret._
 import EitherEffect._
 import org.atnos.eff.Interpret.runInterpreter
-
 import scala.reflect.ClassTag
 
-trait SafeEffect extends
-  SafeCreation with
-  SafeInterpretation
+trait SafeEffect extends SafeCreation with SafeInterpretation
 
 object SafeEffect extends SafeEffect
 
@@ -23,16 +20,16 @@ trait SafeTypes {
 
 trait SafeCreation extends SafeTypes {
 
-  def protect[R :_safe, A](a: =>A): Eff[R, A] =
+  def protect[R: _safe, A](a: => A): Eff[R, A] =
     send[Safe, R, A](Safe.evaluate(a))
 
-  def eval[R :_safe , A](a: Eval[A]): Eff[R, A] =
+  def eval[R: _safe, A](a: Eval[A]): Eff[R, A] =
     send[Safe, R, A](Safe.eval(a))
 
-  def exception[R :_safe, A](t: Throwable): Eff[R, A] =
+  def exception[R: _safe, A](t: Throwable): Eff[R, A] =
     send[Safe, R, A](Safe.fail(t))
 
-  def finalizerException[R :_safe](t: Throwable): Eff[R, Unit] =
+  def finalizerException[R: _safe](t: Throwable): Eff[R, Unit] =
     send[Safe, R, Unit](Safe.failFinalizer(t))
 }
 
@@ -69,7 +66,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
         case None => Eff.pure((Right(a), errors.toList))
         case Some((l, m)) =>
           attempt(l)(m) flatMap {
-            case Left(t)   => outer.finalizerException[R](t)(m) >> pure((Right(a), errors.toList))
+            case Left(t) => outer.finalizerException[R](t)(m) >> pure((Right(a), errors.toList))
             case Right(_) => pure((Right(a), errors.toList))
           }
       }
@@ -86,7 +83,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
 
                   case Some((l, m)) =>
                     attempt(l)(m) flatMap {
-                      case Left(t)   => outer.finalizerException[R](t)(m) >> outer.exception[R, Out[A]](e)(m)
+                      case Left(t) => outer.finalizerException[R](t)(m) >> outer.exception[R, Out[A]](e)(m)
                       case Right(_) => outer.exception[R, Out[A]](e)(m)
                     }
                 }
@@ -113,7 +110,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
                 case None => Eff.pure(())
                 case Some((l, m)) =>
                   attempt(l)(m) flatMap {
-                    case Left(t)   => outer.finalizerException[R](t)(m) >> outer.exception[R, Unit](e)(m)
+                    case Left(t) => outer.finalizerException[R](t)(m) >> outer.exception[R, Unit](e)(m)
                     case Right(_) => outer.exception[R, Unit](e)(m)
                   }
               }
@@ -123,7 +120,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
                 case None => Eff.impure(x, continuation)
                 case Some((l, m)) =>
                   attempt(l)(m) flatMap {
-                    case Left(t)   => outer.finalizerException[R](t)(m) >> Eff.impure(x, continuation)
+                    case Left(t) => outer.finalizerException[R](t)(m) >> Eff.impure(x, continuation)
                     case Right(_) => Eff.impure(x, continuation)
                   }
               }
@@ -137,19 +134,19 @@ trait SafeInterpretation extends SafeCreation { outer =>
           Eff.impure((), continuation)
       }
 
-    def onApplicativeEffect[X, T[_] : Traverse](xs: T[Safe[X]], continuation: Continuation[R, T[X], Out[A]]): Eff[R, Out[A]] = {
+    def onApplicativeEffect[X, T[_]: Traverse](xs: T[Safe[X]], continuation: Continuation[R, T[X], Out[A]]): Eff[R, Out[A]] = {
       val failedFinalizers = new collection.mutable.ListBuffer[Throwable]
       var error: Option[Throwable] = None
 
       val traversed: T[X] = xs.map {
         case FailedFinalizer(t) => failedFinalizers.append(t); ()
-        case FailedValue(t)     => error = Some(t); ().asInstanceOf[X]
-        case EvaluateValue(v)   =>
+        case FailedValue(t) => error = Some(t); ().asInstanceOf[X]
+        case EvaluateValue(v) =>
           error match {
             case None =>
               Either.catchNonFatal(v.value) match {
                 case Right(a) => a
-                case Left(t)  => error = Some(t); ().asInstanceOf[X]
+                case Left(t) => error = Some(t); ().asInstanceOf[X]
               }
             case Some(_) => ().asInstanceOf[X]
           }
@@ -167,7 +164,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
 
             case Some((l, m)) =>
               attempt(l)(m) flatMap {
-                case Left(t1)  => outer.finalizerException[R](t1)(m) >> outer.exception[R, Out[A]](t)(m)
+                case Left(t1) => outer.finalizerException[R](t1)(m) >> outer.exception[R, Out[A]](t)(m)
                 case Right(_) => exception[R, Out[A]](t)(m)
               }
           }
@@ -214,16 +211,18 @@ trait SafeInterpretation extends SafeCreation { outer =>
    * Execute a second action if the first one is not successful, based on the error
    */
   def catchThrowable[R, A, B](action: Eff[R, A], pureValue: A => B, onThrowable: Throwable => Eff[R, B])(implicit m: Safe /= R): Eff[R, B] =
-    recoverThrowable[R, A, B](action, pureValue, {case t => onThrowable(t)})
+    recoverThrowable[R, A, B](action, pureValue, { case t => onThrowable(t) })
 
   /**
    * evaluate first action possibly having error effects
    *
    * Execute a second action if the first one is not successful and second is defined for the error
    */
-  def recoverThrowable[R, A, B](action: Eff[R, A], pureValue: A => B, onThrowable: PartialFunction[Throwable, Eff[R, B]])(implicit m: Safe /= R): Eff[R, B] =
+  def recoverThrowable[R, A, B](action: Eff[R, A], pureValue: A => B, onThrowable: PartialFunction[Throwable, Eff[R, B]])(implicit
+    m: Safe /= R
+  ): Eff[R, B] =
     attemptSafe(action).flatMap {
-      case (Left(t), ls)  if onThrowable.isDefinedAt(t) => onThrowable(t).flatMap(b => ls.traverse(f => finalizerException(f)).as(b))
+      case (Left(t), ls) if onThrowable.isDefinedAt(t) => onThrowable(t).flatMap(b => ls.traverse(f => finalizerException(f)).as(b))
       case (Left(t), _) => exception(t)
       case (Right(a), ls) => pure(pureValue(a)).flatMap(b => ls.traverse(f => finalizerException(f)).as(b))
     }
@@ -257,10 +256,14 @@ trait SafeInterpretation extends SafeCreation { outer =>
   /**
    * ignore one possible exception that could be thrown
    */
-  def ignoreException[R, E <: Throwable : ClassTag, A](action: Eff[R, A])(implicit m: Safe /= R): Eff[R, Unit] =
-    recoverThrowable[R, A, Unit](action, _ => (), {
-      case t if implicitly[ClassTag[E]].runtimeClass.isInstance(t) => pure(())
-    })
+  def ignoreException[R, E <: Throwable: ClassTag, A](action: Eff[R, A])(implicit m: Safe /= R): Eff[R, Unit] =
+    recoverThrowable[R, A, Unit](
+      action,
+      _ => (),
+      {
+        case t if implicitly[ClassTag[E]].runtimeClass.isInstance(t) => pure(())
+      }
+    )
 
   /**
    * Memoize safe effects using a cache
@@ -269,10 +272,9 @@ trait SafeInterpretation extends SafeCreation { outer =>
    */
   def safeMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit safe: Safe /= R): Eff[R, A] =
     attempt(Eff.memoizeEffect(e, cache, key)).flatMap {
-      case Left(t)  => Eff.send(Safe.safeSequenceCached.reset(cache, key)) >> SafeEffect.exception(t)
+      case Left(t) => Eff.send(Safe.safeSequenceCached.reset(cache, key)) >> SafeEffect.exception(t)
       case Right(a) => Eff.pure(a)
     }
-
 
 }
 
@@ -286,12 +288,12 @@ sealed trait Safe[A] {
   def memoize: Safe[A]
 }
 
-case class EvaluateValue[A](run: Eval[A])  extends Safe[A] {
+case class EvaluateValue[A](run: Eval[A]) extends Safe[A] {
   def memoize: Safe[A] =
     copy(run.memoize)
 }
 
-case class FailedValue[A](t: Throwable)  extends Safe[A] {
+case class FailedValue[A](t: Throwable) extends Safe[A] {
   def memoize: Safe[A] =
     this
 }
@@ -303,7 +305,7 @@ case class FailedFinalizer(t: Throwable) extends Safe[Unit] {
 
 object Safe {
 
-  def evaluate[A](a: =>A): Safe[A] =
+  def evaluate[A](a: => A): Safe[A] =
     EvaluateValue[A](Eval.later(a))
 
   def eval[A](a: Eval[A]): Safe[A] =
@@ -320,7 +322,7 @@ object Safe {
       def get[X](cache: Cache, key: AnyRef): Safe[Option[X]] =
         evaluate(cache.get(key))
 
-      def apply[X](cache: Cache, key: AnyRef, subKey: Int, tx: =>Safe[X]): Safe[X] =
+      def apply[X](cache: Cache, key: AnyRef, subKey: Int, tx: => Safe[X]): Safe[X] =
         cache.memo((key, subKey), tx.memoize)
 
       def reset(cache: Cache, key: AnyRef): Safe[Unit] =

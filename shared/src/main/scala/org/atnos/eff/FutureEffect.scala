@@ -1,14 +1,15 @@
 package org.atnos.eff
 
 import java.util.concurrent.TimeoutException
-
 import cats._
 import cats.syntax.all._
 import org.atnos.eff.concurrent.Scheduler
-
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.util.Failure
+import scala.util.Success
 
 object FutureCreation extends FutureCreation
 
@@ -48,13 +49,15 @@ object TimedFuture {
       TimedFuture[B]((scheduler, ec) => fa.runNow(scheduler, ec).flatMap(f(_).runNow(scheduler, ec))(ec))
 
     def tailRecM[A, B](a: A)(f: A => TimedFuture[Either[A, B]]): TimedFuture[B] =
-      TimedFuture[B]({ (scheduler, ec) =>
-        def loop(va: A): Future[B] = f(va).runNow(scheduler, ec).flatMap {
-          case Left(na) => loop(na)
-          case Right(nb) => Future.successful(nb)
-        }(ec)
+      TimedFuture[B] { (scheduler, ec) =>
+        def loop(va: A): Future[B] = f(va)
+          .runNow(scheduler, ec)
+          .flatMap {
+            case Left(na) => loop(na)
+            case Right(nb) => Future.successful(nb)
+          }(ec)
         loop(a)
-      })
+      }
 
     def raiseError[A](e: Throwable): TimedFuture[A] =
       TimedFuture((s, ec) => Future.failed(e))
@@ -73,31 +76,31 @@ trait FutureTypes {
 
 trait FutureCreation extends FutureTypes {
 
-  final def fromFutureWithExecutors[R :_future, A](c: (Scheduler, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def fromFutureWithExecutors[R: _future, A](c: (Scheduler, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedFuture, R, A](TimedFuture(c, timeout))
 
-  final def fromFuture[R :_future, A](c: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def fromFuture[R: _future, A](c: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedFuture, R, A](TimedFuture((_, _) => c, timeout))
 
-  final def futureFail[R :_future, A](t: Throwable): Eff[R, A] =
+  final def futureFail[R: _future, A](t: Throwable): Eff[R, A] =
     Eff.send[TimedFuture, R, A](TimedFuture((_, _) => Future.failed(t)))
 
-  final def futureFromEither[R :_future, A](e: Throwable Either A): Eff[R, A] =
+  final def futureFromEither[R: _future, A](e: Throwable Either A): Eff[R, A] =
     e.fold(futureFail[R, A], Eff.pure[R, A])
 
-  final def futureDelay[R :_future, A](a: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def futureDelay[R: _future, A](a: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedFuture, R, A](TimedFuture((_, ec) => Future(a)(ec), timeout))
 
-  final def futureFork[R :_future, A](a: => A, ec: ExecutionContext, timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def futureFork[R: _future, A](a: => A, ec: ExecutionContext, timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedFuture, R, A](TimedFuture((_, _) => Future(a)(ec), timeout))
 
-  final def futureDefer[R :_future, A](a: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
+  final def futureDefer[R: _future, A](a: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedFuture, R, A](TimedFuture((_, _) => a, timeout))
 
-  def retryUntil[R :_future, A](e: Eff[R, A], condition: A => Boolean, durations: List[FiniteDuration]): Eff[R, A] =
+  def retryUntil[R: _future, A](e: Eff[R, A], condition: A => Boolean, durations: List[FiniteDuration]): Eff[R, A] =
     Eff.retryUntil(e, condition, durations, d => waitFor(d))
 
-  def waitFor[R :_future](duration: FiniteDuration): Eff[R, Unit] =
+  def waitFor[R: _future](duration: FiniteDuration): Eff[R, Unit] =
     Eff.send(TimedFuture((scheduler, _) => scheduler.delay(duration)))
 }
 
@@ -116,20 +119,23 @@ trait FutureInterpretation extends FutureTypes {
     Eff.detach(Eff.effInto[R, Fx1[TimedFuture], A](e)).runNow(scheduler, exc)
 
   final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, Throwable Either A] =
-    interpret.interceptNatM[R, TimedFuture, Either[Throwable, *], A](e,
-      new (TimedFuture ~> ({type l[a] = TimedFuture[Either[Throwable, a]]})#l) {
+    interpret.interceptNatM[R, TimedFuture, Either[Throwable, *], A](
+      e,
+      new (TimedFuture ~> ({ type l[a] = TimedFuture[Either[Throwable, a]] })#l) {
         override def apply[X](fa: TimedFuture[X]): TimedFuture[Throwable Either X] = attempt(fa)
-      })
+      }
+    )
 
   final def attempt[A](a: TimedFuture[A]): TimedFuture[Throwable Either A] = {
     TimedFuture[Throwable Either A](callback = (scheduler, ec) => {
       val prom = Promise[Throwable Either A]()
-      a.runNow(scheduler, ec).onComplete { t =>
-        prom.success(t match {
-          case Failure(ex) => Either.left(ex)
-          case Success(v) => Either.right(v)
-        })
-      }(ec)
+      a.runNow(scheduler, ec)
+        .onComplete { t =>
+          prom.success(t match {
+            case Failure(ex) => Either.left(ex)
+            case Success(v) => Either.right(v)
+          })
+        }(ec)
       prom.future
     })
   }
@@ -137,9 +143,17 @@ trait FutureInterpretation extends FutureTypes {
   final def memoize[A](key: AnyRef, cache: Cache, future: TimedFuture[A]): TimedFuture[A] =
     TimedFuture { (scheduler, ec) =>
       val prom = Promise[A]()
-      cache.get[A](key).fold {
-        prom.completeWith(future.runNow(scheduler, ec).map { v => val _ = cache.put(key, v); v }(ec))
-      } { v => prom.success(v) }
+      cache
+        .get[A](key)
+        .fold {
+          prom.completeWith(
+            future
+              .runNow(scheduler, ec)
+              .map { v =>
+                val _ = cache.put(key, v); v
+              }(ec)
+          )
+        } { v => prom.success(v) }
       prom.future
     }
 

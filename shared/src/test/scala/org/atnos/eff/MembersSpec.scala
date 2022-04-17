@@ -2,7 +2,8 @@ package org.atnos.eff
 
 import org.specs2.Specification
 
-class MembersSpec extends Specification { def is = s2"""
+class MembersSpec extends Specification {
+  def is = s2"""
 
  Some signature can be repetitive on some methods using effects (see #56):
 
@@ -19,7 +20,8 @@ class MembersSpec extends Specification { def is = s2"""
 
   def packed = ok
 
-  import Members.{&:, &&:}
+  import Members.&:
+  import Members.&&:
 
   trait Foo[A]
   trait Bar[A]
@@ -31,11 +33,10 @@ class MembersSpec extends Specification { def is = s2"""
   type _baz[R] = Baz <= R
   type _boo[R] = Boo |= R
 
-
   case class TwoEffects() {
     type _effects[R] = _foo[R] &&: _bar[R]
 
-    def foo[R](implicit e: _effects[R]): Eff[R, Int] =  {
+    def foo[R](implicit e: _effects[R]): Eff[R, Int] = {
       import Members._
 
       getFoo[R]
@@ -51,7 +52,7 @@ class MembersSpec extends Specification { def is = s2"""
   case class ThreeEffects() {
     type _effects[R] = _foo[R] &: _bar[R] &&: _baz[R]
 
-    def foo[R](i: Int)(implicit e: _effects[R]): Eff[R, Int] =  {
+    def foo[R](i: Int)(implicit e: _effects[R]): Eff[R, Int] = {
       import Members._
 
       getFoo[R]
@@ -67,9 +68,8 @@ class MembersSpec extends Specification { def is = s2"""
 
   }
 
-  def getFoo[R :_foo :_bar]: Eff[R, Int] = Eff.pure(1)
-  def getBar[R :_bar]: Eff[R, Int] = Eff.pure(1)
-  def getBaz[R :_baz]: Eff[R, Int] = Eff.pure(1)
+  def getFoo[R: _foo: _bar]: Eff[R, Int] = Eff.pure(1)
+  def getBar[R: _bar]: Eff[R, Int] = Eff.pure(1)
+  def getBaz[R: _baz]: Eff[R, Int] = Eff.pure(1)
 
 }
-

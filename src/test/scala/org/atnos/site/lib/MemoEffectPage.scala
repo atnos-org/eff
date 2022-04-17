@@ -3,31 +3,32 @@ package lib
 
 import org.specs2.matcher.ExpectationsDescription._
 
-object MemoEffectPage extends UserGuidePage { def is = "Memo".title ^ s2"""
+object MemoEffectPage extends UserGuidePage {
+  def is = "Memo".title ^ s2"""
 
 The Memo effect allows the caching of expensive computations. Computations are "stored" with a given key, so that the next
 computation with the same key will return the previously computed value. When interpreting those computations a `Cache` must
-be provided: ${snippet{
+be provided: ${snippet {
 
-import cats.Eval
-import cats.implicits._
-import org.atnos.eff._, memo._
-import org.atnos.eff.syntax.memo._
-import org.atnos.eff.syntax.eval._
-import org.atnos.eff.syntax.eff._
+      import cats.Eval
+      import cats.implicits._
+      import org.atnos.eff._, memo._
+      import org.atnos.eff.syntax.memo._
+      import org.atnos.eff.syntax.eval._
+      import org.atnos.eff.syntax.eff._
 
-type S = Fx.fx2[Memoized, Eval]
+      type S = Fx.fx2[Memoized, Eval]
 
-var i = 0
+      var i = 0
 
-def expensive[R :_memo]: Eff[R, Int] =
-  memoize("key", { i += 1; 10 * 10 })
+      def expensive[R: _memo]: Eff[R, Int] =
+        memoize("key", { i += 1; 10 * 10 })
 
-(expensive[S] >> expensive[S]).runMemo(ConcurrentHashMapCache()).runEval.run === 100
+      (expensive[S] >> expensive[S]).runMemo(ConcurrentHashMapCache()).runEval.run === 100
 
-"there is only one invocation" <==> (i === 1)
+      "there is only one invocation" <==> (i === 1)
 
-}.eval}
+    }.eval}
 
 There are 2 cache implementations provided in this library to support the Memo effect:
 

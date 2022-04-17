@@ -5,7 +5,8 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import cats.syntax.all._
 
-class ChooseEffectSpec extends Specification with Specs2Compat { def is = s2"""
+class ChooseEffectSpec extends Specification with Specs2Compat {
+  def is = s2"""
 
  An action can use some non-deterministic choice
    for lists   $nondetList
@@ -46,6 +47,4 @@ class ChooseEffectSpec extends Specification with Specs2Compat { def is = s2"""
     action.runChoose[List].run must not(throwAn[Exception])
   }
 
-
 }
-

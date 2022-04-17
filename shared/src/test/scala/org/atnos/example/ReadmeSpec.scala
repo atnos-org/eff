@@ -9,7 +9,8 @@ import WriterEffect._
 import EvalEffect._
 import Eff._
 
-class ReadmeSpec extends Specification { def is = s2"""
+class ReadmeSpec extends Specification {
+  def is = s2"""
 
  run the first example $firstExample
 
@@ -27,11 +28,11 @@ class ReadmeSpec extends Specification { def is = s2"""
 
     // create an action
     val action: Eff[Stack, Int] = for {
-    // get the configuration
+      // get the configuration
       init <- ask[Stack, Int]
 
       // log the current configuration value
-      _ <- tell[Stack, String]("START: the start value is "+init)
+      _ <- tell[Stack, String]("START: the start value is " + init)
 
       // compute the nth power of 2
       a <- delay[Stack, Int](powerOfTwo(init))

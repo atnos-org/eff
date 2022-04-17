@@ -7,13 +7,13 @@ import org.atnos.eff.syntax.all._
 import org.atnos.eff.syntax.future._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
-
 import scala.collection.mutable.ListBuffer
 import scala.concurrent._
 import duration._
 import org.specs2.matcher.ThrownExpectations
 
-class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat { def is = sequential ^ s2"""
+class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
+  def is = sequential ^ s2"""
 
  Future effects can work as normal values                      $e1
  Future effects can be attempted                               $e2
@@ -46,7 +46,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   implicit val ec: scala.concurrent.ExecutionContext = ee.ec
 
   def e1 = {
-    def action[R :_future :_option]: Eff[R, Int] = for {
+    def action[R: _future: _option]: Eff[R, Int] = for {
       a <- futureDelay(10)
       b <- futureDelay(20)
     } yield a + b
@@ -55,7 +55,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   }
 
   def e2 = {
-    def action[R :_future :_option]: Eff[R, Int] = for {
+    def action[R: _future: _option]: Eff[R, Int] = for {
       a <- futureDelay(10)
       b <- futureDelay { boom; 20 }
     } yield a + b
@@ -105,7 +105,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
     def loop(i: Int): Future[Eff[R, Int]] =
       if (i == 0) Future.successful(Eff.pure(1))
-      else        Future.successful(futureDefer(loop(i - 1)).flatten[Int].map(_ + 1))
+      else Future.successful(futureDefer(loop(i - 1)).flatten[Int].map(_ + 1))
 
     eventually(retries = 5, sleep = 0.seconds) {
       Await.result(futureDelay(loop(100000)).runSequential, Duration.Inf) must not(throwAn[Exception])
@@ -124,7 +124,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   def e9 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = futureMemo("only once", cache, futureDelay({ invocationsNumber += 1; 1 }))
+    def makeRequest = futureMemo("only once", cache, futureDelay { invocationsNumber += 1; 1 })
 
     (makeRequest >> makeRequest).runSequential must be_==(1).await
     invocationsNumber must be_==(1)
@@ -133,7 +133,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   def e10 = {
     var invocationsNumber = 0
     val cache = ConcurrentHashMapCache()
-    def makeRequest = futureMemo("only once", cache, futureDelay({ invocationsNumber += 1; 1 }))
+    def makeRequest = futureMemo("only once", cache, futureDelay { invocationsNumber += 1; 1 })
 
     (makeRequest >> makeRequest).futureAttempt.runSequential must beRight(1).await
     invocationsNumber must be_==(1)
@@ -163,7 +163,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
     val cache = ConcurrentHashMapCache()
 
     type S = Fx.fx2[Memoized, TimedFuture]
-    def makeRequest = futureMemoized("only once", futureDelay[S, Int]({ invocationsNumber += 1; 1 }))
+    def makeRequest = futureMemoized("only once", futureDelay[S, Int] { invocationsNumber += 1; 1 })
 
     (makeRequest >> makeRequest).runFutureMemo(cache).runSequential must be_==(1).await
     invocationsNumber must be_==(1)
@@ -177,13 +177,11 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
       for {
         i <- futureDelay[S, Int] { sleepFor(10.millis); 1 }
         _ <- futureFail[S, Int](new Exception("boom"))
-        j =  i + 1
+        j = i + 1
       } yield j
 
     val execute: Eff[S, Throwable Either Int] =
-      action.
-        addLast(futureDelay[S, Unit](lastActionDone += 1)).
-        futureAttempt
+      action.addLast(futureDelay[S, Unit](lastActionDone += 1)).futureAttempt
 
     execute.runOption.runSequential must beSome(beLeft[Throwable]).awaitFor(20.seconds)
     lastActionDone must beEqualTo(1)
@@ -235,6 +233,6 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
   val boomException: Throwable = new Exception("boom")
 
   def sleepFor(duration: FiniteDuration) =
-    try Thread.sleep(duration.toMillis) catch { case t: Throwable => () }
+    try Thread.sleep(duration.toMillis)
+    catch { case t: Throwable => () }
 }
-

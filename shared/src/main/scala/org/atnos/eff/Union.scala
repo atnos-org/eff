@@ -22,7 +22,7 @@ sealed trait Effect[R, A] {
 
 case class NoEffect[R, A](a: A) extends Effect[R, A]
 
-sealed trait Union[R, A] extends Effect[R, A]  {
+sealed trait Union[R, A] extends Effect[R, A] {
   final private[eff] def forget[E, B]: Union[E, B] =
     asInstanceOf[Union[E, B]]
 
@@ -30,7 +30,7 @@ sealed trait Union[R, A] extends Effect[R, A]  {
     this.asInstanceOf[UnionTagged[R, A]]
 }
 
-case class UnionTagged[R, A] (valueUnsafe: Any, index: Int) extends Union[R, A] {
+case class UnionTagged[R, A](valueUnsafe: Any, index: Int) extends Union[R, A] {
   private[eff] def increment[E]: Union[E, A] = copy(index = index + 1)
   private[eff] def decrement[E]: Union[E, A] = copy(index = index - 1)
 }
@@ -62,4 +62,3 @@ object Union {
   def appendR[L, R, A](union: Union[R, A]): Union[FxAppend[L, R], A] =
     UnionAppendR(union)
 }
-

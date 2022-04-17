@@ -2,7 +2,7 @@ import org.scalajs.jsenv.nodejs._
 
 lazy val specs2Version = Def.setting("4.15.0")
 lazy val twitterUtilVersion = "22.3.0"
-lazy val doobieVersion      = "0.13.4"
+lazy val doobieVersion = "0.13.4"
 
 enablePlugins(BuildInfoPlugin)
 
@@ -24,7 +24,8 @@ dependsOn(
   scalazJVM,
 )
 
-lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file("."))
+lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("."))
   .settings(moduleName := "eff")
   .jsSettings(commonJsSettings)
   .jvmSettings(commonJvmSettings)
@@ -43,7 +44,8 @@ lazy val doobie = project
   .settings(libraryDependencies ++= doobieJvm)
   .settings(effSettings ++ commonJvmSettings)
 
-lazy val catsEffect = crossProject(JVMPlatform).in(file("cats"))
+lazy val catsEffect = crossProject(JVMPlatform)
+  .in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(core)
   .settings(
@@ -54,7 +56,8 @@ lazy val catsEffect = crossProject(JVMPlatform).in(file("cats"))
 
 lazy val catsEffectJVM = catsEffect.jvm
 
-lazy val macros = project.in(file("macros"))
+lazy val macros = project
+  .in(file("macros"))
   .settings(moduleName := "eff-macros")
   .dependsOn(coreJVM)
   .settings(libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value)
@@ -74,7 +77,8 @@ lazy val macros = project.in(file("macros"))
   .settings(commonJvmSettings)
   .settings(effSettings)
 
-lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
+lazy val monix = crossProject(JSPlatform, JVMPlatform)
+  .in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(core % "test->test;compile->compile")
   .settings(
@@ -85,9 +89,10 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform).in(file("monix"))
   .jsSettings(commonJsSettings)
 
 lazy val monixJVM = monix.jvm
-lazy val monixJS =  monix.js
+lazy val monixJS = monix.js
 
-lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file("scalaz"))
+lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
   .dependsOn(core % "compile->compile;test->test")
   .settings(
@@ -199,13 +204,13 @@ lazy val effSettings =
 
 lazy val publishSettings =
   Seq(
-  homepage := Some(url("https://github.com/atnos-org/eff")),
-  licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
-  scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/eff"), "scm:git:git@github.com:atnos-org/eff.git")),
-  autoAPIMappings := true,
-  apiURL := Some(url("http://atnos.org/eff/api/")),
-  pomExtra := (
-    <developers>
+    homepage := Some(url("https://github.com/atnos-org/eff")),
+    licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
+    scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/eff"), "scm:git:git@github.com:atnos-org/eff.git")),
+    autoAPIMappings := true,
+    apiURL := Some(url("http://atnos.org/eff/api/")),
+    pomExtra := (
+      <developers>
       <developer>
         <id>etorreborre</id>
         <name>Eric Torreborre</name>
@@ -213,8 +218,7 @@ lazy val publishSettings =
       </developer>
     </developers>
     )
-) ++ credentialSettings ++ sharedPublishSettings
-
+  ) ++ credentialSettings ++ sharedPublishSettings
 
 lazy val noPublishSettings = Seq(
   publish := (()),
@@ -225,7 +229,8 @@ lazy val noPublishSettings = Seq(
 lazy val commonScalacOptions = Def.setting {
   Seq(
     "-deprecation",
-    "-encoding", "UTF-8",
+    "-encoding",
+    "UTF-8",
     "-feature",
     "-language:implicitConversions,higherKinds,existentials",
     "-unchecked",
@@ -291,7 +296,7 @@ buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
 buildInfoPackage := "org.atnos.eff"
 
 lazy val warnUnusedImport = Seq(
-  Compile / console / scalacOptions ~= {_.filterNot("-Ywarn-unused-import" == _)},
+  Compile / console / scalacOptions ~= { _.filterNot("-Ywarn-unused-import" == _) },
   (Test / console / scalacOptions) := (Compile / console / scalacOptions).value
 )
 
@@ -308,9 +313,7 @@ lazy val prompt = ThisBuild / shellPrompt := { state =>
   (if (name == "eff") "" else name) + "> "
 }
 
-lazy val doobieJvm = Seq(
-  "org.tpolecat" %% "doobie-core" % doobieVersion,
-  "org.tpolecat" %% "doobie-h2"   % doobieVersion % "test")
+lazy val doobieJvm = Seq("org.tpolecat" %% "doobie-core" % doobieVersion, "org.tpolecat" %% "doobie-h2" % doobieVersion % "test")
 
 lazy val specs2 = Def.setting(
   Seq(

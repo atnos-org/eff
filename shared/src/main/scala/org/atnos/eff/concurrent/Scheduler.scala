@@ -15,7 +15,7 @@ trait Scheduler {
    * The return "Cancel" action can allow the action to be cancelled before
    * the duration expires
    */
-  def schedule(action: =>Unit, duration: FiniteDuration): Cancel
+  def schedule(action: => Unit, duration: FiniteDuration): Cancel
 
   /**
    * return a Future which will only complete after the given duration

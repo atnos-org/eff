@@ -5,12 +5,12 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.eval._
 import org.atnos.eff.syntax.addon.scalaz.all._
 import cats.Eval
-
 import scalaz._
 import Scalaz._
 import org.specs2._
 
-class ScalazSyntaxSpec extends Specification { def is = s2"""
+class ScalazSyntaxSpec extends Specification {
+  def is = s2"""
 
  standard operations of eff values can be called with Scalaz type classes
 

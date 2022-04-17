@@ -1,6 +1,7 @@
 package org.atnos.eff
 
-import cats._, data._
+import cats._
+import data._
 import cats.syntax.all._
 import Interpret._
 
@@ -10,9 +11,7 @@ import Interpret._
  * The runValidate interpreter just collects the messages and returns them at the end
  *
  */
-trait ValidateEffect extends
-  ValidateCreation with
-  ValidateInterpretation
+trait ValidateEffect extends ValidateCreation with ValidateInterpretation
 
 object ValidateEffect extends ValidateEffect
 
@@ -73,7 +72,7 @@ trait ValidateInterpretation extends ValidateCreation {
     runMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.of(e))
 
   /** run the validate effect, yielding a list of failures Either A */
-  def runMap[R, U, E, L : Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L Either A] =
+  def runMap[R, U, E, L: Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L Either A] =
     runMapGen(effect)(map) { (a, l) => l.map(_ => a) }
 
   /** run the validate effect, yielding a non-empty list of failures or A or both */
@@ -81,14 +80,18 @@ trait ValidateInterpretation extends ValidateCreation {
     runIorMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.one(e))
 
   /** run the validate effect, yielding a list of failures or A or both */
-  def runIorMap[R, U, E, L : Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L Ior A] =
-    runMapGen(effect)(map) { (a, l) => l match {
-      case Left(errs) => Ior.Left(errs)
-      case Right(None) => Ior.Right(a)
-      case Right(Some(warns)) => Ior.Both(warns, a)
-    }}
+  def runIorMap[R, U, E, L: Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L Ior A] =
+    runMapGen(effect)(map) { (a, l) =>
+      l match {
+        case Left(errs) => Ior.Left(errs)
+        case Right(None) => Ior.Right(a)
+        case Right(Some(warns)) => Ior.Both(warns, a)
+      }
+    }
 
-  private def runMapGen[R, U, E, L : Semigroup, A, SomeOr[_, _]](effect: Eff[R, A])(map: E => L)(pure: (A, L Either Option[L]) => L SomeOr A)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L SomeOr A] =
+  private def runMapGen[R, U, E, L: Semigroup, A, SomeOr[_, _]](
+    effect: Eff[R, A]
+  )(map: E => L)(pure: (A, L Either Option[L]) => L SomeOr A)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L SomeOr A] =
     runInterpreter(effect)(new Interpreter[Validate[E, *], U, A, L SomeOr A] {
       // Left means failed, Right means not failed (Option contains warnings)
       private[this] var l: L Either Option[L] = Right(None)
@@ -98,16 +101,18 @@ trait ValidateInterpretation extends ValidateCreation {
 
       private def combineLV[X](l: L Either Option[L], v: Validate[E, X]): L Either Option[L] = v match {
         case Correct() => l
-        case Warning(w) => l match {
-          case Left(errs) => Left(errs |+| map(w))
-          case Right(None) => Right(Some(map(w)))
-          case Right(Some(warns)) => Right(Some(warns |+| map(w)))
-        }
-        case Wrong(e) => l match {
-          case Left(errs) => Left(errs |+| map(e))
-          case Right(None) => Left(map(e))
-          case Right(Some(warns)) => Left(warns |+| map(e)) // uniting warnings and errors as cats do
-        }
+        case Warning(w) =>
+          l match {
+            case Left(errs) => Left(errs |+| map(w))
+            case Right(None) => Right(Some(map(w)))
+            case Right(Some(warns)) => Right(Some(warns |+| map(w)))
+          }
+        case Wrong(e) =>
+          l match {
+            case Left(errs) => Left(errs |+| map(e))
+            case Right(None) => Left(map(e))
+            case Right(Some(warns)) => Left(warns |+| map(e)) // uniting warnings and errors as cats do
+          }
       }
 
       def onEffect[X](v: Validate[E, X], continuation: Continuation[U, X, L SomeOr A]): Eff[U, L SomeOr A] = {
@@ -118,7 +123,7 @@ trait ValidateInterpretation extends ValidateCreation {
       def onLastEffect[X](x: Validate[E, X], continuation: Continuation[U, X, Unit]): Eff[U, Unit] =
         Eff.pure(())
 
-      def onApplicativeEffect[X, T[_] : Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L SomeOr A]): Eff[U, L SomeOr A] = {
+      def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[U, T[X], L SomeOr A]): Eff[U, L SomeOr A] = {
         l = xs.foldLeft(l)(combineLV)
 
         val tx: T[X] = xs.map { case Correct() | Warning(_) | Wrong(_) => () }
@@ -127,7 +132,9 @@ trait ValidateInterpretation extends ValidateCreation {
     })
 
   /** catch and handle possible wrong values */
-  def catchWrongs[R, E, A, S[_]: Applicative](effect: Eff[R, A])(handle: S[E] => Eff[R, A])(implicit member: Validate[E, *] <= R, semi: Semigroup[S[E]]): Eff[R, A] =
+  def catchWrongs[R, E, A, S[_]: Applicative](
+    effect: Eff[R, A]
+  )(handle: S[E] => Eff[R, A])(implicit member: Validate[E, *] <= R, semi: Semigroup[S[E]]): Eff[R, A] =
     intercept(effect)(new Interpreter[Validate[E, *], R, A, A] {
       private[this] var errs: Option[S[E]] = None
 
@@ -137,7 +144,7 @@ trait ValidateInterpretation extends ValidateCreation {
       def onEffect[X](m: Validate[E, X], continuation: Continuation[R, X, A]): Eff[R, A] = {
         val x: X = m match {
           case Correct() | Warning(_) => ()
-          case Wrong(e)               => {
+          case Wrong(e) => {
             errs = errs |+| Some(Applicative[S].pure(e))
             ()
           }
@@ -151,7 +158,7 @@ trait ValidateInterpretation extends ValidateCreation {
       def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
         val (eo, tx): (Option[S[E]], T[X]) = xs.traverse {
           case Correct() | Warning(_) => (Option.empty[S[E]], ())
-          case Wrong(e)               => (Some(Applicative[S].pure(e)), ())
+          case Wrong(e) => (Some(Applicative[S].pure(e)), ())
         }
 
         errs = errs |+| eo
@@ -161,13 +168,13 @@ trait ValidateInterpretation extends ValidateCreation {
 
   /** catch and handle the first wrong value */
   def catchFirstWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, *] <= R): Eff[R, A] = {
-    implicit val first: Semigroup[E] = Semigroup.instance{ (a, _) => a }
+    implicit val first: Semigroup[E] = Semigroup.instance { (a, _) => a }
     catchWrongs[R, E, A, Id](effect)(handle)
   }
 
   /** catch and handle the last wrong value */
   def catchLastWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, *] <= R): Eff[R, A] = {
-    implicit val last: Semigroup[E] = Semigroup.instance{ (_, b) => b }
+    implicit val last: Semigroup[E] = Semigroup.instance { (_, b) => b }
     catchWrongs[R, E, A, Id](effect)(handle)
   }
 
@@ -182,4 +189,3 @@ trait ValidateInterpretation extends ValidateCreation {
 }
 
 object ValidateInterpretation extends ValidateInterpretation
-

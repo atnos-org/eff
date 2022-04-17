@@ -3,11 +3,12 @@ package org.atnos.eff
 import cats.Eval
 
 case class ConcurrentWeakIdentityHashMapCache(
-  map: ConcurrentWeakIdentityHashMap[AnyRef, Eval[Any]] = new ConcurrentWeakIdentityHashMap[AnyRef, Eval[Any]]) extends Cache {
+  map: ConcurrentWeakIdentityHashMap[AnyRef, Eval[Any]] = new ConcurrentWeakIdentityHashMap[AnyRef, Eval[Any]]
+) extends Cache {
 
   type C = Cache
 
-  def memo[V](key: AnyRef, value: =>V): V = {
+  def memo[V](key: AnyRef, value: => V): V = {
     lazy val v = value
     if (map.putIfAbsent(key, Eval.later(v).memoize) == null) v
     else map.get(key).value.asInstanceOf[V]

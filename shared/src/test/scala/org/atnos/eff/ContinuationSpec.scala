@@ -4,9 +4,11 @@ import cats._
 import org.atnos.eff.syntax.all._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
-import org.specs2.{ScalaCheck, Specification}
+import org.specs2.ScalaCheck
+import org.specs2.Specification
 
-class ContinuationSpec extends Specification with ScalaCheck with Specs2Compat { def is = s2"""
+class ContinuationSpec extends Specification with ScalaCheck with Specs2Compat {
+  def is = s2"""
 
  A function can run at the end of a Kleisli arrow into the Eff monad $mapLast
 

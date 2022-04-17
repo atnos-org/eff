@@ -6,7 +6,8 @@ import cats.data._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
-class ReaderEffectSpec extends Specification with Specs2Compat { def is = s2"""
+class ReaderEffectSpec extends Specification with Specs2Compat {
+  def is = s2"""
 
  local can be used to "zoom" on a configuration $localEffect
    localKleisli for the Kleisli effect $localKleisliEffect
@@ -25,8 +26,8 @@ class ReaderEffectSpec extends Specification with Specs2Compat { def is = s2"""
     type S = Fx.fx1[R]
 
     val action: Eff[S, (Int, String)] = for {
-      f <- local[S, Config, Int]((_:Config).factor)
-      h <- local[S, Config, String]((_:Config).host)
+      f <- local[S, Config, Int]((_: Config).factor)
+      h <- local[S, Config, String]((_: Config).host)
     } yield (f, h)
 
     action.runReader(Config(10, "www.me.com")).run ==== ((10, "www.me.com"))
@@ -37,8 +38,8 @@ class ReaderEffectSpec extends Specification with Specs2Compat { def is = s2"""
     type S = Fx.fx2[Kleisli[Option, Config, *], Option]
 
     val action: Eff[S, (Int, String)] = for {
-      f <- localKleisli[S, Config, Int, Option]((_:Config).factor.some)
-      h <- localKleisli[S, Config, String, Option]((_:Config).host.some)
+      f <- localKleisli[S, Config, Int, Option]((_: Config).factor.some)
+      h <- localKleisli[S, Config, String, Option]((_: Config).host.some)
     } yield (f, h)
 
     action.runKleisli(Config(10, "www.me.com")).runOption.run ==== Some((10, "www.me.com"))
@@ -46,15 +47,15 @@ class ReaderEffectSpec extends Specification with Specs2Compat { def is = s2"""
 
   def localReaderEffect = {
     type ReaderConfig[A] = Reader[Config, A]
-    type ReaderInt[A]    = Reader[Int, A]
+    type ReaderInt[A] = Reader[Int, A]
     type ReaderString[A] = Reader[String, A]
 
-    def readFactor[R :_option](implicit r: ReaderInt |= R): Eff[R, String] = for {
+    def readFactor[R: _option](implicit r: ReaderInt |= R): Eff[R, String] = for {
       c <- ask[R, Int]
       h <- OptionEffect.some("hello")
     } yield h
 
-    def readHost[R :_option](implicit r: ReaderString |= R): Eff[R, String] = for {
+    def readHost[R: _option](implicit r: ReaderString |= R): Eff[R, String] = for {
       c <- ask[R, String]
       h <- OptionEffect.some("world")
     } yield h
@@ -85,13 +86,12 @@ class ReaderEffectSpec extends Specification with Specs2Compat { def is = s2"""
     // the lookup should work on the modified environment
     // but this should not change subsequent calls to the environment
     def program: Eff[Comp, String] = for {
-      v <- lookup("x").zoomReader((_:Env).updated("x", 2))
+      v <- lookup("x").zoomReader((_: Env).updated("x", 2))
       e <- ask[Comp, Env]
     } yield s"Value: $v, env: $e"
 
     program.runReader(env).runOption.run ==== Option(s"Value: 2, env: Map()")
   }
-
 
   def updateReaderEffect = {
     type ReaderInt[A] = Reader[Int, A]
@@ -99,7 +99,7 @@ class ReaderEffectSpec extends Specification with Specs2Compat { def is = s2"""
 
     type Stack = Fx.fx2[ReaderInt, Eval]
 
-    def bar[R :_ReaderInt :_eval](x: String): Eff[R, String] = for {
+    def bar[R: _ReaderInt: _eval](x: String): Eff[R, String] = for {
       y <- ask[R, Int]
       r <- if (y == 1) delay[R, String](x) else bar(x).localReader((z: Int) => z - 1)
     } yield r + "."
@@ -111,4 +111,3 @@ class ReaderEffectSpec extends Specification with Specs2Compat { def is = s2"""
   case class Config(factor: Int, host: String)
 
 }
-
