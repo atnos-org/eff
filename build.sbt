@@ -270,7 +270,7 @@ lazy val sharedPublishSettings = Seq(
   Test / publishArtifact := false,
   pomIncludeRepository := Function.const(false),
   publishTo := sonatypePublishToBundle.value,
-) ++ notesSettings ++ buildInfoSettings
+) ++ notesSettings
 
 lazy val notesSettings = Seq(
   ghreleaseRepoOrg := "atnos-org",
@@ -287,10 +287,8 @@ lazy val notesSettings = Seq(
   ghreleaseAssets := Seq()
 )
 
-lazy val buildInfoSettings = Seq(
-  buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-  buildInfoPackage := "org.atnos.eff"
-)
+buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
+buildInfoPackage := "org.atnos.eff"
 
 lazy val warnUnusedImport = Seq(
   Compile / console / scalacOptions ~= {_.filterNot("-Ywarn-unused-import" == _)},
@@ -367,4 +365,10 @@ lazy val disableScala3 = Def.settings(
     }
   },
   publish / skip := (scalaBinaryVersion.value == "3"),
+)
+
+Global / excludeLintKeys ++= Set(
+  ghreleaseIsPrerelease,
+  ghreleaseNotes,
+  ghreleaseTitle,
 )
