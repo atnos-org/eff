@@ -9,13 +9,33 @@ You add `eff` as an sbt dependency:
 libraryDependencies += "org.atnos" %% "eff" % "$version"
 
 // to write types like Reader[String, *]
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full)
+libraryDependencies ++= {
+  if (scalaBinaryVersion.value == "3") {
+    Nil
+  } else {
+    Seq(compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full))
+  }
+}
+
+scalacOptions ++= {
+  if (scalaBinaryVersion.value == "3") {
+    Seq("-Ykind-projector")
+  } else {
+    Nil
+  }
+}
 ```
 
 To get types like `Reader[String, *]` (with more than one type parameter) correctly inferred, you'll have to use the following compiler option
 
 ```scala
-scalacOptions += "-Ypartial-unification"
+scalacOptions ++= {
+  if (scalaBinaryVersion.value == "2.12") {
+    Seq("-Ypartial-unification")
+  } else {
+    Nil
+  }
+}
 ```
 
 ##### Additional dependencies
