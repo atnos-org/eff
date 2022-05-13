@@ -71,8 +71,8 @@ class ErrorEffectSpec extends Specification with Specs2Compat {
     val all: Eff[R, Int] =
       action.orElse(OK { messages.append("second"); 2 })
 
-    (all.runError.run ==== Right(1)) and
-      (messages.toList ==== List("first"))
+    all.runError.run ==== Right(1) and
+      messages.toList ==== List("first")
   }
 
   def orElse2 = {
@@ -84,8 +84,8 @@ class ErrorEffectSpec extends Specification with Specs2Compat {
     val all: Eff[R, Int] =
       action.orElse(OK { messages.append("second"); 2 })
 
-    (all.runError.run ==== Right(2)) and
-      (messages.toList ==== List("second"))
+    all.runError.run ==== Right(2) and
+      messages.toList ==== List("second")
   }
 
   def logException = {
@@ -103,8 +103,8 @@ class ErrorEffectSpec extends Specification with Specs2Compat {
     val result =
       action.runError.runWriter.runEval.run
 
-    (result._2 ==== List("start")) and
-      (result._1.toErrorSimpleMessage ==== Option("Error[java.lang.Exception] boom"))
+    result._2 ==== List("start") and
+      result._1.toErrorSimpleMessage ==== Option("Error[java.lang.Exception] boom")
   }
 
   def ignored = {

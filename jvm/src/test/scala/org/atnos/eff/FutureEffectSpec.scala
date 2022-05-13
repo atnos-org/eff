@@ -209,7 +209,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
     execute.runOption.runSequential must beSome(3).awaitFor(10.seconds)
 
     val after = System.currentTimeMillis
-    (after - before) must be_>(durations.map(_.toMillis).sum)
+    after - before must be_>(durations.map(_.toMillis).sum)
   }
 
   def retry2 = {

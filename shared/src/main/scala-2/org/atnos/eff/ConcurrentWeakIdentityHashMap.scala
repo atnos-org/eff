@@ -173,7 +173,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
       next
     }
 
-    override def remove() = throw new UnsupportedOperationException()
+    override def remove() = throw new UnsupportedOperationException
 
     def extract(u: U): T
   }

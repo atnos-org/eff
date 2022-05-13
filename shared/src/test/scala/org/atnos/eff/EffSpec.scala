@@ -102,7 +102,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
       } yield i + j
 
     // run effects
-    readWrite.runWriter.runReader(init).run must_== ((init * 2, List("init=" + init, "result=" + (init * 2))))
+    readWrite.runWriter.runReader(init).run must_== ((init * 2, List("init=" + init, "result=" + init * 2)))
   }.setGen(Gen.posNum[Int])
 
   def stacksafeWriter = {
@@ -152,8 +152,8 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
   }
 
   def runPureValue =
-    (EffMonad[Fx.fx1[Eval]].pure(1).runPure === Option(1)) and
-      (delay(1).runPure === None)
+    EffMonad[Fx.fx1[Eval]].pure(1).runPure === Option(1) and
+      delay(1).runPure === None
 
   def runOneEffect =
     Eval.later(1).send.runEval.run === 1
@@ -282,7 +282,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
       (1 to n).toList.traverseA(_ => ask[S, Int] >>= (i => tell[S, String](s + i.toString))).void
 
     def reverse(ls: Eff[S, Unit]) =
-      interpret.interceptNat(ls)(new (WS ~> WS) {
+      interpret.interceptNat(ls)(new WS ~> WS {
         def apply[X](w: WS[X]): WS[X] =
           w.run match { case (l, v) => Writer.apply(l.reverse, v) }
       })
@@ -291,7 +291,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
     val reversedA = reverse(logsA).runWriterLog.runReader(0).run
     val expected = (1 to n).map(_ => (s + "0").reverse).toList
 
-    (reversed ==== expected) and (reversedA ==== expected)
+    reversed ==== expected and reversedA ==== expected
 
   }.setGens(Gen.choose(3, 3), Gen.oneOf("abc", "dce", "xyz")).set(minTestsOk = 1)
 

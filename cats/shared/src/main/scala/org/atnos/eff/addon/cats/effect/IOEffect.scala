@@ -60,7 +60,7 @@ trait IOInterpretation extends IOTypes {
 
     interpret.interceptNatM[R, IO, Either[Throwable, *], A](
       e,
-      new (IO ~> (IO of Either[Throwable, *])#l) {
+      new IO ~> (IO of Either[Throwable, *])#l {
         def apply[X](io: IO[X]): IO[Throwable Either X] =
           io.attempt
       }

@@ -60,7 +60,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
 
   def attempt1 = prop { (n: Int) =>
     protect[S, Int](action(n)).attempt.runSafe.run ====
-      (Right(Either.cond(isEven(n), n, boom)) -> List())
+      Right(Either.cond(isEven(n), n, boom)) -> List()
   }
 
   def attempt2 = {
@@ -84,7 +84,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
       case (Right(r), ls) =>
         n1 must beEven
         n2 must beEven
-        r ==== (n1 + n2)
+        r ==== n1 + n2
 
         if (isEven(n3) && isEven(n4)) ls must beEmpty
         else if (isOdd(n3) && isEven(n4)) ls must haveSize(1)
@@ -94,7 +94,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
         messages.toList ==== List("finalizer1", "finalizer2")
 
       case (Left(t), ls) =>
-        (n1 must beOdd) or (n2 must beOdd)
+        n1 must beOdd or (n2 must beOdd)
 
         if (isEven(n1)) {
 
@@ -130,19 +130,19 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   def catchThrowable1 = prop { (n: Int) =>
     val program = protect[S, Int](action(n)).catchThrowable(identity, _ => pure(1))
 
-    program.runSafe.run ==== (Right(if (isEven(n)) n else 1) -> List())
+    program.runSafe.run ==== Right(if (isEven(n)) n else 1) -> List()
   }.setGen(genInt)
 
   def catchThrowable2 = prop { (n: Int) =>
     val program = (protect[S, Int](action(n)) `finally` protect[S, Unit](throw finalBoom)).catchThrowable(identity, _ => pure(1))
 
-    program.runSafe.run ==== (Right(if (isEven(n)) n else 1) -> List(finalBoom))
+    program.runSafe.run ==== Right(if (isEven(n)) n else 1) -> List(finalBoom)
   }.setGen(genInt)
 
   def catchThrowable3 = prop { (n: Int) =>
     val program = protect[S, Int](action(n)).catchThrowable(identity, _ => pure(1)) `finally` protect[S, Unit](throw finalBoom)
 
-    program.runSafe.run ==== (Right(if (isEven(n)) n else 1) -> List(finalBoom))
+    program.runSafe.run ==== Right(if (isEven(n)) n else 1) -> List(finalBoom)
   }.setGen(genInt)
 
   def ignoreException1 = prop { (n: Int) =>

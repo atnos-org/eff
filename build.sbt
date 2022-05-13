@@ -65,7 +65,7 @@ lazy val macros = project
     disableScala3,
     libraryDependencies ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, v)) if v <= 12 =>
+        case Some(2, v) if v <= 12 =>
           Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
         case _ =>
           // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
@@ -133,7 +133,7 @@ lazy val buildSettings = Seq(
 lazy val commonSettings = Def.settings(
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.7.0",
   scalacOptions ++= commonScalacOptions.value,
-  (Compile / doc / scalacOptions) ++= {
+  Compile / doc / scalacOptions ++= {
     Seq(
       "-sourcepath",
       (LocalRootProject / baseDirectory).value.getAbsolutePath,
@@ -141,10 +141,10 @@ lazy val commonSettings = Def.settings(
       s"https://github.com/atnos-org/eff/tree/${hash()}€{FILE_PATH}.scala"
     )
   },
-  (Compile / doc / scalacOptions) := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
+  Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
   libraryDependencies ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((3, _)) =>
+      case Some(3, _) =>
         Nil
       case _ =>
         Seq(
@@ -168,7 +168,7 @@ lazy val commonJsSettings = Seq(
     val a = (LocalRootProject / baseDirectory).value.toURI.toString
     val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
     val key = CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((3, _)) =>
+      case Some(3, _) =>
         "-scalajs-mapSourceURI"
       case _ =>
         "-P:scalajs:mapSourceURI"
@@ -209,7 +209,7 @@ lazy val publishSettings =
     scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/eff"), "scm:git:git@github.com:atnos-org/eff.git")),
     autoAPIMappings := true,
     apiURL := Some(url("http://atnos.org/eff/api/")),
-    pomExtra := (
+    pomExtra :=
       <developers>
       <developer>
         <id>etorreborre</id>
@@ -217,7 +217,6 @@ lazy val publishSettings =
         <url>https://github.com/etorreborre/</url>
       </developer>
     </developers>
-    )
   ) ++ credentialSettings ++ sharedPublishSettings
 
 lazy val noPublishSettings = Seq(
@@ -236,7 +235,7 @@ lazy val commonScalacOptions = Def.setting {
     "-unchecked",
   ) ++ {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, _)) =>
+      case Some(2, _) =>
         Seq(
           "-Xlint",
           "-Xlint:-nullary-unit",
@@ -248,11 +247,11 @@ lazy val commonScalacOptions = Def.setting {
     }
   } ++ {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, v)) if v >= 13 =>
+      case Some(2, v) if v >= 13 =>
         Seq(
           "-Ymacro-annotations"
         )
-      case Some((3, _)) =>
+      case Some(3, _) =>
         Seq(
           "-no-indent",
           "-Ykind-projector",
@@ -297,7 +296,7 @@ buildInfoPackage := "org.atnos.eff"
 
 lazy val warnUnusedImport = Seq(
   Compile / console / scalacOptions ~= { _.filterNot("-Ywarn-unused-import" == _) },
-  (Test / console / scalacOptions) := (Compile / console / scalacOptions).value
+  Test / console / scalacOptions := (Compile / console / scalacOptions).value
 )
 
 lazy val credentialSettings = Seq(
@@ -352,7 +351,7 @@ lazy val disableScala3 = Def.settings(
     }
   },
   Seq(Compile, Test).map { x =>
-    (x / sources) := {
+    x / sources := {
       if (scalaBinaryVersion.value == "3") {
         Nil
       } else {
@@ -367,7 +366,7 @@ lazy val disableScala3 = Def.settings(
       (Test / test).value
     }
   },
-  publish / skip := (scalaBinaryVersion.value == "3"),
+  publish / skip := scalaBinaryVersion.value == "3",
 )
 
 Global / excludeLintKeys ++= Set(

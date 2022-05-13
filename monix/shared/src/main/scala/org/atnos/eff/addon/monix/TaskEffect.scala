@@ -90,14 +90,14 @@ trait TaskInterpretation extends TaskTypes {
   def taskAttempt[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, Throwable Either A] =
     interpret.interceptNatM[R, Task, Either[Throwable, *], A](
       e,
-      new (Task ~> (Task of Either[Throwable, *])#l) {
+      new Task ~> (Task of Either[Throwable, *])#l {
         def apply[X](fa: Task[X]): Task[Throwable Either X] =
           fa.attempt
       }
     )
 
   def forkTasks[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, A] =
-    interpret.interceptNat[R, Task, A](e)(new (Task ~> Task) {
+    interpret.interceptNat[R, Task, A](e)(new Task ~> Task {
       def apply[X](fa: Task[X]): Task[X] =
         fa.executeAsync
     })

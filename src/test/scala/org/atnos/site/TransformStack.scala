@@ -103,11 +103,11 @@ A typical use case for this is to transform a stack having a `Reader[S, *]` effe
         h <- OptionEffect.some[S2, String]("world")
       } yield h
 
-      val fromHost = new (ReaderHost ~> ReaderConf) {
+      val fromHost = new ReaderHost ~> ReaderConf {
         def apply[X](r: ReaderHost[X]) = Reader((c: Conf) => r.run(c.host))
       }
 
-      val fromPort = new (ReaderPort ~> ReaderConf) {
+      val fromPort = new ReaderPort ~> ReaderConf {
         def apply[X](r: ReaderPort[X]) = Reader((c: Conf) => r.run(c.port))
       }
 

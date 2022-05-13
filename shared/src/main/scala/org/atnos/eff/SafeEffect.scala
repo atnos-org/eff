@@ -64,7 +64,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
     def onPure(a: A): Eff[R, Out[A]] =
       last match {
         case None => Eff.pure((Right(a), errors.toList))
-        case Some((l, m)) =>
+        case Some(l, m) =>
           attempt(l)(m) flatMap {
             case Left(t) => outer.finalizerException[R](t)(m) >> pure((Right(a), errors.toList))
             case Right(_) => pure((Right(a), errors.toList))
@@ -81,7 +81,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
                   case None =>
                     Eff.pure((Left(e), errors.toList))
 
-                  case Some((l, m)) =>
+                  case Some(l, m) =>
                     attempt(l)(m) flatMap {
                       case Left(t) => outer.finalizerException[R](t)(m) >> outer.exception[R, Out[A]](e)(m)
                       case Right(_) => outer.exception[R, Out[A]](e)(m)
@@ -108,7 +108,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
             case Left(e) =>
               last match {
                 case None => Eff.pure(())
-                case Some((l, m)) =>
+                case Some(l, m) =>
                   attempt(l)(m) flatMap {
                     case Left(t) => outer.finalizerException[R](t)(m) >> outer.exception[R, Unit](e)(m)
                     case Right(_) => outer.exception[R, Unit](e)(m)
@@ -118,7 +118,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
             case Right(x) =>
               last match {
                 case None => Eff.impure(x, continuation)
-                case Some((l, m)) =>
+                case Some(l, m) =>
                   attempt(l)(m) flatMap {
                     case Left(t) => outer.finalizerException[R](t)(m) >> Eff.impure(x, continuation)
                     case Right(_) => Eff.impure(x, continuation)
@@ -162,7 +162,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
             case None =>
               Eff.pure((Left(t), errors.toList))
 
-            case Some((l, m)) =>
+            case Some(l, m) =>
               attempt(l)(m) flatMap {
                 case Left(t1) => outer.finalizerException[R](t1)(m) >> outer.exception[R, Out[A]](t)(m)
                 case Right(_) => exception[R, Out[A]](t)(m)

@@ -486,7 +486,7 @@ trait EffInterpretation {
     var seqKey = 0
     def incrementSeqKey = { val s = seqKey; seqKey += 1; s }
 
-    interpret.interceptNat[R, M, A](e)(new (M ~> M) {
+    interpret.interceptNat[R, M, A](e)(new M ~> M {
       def apply[X](fa: M[X]): M[X] = cached.apply(cache, key, incrementSeqKey, fa)
     })
 

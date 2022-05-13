@@ -230,7 +230,7 @@ object ErrorEffect extends ErrorEffect[String] {
     trace(t).linesIterator.map(line => indent + line).mkString("\n")
 }
 
-case class Evaluate[F, A](run: (Throwable Either F) Either cats.Eval[A])
+case class Evaluate[F, A](run: Throwable Either F Either cats.Eval[A])
 
 object Evaluate {
   def ok[F, A](a: => A) = Evaluate[F, A](Right(cats.Eval.later(a)))

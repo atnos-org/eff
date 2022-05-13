@@ -15,7 +15,7 @@ import scala.annotation.tailrec
  * to add its own effect. See SafeEffect.bracket
  *
  */
-case class Continuation[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: Last[R] = Last.none[R]) extends (A => Eff[R, B]) {
+case class Continuation[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: Last[R] = Last.none[R]) extends A => Eff[R, B] {
 
   /**
    * append a new monadic function to this list of functions such that

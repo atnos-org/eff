@@ -36,7 +36,7 @@ trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
       })
 
     def interceptErrors[Y](effect: Eff[U, Y])(oops: F[Unit]): Eff[U, Y] =
-      interpret.interceptNat(effect)(new (F ~> F) {
+      interpret.interceptNat(effect)(new F ~> F {
         def apply[X](f: F[X]): F[X] =
           f.handleErrorWith((err: Throwable) => oops *> me.raiseError[X](err))
       })

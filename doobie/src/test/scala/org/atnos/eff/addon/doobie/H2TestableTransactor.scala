@@ -38,7 +38,7 @@ object H2TestableTransactor {
 
     val pool = JdbcConnectionPool.create(url, user, pass)
 
-    val c = new OpHistory()
+    val c = new OpHistory
 
     val ec = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool)
 

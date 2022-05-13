@@ -14,7 +14,7 @@ object SubscribeEffect {
 
   type Callback[A] = (Throwable Either A) => Unit
 
-  sealed trait Subscribe[A] extends (Callback[A] => Unit) {
+  sealed trait Subscribe[A] extends Callback[A] => Unit {
     def memoizeKey: Option[(AnyRef, Cache)]
     def unmemoize: Subscribe[A]
   }
@@ -44,7 +44,7 @@ object SubscribeEffect {
 
   type FS = Fx.fx1[Subscribe]
 
-  def subscribeToAttemptedSubscribe = new (Subscribe ~> AttemptedSubscribe) {
+  def subscribeToAttemptedSubscribe = new Subscribe ~> AttemptedSubscribe {
 
     def apply[X](subscribe: Subscribe[X]): AttemptedSubscribe[X] =
       AttemptedSubscribe((c: Callback[Throwable Either X]) => subscribe((tx: Throwable Either X) => c(Right(tx))))

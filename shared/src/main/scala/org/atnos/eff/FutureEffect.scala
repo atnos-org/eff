@@ -121,7 +121,7 @@ trait FutureInterpretation extends FutureTypes {
   final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, Throwable Either A] =
     interpret.interceptNatM[R, TimedFuture, Either[Throwable, *], A](
       e,
-      new (TimedFuture ~> ({ type l[a] = TimedFuture[Either[Throwable, a]] })#l) {
+      new TimedFuture ~> ({ type l[a] = TimedFuture[Either[Throwable, a]] })#l {
         override def apply[X](fa: TimedFuture[X]): TimedFuture[Throwable Either X] = attempt(fa)
       }
     )
@@ -164,7 +164,7 @@ trait FutureInterpretation extends FutureTypes {
     */
   final def futureMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, A] =
     interpret.interceptNat[R, TimedFuture, A](e)(
-      new (TimedFuture ~> TimedFuture) {
+      new TimedFuture ~> TimedFuture {
         override def apply[X](fa: TimedFuture[X]): TimedFuture[X] = memoize(key, cache, fa)
       }
     )

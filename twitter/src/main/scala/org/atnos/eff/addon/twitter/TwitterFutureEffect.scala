@@ -127,7 +127,7 @@ trait TwitterFutureCreation extends TwitterFutureTypes {
     Eff.send(TwitterTimedFuture((_, scheduler) => Future.Unit.delayed(Duration.fromNanoseconds(duration.toNanos))(twitterTimer)))
 
   val twitterTimer: JavaTimer =
-    new JavaTimer()
+    new JavaTimer
 }
 
 trait TwitterFutureInterpretation extends TwitterFutureTypes {
@@ -143,7 +143,7 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
   final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, Throwable Either A] =
     interpret.interceptNatM[R, TwitterTimedFuture, Either[Throwable, *], A](
       e,
-      new (TwitterTimedFuture ~> (TwitterTimedFuture of Either[Throwable, *])#l) {
+      new TwitterTimedFuture ~> (TwitterTimedFuture of Either[Throwable, *])#l {
         override def apply[X](fa: TwitterTimedFuture[X]): TwitterTimedFuture[Throwable Either X] = attempt(fa)
       }
     )
