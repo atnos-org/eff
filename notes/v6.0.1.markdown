@@ -1,0 +1,3 @@
+- [Update cats-effect to 3.3.12](https://github.com/atnos-org/eff/commit/fd09137080cd8e6a1fd3e2c19f7a6956c048f454)
+- [Update monix to 3.4.1](https://github.com/atnos-org/eff/commit/50667002788b250a4f742ec68d36829a6ca0d4ee)
+- [Update twitter util-core to 22.4.0](https://github.com/atnos-org/eff/commit/a5f6315e4a7e53b96fe71e48336bab6afb65b22b)
