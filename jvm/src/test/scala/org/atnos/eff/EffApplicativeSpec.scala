@@ -137,7 +137,7 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
         case Impure(UnionTagged(GetUser(i), _), c, _) =>
           runDsl(c.cast[Continuation[Fx1[UserDsl], User, A]].apply(getWebUser(i)))
         case Impure(UnionTagged(GetUsers(is), _), c, _) =>
-          runDsl(c.cast[Continuation[Fx1[UserDsl], List[User], A]].apply((getWebUsers(is))))
+          runDsl(c.cast[Continuation[Fx1[UserDsl], List[User], A]].apply(getWebUsers(is)))
         case ap @ ImpureAp(u, m, _) =>
           runDsl(ap.toMonadic)
         case Impure(_, _, _) =>
