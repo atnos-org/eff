@@ -132,6 +132,7 @@ lazy val buildSettings = Seq(
 
 lazy val commonSettings = Def.settings(
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.7.0",
+  libraryDependencies ++= specs2.value,
   scalacOptions ++= commonScalacOptions.value,
   (Compile / doc / scalacOptions) ++= {
     Seq(
@@ -156,7 +157,6 @@ lazy val commonSettings = Def.settings(
 
 lazy val commonJsSettings = Seq(
   parallelExecution := false,
-  libraryDependencies ++= specs2.value,
   scalacOptions ++= {
     if (scalaBinaryVersion.value == "3") {
       Nil
@@ -178,7 +178,6 @@ lazy val commonJsSettings = Seq(
 )
 
 lazy val commonJvmSettings = Seq(
-  libraryDependencies ++= specs2.value,
   Test / fork := true,
   Global / cancelable := true,
   Test / scalacOptions ~= (_.filterNot(_ == "-Xfatal-warnings")),
@@ -193,10 +192,6 @@ lazy val commonJvmSettings = Seq(
 
 lazy val commonNativeSettings = Def.settings(
   disableScala3, // TODO https://github.com/typelevel/cats/issues/4117
-  Test / loadedTestFrameworks := Map.empty,
-  Test / sources := Nil,
-  test := {},
-  Test / testOnly := {},
 )
 
 lazy val effSettings =
@@ -327,6 +322,9 @@ lazy val specs2 = Def.setting(
     _.exclude(
       "org.specs2",
       "xml_sjs1_" + scalaBinaryVersion.value
+    ).exclude(
+      "org.specs2",
+      "xml_native0.4_" + scalaBinaryVersion.value
     )
   )
 )
