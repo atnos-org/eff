@@ -4,6 +4,7 @@ import cats._
 import cats.syntax.all._
 import Eff._
 import EffCompat._
+import scala.annotation.tailrec
 import scala.concurrent.duration.FiniteDuration
 
 /**
@@ -452,7 +453,8 @@ trait EffInterpretation {
   /**
    * get the pure value if there is no effect
    */
-  def runPure[R, A](eff: Eff[R, A]): Option[A] =
+  @tailrec
+  final def runPure[R, A](eff: Eff[R, A]): Option[A] =
     eff match {
       case Pure(a, Last(Some(l))) => l.value; Some(a)
       case Pure(a, _) => Some(a)
