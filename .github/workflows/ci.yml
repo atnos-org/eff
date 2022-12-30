@@ -34,8 +34,8 @@ jobs:
     steps:
     - name: Install pandoc
       run: |
-        wget https://github.com/jgm/pandoc/releases/download/2.17.0.1/pandoc-2.17.0.1-1-amd64.deb
-        sudo dpkg -i pandoc-2.17.0.1-1-amd64.deb
+        wget https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.19.2-1-amd64.deb
+        sudo dpkg -i pandoc-2.19.2-1-amd64.deb
         pandoc --version
     - uses: actions/setup-java@1df8dbefe2a8cbc99770194893dd902763bee34b # v3.9.0
       with:
