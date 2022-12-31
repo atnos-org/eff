@@ -4,6 +4,8 @@ on:
   push:
   schedule:
   - cron: '0 0 * * 0'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   test:
     runs-on: ubuntu-latest
