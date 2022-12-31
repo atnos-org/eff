@@ -323,8 +323,8 @@ typeclasses">Know your Membe...</a>
 “monad stack” used when talking about monad transformers. With
 <code class="prettyprint">Eff</code> though, effects are modelled differently, as a tree of
 effects.</p>
-<p>For example the type level representation of four effects <code class="prettyprint">T1,
-T2, T3, T4</code> is represented as:</p>
+<p>For example the type level representation of four effects
+<code class="prettyprint">T1, T2, T3, T4</code> is represented as:</p>
 <pre><code class="prettyprint">Fx.fx4[T1, T2, T3, T4]
 
 // or
@@ -374,10 +374,10 @@ compiles ok:</p>
 another</h3>
 <h4 id="change-the-effect">Change the effect</h4>
 <p>A typical use case for this is to transform a stack having a
-<code class="prettyprint">Reader[S, *]</code> effect to a stack having a <code class="prettyprint">Reader[B,
-*]</code> effect where <code class="prettyprint">S</code> is “contained” in <code class="prettyprint">B</code>
-(meaning that there is a mapping from <code class="prettyprint">B</code>, “big”, to
-<code class="prettyprint">S</code>, “small”). Here is an example:</p>
+<code class="prettyprint">Reader[S, *]</code> effect to a stack having a
+<code class="prettyprint">Reader[B, *]</code> effect where <code class="prettyprint">S</code> is “contained” in
+<code class="prettyprint">B</code> (meaning that there is a mapping from <code class="prettyprint">B</code>,
+“big”, to <code class="prettyprint">S</code>, “small”). Here is an example:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._
       import org.atnos.eff.syntax.all._
       import cats._
@@ -421,13 +421,14 @@ another</h3>
 <p>There are also specialized versions of <code class="prettyprint">transform</code> for
 <code class="prettyprint">Reader</code> and <code class="prettyprint">State</code>:</p>
 <ul>
-<li><code class="prettyprint">ReaderEffect.localReader</code> takes a “getter” <code class="prettyprint">B =&gt;
-A</code> to transform a stack with a <code class="prettyprint">Reader[A, *]</code> into a
-stack with a <code class="prettyprint">Reader[B, *]</code></li>
-<li><code class="prettyprint">StateEffect.lensState</code> takes a “getter” <code class="prettyprint">S =&gt;
-T</code> and a “setter” <code class="prettyprint">(S, T) =&gt; S</code> to to transform a
-stack with a <code class="prettyprint">State[T, *]</code> into a stack with a <code class="prettyprint">State[S,
-*]</code></li>
+<li><code class="prettyprint">ReaderEffect.localReader</code> takes a “getter”
+<code class="prettyprint">B =&gt; A</code> to transform a stack with a
+<code class="prettyprint">Reader[A, *]</code> into a stack with a
+<code class="prettyprint">Reader[B, *]</code></li>
+<li><code class="prettyprint">StateEffect.lensState</code> takes a “getter”
+<code class="prettyprint">S =&gt; T</code> and a “setter” <code class="prettyprint">(S, T) =&gt; S</code> to to
+transform a stack with a <code class="prettyprint">State[T, *]</code> into a stack with a
+<code class="prettyprint">State[S, *]</code></li>
 </ul>
 <h3 id="translate-an-effect-into-multiple-others">Translate an effect
 into multiple others</h3>
@@ -612,8 +613,7 @@ each stack into this common stack:</p>
 
       // and we can run the composite action
       action.runReader(S3Conf(&quot;bucket&quot;)).runReader(HadoopConf(10)).runWriter.runEval.run</code></pre>
-<p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket:
-10))</code></p>
+<p><code class="prettyprint">&gt; ((),List(Reading from /tmp/data, Writing to bucket bucket: 10))</code></p>
 <p>You can find a fully working example of this approach in
 <code class="prettyprint">src/test/org/atnos/example/StacksSpec</code>.</p>
 </div>

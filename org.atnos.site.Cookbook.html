@@ -393,8 +393,7 @@ additional effects, like state, within one part.</p>
       type Stack = Fx.fx2[EitherString, WriterString]
 
       incrementNTimes[Stack](3, 2).runWriter.runEither.run</code></pre>
-<p><code class="prettyprint">&gt; Right((6,List(counter == 4, counter == 5, counter ==
-6)))</code></p>
+<p><code class="prettyprint">&gt; Right((6,List(counter == 4, counter == 5, counter == 6)))</code></p>
 </div>
 
 <script>

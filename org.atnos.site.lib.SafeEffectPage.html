@@ -357,11 +357,11 @@ and then close it safely. The <code class="prettyprint">close</code> part is a â
 Without exception: Right(55), finalizers exceptions: no exceptions, resource is closed: true
 With exception   : Left(boo), finalizers exceptions: no exceptions, resource is closed: true</code></pre>
 <p>As you can see in the signature of <code class="prettyprint">program</code> the return
-value of <code class="prettyprint">runSafe</code> is <code class="prettyprint">(Throwable Either A,
-List[Throwable])</code>. The first part is the result of your program,
-which may end with an exception, and the second part is the list of
-possible exceptions thrown by the finalizers which can themselves
-fail.</p>
+value of <code class="prettyprint">runSafe</code> is
+<code class="prettyprint">(Throwable Either A, List[Throwable])</code>. The first part is
+the result of your program, which may end with an exception, and the
+second part is the list of possible exceptions thrown by the finalizers
+which can themselves fail.</p>
 <p>A simpler version of <code class="prettyprint">bracket</code> is
 <code class="prettyprint">finally</code>.</p>
 <p>This example show how to use <code class="prettyprint">finally</code> but also what
