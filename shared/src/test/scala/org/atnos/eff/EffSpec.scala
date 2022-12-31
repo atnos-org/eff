@@ -359,14 +359,10 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
 
   import OptionEffect._
 
-  implicit val eqEffInt: Eq[F[Int]] = new Eq[F[Int]] {
-    def eqv(x: F[Int], y: F[Int]): Boolean =
-      runOption(x).run == runOption(y).run
-  }
+  implicit val eqEffInt: Eq[F[Int]] =
+    (x: F[Int], y: F[Int]) => runOption(x).run == runOption(y).run
 
-  implicit val eqEffInt3: Eq[F[(Int, Int, Int)]] = new Eq[F[(Int, Int, Int)]] {
-    def eqv(x: F[(Int, Int, Int)], y: F[(Int, Int, Int)]): Boolean =
-      runOption(x).run == runOption(y).run
-  }
+  implicit val eqEffInt3: Eq[F[(Int, Int, Int)]] =
+    (x: F[(Int, Int, Int)], y: F[(Int, Int, Int)]) => runOption(x).run == runOption(y).run
 
 }

@@ -30,8 +30,7 @@ package object scalaz {
       Eff.EffApplicative[R].ap(ff)(fa)
   }
 
-  def catsSemigroup[A](s: Semigroup[A]): cats.Semigroup[A] = new cats.Semigroup[A] {
-    def combine(x: A, y: A): A = s.append(x, y)
-  }
+  def catsSemigroup[A](s: Semigroup[A]): cats.Semigroup[A] =
+    (x: A, y: A) => s.append(x, y)
 
 }
