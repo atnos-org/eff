@@ -5,7 +5,7 @@ object index extends UserGuidePage {
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
 This library is based on the "free-er" monad and an "open union" of effects described by
-Oleg Kiselyov in [Freer monads, more extensible effects](http://okmij.org/ftp/Haskell/extensible/more.pdf).
+Oleg Kiselyov in [Freer monads, more extensible effects](https://okmij.org/ftp/Haskell/extensible/more.pdf).
 
 You can learn more in the following sections, it is recommended to read them in order if you are new to `eff`:
 

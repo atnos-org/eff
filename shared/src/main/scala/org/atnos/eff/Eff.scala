@@ -49,7 +49,7 @@ import scala.concurrent.duration.FiniteDuration
  * Since this last action will be executed, its value never collected so if it throws an exception it is possible
  * to print it by defining the eff.debuglast system property (-Deff.debuglast=true)
  *
- * @see [[http://okmij.org/ftp/Haskell/extensible/more.pdf]]
+ * @see [[https://okmij.org/ftp/Haskell/extensible/more.pdf]]
  *
  */
 sealed trait Eff[R, A] {

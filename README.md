@@ -5,7 +5,7 @@
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
 This library is based on the "free-er" monad and extensible effects described in
-Oleg Kiselyov in [Freer monads, more extensible effects](http://okmij.org/ftp/Haskell/extensible/more.pdf).
+Oleg Kiselyov in [Freer monads, more extensible effects](https://okmij.org/ftp/Haskell/extensible/more.pdf).
 
 You can learn more in the User Guide:
 

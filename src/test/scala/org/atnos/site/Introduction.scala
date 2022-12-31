@@ -9,7 +9,7 @@ object Introduction extends UserGuidePage {
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
 This library uses a "free-er" monad and extensible effects to create an "effect stack" as described in
-[Oleg Kiselyov's paper](http://okmij.org/ftp/Haskell/extensible/more.pdf).
+[Oleg Kiselyov's paper](https://okmij.org/ftp/Haskell/extensible/more.pdf).
 
 There are lots of advantages to this approach:
 
