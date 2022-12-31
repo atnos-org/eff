@@ -16,6 +16,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.ThrownExpectations
 import scala.concurrent._
 import duration._
+import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
 class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
@@ -128,6 +129,7 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
     def getWebUser(i: Int): User = User(i)
     def getWebUsers(is: List[Int]): List[User] = is.map(i => User(i))
 
+    @tailrec
     def runDsl[A](eff: Eff[Fx1[UserDsl], A]): A =
       eff match {
         case Pure(a, _) =>
