@@ -2,14 +2,11 @@ package org.atnos.eff
 
 import java.util.concurrent.TimeoutException
 import cats._
-import cats.syntax.all._
 import org.atnos.eff.concurrent.Scheduler
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.util.Failure
-import scala.util.Success
 
 object FutureCreation extends FutureCreation
 
@@ -131,10 +128,7 @@ trait FutureInterpretation extends FutureTypes {
       val prom = Promise[Throwable Either A]()
       a.runNow(scheduler, ec)
         .onComplete { t =>
-          prom.success(t match {
-            case Failure(ex) => Either.left(ex)
-            case Success(v) => Either.right(v)
-          })
+          prom.success(t.toEither)
         }(ec)
       prom.future
     })
