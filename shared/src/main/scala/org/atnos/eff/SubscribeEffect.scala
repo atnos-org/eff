@@ -94,7 +94,7 @@ object SubscribeEffect {
     var sub = subSequenceKey
 
     def cacheKey =
-      key.toString + "-" + sequenceKey + "-" + sub
+      s"${key}-${sequenceKey}-${sub}"
 
     def materialize(u: Union[FS, Any]): Union[FS, Any] = {
       val tagged = u.tagged
