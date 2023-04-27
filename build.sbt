@@ -1,6 +1,6 @@
 import org.scalajs.jsenv.nodejs._
 
-lazy val specs2Version = Def.setting("4.19.2")
+lazy val specs2Version = Def.setting("4.20.0")
 lazy val twitterUtilVersion = "22.12.0"
 lazy val doobieVersion = "0.13.4"
 
