@@ -167,7 +167,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat
     } yield x
     val v3: Eff[S, Int] = ValidateEffect.validateValue(condition = false, 6, "error2")
 
-    val prod: Eff[S, Prod] = (v1, v2, v3).mapN(Prod)
+    val prod: Eff[S, Prod] = (v1, v2, v3).mapN(Prod.apply)
     val v: Eff[S, String] = prod.map(_.toString)
 
     def catchFirstWrongValue = {

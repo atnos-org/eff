@@ -156,7 +156,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
       EitherEffect.left(Error1("boom"))
 
     val action2: Eff[R2, Unit] =
-      action1.zoomEither(Error2)
+      action1.zoomEither(Error2.apply)
 
     action2.runEither.run ==== Left(Error2(Error1("boom")))
   }
@@ -170,7 +170,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     val action1: Eff[R1, Unit] =
       EitherEffect.left(Error1("boom"))
 
-    action1.translateEither(Error2).runEither.run ==== Left(Error2(Error1("boom")))
+    action1.translateEither(Error2.apply).runEither.run ==== Left(Error2(Error1("boom")))
   }
 
   def implicitRequireLeft = {

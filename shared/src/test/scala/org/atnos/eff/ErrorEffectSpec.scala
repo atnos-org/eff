@@ -136,7 +136,7 @@ class ErrorEffectSpec extends Specification with Specs2Compat {
       // add the error1 effect locally and run it right away into error2
       type R1 = Fx.prepend[ErrorOrOk1, E]
 
-      ErrorEffect.runLocalError(action1[R1], Error2)
+      ErrorEffect.runLocalError(action1[R1], Error2.apply)
     }
 
     ErrorEffect2.runError(action2[Fx.fx1[ErrorOrOk2]]).run ==== Left(Right(Error2(Error1("boom"))))
