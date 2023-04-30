@@ -82,7 +82,7 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
 }
 
 object Unions {
-  def send[M[_], R, X](mx: M[X])(implicit m: MemberIn[M, R]) =
+  def send[M[_], R, X](mx: M[X])(implicit m: MemberIn[M, R]): Unions[R, X] =
     Unions[R, X](m.inject(mx), Vector.empty)
 }
 

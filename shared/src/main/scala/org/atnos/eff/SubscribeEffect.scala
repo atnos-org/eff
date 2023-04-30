@@ -44,7 +44,7 @@ object SubscribeEffect {
 
   type FS = Fx.fx1[Subscribe]
 
-  def subscribeToAttemptedSubscribe = new (Subscribe ~> AttemptedSubscribe) {
+  def subscribeToAttemptedSubscribe: Subscribe ~> AttemptedSubscribe = new (Subscribe ~> AttemptedSubscribe) {
 
     def apply[X](subscribe: Subscribe[X]): AttemptedSubscribe[X] =
       AttemptedSubscribe((c: Callback[Throwable Either X]) => subscribe((tx: Throwable Either X) => c(Right(tx))))

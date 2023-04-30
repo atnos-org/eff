@@ -44,7 +44,7 @@ trait StateImplicits {
   implicit def stateMemberInLens[E, S, T](implicit m: MemberIn[State[S, *], E], get: S => T, set: T => S => S): MemberIn[State[T, *], E] =
     m.transform(via(get, set))
 
-  def readerToStateNat[S1] = new (Reader[S1, *] ~> State[S1, *]) {
+  def readerToStateNat[S1]: Reader[S1, *] ~> State[S1, *] = new (Reader[S1, *] ~> State[S1, *]) {
     def apply[X](r: Reader[S1, X]): State[S1, X] =
       State((s: S1) => (s, r.run(s)))
   }

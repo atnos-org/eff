@@ -95,19 +95,19 @@ private object Batched {
 }
 
 private case class Composed[T[_]](unbatched: Vector[Batched[T]], batched: Single[T]) extends Batched[T] {
-  def effects = unbatched.flatMap(_.effects)
-  def keys = unbatched.flatMap(_.keys) ++ batched.keys
+  def effects: Vector[T[_]] = unbatched.flatMap(_.effects)
+  def keys: Vector[Int] = unbatched.flatMap(_.keys) ++ batched.keys
   def batchedEffect: T[_] = batched.batchedEffect
 
-  def append(ty: T[_], key: Int) =
+  def append(ty: T[_], key: Int): Batched[T] =
     copy(unbatched = unbatched :+ Batched.single[T, Any]((ty.asInstanceOf[T[Any]], key)))
 
-  def fuse(ty: T[_], key: Int) =
+  def fuse(ty: T[_], key: Int): Batched[T] =
     copy(batched = Single(ty, batched.keys :+ key))
 }
 
 private case class Single[T[_]](tx: T[_], keys: Vector[Int]) extends Batched[T] {
-  def effects = Vector(tx)
+  def effects: Vector[T[_]] = Vector(tx)
   def batchedEffect = tx
 
   def append(ty: T[_], key: Int): Batched[T] =
