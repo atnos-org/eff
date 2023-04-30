@@ -153,15 +153,10 @@ object Rand {
     def combineK[A](x: Rand[A], y: Rand[A]): Rand[A] =
       Rand { r =>
         if (r.nextBoolean()) {
-          x.run(r) match {
-            case Some(a) => Some(a)
-            case None => y.run(r)
-          }
-        } else
-          y.run(r) match {
-            case Some(a) => Some(a)
-            case None => x.run(r)
-          }
+          x.run(r) orElse y.run(r)
+        } else {
+          y.run(r) orElse x.run(r)
+        }
       }
 
     def flatMap[A, B](fa: Rand[A])(f: A => Rand[B]): Rand[B] =
