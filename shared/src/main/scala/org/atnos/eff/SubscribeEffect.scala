@@ -104,8 +104,8 @@ object SubscribeEffect {
     }
 
     e match {
-      case Pure(a, last) =>
-        Pure(a, last)
+      case x @ Pure(_, _) =>
+        x
 
       case Impure(NoEffect(a), c, last) =>
         memoizeSubsequence(key, sequenceKey, subSequenceKey, cache, c(a).addLast(last))

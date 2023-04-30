@@ -340,7 +340,7 @@ trait EffCreation {
   /** attach a clean-up action to the continuation (if any) */
   def whenStopped[R, A](e: Eff[R, A], action: Last[R]): Eff[R, A] =
     e match {
-      case Pure(a, l) => Pure(a, l)
+      case x @ Pure(_, _) => x
       case Impure(u, c, l) => Impure(u, c.copy(onNone = c.onNone <* action), l)
       case ImpureAp(u, c, l) => ImpureAp(u, c.copy(onNone = c.onNone <* action), l)
     }
