@@ -195,10 +195,10 @@ trait EffImplicits {
             case Right(b) => Pure(b)
           }
         case Impure(u, c, l) =>
-          Impure(u, Continuation.lift((x: u.X) => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
+          Impure(u, Continuation.lift((x: u.X) => c(x).flatMap(_.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
 
         case ImpureAp(u, c, l) =>
-          ImpureAp(u, Continuation.lift(x => c(x).flatMap(a1 => a1.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
+          ImpureAp(u, Continuation.lift(x => c(x).flatMap(_.fold(a11 => tailRecM(a11)(f), b => pure(b)))), l)
       }
   }
 

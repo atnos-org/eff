@@ -11,7 +11,7 @@ case class Last[R](value: Option[Eval[Eff[R, Unit]]]) {
 
   /** interpret this last action as a set of effects in another stack */
   def interpret[U](n: Eff[R, Unit] => Eff[U, Unit]): Last[U] =
-    Last[U](value.map(v => v.map(n)))
+    Last[U](value.map(_.map(n)))
 
   def interpretEff[U](n: Last[R] => Eff[U, Unit]): Last[U] =
     Last.eff(n(this))

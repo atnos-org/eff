@@ -76,8 +76,8 @@ class EffMacros(val c: blackbox.Context) {
         }
 
         def nonStackParams(paramss: List[List[ValDef]]) = {
-          paramss.map { params =>
-            params.filter {
+          paramss.map {
+            _.filter {
               case ValDef(_, _, AppliedTypeTree(Ident(name), _), _) => name != typeAlias.name
               case _ => true
             }
