@@ -217,7 +217,7 @@ Now if we run our program for a Stack combining both effects and type in "snuggl
 
       type Stack = Fx.fx2[Interact, DataOp]
 
-      runInteract(runDataOp(program[Stack]))
+      runInteract(runDataOp(program[Stack])).run
     }}
 ```
 What's the kitty's name?
