@@ -68,7 +68,7 @@ trait AdtInterpreterSafeSnippet {
           case Delete(key) =>
             for {
               _ <- tell(s"delete($key)")
-              u <- modify((map: Map[String, Any]) => map - key)
+              _ <- modify((map: Map[String, Any]) => map - key)
               r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
             } yield r
         }
