@@ -212,12 +212,12 @@ Now if we run our program for a Stack combining both effects and type in "snuggl
       import UserInteractionSnippet._
       import UserInteractionInterpretersSnippet._
       import UserInteractionProgramSnippet._
-      import org.atnos.eff._
+      import org.atnos.eff._, syntax.all._
 // 8<--
 
       type Stack = Fx.fx2[Interact, DataOp]
 
-      runInteract(runDataOp(program[Stack]))
+      runInteract(runDataOp(program[Stack])).run
     }}
 ```
 What's the kitty's name?
