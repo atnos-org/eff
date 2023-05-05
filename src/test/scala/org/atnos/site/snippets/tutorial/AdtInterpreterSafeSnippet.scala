@@ -55,21 +55,21 @@ trait AdtInterpreterSafeSnippet {
             for {
               _ <- tell(s"put($key, $value)")
               _ <- modify((map: Map[String, Any]) => map.updated(key, value))
-              r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
+              r <- fromEither(Either.catchNonFatal(()))
             } yield r
 
           case Get(key) =>
             for {
               _ <- tell(s"get($key)")
               m <- get[U, Map[String, Any]]
-              r <- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
+              r <- fromEither(Either.catchNonFatal(m.get(key)))
             } yield r
 
           case Delete(key) =>
             for {
               _ <- tell(s"delete($key)")
               _ <- modify((map: Map[String, Any]) => map - key)
-              r <- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
+              r <- fromEither(Either.catchNonFatal(()))
             } yield r
         }
     })

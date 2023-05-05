@@ -40,16 +40,16 @@ trait AdtInterpreterSnippet {
           case Put(key, value) =>
             println(s"put($key, $value)")
             kvs.put(key, value)
-            ().asInstanceOf[X]
+            ()
 
           case Get(key) =>
             println(s"get($key)")
-            kvs.get(key).asInstanceOf[X]
+            kvs.get(key)
 
           case Delete(key) =>
             println(s"delete($key)")
             kvs.remove(key)
-            ().asInstanceOf[X]
+            ()
         }
 
       def applicative[X, Tr[_]: Traverse](ms: Tr[KVStore[X]]): Tr[X] =
