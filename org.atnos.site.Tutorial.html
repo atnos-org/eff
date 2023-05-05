@@ -464,16 +464,16 @@ abstract language into concrete values.</p>
           case Put(key, value) =&gt;
             println(s&quot;put($key, $value)&quot;)
             kvs.put(key, value)
-            ().asInstanceOf[X]
+            ()
 
           case Get(key) =&gt;
             println(s&quot;get($key)&quot;)
-            kvs.get(key).asInstanceOf[X]
+            kvs.get(key)
 
           case Delete(key) =&gt;
             println(s&quot;delete($key)&quot;)
             kvs.remove(key)
-            ().asInstanceOf[X]
+            ()
         }
 
       def applicative[X, Tr[_]: Traverse](ms: Tr[KVStore[X]]): Tr[X] =
@@ -545,21 +545,21 @@ delegate the results to other effects in the same stack:</p>
             for {
               _ &lt;- tell(s&quot;put($key, $value)&quot;)
               _ &lt;- modify((map: Map[String, Any]) =&gt; map.updated(key, value))
-              r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
+              r &lt;- fromEither(Either.catchNonFatal(()))
             } yield r
 
           case Get(key) =&gt;
             for {
               _ &lt;- tell(s&quot;get($key)&quot;)
               m &lt;- get[U, Map[String, Any]]
-              r &lt;- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
+              r &lt;- fromEither(Either.catchNonFatal(m.get(key)))
             } yield r
 
           case Delete(key) =&gt;
             for {
               _ &lt;- tell(s&quot;delete($key)&quot;)
               _ &lt;- modify((map: Map[String, Any]) =&gt; map - key)
-              r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
+              r &lt;- fromEither(Either.catchNonFatal(()))
             } yield r
         }
     })
