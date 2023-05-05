@@ -558,7 +558,7 @@ delegate the results to other effects in the same stack:</p>
           case Delete(key) =&gt;
             for {
               _ &lt;- tell(s&quot;delete($key)&quot;)
-              u &lt;- modify((map: Map[String, Any]) =&gt; map - key)
+              _ &lt;- modify((map: Map[String, Any]) =&gt; map - key)
               r &lt;- fromEither(Either.catchNonFatal(().asInstanceOf[X]))
             } yield r
         }
@@ -769,7 +769,7 @@ instances for those effects:</p>
 in “snuggles” when prompted, we see something like this:</p>
 <pre><code class="prettyprint">      type Stack = Fx.fx2[Interact, DataOp]
 
-      runInteract(runDataOp(program[Stack]))</code></pre>
+      runInteract(runDataOp(program[Stack])).run</code></pre>
 <pre><code class="prettyprint">What&#39;s the kitty&#39;s name?
 Current cats: snuggles</code></pre>
 </div>
