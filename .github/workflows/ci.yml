@@ -49,7 +49,7 @@ jobs:
       run: sbt -v "testOnly *index* -- html html.search html.toc html.nostats html.outdir target/specs2-reports/site all"
     - name: Push to gh-pages
       if: ${{ github.repository_owner == 'atnos-org' && github.ref == 'refs/heads/master' && github.event_name == 'push' }}
-      uses: JamesIves/github-pages-deploy-action@22a6ee251d6f13c6ab1ecb200d974f1a6feb1b8d # v4.4.2
+      uses: JamesIves/github-pages-deploy-action@a1ea191d508feb8485aceba848389d49f80ca2dc # v4.4.3
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
