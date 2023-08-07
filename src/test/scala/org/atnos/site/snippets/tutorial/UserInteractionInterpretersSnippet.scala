@@ -6,7 +6,7 @@ import UserInteractionSnippet._
 trait UserInteractionInterpretersSnippet {
 // 8<---
   import cats._
-  import cats.implicits._
+  import cats.syntax.all._
   import org.atnos.eff._
   import interpret._
 

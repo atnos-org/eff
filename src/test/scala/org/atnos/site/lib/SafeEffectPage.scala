@@ -78,7 +78,7 @@ Finally (no pun intended!) note that you can use `execSafe` if you are not inter
 
 """
 
-  import cats.implicits._
+  import cats.syntax.all._
 
   def showResult1(message: String, result: (Throwable Either Int, List[Throwable]), resourceMessage: String, closed: Boolean) =
     result match {

@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats.implicits._
+import cats.syntax.all._
 import org.atnos.eff.all._
 import org.atnos.eff.future._
 import org.atnos.eff.syntax.all._

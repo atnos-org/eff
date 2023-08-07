@@ -11,7 +11,7 @@ computation with the same key will return the previously computed value. When in
 be provided: ${snippet {
 
       import cats.Eval
-      import cats.implicits._
+      import cats.syntax.all._
       import org.atnos.eff._, memo._
       import org.atnos.eff.syntax.memo._
       import org.atnos.eff.syntax.eval._

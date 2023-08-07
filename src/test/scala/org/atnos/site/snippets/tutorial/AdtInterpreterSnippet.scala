@@ -9,7 +9,7 @@ trait AdtInterpreterSnippet {
   import org.atnos.eff._
   import interpret._
   import cats.Traverse
-  import cats.implicits._
+  import cats.syntax.all._
   import scala.collection.mutable._
 
   /**

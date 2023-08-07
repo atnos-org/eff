@@ -59,7 +59,7 @@ There are corresponding syntax imports to be able to call `runAsync` methods in:
 <p/>
 
 ${snippet {
-      import cats.implicits._
+      import cats.syntax.all._
       import org.atnos.eff._, future._, all._
       import org.atnos.eff.concurrent.Scheduler
       import org.atnos.eff.syntax.all._
