@@ -7,7 +7,7 @@ import cats.effect.Bracket
 import cats.syntax.all._
 import cats.~>
 import org.atnos.eff._
-import org.atnos.eff.all._
+import org.atnos.eff.eff._
 
 trait DoobieConnectionIOTypes {
   type _connectionIO[R] = ConnectionIO |= R
