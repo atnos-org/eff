@@ -9,6 +9,6 @@ object eval extends eval
 trait eval {
 
   def attemptEvalDisjunction[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Throwable \/ A] =
-    org.atnos.eff.all.attemptEval(r).map(_.fold(\/.left, \/.right))
+    org.atnos.eff.eval.attemptEval(r).map(_.fold(\/.left, \/.right))
 
 }
