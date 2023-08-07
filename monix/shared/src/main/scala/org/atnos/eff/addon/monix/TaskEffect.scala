@@ -5,7 +5,7 @@ import cats.effect._
 import monix.eval._
 import monix.execution._
 import org.atnos.eff._
-import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.eff._
 import scala.concurrent.duration.FiniteDuration
 import scala.util._
 

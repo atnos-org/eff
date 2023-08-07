@@ -58,7 +58,7 @@ class EffMacrosSpec extends Specification {
 
   def generatesSideEffectInterpreter = {
 
-    import org.atnos.eff._, syntax.all._
+    import org.atnos.eff.syntax.eff._
     import scala.collection.mutable._
 
     val sideEffect = new KVStoreDsl.SideEffect {

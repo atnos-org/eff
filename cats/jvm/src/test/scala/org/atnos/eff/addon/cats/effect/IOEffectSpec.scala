@@ -1,7 +1,8 @@
 package org.atnos.eff.addon.cats.effect
 
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
+import org.atnos.eff.option._
+import org.atnos.eff.syntax.eff._
+import org.atnos.eff.syntax.option._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 import org.atnos.eff._

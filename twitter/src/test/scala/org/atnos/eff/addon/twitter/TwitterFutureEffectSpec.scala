@@ -6,8 +6,11 @@ import org.atnos.eff.addon.twitter.future._
 import org.atnos.eff.syntax.addon.twitter.future._
 import cats.implicits._
 import org.atnos.eff._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
+import org.atnos.eff.choose._
+import org.atnos.eff.option._
+import org.atnos.eff.syntax.choose._
+import org.atnos.eff.syntax.eff._
+import org.atnos.eff.syntax.option._
 import org.specs2._
 import org.specs2.concurrent.ExecutionEnv
 import scala.collection.mutable.ListBuffer

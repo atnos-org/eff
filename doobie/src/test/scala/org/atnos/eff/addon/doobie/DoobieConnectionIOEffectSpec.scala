@@ -7,7 +7,7 @@ import cats.effect._
 import org.atnos.eff.Eff
 import org.atnos.eff.Fx
 import org.atnos.eff.Specs2Compat
-import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.eff._
 import org.atnos.eff.syntax.addon.doobie._
 import org.specs2.matcher.ThrownExpectations
 import org.specs2.matcher.ValueCheck
