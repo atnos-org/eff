@@ -21,7 +21,7 @@ The example below shows how we can do this
 
 ${snippet {
       import cats._, data._
-      import cats.implicits._
+      import cats.syntax.all._
       import org.atnos.eff._
       import org.atnos.eff.all._
       import org.atnos.eff.syntax.all._

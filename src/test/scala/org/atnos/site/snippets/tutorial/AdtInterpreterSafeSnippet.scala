@@ -11,7 +11,7 @@ trait AdtInterpreterSafeSnippet {
   import org.atnos.eff.writer._
   import org.atnos.eff.state._
   import org.atnos.eff.interpret._
-  import cats.implicits._
+  import cats.syntax.all._
   import cats.data._
 
   type _writerString[R] = Writer[String, *] |= R

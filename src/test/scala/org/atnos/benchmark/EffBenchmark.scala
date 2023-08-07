@@ -4,7 +4,7 @@ import org.scalameter.api._
 import org.atnos.eff._
 import EvalEffect._
 import Eff._
-import cats.implicits._
+import cats.syntax.all._
 import cats.Eval
 import org.scalameter.picklers.Implicits._
 
