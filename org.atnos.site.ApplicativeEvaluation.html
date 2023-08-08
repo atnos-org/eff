@@ -369,7 +369,7 @@ futures concurrently and the fastest actions finish first.</p>
 them individual requests and “batch” them into one single request. For
 example:</p>
 <pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-      import cats.implicits._
+      import cats.syntax.all._
 
 // An effect to get users from a database
 // calls can be individual or batched

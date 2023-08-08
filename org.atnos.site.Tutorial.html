@@ -433,7 +433,7 @@ abstract language into concrete values.</p>
 <pre><code class="prettyprint">  import org.atnos.eff._
   import interpret._
   import cats.Traverse
-  import cats.implicits._
+  import cats.syntax.all._
   import scala.collection.mutable._
 
   /**
@@ -501,7 +501,7 @@ delegate the results to other effects in the same stack:</p>
   import org.atnos.eff.writer._
   import org.atnos.eff.state._
   import org.atnos.eff.interpret._
-  import cats.implicits._
+  import cats.syntax.all._
   import cats.data._
 
   type _writerString[R] = Writer[String, *] |= R
@@ -713,7 +713,7 @@ instances for those effects:</p>
     } yield ()</code></pre>
 <p>Finally we write one interpreter per ADT:</p>
 <pre><code class="prettyprint">  import cats._
-  import cats.implicits._
+  import cats.syntax.all._
   import org.atnos.eff._
   import interpret._
 

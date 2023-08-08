@@ -324,7 +324,7 @@ with the same key will return the previously computed value. When
 interpreting those computations a <code class="prettyprint">Cache</code> must be
 provided:</p>
 <pre><code class="prettyprint">import cats.Eval
-      import cats.implicits._
+      import cats.syntax.all._
       import org.atnos.eff._, memo._
       import org.atnos.eff.syntax.memo._
       import org.atnos.eff.syntax.eval._
