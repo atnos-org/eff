@@ -119,24 +119,6 @@ trait TaskInterpretation extends TaskTypes {
       case Right(a) => Eff.pure(a)
     }
 
-  /**
-    * Memoize task values using a memoization effect
-    *
-    * if this method is called with the same key the previous value will be returned
-    */
-  def taskMemoized[R, A](key: AnyRef, e: Eff[R, A])(implicit task: Task /= R, m: Memoized |= R): Eff[R, A] =
-    MemoEffect.getCache[R].flatMap(cache => taskMemo(key, cache, e))
-
-  def runTaskMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], task: Task |= U): Eff[U, A] = {
-    interpret.translate(effect)(new Translate[Memoized, U] {
-      def apply[X](mx: Memoized[X]): Eff[U, X] =
-        mx match {
-          case Store(key, value) => TaskCreation.taskDelay(cache.memo(key, value()))
-          case GetCache() => TaskCreation.taskDelay(cache)
-        }
-    })
-  }
-
   implicit val taskSequenceCached: SequenceCached[Task] = new SequenceCached[Task] {
     def get[X](cache: Cache, key: AnyRef): Task[Option[X]] =
       Task.delay(cache.get(key)).executeAsync
