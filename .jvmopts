@@ -1,4 +1,4 @@
 -Xms4096M
--Xmx4096M
+-Xmx6000M
 -Xss6M
 -XX:+UseG1GC
