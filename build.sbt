@@ -191,6 +191,13 @@ lazy val commonJvmSettings = Seq(
 )
 
 lazy val commonNativeSettings = Def.settings(
+  Test / test := {
+    if ((Test / sources).value.isEmpty) {
+      ()
+    } else {
+      (Test / test).value
+    }
+  }
 )
 
 lazy val effSettings =
