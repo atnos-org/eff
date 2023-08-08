@@ -65,13 +65,6 @@ trait Batch {
 
 object Batch extends Batch
 
-trait Batchable[T[_]] {
-  type Z
-  type E
-  def distribute(z: Z): List[E]
-  def batch[X, Y](t1: T[X], t2: T[Y]): Option[T[Z]]
-}
-
 /**
  * The Batched classes are used to store unbatched and batched effects
  * depending on the result of the Batchable typeclass
