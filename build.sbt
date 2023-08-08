@@ -1,5 +1,7 @@
 import org.scalajs.jsenv.nodejs._
 
+Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
+
 lazy val specs2Version = Def.setting("4.20.1")
 lazy val twitterUtilVersion = "22.12.0"
 lazy val doobieVersion = "0.13.4"
