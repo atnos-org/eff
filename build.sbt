@@ -27,6 +27,18 @@ dependsOn(
   scalazJVM,
 )
 
+def scala3migartionOption(xs: Configuration*) = Def.settings {
+  xs.map { c =>
+    c / scalacOptions ++= {
+      if (scalaBinaryVersion.value == "3") {
+        Seq("-source:3.0-migration")
+      } else {
+        Nil
+      }
+    }
+  }
+}
+
 def p(id: String) = CrossProject(id, file(id))(JSPlatform, JVMPlatform, NativePlatform)
   .settings(moduleName := s"eff-$id")
   .jsSettings(commonJsSettings)
@@ -43,6 +55,7 @@ lazy val core = CrossProject("core", file("core"))(JSPlatform, JVMPlatform, Nati
   .jvmSettings(commonJvmSettings)
   .settings(
     effSettings,
+    scala3migartionOption(Compile),
   )
   .nativeSettings(commonNativeSettings)
 
@@ -57,7 +70,9 @@ lazy val choose = p("choose")
 lazy val list = p("list")
 lazy val state = p("state")
 lazy val safe = p("safe").dependsOn(either)
-lazy val batch = p("batch")
+lazy val batch = p("batch").settings(
+  scala3migartionOption(Compile),
+)
 lazy val future = p("future").dependsOn(eval)
 
 lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
@@ -68,6 +83,7 @@ lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jvmSettings(notesSettings)
   .settings(
     effSettings,
+    scala3migartionOption(Test),
   )
   .nativeSettings(commonNativeSettings)
   .dependsOn(
@@ -180,6 +196,7 @@ lazy val twitter = project
   .settings(libraryDependencies ++= twitterUtilCore)
   .settings(effSettings ++ commonJvmSettings)
   .settings(
+    scala3migartionOption(Test),
     conflictWarning := {
       if (scalaBinaryVersion.value == "3") {
         // TODO
@@ -325,8 +342,6 @@ lazy val commonScalacOptions = Def.setting {
         Seq(
           "-no-indent",
           "-Ykind-projector",
-          "-source",
-          "3.0-migration",
         )
       case _ =>
         Seq(
