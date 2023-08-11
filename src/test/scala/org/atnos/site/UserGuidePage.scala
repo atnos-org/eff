@@ -7,6 +7,7 @@ import org.specs2.io._
 import org.specs2.specification.Snippets
 import org.specs2.specification.core._
 import org.specs2.specification.create.SpecificationCreation
+import scala.collection.compat._
 import scala.reflect.ClassTag
 
 abstract class UserGuidePage
@@ -35,7 +36,22 @@ abstract class UserGuidePage
     load(FilePath.unsafe("src/test/scala/" + name.replace(".", "/") + ".scala"))
   }
 
-  val version = org.atnos.eff.BuildInfo.version
+  val version: String = {
+    val v = org.atnos.eff.BuildInfo.version
+    val suffix = "-SNAPSHOT"
+    if (v.endsWith(suffix)) {
+      v.dropRight(suffix.length).split('.').toSeq match {
+        case xs :+ x =>
+          x.toIntOption.filter(_ > 0).fold(v) { a =>
+            (xs :+ (a - 1).toString).mkString(".")
+          }
+        case _ =>
+          v
+      }
+    } else {
+      v
+    }
+  }
 
   override implicit def defaultSnippetParameters[T] =
     Snippet.defaultParams[T].copy(asCode = (s1: String, s2: String) => splitText(Snippet.markdownCode()(s1, s2)))
