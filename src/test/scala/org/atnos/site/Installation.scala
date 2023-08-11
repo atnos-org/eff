@@ -3,6 +3,8 @@ package org.atnos.site
 object Installation extends UserGuidePage {
   def is = "Installation".title ^ s2"""
 
+foo
+
 You add `eff` as an sbt dependency:
 
 ```scala
