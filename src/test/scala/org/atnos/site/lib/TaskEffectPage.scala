@@ -41,7 +41,7 @@ Then we need to pass a Monix `Scheduler`  in to begin the computation.
       /*p
 Monix doesn't natively offer an Await API to block on a Task result.
 Instead it advises converting to a Scala `Future` and using `Await.result`.
-See https://monix.io/docs/2x/eval/task.html#blocking-for-a-result
+See https://monix.io/docs/3x/eval/task.html#blocking-for-a-result
        */
       import scala.concurrent.Await
 
