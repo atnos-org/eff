@@ -350,7 +350,7 @@ computation.</p>
 <p>Monix doesn’t natively offer an Await API to block on a Task result.
 Instead it advises converting to a Scala <code class="prettyprint">Future</code> and using
 <code class="prettyprint">Await.result</code>. See
-https://monix.io/docs/2x/eval/task.html#blocking-for-a-result</p>
+https://monix.io/docs/3x/eval/task.html#blocking-for-a-result</p>
 <pre><code class="prettyprint">      import scala.concurrent.Await
 
       Await.result(action.runOption.runAsync.runToFuture, 1.second)</code></pre>
