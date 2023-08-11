@@ -38,24 +38,19 @@ jobs:
     needs: test
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'atnos-org' && github.ref == 'refs/heads/master' && github.event_name == 'push' }}
     steps:
-    - name: Install pandoc
-      run: |
-        wget https://github.com/jgm/pandoc/releases/download/3.1.5/pandoc-3.1.5-1-amd64.deb
-        sudo dpkg -i pandoc-3.1.5-1-amd64.deb
-        pandoc --version
     - uses: actions/setup-java@cd89f46ac9d01407894225f350157564c9c7cee2 # v3.12.0
       with:
         java-version: 8
         distribution: temurin
     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+    - name: Install pandoc
+      run: ./.github/install_pandoc.sh
     - uses: coursier/cache-action@d1039466d0812d6370649b9afb02bbf5f646bacf # v6.4.3
     - name: Generate html
-      run: sbt -v
-           "set aggregate := false"
-           "testOnly *index* -- html html.search html.toc html.nostats html.outdir target/specs2-reports/site all"
+      run: ./.github/gen_doc.sh
     - name: Push to gh-pages
-      if: ${{ github.repository_owner == 'atnos-org' && github.ref == 'refs/heads/master' && github.event_name == 'push' }}
       uses: JamesIves/github-pages-deploy-action@a1ea191d508feb8485aceba848389d49f80ca2dc # v4.4.3
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

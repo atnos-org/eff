@@ -1,0 +1,50 @@
+on:
+  pull_request_target:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+jobs:
+  show_doc_diff:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+    - uses: actions/setup-java@cd89f46ac9d01407894225f350157564c9c7cee2 # v3.12.0
+      with:
+        java-version: 8
+        distribution: temurin
+    - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+    - run: echo "${{ toJson(github) }}"
+    - name: Install pandoc
+      run: ./.github/install_pandoc.sh
+    - uses: coursier/cache-action@d1039466d0812d6370649b9afb02bbf5f646bacf # v6.4.3
+    - name: Generate html
+      run: ./.github/gen_doc.sh
+    - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      with:
+        ref: gh-pages
+        path: gh-pages
+    - run: |
+        cp -r target/specs2-reports/site/* gh-pages/
+        pushd gh-pages
+        git diff > diff.txt
+        wc -l diff.txt
+        popd
+    - uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const diff = fs.readFileSync("gh-pages/diff.txt").toString();
+          if (diff.length === 0) {
+            console.log("no diff");
+          } else {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "```diff\n" + diff + "\n```"
+            });
+          }
