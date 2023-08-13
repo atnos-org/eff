@@ -141,6 +141,6 @@ class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCh
 
   def sleepFor(duration: FiniteDuration) =
     try Thread.sleep(duration.toMillis)
-    catch { case t: Throwable => () }
+    catch { case _: Throwable => () }
 
 }

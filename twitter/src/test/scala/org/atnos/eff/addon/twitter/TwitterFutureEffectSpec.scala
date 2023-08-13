@@ -224,5 +224,5 @@ class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification w
 
   def sleepFor(duration: FiniteDuration) =
     try Thread.sleep(duration.toMillis)
-    catch { case t: Throwable => () }
+    catch { case _: Throwable => () }
 }

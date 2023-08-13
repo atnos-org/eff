@@ -234,5 +234,5 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
   def sleepFor(duration: FiniteDuration) =
     try Thread.sleep(duration.toMillis)
-    catch { case t: Throwable => () }
+    catch { case _: Throwable => () }
 }

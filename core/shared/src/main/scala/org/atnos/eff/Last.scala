@@ -19,16 +19,16 @@ case class Last[R](value: Option[Eval[Eff[R, Unit]]]) {
   def <*(last: Last[R]): Last[R] =
     (value, last.value) match {
       case (None, None) => this
-      case (Some(r), None) => this
-      case (None, Some(l)) => last
+      case (Some(_), None) => this
+      case (None, Some(_)) => last
       case (Some(r), Some(l)) => Last(Option(r.map2(l)((a, b) => b <* a)))
     }
 
   def *>(last: Last[R]): Last[R] =
     (value, last.value) match {
       case (None, None) => this
-      case (Some(r), None) => this
-      case (None, Some(l)) => last
+      case (Some(_), None) => this
+      case (None, Some(_)) => last
       case (Some(r), Some(l)) => Last(Option(r.map2(l)(_ *> _)))
     }
 }

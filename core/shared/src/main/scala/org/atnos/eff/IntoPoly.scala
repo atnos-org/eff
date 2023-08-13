@@ -39,7 +39,7 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
         def apply[A](union: Union[FxAppend[NoFx, R], A]): Union[R, A] =
           union match {
             case UnionAppendR(r) => r
-            case UnionAppendL(l) => throw new EffImpossibleException("impossible - intoNoFxAppendL for UnionAppendL")
+            case UnionAppendL(_) => throw new EffImpossibleException("impossible - intoNoFxAppendL for UnionAppendL")
             case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoNoFxAppendL for UnionTagged")
           }
       }
@@ -51,7 +51,7 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
         def apply[A](union: Union[FxAppend[R, NoFx], A]): Union[R, A] =
           union match {
             case UnionAppendL(l) => l
-            case UnionAppendR(r) => throw new EffImpossibleException("impossible - intoNoFxAppendR for UnionAppendR")
+            case UnionAppendR(_) => throw new EffImpossibleException("impossible - intoNoFxAppendR for UnionAppendR")
             case UnionTagged(_, _) => throw new EffImpossibleException("impossible - intoNoFxAppendR for UnionTagged")
           }
       }

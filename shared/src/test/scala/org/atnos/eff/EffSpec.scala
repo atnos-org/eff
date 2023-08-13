@@ -114,7 +114,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
 
   def stacksafeReader = {
     val list = (1 to 5000).toList
-    val action = list.traverse(i => ReaderEffect.ask[ReaderStringFx, String])
+    val action = list.traverse(_ => ReaderEffect.ask[ReaderStringFx, String])
 
     action.runReader("h").run ==== list.map(_ => "h")
   }
@@ -123,7 +123,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
     type S = Fx.fx2[ReaderString, WriterString]
 
     val list = (1 to 5000).toList
-    val action = list.traverse(i => ReaderEffect.ask[S, String] >>= WriterEffect.tell[S, String])
+    val action = list.traverse(_ => ReaderEffect.ask[S, String] >>= WriterEffect.tell[S, String])
 
     action.runReader("h").runWriter.run ==== ((list.map(_ => ()), list.map(_ => "h")))
   }

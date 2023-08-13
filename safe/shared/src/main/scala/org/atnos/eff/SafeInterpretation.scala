@@ -101,7 +101,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
               }
           }
 
-        case FailedValue(t) =>
+        case FailedValue(_) =>
           Eff.pure(())
 
         case FailedFinalizer(t) =>

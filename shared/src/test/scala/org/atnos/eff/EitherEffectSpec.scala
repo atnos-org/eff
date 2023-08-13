@@ -190,7 +190,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
   def handleFromCatchNonFatal = {
     val newException = new Exception("bam")
-    val caught = EitherEffect.fromCatchNonFatal { throw new Exception("boom"); 1 }((t: Throwable) => newException)
+    val caught = EitherEffect.fromCatchNonFatal { throw new Exception("boom"); 1 }((_: Throwable) => newException)
 
     caught.runEither.run must beLeft(newException)
   }

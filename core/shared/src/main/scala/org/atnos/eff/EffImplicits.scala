@@ -42,7 +42,7 @@ trait EffImplicits {
 
     def tailRecM[A, B](a: A)(f: A => Eff[AnyRef, Either[A, B]]): Eff[AnyRef, B] =
       f(a) match {
-        case Pure(v, l) =>
+        case Pure(v, _) =>
           v match {
             case Left(a1) => tailRecM(a1)(f)
             case Right(b) => Pure(b)

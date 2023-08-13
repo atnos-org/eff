@@ -140,7 +140,7 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
           runDsl(c.cast[Continuation[Fx1[UserDsl], User, A]].apply(getWebUser(i)))
         case Impure(UnionTagged(GetUsers(is), _), c, _) =>
           runDsl(c.cast[Continuation[Fx1[UserDsl], List[User], A]].apply(getWebUsers(is)))
-        case ap @ ImpureAp(u, m, _) =>
+        case ap @ ImpureAp(_, _, _) =>
           runDsl(ap.toMonadic)
         case Impure(_, _, _) =>
           sys.error("this should not happen with just one effect. Got " + eff)

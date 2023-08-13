@@ -46,7 +46,7 @@ trait Interpret {
 
     def interpretLastEff(last: Eff[R, Unit]): Eff[U, Unit] =
       last match {
-        case Pure(a, last1) =>
+        case Pure(_, last1) =>
           interpretLast(last1).value.map(_.value).getOrElse(Eff.pure(()))
 
         case Impure(NoEffect(a), c, last1) =>
@@ -82,7 +82,7 @@ trait Interpret {
           case Left(other) => Impure(other, interpretContinuation(c), interpretLast(last))
         }
 
-      case ap @ ImpureAp(unions, continuation, last) =>
+      case ImpureAp(unions, continuation, last) =>
         val collected = unions.project
 
         if (collected.effects.isEmpty)

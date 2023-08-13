@@ -36,7 +36,7 @@ object EffScalaz {
           case NoEffect(a) => Monad[M].point(-\/(continuation(a).addLast(last)))
           case UnionTagged(ta: M[Nothing] @unchecked, _) =>
             last match {
-              case Last(Some(l)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
+              case Last(Some(_)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
               case Last(None) => Monad[M].map(ta)(x => -\/(continuation(x)))
             }
         }
@@ -60,17 +60,17 @@ object EffScalaz {
           case NoEffect(a) => Monad[M].point(-\/(continuation(a).addLast(last)))
           case UnionTagged(ta: M[Nothing] @unchecked, _) =>
             last match {
-              case Last(Some(l)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
+              case Last(Some(_)) => Monad[M].map(ta)(x => -\/(continuation(x).addLast(last)))
               case Last(None) => Monad[M].map(ta)(x => -\/(continuation(x)))
             }
         }
 
-      case ap @ ImpureAp(unions, continuation, last) =>
+      case ImpureAp(unions, continuation, last) =>
         val effects = unions.unions.collect { case UnionTagged(mx: M[Nothing] @unchecked, _) => mx }
         val sequenced = applicative.sequence[Nothing, Vector](effects)
 
         last match {
-          case Last(Some(l)) => Monad[M].map(sequenced)(x => -\/(continuation(x).addLast(last)))
+          case Last(Some(_)) => Monad[M].map(sequenced)(x => -\/(continuation(x).addLast(last)))
           case Last(None) => Monad[M].map(sequenced)(x => -\/(continuation(x)))
         }
     }
