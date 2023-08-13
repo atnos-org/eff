@@ -55,7 +55,7 @@ object TimedFuture {
       }
 
     def raiseError[A](e: Throwable): TimedFuture[A] =
-      TimedFuture((s, ec) => Future.failed(e))
+      TimedFuture((_, _) => Future.failed(e))
 
     def handleErrorWith[A](fa: TimedFuture[A])(f: Throwable => TimedFuture[A]): TimedFuture[A] =
       TimedFuture((s, ec) => fa.runNow(s, ec).recoverWith[A] { case t => f(t).runNow(s, ec) }(ec))

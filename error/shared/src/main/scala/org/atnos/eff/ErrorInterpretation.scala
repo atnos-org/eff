@@ -106,7 +106,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
   def ignoreException[R, E <: Throwable: ClassTag, A](action: Eff[R, A])(implicit m: ErrorOrOk /= R): Eff[R, Unit] =
     catchError[R, A, Unit](
       action,
-      (a: A) => (),
+      (_: A) => (),
       {
         case Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
           EffMonad[R].pure(())

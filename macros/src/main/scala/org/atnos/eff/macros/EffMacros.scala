@@ -28,7 +28,7 @@ class EffMacros(val c: blackbox.Context) {
 
   type Paramss = List[List[ValDef]]
   def paramssToArgs(paramss: Paramss): List[List[TermName]] =
-    paramss.filter(_.nonEmpty).map(_.collect { case t @ ValDef(mods, name, _, _) => name })
+    paramss.filter(_.nonEmpty).map(_.collect { case ValDef(_, name, _, _) => name })
 
   // remove () if no args
   def methodCallFmt(method: c.universe.Tree, args: Seq[Seq[TermName]]) = if (args.flatten.isEmpty) method else q"$method(...$args)"
@@ -65,7 +65,7 @@ class EffMacros(val c: blackbox.Context) {
         }
 
         def findImplicitBracket(paramss: List[List[ValDef]]): Option[Int] = {
-          paramss.zipWithIndex.find { case (params, idx) => params.exists(_.mods.hasFlag(Flag.IMPLICIT)) }.map(_._2)
+          paramss.zipWithIndex.find { case (params, _) => params.exists(_.mods.hasFlag(Flag.IMPLICIT)) }.map(_._2)
         }
         def addImplicits(newImplicits: List[ValDef], paramss: List[List[ValDef]]) = {
           findImplicitBracket(paramss).map { idx =>
@@ -87,9 +87,9 @@ class EffMacros(val c: blackbox.Context) {
         // check some constraints that will result in a compiler error
         stats.foreach {
           case x: ValOrDefDef if x.mods.hasFlag(Flag.PRIVATE | Flag.PROTECTED) => c.abort(x.pos, "try using access modifier: package-private")
-          case v @ ValDef(_, _, rt: TypeTree, _) => c.abort(v.pos, s"Define the return type for:") // requires explicit return type
-          case d @ DefDef(_, _, _, _, rt: TypeTree, _) => c.abort(d.pos, s"Define the return type for:") // requires explicit return type
-          case v @ ValDef(mods, _, rt, _) if mods.hasFlag(Flag.MUTABLE) => c.abort(v.pos, s"var is not allow in @eff trait $tpname")
+          case v @ ValDef(_, _, _: TypeTree, _) => c.abort(v.pos, s"Define the return type for:") // requires explicit return type
+          case d @ DefDef(_, _, _, _, _: TypeTree, _) => c.abort(d.pos, s"Define the return type for:") // requires explicit return type
+          case v @ ValDef(mods, _, _, _) if mods.hasFlag(Flag.MUTABLE) => c.abort(v.pos, s"var is not allow in @eff trait $tpname")
           case v @ ValDef(_, _, rt, EmptyTree) =>
             if (!isReturnTypeOfTypeAlias(rt))
               c.abort(v.pos, s"Abstract val needs to have return type ${typeAlias.name}[...], otherwise, make it non-abstract.")
@@ -124,7 +124,7 @@ class EffMacros(val c: blackbox.Context) {
             val implicits = fixedParams match {
               // this should not happen, there should be implicit parameters
               case Nil => Nil
-              case ps :: is :: _ => is
+              case _ :: is :: _ => is
               case is :: _ => is
             }
 
@@ -151,7 +151,7 @@ class EffMacros(val c: blackbox.Context) {
               trait SideEffect extends org.atnos.eff.SideEffect[${sealedTrait.name}] {
                 def apply[A](fa: ${sealedTrait.name}[A]): A = fa match {
                   case ..${absValsDefsOps.map {
-              case DefDef(_, name, _, paramss, rt, _) =>
+              case DefDef(_, name, _, paramss, _, _) =>
                 val binds = nonStackParams(paramss).flatMap(_.collect { case t: ValDef => Bind(t.name, Ident(termNames.WILDCARD)) })
                 val args = nonStackParams(paramss).map(_.collect { case t: ValDef => Ident(t.name.toTermName) })
                 val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
@@ -178,7 +178,7 @@ class EffMacros(val c: blackbox.Context) {
               trait Translate[R, U] extends org.atnos.eff.Translate[${sealedTrait.name}, U] {
                 def apply[X](fa: ${sealedTrait.name}[X]): Eff[U, X] = fa match {
                   case ..${absValsDefsOps.map {
-              case DefDef(_, name, _, paramss, rt, _) =>
+              case DefDef(_, name, _, paramss, _, _) =>
                 val binds = nonStackParams(paramss).flatMap(_.collect { case t: ValDef => Bind(t.name, Ident(termNames.WILDCARD)) })
                 val args = nonStackParams(paramss).map(_.collect { case t: ValDef => Ident(t.name.toTermName) })
                 val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
@@ -273,7 +273,7 @@ class EffMacros(val c: blackbox.Context) {
               trait FunctionK[M[_]] extends cats.~>[${sealedTrait.name}, M] {
                 def apply[X](fa: ${sealedTrait.name}[X]): M[X] = fa match {
                   case ..${absValsDefsOps.map {
-              case DefDef(_, name, _, paramss, rt, _) =>
+              case DefDef(_, name, _, paramss, _, _) =>
                 val binds = nonStackParams(paramss).flatMap(_.collect { case t: ValDef => Bind(t.name, Ident(termNames.WILDCARD)) })
                 val args = nonStackParams(paramss).map(_.collect { case t: ValDef => Ident(t.name.toTermName) })
                 val rhs = if (args.isEmpty) q"$name" else q"$name(...${args})"
