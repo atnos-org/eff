@@ -28,7 +28,7 @@ dependsOn(
   scalazJVM,
 )
 
-def scala3migartionOption(xs: Configuration*) = Def.settings {
+def scala3migrationOption(xs: Configuration*) = Def.settings {
   xs.map { c =>
     c / scalacOptions ++= {
       if (scalaBinaryVersion.value == "3") {
@@ -56,7 +56,7 @@ lazy val core = CrossProject("core", file("core"))(JSPlatform, JVMPlatform, Nati
   .jvmSettings(commonJvmSettings)
   .settings(
     effSettings,
-    scala3migartionOption(Compile),
+    scala3migrationOption(Compile),
   )
   .nativeSettings(commonNativeSettings)
 
@@ -72,7 +72,7 @@ lazy val list = p("list")
 lazy val state = p("state")
 lazy val safe = p("safe").dependsOn(either)
 lazy val batch = p("batch").settings(
-  scala3migartionOption(Compile),
+  scala3migrationOption(Compile),
 )
 lazy val future = p("future").dependsOn(eval)
 
@@ -84,7 +84,7 @@ lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jvmSettings(notesSettings)
   .settings(
     effSettings,
-    scala3migartionOption(Test),
+    scala3migrationOption(Test),
   )
   .nativeSettings(commonNativeSettings)
   .dependsOn(
@@ -197,7 +197,7 @@ lazy val twitter = project
   .settings(libraryDependencies ++= twitterUtilCore)
   .settings(effSettings ++ commonJvmSettings)
   .settings(
-    scala3migartionOption(Test),
+    scala3migrationOption(Test),
     conflictWarning := {
       if (scalaBinaryVersion.value == "3") {
         // TODO
