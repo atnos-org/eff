@@ -38,4 +38,13 @@ class ScalazSyntaxSpec extends Specification {
   def flatSequenceA =
     List(1).map(i => fromOption[Fx1[Option], List[Int]](Option(List(i)))).flatSequenceA
 
+  def runValidationNel[A](eff: Eff[Fx.fx1[Validate[Int, *]], A]): scalaz.ValidationNel[Int, A] =
+    eff.runValidationNel.run
+
+  def runNelDisjunction[A](eff: Eff[Fx.fx1[Validate[Int, *]], A]): scalaz.NonEmptyList[Int] \/ A =
+    eff.runNelDisjunction.run
+
+  def runMapDisjunction[A, B: Semigroup, C](eff: Eff[Fx.fx1[Validate[A, *]], C], f: A => B): B \/ C =
+    eff.runMapDisjunction(f).run
+
 }
