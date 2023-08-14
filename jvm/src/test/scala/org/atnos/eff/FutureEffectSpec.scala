@@ -97,7 +97,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
     val action = list.traverseA(i => chooseFrom[U, Int](List(1)) >> futureDelay[U, String](i.toString))
 
     val x = action.runChoose[List].runOption.map(_.map(_.flatten)).runSequential
-    Await.result(x, 20.seconds) must beSome(list.map(_.toString))
+    Await.result(x, 20.seconds) must_== Some(list.map(_.toString))
   }
 
   def e6 = {
