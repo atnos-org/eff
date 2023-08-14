@@ -84,7 +84,6 @@ lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jvmSettings(notesSettings)
   .settings(
     effSettings,
-    scala3migrationOption(Test),
   )
   .nativeSettings(commonNativeSettings)
   .dependsOn(
