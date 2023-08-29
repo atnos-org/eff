@@ -1,4 +1,4 @@
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.0")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.1")
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
 addSbtPlugin("com.github.sbt" % "sbt-git" % "2.0.1")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.13.2")
