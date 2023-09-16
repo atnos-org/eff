@@ -122,9 +122,9 @@ for 4-element stacks:
 
   def genMember3[T[_]]: Gen[SMember3] =
     Gen.oneOf(
-      new SMember3 { type T[A] = WriterString[A]; val member = writerMember3 },
-      new SMember3 { type T[A] = Eval[A]; val member = evalMember3 },
-      new SMember3 { type T[A] = ReaderInt[A]; val member = readerMember3 }
+      new SMember3 { type T[A] = WriterString[A]; val member: Member[T, S3] = writerMember3 },
+      new SMember3 { type T[A] = Eval[A]; val member: Member[T, S3] = evalMember3 },
+      new SMember3 { type T[A] = ReaderInt[A]; val member: Member[T, S3] = readerMember3 }
     )
 
   def genUnion4: Gen[Union[S4, String]] =
@@ -132,9 +132,9 @@ for 4-element stacks:
 
   def genMember4[T[_]]: Gen[SMember4] =
     Gen.oneOf(
-      new SMember4 { type T[A] = WriterString[A]; val member = writerMember4 },
-      new SMember4 { type T[A] = Eval[A]; val member = evalMember4 },
-      new SMember4 { type T[A] = ReaderInt[A]; val member = readerMember4 }
+      new SMember4 { type T[A] = WriterString[A]; val member: Member[T, S4] = writerMember4 },
+      new SMember4 { type T[A] = Eval[A]; val member: Member[T, S4] = evalMember4 },
+      new SMember4 { type T[A] = ReaderInt[A]; val member: Member[T, S4] = readerMember4 }
     )
 
   type readStr[E] = Reader[String, *] |= E
