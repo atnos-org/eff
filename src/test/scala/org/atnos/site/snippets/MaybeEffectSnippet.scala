@@ -26,7 +26,7 @@ trait MaybeEffectSnippet {
 
     def runMaybe[R, U, A, B](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
       recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
-        def onPure(a: A) = Some(a)
+        def onPure(a: A): Option[A] = Some(a)
 
         def onEffect[X](m: Maybe[X]): X Either Eff[U, Option[A]] =
           m match {

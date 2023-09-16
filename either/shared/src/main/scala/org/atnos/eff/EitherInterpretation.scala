@@ -105,7 +105,7 @@ trait EitherInterpretation {
     })
 
   def EitherApplicative[E](implicit s: Semigroup[E]): Applicative[Either[E, *]] = new Applicative[Either[E, *]] {
-    def pure[A](a: A) = Right(a)
+    def pure[A](a: A): Either[E, A] = Right(a)
 
     def ap[A, B](ff: E Either (A => B))(fa: E Either A): E Either B =
       fa match {
