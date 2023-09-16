@@ -20,7 +20,7 @@ case class ConcurrentWeakIdentityHashMapCache(
   def get[V](key: AnyRef): Option[V] =
     Option(map.get(key)).map(_.value.asInstanceOf[V])
 
-  def reset(key: AnyRef) = {
+  def reset(key: AnyRef): C = {
     map.remove(key.hashCode)
     this
   }
