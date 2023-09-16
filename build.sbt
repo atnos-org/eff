@@ -324,6 +324,7 @@ lazy val commonScalacOptions = Def.setting {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, _)) =>
         Seq(
+          "-Xsource:3",
           "-Xlint",
           "-Xlint:-nullary-unit",
           "-Ywarn-numeric-widen",
