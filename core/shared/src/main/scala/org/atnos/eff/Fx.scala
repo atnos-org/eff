@@ -39,10 +39,14 @@ object Fx {
 /**
  * Append a tree of effects to another one
  */
+@deprecatedInheritance
 trait FxAppend[+L, +R] extends Fx
 
+@deprecatedInheritance
 trait Fx1[+F[_]] extends Fx
+@deprecatedInheritance
 trait Fx2[+L[_], +R[_]] extends Fx
+@deprecatedInheritance
 trait Fx3[+L[_], +M[_], +R[_]] extends Fx
 
 /**
