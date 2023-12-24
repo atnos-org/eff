@@ -16,7 +16,7 @@ trait UnionInto[R, S] {
       case Impure(NoEffect(a), c, l) =>
         Impure(NoEffect(a), c.interpretEff(into)(into), l.interpret(into))
 
-      case Impure(u: Union[_, _], c, l) =>
+      case Impure(u: Union[?, ?], c, l) =>
         Impure(apply(u), c.interpretEff(into)(into), l.interpret(into))
 
       case ImpureAp(unions, continuation, last) =>

@@ -34,7 +34,7 @@ trait Batch {
               case v if v.isEmpty =>
                 eff
 
-              case (e1: T[_]) +: rest1 =>
+              case (e1: T[?]) +: rest1 =>
                 ImpureAp(
                   Unions(m.inject(e1), rest1.map(r => m.inject(r.asInstanceOf[T[Any]])) ++ collected.otherEffects),
                   // the map operation has to reorder the results based on what could be batched or not
@@ -74,12 +74,12 @@ object Batch extends Batch
  *
  */
 private sealed trait Batched[T[_]] {
-  def effects: Vector[T[_]]
+  def effects: Vector[T[?]]
   def keys: Vector[Int]
-  def batchedEffect: T[_]
+  def batchedEffect: T[?]
 
-  def append(ty: T[_], key: Int): Batched[T]
-  def fuse(ty: T[_], key: Int): Batched[T]
+  def append(ty: T[?], key: Int): Batched[T]
+  def fuse(ty: T[?], key: Int): Batched[T]
 }
 
 private object Batched {
@@ -88,24 +88,24 @@ private object Batched {
 }
 
 private case class Composed[T[_]](unbatched: Vector[Batched[T]], batched: Single[T]) extends Batched[T] {
-  def effects: Vector[T[_]] = unbatched.flatMap(_.effects)
+  def effects: Vector[T[?]] = unbatched.flatMap(_.effects)
   def keys: Vector[Int] = unbatched.flatMap(_.keys) ++ batched.keys
-  def batchedEffect: T[_] = batched.batchedEffect
+  def batchedEffect: T[?] = batched.batchedEffect
 
-  def append(ty: T[_], key: Int): Batched[T] =
+  def append(ty: T[?], key: Int): Batched[T] =
     copy(unbatched = unbatched :+ Batched.single[T, Any]((ty.asInstanceOf[T[Any]], key)))
 
-  def fuse(ty: T[_], key: Int): Batched[T] =
+  def fuse(ty: T[?], key: Int): Batched[T] =
     copy(batched = Single(ty, batched.keys :+ key))
 }
 
-private case class Single[T[_]](tx: T[_], keys: Vector[Int]) extends Batched[T] {
-  def effects: Vector[T[_]] = Vector(tx)
+private case class Single[T[_]](tx: T[?], keys: Vector[Int]) extends Batched[T] {
+  def effects: Vector[T[?]] = Vector(tx)
   def batchedEffect = tx
 
-  def append(ty: T[_], key: Int): Batched[T] =
+  def append(ty: T[?], key: Int): Batched[T] =
     Composed(Vector(Batched.single((tx.asInstanceOf[T[Any]], key))), this)
 
-  def fuse(ty: T[_], key: Int): Batched[T] =
+  def fuse(ty: T[?], key: Int): Batched[T] =
     Single(ty, keys :+ key)
 }

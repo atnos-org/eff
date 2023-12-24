@@ -63,7 +63,7 @@ trait EffInterpretation {
       case Impure(NoEffect(a), continuation, last) =>
         monad.pure(Left(continuation(a).addLast(last)))
 
-      case Impure(u: Union[_, _], continuation, last) =>
+      case Impure(u: Union[?, ?], continuation, last) =>
         val ta = u.tagged.valueUnsafe.asInstanceOf[M[A]]
         val result: M[Either[Eff[Fx1[M], A], A]] =
           ta.map(x => Left(Impure(NoEffect(x.asInstanceOf[Any]), continuation.cast[Continuation[Fx1[M], Any, A]], last)))

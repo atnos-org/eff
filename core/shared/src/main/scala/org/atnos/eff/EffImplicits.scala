@@ -72,7 +72,7 @@ trait EffImplicits {
             case Impure(NoEffect(f), c, last1) =>
               Impure[AnyRef, Any, B](NoEffect[AnyRef, Any](f), c.append(f1 => pure(f1(a))).cast[Continuation[Object, Any, B]], c.onNone)
                 .addLast(last1 *> last)
-            case Impure(u: Union[_, _], c: Continuation[AnyRef, Any, A => B], last1) =>
+            case Impure(u: Union[?, ?], c: Continuation[AnyRef, Any, A => B], last1) =>
               ImpureAp(Unions(u, Vector.empty), c.dimapEff((x: Vector[Any]) => x.head)(_.map(_(a))), last1 *> last)
             case ImpureAp(u, c, last1) =>
               ImpureAp(u, c.map(_(a)), last1 *> last)
@@ -87,7 +87,7 @@ trait EffImplicits {
               ImpureAp(Unions(u, Vector.empty), c.contramap((x: Vector[Any]) => x.head).map(f), last1 *> last)
             case Impure(NoEffect(f), c1, last1) =>
               Impure(u, c.append(x => c1(f).map(_(x)))).addLast(last1 *> last)
-            case Impure(u1: Union[_, _], c1: Continuation[AnyRef, Any, A => B], last1) =>
+            case Impure(u1: Union[?, ?], c1: Continuation[AnyRef, Any, A => B], last1) =>
               ImpureAp[AnyRef, Any, B](Unions(u, Vector(u1)), Continuation.lift(ls => ap(c1(ls(1)))(c(ls.head)), c.onNone), last1 *> last)
             case ImpureAp(u1, c1, last1) =>
               ImpureAp(Unions(u, u1.unions), Continuation.lift(ls => ap(c1(ls.drop(1)))(c(ls.head)), c.onNone), last1 *> last)
@@ -99,7 +99,7 @@ trait EffImplicits {
               ImpureAp(unions, c map f, last1 *> last)
             case Impure(NoEffect(f), c1, last1) =>
               ImpureAp(unions, c.append(x => c1(f).map(_(x)))).addLast(last1 *> last)
-            case Impure(u: Union[_, _], c1: Continuation[AnyRef, Any, A => B], last1) =>
+            case Impure(u: Union[?, ?], c1: Continuation[AnyRef, Any, A => B], last1) =>
               ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.lift(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
             case ImpureAp(u, c1, last1) =>
               ImpureAp(
