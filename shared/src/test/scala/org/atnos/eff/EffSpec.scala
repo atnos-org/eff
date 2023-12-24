@@ -338,8 +338,8 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
   }
 
   def traceEffect = {
-    runStored(action[Fx.fx2[Writer[Stored[_], *], Stored]].trace[Stored]).runWriterLog.run ====
-      List[Stored[_]](Update("a", 1), Get("b"), Remove("c"))
+    runStored(action[Fx.fx2[Writer[Stored[?], *], Stored]].trace[Stored]).runWriterLog.run ====
+      List[Stored[?]](Update("a", 1), Get("b"), Remove("c"))
   }
 
   /**

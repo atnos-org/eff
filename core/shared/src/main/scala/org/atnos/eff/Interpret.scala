@@ -52,7 +52,7 @@ trait Interpret {
         case Impure(NoEffect(a), c, last1) =>
           interpretLastEff(c(a).addLast(last1))
 
-        case Impure(u: Union[_, _], c, last1) =>
+        case Impure(u: Union[?, ?], c, last1) =>
           m.project(u) match {
             case Right(tu) =>
               interpreter.onLastEffect(tu, Continuation.lift((x: u.X) => interpretLastEff(c(x).addLast(last1)), interpretLast(c.onNone)))
@@ -76,7 +76,7 @@ trait Interpret {
       case Impure(NoEffect(a), c, last) =>
         Impure(NoEffect(a), interpretContinuation(c), interpretLast(last))
 
-      case Impure(u: Union[_, _], c, last) =>
+      case Impure(u: Union[?, ?], c, last) =>
         m.project(u) match {
           case Right(tu) => interpreter.onEffect(tu, interpretContinuationWithLast(c, last))
           case Left(other) => Impure(other, interpretContinuation(c), interpretLast(last))
@@ -232,9 +232,9 @@ trait Interpret {
   /**
    * For a single effect T log every value of that effect
    */
-  def trace[R, T[_], A](eff: Eff[R, A])(implicit memberT: MemberInOut[T, R], memberW: MemberInOut[Writer[T[_], *], R]): Eff[R, A] =
-    write[R, T, T[_], A](eff)(new Write[T, T[_]] {
-      def apply[X](tx: T[X]): T[_] = tx
+  def trace[R, T[_], A](eff: Eff[R, A])(implicit memberT: MemberInOut[T, R], memberW: MemberInOut[Writer[T[?], *], R]): Eff[R, A] =
+    write[R, T, T[?], A](eff)(new Write[T, T[?]] {
+      def apply[X](tx: T[X]): T[?] = tx
     })
 
 }

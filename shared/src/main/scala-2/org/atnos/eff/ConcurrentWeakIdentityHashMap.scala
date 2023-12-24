@@ -118,7 +118,7 @@ class ConcurrentWeakIdentityHashMap[K, V] extends ConcurrentMap[K, V] {
     def size = map.size
   }
 
-  def putAll(m: java.util.Map[_ <: K, _ <: V]): Unit = {
+  def putAll(m: java.util.Map[? <: K, ? <: V]): Unit = {
     purgeKeys()
     import scala.collection.JavaConverters._
     m.entrySet.asScala.foreach(e => map.put(newKey(e.getKey), e.getValue))

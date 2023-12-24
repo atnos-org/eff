@@ -88,15 +88,15 @@ class IntoPolySpec extends Specification with ThrownExpectations {
   /**
    * HELPERS
    */
-  implicit class RunOptionOps[T[_] <: OptionLike[_], R, U](e: Eff[R, Int])(implicit m: Member.Aux[T, R, U]) {
+  implicit class RunOptionOps[T[_] <: OptionLike[?], R, U](e: Eff[R, Int])(implicit m: Member.Aux[T, R, U]) {
     def runOpt: Eff[U, Int] = runOption(e)
   }
 
-  def runOption[T[_] <: OptionLike[_], R, U](e: Eff[R, Int])(implicit m: Member.Aux[T, R, U]): Eff[U, Int] =
+  def runOption[T[_] <: OptionLike[?], R, U](e: Eff[R, Int])(implicit m: Member.Aux[T, R, U]): Eff[U, Int] =
     e match {
       case Pure(a, _) => Eff.pure(a)
       case Impure(NoEffect(a), c, _) => runOption(c(a))
-      case Impure(u: Union[_, _], c, _) =>
+      case Impure(u: Union[?, ?], c, _) =>
         m.project(u) match {
           case Right(oa) => runOption(c.cast[Continuation[R, Any, Int]].apply(oa.a))
           case Left(u1) => Impure[U, u1.X, Int](u1, Continuation.lift(x => runOption(c(x))))

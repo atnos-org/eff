@@ -33,7 +33,7 @@ trait ChooseInterpretation {
             case Impure(NoEffect(a), c, last) =>
               runChoose(c(a).addLast(last))
 
-            case Impure(u: Union[_, _], c, last) =>
+            case Impure(u: Union[?, ?], c, last) =>
               m.project(u) match {
                 case Left(u1) =>
                   val r1 = Impure(u1, c.interpret(runChoose[R, U, A, F])(_.interpret(l => runChoose[R, U, Unit, F](l).void))).addLast(lastRun(last))

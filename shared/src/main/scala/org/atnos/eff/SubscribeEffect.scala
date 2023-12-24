@@ -110,7 +110,7 @@ object SubscribeEffect {
       case Impure(NoEffect(a), c, last) =>
         memoizeSubsequence(key, sequenceKey, subSequenceKey, cache, c(a).addLast(last))
 
-      case Impure(u: Union[_, _], c, last) =>
+      case Impure(u: Union[?, ?], c, last) =>
         Impure(
           materialize(u.cast[Union[FS, Any]]),
           c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r)).cast[Continuation[Fx1[Subscribe], Any, A]],
