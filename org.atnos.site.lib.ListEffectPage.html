@@ -327,8 +327,8 @@ return several values. A simple example using this effect would be</p>
 // create all the possible pairs for a given list
 // where the sum is greater than a value
       def pairsBiggerThan[R: _list](list: List[Int], n: Int): Eff[R, (Int, Int)] = for {
-        a &lt;- values(list: _*)
-        b &lt;- values(list: _*)
+        a &lt;- values(list*)
+        b &lt;- values(list*)
         found &lt;-
           if (a + b &gt; n) singleton((a, b))
           else empty
