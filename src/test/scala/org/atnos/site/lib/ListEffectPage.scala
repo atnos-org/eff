@@ -13,8 +13,8 @@ A simple example using this effect would be ${snippet {
 // create all the possible pairs for a given list
 // where the sum is greater than a value
       def pairsBiggerThan[R: _list](list: List[Int], n: Int): Eff[R, (Int, Int)] = for {
-        a <- values(list: _*)
-        b <- values(list: _*)
+        a <- values(list*)
+        b <- values(list*)
         found <-
           if (a + b > n) singleton((a, b))
           else empty
