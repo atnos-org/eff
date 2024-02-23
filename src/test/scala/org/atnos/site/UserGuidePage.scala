@@ -4,6 +4,7 @@ import org.atnos.eff.Specs2Compat
 import org.specs2.matcher._
 import org.specs2.execute.Snippet
 import org.specs2.io._
+import org.specs2.control.ioOperationToOption
 import org.specs2.specification.Snippets
 import org.specs2.specification.core._
 import org.specs2.specification.create.SpecificationCreation
@@ -53,7 +54,7 @@ abstract class UserGuidePage
     }
   }
 
-  override implicit def defaultSnippetParameters[T] =
+  override implicit def defaultSnippetParameters[T]: org.specs2.execute.SnippetParams[T] =
     Snippet.defaultParams[T].copy(asCode = (s1: String, s2: String) => splitText(Snippet.markdownCode()(s1, s2)))
 
   // extract //text comments as text paragraphs
