@@ -21,7 +21,7 @@ jobs:
         - 8
         - 21
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
     - uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
       with:
         java-version: ${{matrix.java}}
@@ -43,7 +43,7 @@ jobs:
       with:
         java-version: 8
         distribution: temurin
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
     - name: Install pandoc
       run: ./.github/install_pandoc.sh
     - uses: coursier/cache-action@1ff273bff02a8787bc9f1877d347948af647956d # v6.4.5
