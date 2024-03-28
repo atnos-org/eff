@@ -212,7 +212,7 @@ def Scala212 = "2.12.19"
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := Scala212,
-  crossScalaVersions := Seq(Scala212, "2.13.13", "3.3.3")
+  crossScalaVersions := Seq(Scala212, "2.13.13", "3.4.1")
 )
 
 lazy val commonSettings = Def.settings(
