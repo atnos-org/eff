@@ -19,7 +19,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
     - name: Install pandoc
       run: ./.github/install_pandoc.sh
-    - uses: coursier/cache-action@1ff273bff02a8787bc9f1877d347948af647956d # v6.4.5
+    - uses: coursier/cache-action@142d2738bd29f0eb9d44610828acb3a19809feab # v6.4.6
     - name: Generate html
       run: ./.github/gen_doc.sh
     - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
