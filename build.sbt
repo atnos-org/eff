@@ -17,7 +17,7 @@ noPublishSettings
 commonJvmSettings
 libraryDependencies ++= scalameter.value
 libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version.value % "test"
-libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0" % Test
+libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0" % Test
 disableScala3
 
 dependsOn(
