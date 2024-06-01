@@ -216,8 +216,7 @@ lazy val buildSettings = Seq(
 )
 
 lazy val commonSettings = Def.settings(
-  libraryDependencies += "org.typelevel" %%% "cats-core" % "2.11.0",
-  libraryDependencies ++= specs2.value,
+  libraryDependencies += "org.typelevel" %%% "cats-core" % "2.12.0",
   scalacOptions ++= commonScalacOptions.value,
   (Compile / doc / scalacOptions) ++= {
     Seq(
@@ -241,6 +240,7 @@ lazy val commonSettings = Def.settings(
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Seq(
+  libraryDependencies ++= specs2.value,
   parallelExecution := false,
   scalacOptions ++= {
     if (scalaBinaryVersion.value == "3") {
@@ -263,6 +263,7 @@ lazy val commonJsSettings = Seq(
 )
 
 lazy val commonJvmSettings = Seq(
+  libraryDependencies ++= specs2.value,
   Test / fork := true,
   Global / cancelable := true,
   Test / scalacOptions ~= (_.filterNot(_ == "-Xfatal-warnings")),
@@ -276,12 +277,10 @@ lazy val commonJvmSettings = Seq(
 )
 
 lazy val commonNativeSettings = Def.settings(
-  Test / test := {
-    if ((Test / sources).value.isEmpty) {
-      ()
-    } else {
-      (Test / test).value
-    }
+  Test / sources := {
+    // TODO
+    // https://github.com/etorreborre/specs2/issues/1239
+    Nil
   }
 )
 
@@ -406,7 +405,7 @@ lazy val specs2 = Def.setting(
       "xml_sjs1_" + scalaBinaryVersion.value
     ).exclude(
       "org.specs2",
-      "xml_native0.4_" + scalaBinaryVersion.value
+      "xml_native0.5_" + scalaBinaryVersion.value
     )
   )
 )
