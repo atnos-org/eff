@@ -3,7 +3,14 @@ import sbtcrossproject.CrossProject
 
 Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
 
-lazy val specs2Version = Def.setting("4.20.5")
+lazy val specs2Version = Def.setting(
+  scalaBinaryVersion.value match {
+    case "3" =>
+      "4.20.7"
+    case _ =>
+      "4.20.6"
+  }
+)
 lazy val twitterUtilVersion = "24.2.0"
 lazy val doobieVersion = "0.13.4"
 
@@ -277,17 +284,13 @@ lazy val commonJvmSettings = Seq(
 )
 
 lazy val commonNativeSettings = Def.settings(
+  libraryDependencies ++= specs2.value,
   Test / test := {
     if ((Test / sources).value.isEmpty) {
       ()
     } else {
       (Test / test).value
     }
-  },
-  Test / sources := {
-    // TODO
-    // https://github.com/etorreborre/specs2/issues/1239
-    Nil
   },
 )
 
