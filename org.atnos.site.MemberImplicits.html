@@ -369,7 +369,7 @@ effect stack with 3 typeclasses:</p>
 <col style="width: 47%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Typeclass</th>
 <th>Alias</th>
 <th>Meaning</th>
@@ -377,13 +377,13 @@ effect stack with 3 typeclasses:</p>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code class="prettyprint">MemberIn[M, R]</code></td>
 <td><code class="prettyprint">M |= R</code></td>
 <td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>”</td>
 <td>to create <code class="prettyprint">M</code> effects in <code class="prettyprint">R</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code class="prettyprint">MemberInOut[M, R]</code></td>
 <td><code class="prettyprint">M /= R</code></td>
 <td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code> and can be extracted from
@@ -393,7 +393,7 @@ it”</td>
 same stack. For example to <code class="prettyprint">handleError</code> for an Error
 effect</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code class="prettyprint">Member[M, R]</code></td>
 <td><code class="prettyprint">M &lt;= R</code></td>
 <td>“<code class="prettyprint">M</code> is part of <code class="prettyprint">R</code>, can be extracted from it,
