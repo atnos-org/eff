@@ -4,7 +4,6 @@ package org.atnos.site.snippets
 trait MaybeEffectSnippet {
 
 // 8<---
-
   import cats._
   import implicits._
   import org.atnos.eff._

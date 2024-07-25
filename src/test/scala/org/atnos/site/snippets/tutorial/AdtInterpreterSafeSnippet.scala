@@ -5,7 +5,6 @@ import AdtSnippet._
 
 trait AdtInterpreterSafeSnippet {
 // 8<---
-
   import org.atnos.eff._
   import org.atnos.eff.either._
   import org.atnos.eff.writer._

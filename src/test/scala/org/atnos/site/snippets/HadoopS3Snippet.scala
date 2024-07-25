@@ -3,7 +3,6 @@ package org.atnos.site.snippets
 
 trait HadoopS3Snippet {
 // 8<---
-
   import org.atnos.eff._
   import all._
   import cats.data._
