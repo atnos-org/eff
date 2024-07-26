@@ -5,7 +5,6 @@ import AdtSnippet._
 
 trait AdtCreationSnippet {
 // 8<---
-
   import org.atnos.eff._
 
 // T |= R is an alias for MemberIn[T, R]

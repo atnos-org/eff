@@ -5,7 +5,6 @@ import AdtSnippet._
 
 trait AdtInterpreterSnippet {
 // 8<---
-
   import org.atnos.eff._
   import interpret._
   import cats.Traverse

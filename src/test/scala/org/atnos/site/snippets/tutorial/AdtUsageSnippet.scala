@@ -5,7 +5,6 @@ import AdtCreationSnippet._
 
 trait AdtUsageSnippet {
 // 8<---
-
   import org.atnos.eff._
 
   def program[R: _kvstore]: Eff[R, Option[Int]] =
