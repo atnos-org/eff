@@ -8,7 +8,7 @@ package object scalaz {
   /**
    * Monad implementation for the Eff[R, *] type
    */
-  implicit final def EffScalazMonad[R]: Monad[Eff[R, *]] with BindRec[Eff[R, *]] = new Monad[Eff[R, *]] with BindRec[Eff[R, *]] {
+  implicit final def EffScalazMonad[R]: Monad[Eff[R, *]] & BindRec[Eff[R, *]] = new Monad[Eff[R, *]] with BindRec[Eff[R, *]] {
     def point[A](a: => A): Eff[R, A] =
       Eff.EffMonad[R].pure(a)
 
