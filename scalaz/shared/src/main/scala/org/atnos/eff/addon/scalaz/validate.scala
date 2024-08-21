@@ -14,6 +14,6 @@ trait validate {
     org.atnos.eff.ValidateEffect.runNel(r).map(_.fold(ls => \/.left(NonEmptyList.fromSeq(ls.head, ls.tail)), \/.right))
 
   def runMapDisjunction[R, U, E, L: Semigroup, A](r: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L \/ A] =
-    org.atnos.eff.ValidateEffect.runMap(r)(map)(catsSemigroup(Semigroup[L]), m).map(_.fold(\/.left, \/.right))
+    org.atnos.eff.ValidateEffect.runMap(r)(map)(using catsSemigroup(Semigroup[L]), m).map(_.fold(\/.left, \/.right))
 
 }

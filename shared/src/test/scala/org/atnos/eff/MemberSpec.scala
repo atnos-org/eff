@@ -160,7 +160,7 @@ for 4-element stacks:
     } yield s.size
 
   def stateIn[E](implicit state: State[String, *] |= E, option: Option |= E): Eff[E, Int] =
-    readIn[E](state.transform[Reader[String, *]], option)
+    readIn[E](using state.transform[Reader[String, *]], option)
 
   def readInOut[E: ReadStr: _option]: Eff[E, Int] =
     for {
@@ -169,5 +169,5 @@ for 4-element stacks:
     } yield s.size
 
   def stateInOut[E](implicit state: State[String, *] /= E, option: Option |= E): Eff[E, Int] =
-    readInOut[E](state.transform[Reader[String, *]], option)
+    readInOut[E](using state.transform[Reader[String, *]], option)
 }

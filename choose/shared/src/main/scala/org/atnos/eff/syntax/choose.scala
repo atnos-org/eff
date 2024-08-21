@@ -12,6 +12,6 @@ trait choose {
 final class ChooseEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def runChoose[F[_]: Alternative](implicit member: Member[Choose, R]): Eff[member.Out, F[A]] =
-    ChooseInterpretation.runChoose(e)(Alternative[F], member.aux)
+    ChooseInterpretation.runChoose(e)(using Alternative[F], member.aux)
 
 }
