@@ -17,6 +17,7 @@ jobs:
         - "2.12.x"
         - "2.13.x"
         - "3.x"
+        - "latest"
         java:
         - 8
         - 21
@@ -27,7 +28,15 @@ jobs:
         java-version: ${{matrix.java}}
         distribution: temurin
     - uses: coursier/cache-action@142d2738bd29f0eb9d44610828acb3a19809feab # v6.4.6
-    - run: sbt -v
+    - if: ${{ matrix.scala == 'latest' }}
+      run: sbt -v
+           scalafmtSbtCheck
+           "++ 3.5.1-RC2!"
+           "scalafmtCheckAll"
+           "Test/compile"
+           "test"
+    - if: ${{ matrix.scala != 'latest' }}
+      run: sbt -v
            scalafmtSbtCheck
            "++ ${{ matrix.scala }} -v"
            "scalafmtCheckAll"
