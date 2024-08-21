@@ -9,10 +9,10 @@ import _root_.scalaz.std.vector._
 object EffScalaz {
 
   def traverseA[R, F[_]: Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
-    Traverse[F].traverse(fs)(f)(EffScalazApplicative[R])
+    Traverse[F].traverse(fs)(f)(using EffScalazApplicative[R])
 
   def sequenceA[R, F[_]: Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
-    Traverse[F].sequence(fs)(EffScalazApplicative[R])
+    Traverse[F].sequence(fs)(using EffScalazApplicative[R])
 
   def flatTraverseA[R, F[_], A, B](fs: F[A])(
     f: A => Eff[R, F[B]]

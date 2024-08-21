@@ -18,13 +18,13 @@ trait validate {
       ValidateInterpretation.runNel(e)(m.aux)
 
     def runMap[E, L: Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, L Either A] =
-      ValidateInterpretation.runMap(e)(map)(Semigroup[L], m.aux)
+      ValidateInterpretation.runMap(e)(map)(using Semigroup[L], m.aux)
 
     def runValidatedNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, ValidatedNel[E, A]] =
       ValidateInterpretation.runValidatedNel(e)(m.aux)
 
     def runIorMap[E, L: Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, L Ior A] =
-      ValidateInterpretation.runIorMap(e)(map)(Semigroup[L], m.aux)
+      ValidateInterpretation.runIorMap(e)(map)(using Semigroup[L], m.aux)
 
     def runIorNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, E IorNel A] =
       ValidateInterpretation.runIorNel(e)(m.aux)

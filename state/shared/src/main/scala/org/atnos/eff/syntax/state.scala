@@ -17,7 +17,7 @@ trait state {
       StateInterpretation.runState(s)(e)(member)
 
     def runStateZero[S: Monoid](implicit member: Member[State[S, *], R]): Eff[member.Out, (A, S)] =
-      StateInterpretation.runStateZero(e)(Monoid[S], member.aux)
+      StateInterpretation.runStateZero(e)(using Monoid[S], member.aux)
 
     def evalState[S](s: S)(implicit member: Member[State[S, *], R]): Eff[member.Out, A] =
       StateInterpretation.evalState(s)(e)(member.aux)
@@ -26,10 +26,10 @@ trait state {
       StateInterpretation.evalState(s)(e)(member.aux)
 
     def evalStateZero[S: Monoid](implicit member: Member[State[S, *], R]): Eff[member.Out, A] =
-      StateInterpretation.evalStateZero(e)(Monoid[S], member.aux)
+      StateInterpretation.evalStateZero(e)(using Monoid[S], member.aux)
 
     def evalStateZeroU[S: Monoid, U](implicit member: Member.Aux[State[S, *], R, U]): Eff[U, A] =
-      StateInterpretation.evalStateZero(e)(Monoid[S], member.aux)
+      StateInterpretation.evalStateZero(e)(using Monoid[S], member.aux)
 
     def execState[S](s: S)(implicit member: Member[State[S, *], R]): Eff[member.Out, S] =
       StateInterpretation.execState(s)(e)(member.aux)
@@ -38,10 +38,10 @@ trait state {
       StateInterpretation.execState(s)(e)(member.aux)
 
     def execStateZero[S: Monoid](implicit member: Member[State[S, *], R]): Eff[member.Out, S] =
-      StateInterpretation.execStateZero(e)(Monoid[S], member.aux)
+      StateInterpretation.execStateZero(e)(using Monoid[S], member.aux)
 
     def execStateZeroU[S: Monoid, U](implicit member: Member.Aux[State[S, *], R, U]): Eff[U, S] =
-      StateInterpretation.execStateZero(e)(Monoid[S], member.aux)
+      StateInterpretation.execStateZero(e)(using Monoid[S], member.aux)
 
     def lensState[BR, U, T, S](getter: S => T, setter: (S, T) => S)(implicit
       m1: Member.Aux[State[T, *], R, U],
