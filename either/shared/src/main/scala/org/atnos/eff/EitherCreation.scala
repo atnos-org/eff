@@ -15,7 +15,7 @@ trait EitherCreation {
 
   /** create an Either effect from a single Either value */
   def fromEither[R, E, A](Either: E Either A)(implicit member: Either[E, *] |= R): Eff[R, A] =
-    Either.fold[Eff[R, A]](left[R, E, A], right[R, E, A])
+    send[Either[E, *], R, A](Either)
 
   /** create a failed value */
   def left[R, E, A](e: E)(implicit member: Either[E, *] |= R): Eff[R, A] =
