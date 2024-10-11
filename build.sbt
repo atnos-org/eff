@@ -239,9 +239,32 @@ lazy val commonSettings = Def.settings(
   }
 ) ++ warnUnusedImport ++ prompt
 
-lazy val commonJsSettings = Seq(
+lazy val commonJsSettings = Def.settings(
   libraryDependencies ++= specs2.value,
   parallelExecution := false,
+  if (sys.props.isDefinedAt("scala_js_wasm")) {
+    println("enable wasm")
+    Def.settings(
+      scalaJSLinkerConfig ~= (
+        _.withExperimentalUseWebAssembly(true).withModuleKind(ModuleKind.ESModule)
+      ),
+      jsEnv := {
+        import org.scalajs.jsenv.nodejs.NodeJSEnv
+        val config = NodeJSEnv
+          .Config()
+          .withArgs(
+            List(
+              "--experimental-wasm-exnref",
+              "--experimental-wasm-imported-strings",
+              "--turboshaft-wasm",
+            )
+          )
+        new NodeJSEnv(config)
+      },
+    )
+  } else {
+    Def.settings()
+  },
   scalacOptions ++= {
     if (scalaBinaryVersion.value == "3") {
       Nil
