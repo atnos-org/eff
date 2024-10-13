@@ -27,6 +27,7 @@ jobs:
       with:
         java-version: ${{matrix.java}}
         distribution: temurin
+    - uses: sbt/setup-sbt@v1
     - uses: coursier/cache-action@142d2738bd29f0eb9d44610828acb3a19809feab # v6.4.6
     - if: ${{ matrix.scala == 'latest' }}
       run: sbt -v
@@ -53,6 +54,7 @@ jobs:
       with:
         java-version: 21
         distribution: temurin
+    - uses: sbt/setup-sbt@v1
     - uses: actions/setup-node@v4
       with:
         node-version: 22
@@ -78,6 +80,7 @@ jobs:
     - name: Install pandoc
       run: ./.github/install_pandoc.sh
     - uses: coursier/cache-action@142d2738bd29f0eb9d44610828acb3a19809feab # v6.4.6
+    - uses: sbt/setup-sbt@v1
     - name: Generate html
       run: ./.github/gen_doc.sh
     - name: Push to gh-pages
