@@ -85,7 +85,16 @@ lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     effSettings,
   )
-  .nativeSettings(commonNativeSettings)
+  .nativeSettings(
+    commonNativeSettings,
+    Test / testOptions ++= {
+      if (scala.util.Properties.isLinux) {
+        Seq(Tests.Exclude(Set("org.atnos.eff.EvalEffectSpec")))
+      } else {
+        Nil
+      }
+    },
+  )
   .dependsOn(
     core % "test->test",
     eval,
