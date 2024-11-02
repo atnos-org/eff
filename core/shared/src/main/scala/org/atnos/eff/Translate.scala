@@ -6,3 +6,5 @@ package org.atnos.eff
 trait Translate[T[_], U] {
   def apply[X](kv: T[X]): Eff[U, X]
 }
+
+object Translate extends TranslateCompanion
