@@ -1,6 +1,7 @@
 #!/bin/bash -xe
 
-PANDOC_FILE_NAME="pandoc-3.6-1-amd64.deb"
-wget "https://github.com/jgm/pandoc/releases/download/3.6/${PANDOC_FILE_NAME}"
+PANDOC_VERSION="3.6.1"
+PANDOC_FILE_NAME="pandoc-${PANDOC_VERSION}-1-amd64.deb"
+wget "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/${PANDOC_FILE_NAME}"
 sudo dpkg -i "${PANDOC_FILE_NAME}"
 pandoc --version
