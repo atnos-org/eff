@@ -216,7 +216,7 @@ lazy val twitter = project
     },
   )
 
-def Scala212 = "2.12.20"
+def Scala212 = "2.13.15"
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
