@@ -17,11 +17,11 @@ object EffScalaz {
   def flatTraverseA[R, F[_], A, B](fs: F[A])(
     f: A => Eff[R, F[B]]
   )(implicit FT: Traverse[F], FM: Bind[F]): Eff[R, F[B]] =
-    FT.traverseM[A, Eff[R, *], B](fs)(f)(EffScalazApplicative[R], FM)
+    FT.traverseM[A, Eff[R, *], B](fs)(f)(using EffScalazApplicative[R], FM)
 
   /** use the applicative instance of Eff to sequence a list of values, then flatten it */
   def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(implicit FT: Traverse[F], FM: Bind[F]): Eff[R, F[A]] =
-    FT.traverseM[Eff[R, F[A]], Eff[R, *], A](fs)(identity)(EffScalazApplicative[R], FM)
+    FT.traverseM[Eff[R, F[A]], Eff[R, *], A](fs)(identity)(using EffScalazApplicative[R], FM)
 
   def detach[M[_], A](eff: Eff[Fx1[M], A])(implicit m: Monad[M], b: BindRec[M]): M[A] =
     BindRec[M].tailrecM[Eff[Fx1[M], A], A](eff) {

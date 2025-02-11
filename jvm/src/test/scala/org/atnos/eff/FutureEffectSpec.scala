@@ -80,7 +80,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
       val ec = ExecutionContext.fromExecutor(executor)
       try {
         messages.clear()
-        Await.result(run.runOption.runAsync(scheduler = implicitly, exc = ec, m = implicitly), 4.seconds)
+        Await.result(run.runOption.runAsync(using scheduler = implicitly, exc = ec, m = implicitly), 4.seconds)
 
         "the messages are ordered" ==> {
           messages.toList ==== delays.sorted

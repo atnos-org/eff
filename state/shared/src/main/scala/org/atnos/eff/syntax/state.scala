@@ -11,19 +11,19 @@ trait state {
   implicit class StateEffectOps[R, A](e: Eff[R, A]) {
 
     def runState[S](s: S)(implicit member: Member[State[S, *], R]): Eff[member.Out, (A, S)] =
-      StateInterpretation.runState(s)(e)(member.aux)
+      StateInterpretation.runState(s)(e)(using member.aux)
 
     def runStateU[S, U](s: S)(implicit member: Member.Aux[State[S, *], R, U]): Eff[U, (A, S)] =
-      StateInterpretation.runState(s)(e)(member)
+      StateInterpretation.runState(s)(e)(using member)
 
     def runStateZero[S: Monoid](implicit member: Member[State[S, *], R]): Eff[member.Out, (A, S)] =
       StateInterpretation.runStateZero(e)(using Monoid[S], member.aux)
 
     def evalState[S](s: S)(implicit member: Member[State[S, *], R]): Eff[member.Out, A] =
-      StateInterpretation.evalState(s)(e)(member.aux)
+      StateInterpretation.evalState(s)(e)(using member.aux)
 
     def evalStateU[S, U](s: S)(implicit member: Member.Aux[State[S, *], R, U]): Eff[U, A] =
-      StateInterpretation.evalState(s)(e)(member.aux)
+      StateInterpretation.evalState(s)(e)(using member.aux)
 
     def evalStateZero[S: Monoid](implicit member: Member[State[S, *], R]): Eff[member.Out, A] =
       StateInterpretation.evalStateZero(e)(using Monoid[S], member.aux)
@@ -32,10 +32,10 @@ trait state {
       StateInterpretation.evalStateZero(e)(using Monoid[S], member.aux)
 
     def execState[S](s: S)(implicit member: Member[State[S, *], R]): Eff[member.Out, S] =
-      StateInterpretation.execState(s)(e)(member.aux)
+      StateInterpretation.execState(s)(e)(using member.aux)
 
     def execStateU[S, U](s: S)(implicit member: Member.Aux[State[S, *], R, U]): Eff[U, S] =
-      StateInterpretation.execState(s)(e)(member.aux)
+      StateInterpretation.execState(s)(e)(using member.aux)
 
     def execStateZero[S: Monoid](implicit member: Member[State[S, *], R]): Eff[member.Out, S] =
       StateInterpretation.execStateZero(e)(using Monoid[S], member.aux)

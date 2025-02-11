@@ -6,10 +6,10 @@ import data._
 trait StateImplicits {
 
   implicit def stateMemberInToReaderMemberIn[E, S](implicit m: MemberIn[State[S, *], E]): MemberIn[Reader[S, *], E] =
-    m.transform(readerToStateNat)
+    m.transform(using readerToStateNat)
 
   implicit def stateMemberInLens[E, S, T](implicit m: MemberIn[State[S, *], E], get: S => T, set: T => S => S): MemberIn[State[T, *], E] =
-    m.transform(via(get, set))
+    m.transform(using via(get, set))
 
   def readerToStateNat[S1]: Reader[S1, *] ~> State[S1, *] = new (Reader[S1, *] ~> State[S1, *]) {
     def apply[X](r: Reader[S1, X]): State[S1, X] =

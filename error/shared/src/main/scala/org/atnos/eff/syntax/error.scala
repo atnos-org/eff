@@ -15,7 +15,7 @@ trait error {
 final class ErrorEffectOps[R, A](private val action: Eff[R, A]) extends AnyVal {
 
   def runError(implicit m: Member[ErrorOrOk, R]): Eff[m.Out, Error Either A] =
-    ErrorEffect.runError(action)(m.aux)
+    ErrorEffect.runError(action)(using m.aux)
 
   def andFinally(last: Eff[R, Unit])(implicit m: ErrorOrOk <= R): Eff[R, A] =
     ErrorEffect.andFinally(action, last)

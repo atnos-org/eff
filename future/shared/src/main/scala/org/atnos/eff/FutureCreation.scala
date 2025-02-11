@@ -22,10 +22,10 @@ trait FutureCreation extends FutureTypes {
     e.fold(futureFail[R, A], Eff.pure[R, A])
 
   final def futureDelay[R: _future, A](a: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    Eff.send[TimedFuture, R, A](TimedFuture((_, ec) => Future(a)(ec), timeout))
+    Eff.send[TimedFuture, R, A](TimedFuture((_, ec) => Future(a)(using ec), timeout))
 
   final def futureFork[R: _future, A](a: => A, ec: ExecutionContext, timeout: Option[FiniteDuration] = None): Eff[R, A] =
-    Eff.send[TimedFuture, R, A](TimedFuture((_, _) => Future(a)(ec), timeout))
+    Eff.send[TimedFuture, R, A](TimedFuture((_, _) => Future(a)(using ec), timeout))
 
   final def futureDefer[R: _future, A](a: => Future[A], timeout: Option[FiniteDuration] = None): Eff[R, A] =
     Eff.send[TimedFuture, R, A](TimedFuture((_, _) => a, timeout))

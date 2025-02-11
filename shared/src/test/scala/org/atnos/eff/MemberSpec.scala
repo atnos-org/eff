@@ -95,13 +95,13 @@ for 4-element stacks:
     Member.Member3R[WriterString, ReaderInt, Eval]
 
   def writerMember4: Member.Aux[WriterString, FxAppend[Fx3[WriterString, ReaderInt, Eval], NoFx], FxAppend[Fx2[ReaderInt, Eval], NoFx]] =
-    Member.MemberAppendL(writerMember3)
+    Member.MemberAppendL(using writerMember3)
 
   def readerMember4: Member.Aux[ReaderInt, FxAppend[Fx3[WriterString, ReaderInt, Eval], NoFx], FxAppend[Fx2[WriterString, Eval], NoFx]] =
-    Member.MemberAppendL(readerMember3)
+    Member.MemberAppendL(using readerMember3)
 
   def evalMember4: Member.Aux[Eval, FxAppend[S3, NoFx], FxAppend[Fx2[WriterString, ReaderInt], NoFx]] =
-    Member.MemberAppendL(evalMember3)
+    Member.MemberAppendL(using evalMember3)
 
   val read1 = Reader((i: Int) => "hey")
   val write1 = Writer[String, String]("hey", "hey")
