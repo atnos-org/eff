@@ -29,7 +29,7 @@ trait ActionCreation extends ActionTypes {
     * and then fail all other computations
     */
   def warnAndFail[R, A](message: String, failureMessage: String)(implicit m1: Warnings |= R, m2: ErrorOrOk |= R): Eff[R, A] =
-    warn(message)(m1) >>
+    warn(message)(using m1) >>
       fail(failureMessage)
 }
 trait ActionInterpretation extends ActionImplicits {
@@ -46,15 +46,15 @@ trait ActionImplicits extends ActionTypes {
 
   implicit def ConsoleMember
     : Member.Aux[Console, FxAppend[Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval]], FxAppend[Fx1[ErrorOrOk], Fx2[Warnings, Eval]]] =
-    Member.MemberAppendR[Console, Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval], Fx2[Warnings, Eval]](Member.Member3L[Console, Warnings, Eval])
+    Member.MemberAppendR[Console, Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval], Fx2[Warnings, Eval]](using Member.Member3L[Console, Warnings, Eval])
 
   implicit def WarningsMember
     : Member.Aux[Warnings, FxAppend[Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval]], FxAppend[Fx1[ErrorOrOk], Fx2[Console, Eval]]] =
-    Member.MemberAppendR[Warnings, Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval], Fx2[Console, Eval]](Member.Member3M[Console, Warnings, Eval])
+    Member.MemberAppendR[Warnings, Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval], Fx2[Console, Eval]](using Member.Member3M[Console, Warnings, Eval])
 
   implicit def EvalMember
     : Member.Aux[Eval, FxAppend[Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval]], FxAppend[Fx1[ErrorOrOk], Fx2[Console, Warnings]]] =
-    Member.MemberAppendR[Eval, Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval], Fx2[Console, Warnings]](Member.Member3R[Console, Warnings, Eval])
+    Member.MemberAppendR[Eval, Fx1[ErrorOrOk], Fx3[Console, Warnings, Eval], Fx2[Console, Warnings]](using Member.Member3R[Console, Warnings, Eval])
 }
 
 object ActionImplicits extends ActionImplicits

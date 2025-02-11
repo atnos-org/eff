@@ -8,7 +8,7 @@ final class EffScalazOneEffectOps[M[_], A](private val e: Eff[Fx1[M], A]) extend
     EffScalaz.detach(e)
 
   def detachA(applicative: Applicative[M])(implicit monad: Monad[M], bindRec: BindRec[M]): M[A] =
-    EffScalaz.detachA(e)(monad, bindRec, applicative)
+    EffScalaz.detachA(e)(using monad, bindRec, applicative)
 }
 
 final class EffScalazApplicativeOps[F[_], A](private val values: F[A]) extends AnyVal {

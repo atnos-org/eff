@@ -13,9 +13,9 @@ trait eval {
 final class EvalEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
   def runEval(implicit member: Member[Eval, R]): Eff[member.Out, A] =
-    EvalInterpretation.runEval(e)(member.aux)
+    EvalInterpretation.runEval(e)(using member.aux)
 
   def attemptEval(implicit member: Member[Eval, R]): Eff[member.Out, Throwable Either A] =
-    EvalInterpretation.attemptEval(e)(member.aux)
+    EvalInterpretation.attemptEval(e)(using member.aux)
 
 }

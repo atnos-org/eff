@@ -9,13 +9,13 @@ import scala.concurrent.Promise
 trait FutureInterpretation extends FutureTypes {
 
   def runAsyncOn[R, A](executorServices: ExecutorServices)(e: Eff[R, A])(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
-    runAsync(e)(executorServices.scheduler, executorServices.executionContext, m)
+    runAsync(e)(using executorServices.scheduler, executorServices.executionContext, m)
 
   def runAsync[R, A](e: Eff[R, A])(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
-    Eff.detachA(Eff.effInto[R, Fx1[TimedFuture], A](e))(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(scheduler, exc)
+    Eff.detachA(Eff.effInto[R, Fx1[TimedFuture], A](e))(using TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(scheduler, exc)
 
   def runSequentialOn[R, A](executorServices: ExecutorServices)(e: Eff[R, A])(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
-    runSequential(e)(executorServices.scheduler, executorServices.executionContext, m)
+    runSequential(e)(using executorServices.scheduler, executorServices.executionContext, m)
 
   def runSequential[R, A](e: Eff[R, A])(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     Eff.detach(Eff.effInto[R, Fx1[TimedFuture], A](e)).runNow(scheduler, exc)
@@ -34,7 +34,7 @@ trait FutureInterpretation extends FutureTypes {
       a.runNow(scheduler, ec)
         .onComplete { t =>
           prom.success(t.toEither)
-        }(ec)
+        }(using ec)
       prom.future
     })
   }
@@ -50,7 +50,7 @@ trait FutureInterpretation extends FutureTypes {
               .runNow(scheduler, ec)
               .map { v =>
                 val _ = cache.put(key, v); v
-              }(ec)
+              }(using ec)
           )
         } { v => prom.success(v) }
       prom.future

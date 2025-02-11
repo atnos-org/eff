@@ -13,7 +13,7 @@ final case class TimedFuture[A](callback: (Scheduler, ExecutionContext) => Futur
     timeout.fold(callback(scheduler, ec)) { t =>
       val promise = Promise[A]()
       val cancelTimeout = scheduler.schedule({ promise.tryFailure(new TimeoutException); () }, t)
-      promise.completeWith(callback(scheduler, ec).map(a => { cancelTimeout(); a })(ec))
+      promise.completeWith(callback(scheduler, ec).map(a => { cancelTimeout(); a })(using ec))
       promise.future
     }
 }
@@ -28,7 +28,7 @@ object TimedFuture {
       val newCallback = { (scheduler: Scheduler, ec: ExecutionContext) =>
         val ffRan = ff.runNow(scheduler, ec)
         val faRan = fa.runNow(scheduler, ec)
-        faRan.flatMap(a => ffRan.map(f => f(a))(ec))(ec)
+        faRan.flatMap(a => ffRan.map(f => f(a))(using ec))(using ec)
       }
       TimedFuture(newCallback)
     }
@@ -41,7 +41,7 @@ object TimedFuture {
       TimedFuture((_, _) => Future.successful(x))
 
     def flatMap[A, B](fa: TimedFuture[A])(f: A => TimedFuture[B]): TimedFuture[B] =
-      TimedFuture[B]((scheduler, ec) => fa.runNow(scheduler, ec).flatMap(f(_).runNow(scheduler, ec))(ec))
+      TimedFuture[B]((scheduler, ec) => fa.runNow(scheduler, ec).flatMap(f(_).runNow(scheduler, ec))(using ec))
 
     def tailRecM[A, B](a: A)(f: A => TimedFuture[Either[A, B]]): TimedFuture[B] =
       TimedFuture[B] { (scheduler, ec) =>
@@ -50,7 +50,7 @@ object TimedFuture {
           .flatMap {
             case Left(na) => loop(na)
             case Right(nb) => Future.successful(nb)
-          }(ec)
+          }(using ec)
         loop(a)
       }
 
@@ -58,7 +58,7 @@ object TimedFuture {
       TimedFuture((_, _) => Future.failed(e))
 
     def handleErrorWith[A](fa: TimedFuture[A])(f: Throwable => TimedFuture[A]): TimedFuture[A] =
-      TimedFuture((s, ec) => fa.runNow(s, ec).recoverWith[A] { case t => f(t).runNow(s, ec) }(ec))
+      TimedFuture((s, ec) => fa.runNow(s, ec).recoverWith[A] { case t => f(t).runNow(s, ec) }(using ec))
 
     override def toString = "MonadError[TimedFuture, Throwable]"
   }

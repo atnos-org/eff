@@ -81,8 +81,8 @@ class StacksSpec extends Specification with Specs2Compat {
 
     def readFile[R](path: String)(implicit r: HadoopReader |= R, w: WriterString |= R): Eff[R, String] =
       for {
-        c <- ask[R, HadoopConf](r)
-        _ <- tell[R, String]("Reading from " + path)(w)
+        c <- ask[R, HadoopConf](using r)
+        _ <- tell[R, String]("Reading from " + path)(using w)
       } yield c.mappers.toString
 
     def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(implicit m: Member.Aux[HadoopReader, R, U]): Eff[U, A] =
@@ -101,8 +101,8 @@ class StacksSpec extends Specification with Specs2Compat {
 
     def writeFile[R](key: String, content: String)(implicit r: S3Reader |= R, w: WriterString |= R): Eff[R, Unit] =
       for {
-        c <- ask[R, S3Conf](r)
-        _ <- tell[R, String]("Writing to bucket " + c.bucket + ": " + content)(w)
+        c <- ask[R, S3Conf](using r)
+        _ <- tell[R, String]("Writing to bucket " + c.bucket + ": " + content)(using w)
       } yield ()
 
     def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(implicit m: Member.Aux[S3Reader, R, U]): Eff[U, A] =
