@@ -3,7 +3,6 @@ package org.atnos.eff
 import cats.*
 import cats.syntax.all.*
 import org.atnos.eff.Eff.send
-import org.atnos.eff.EffCompat.*
 import scala.annotation.tailrec
 
 trait EffInterpretation {
@@ -37,25 +36,25 @@ trait EffInterpretation {
   /**
    * peel-off the only present effect
    */
-  def detach[M[_], R, A, E](eff: Eff[R, A])(implicit monad: MonadError[M, E], m: Member.Aux[M, R, NoFx]): M[A] =
+  def detach[M[_], R, A, E](eff: Eff[R, A])(using MonadError[M, E], Member.Aux[M, R, NoFx]): M[A] =
     detachA(Eff.effInto[R, Fx1[M], A](eff))
 
   /**
    * peel-off the only present effect
    */
-  def detach[M[_], A, E](eff: Eff[Fx1[M], A])(implicit monad: MonadError[M, E]): M[A] =
+  def detach[M[_], A, E](eff: Eff[Fx1[M], A])(using MonadError[M, E]): M[A] =
     detachA(eff)
 
   /**
    * peel-off the only present effect, using an Applicative instance where possible
    */
-  def detachA[M[_], R, A, E](eff: Eff[R, A])(implicit monad: MonadError[M, E], applicative: Applicative[M], member: Member.Aux[M, R, NoFx]): M[A] =
+  def detachA[M[_], R, A, E](eff: Eff[R, A])(using monad: MonadError[M, E], applicative: Applicative[M], member: Member.Aux[M, R, NoFx]): M[A] =
     detachA(Eff.effInto[R, Fx1[M], A](eff))(using monad, applicative)
 
   /**
    * peel-off the only present effect, using an Applicative instance where possible
    */
-  def detachA[M[_], A, E](eff: Eff[Fx1[M], A])(implicit monad: MonadError[M, E], applicative: Applicative[M]): M[A] =
+  def detachA[M[_], A, E](eff: Eff[Fx1[M], A])(using monad: MonadError[M, E], applicative: Applicative[M]): M[A] =
     Monad[M].tailRecM[Eff[Fx1[M], A], A](eff) {
       case Pure(a, Last(Some(l))) => monad.pure(Left(l.value.as(a)))
       case Pure(a, Last(None)) => monad.pure(Right(a))
@@ -66,7 +65,7 @@ trait EffInterpretation {
       case Impure(u: Union[?, ?], continuation, last) =>
         val ta = u.tagged.valueUnsafe.asInstanceOf[M[A]]
         val result: M[Either[Eff[Fx1[M], A], A]] =
-          ta.map(x => Left(Impure(NoEffect(x.asInstanceOf[Any]), continuation.cast[Continuation[Fx1[M], Any, A]], last)))
+          ta.map(x => Left(Impure(NoEffect(x.asInstanceOf[Any]), continuation.asInstanceOf[Continuation[Fx1[M], Any, A]], last)))
 
         last match {
           case Last(Some(l)) =>
@@ -108,7 +107,7 @@ trait EffInterpretation {
    * An Eff[R, A] value can be transformed into an Eff[U, A]
    * value provided that all the effects in R are also in U
    */
-  def effInto[R, U, A](e: Eff[R, A])(implicit f: IntoPoly[R, U]): Eff[U, A] =
+  def effInto[R, U, A](e: Eff[R, A])(using f: IntoPoly[R, U]): Eff[U, A] =
     f(e)
 
   /**
@@ -118,12 +117,12 @@ trait EffInterpretation {
    * will be cached in the cache and retrieved from there if the Eff[R, A] computation is
    * executed again
    */
-  def memoizeEffect[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit member: M /= R, cached: SequenceCached[M]): Eff[R, A] =
+  def memoizeEffect[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(using member: M /= R, cached: SequenceCached[M]): Eff[R, A] =
     send[M, R, Option[A]](cached.get(cache, key)).flatMap(_.map(Eff.pure[R, A]).getOrElse(memoizeEffectSequence(e, cache, key).map(a => {
       cache.put(key, a); a
     })))
 
-  private def memoizeEffectSequence[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(implicit
+  private def memoizeEffectSequence[R, M[_], A](e: Eff[R, A], cache: Cache, key: AnyRef)(using
     member: M /= R,
     cached: SequenceCached[M]
   ): Eff[R, A] = {

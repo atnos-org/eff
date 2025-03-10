@@ -6,7 +6,7 @@ import cats.*
  * The Safe type is a mix of a ThrowableEither / Eval effect
  *   and a writer effect to collect finalizer failures
  */
-sealed trait Safe[A] {
+sealed abstract class Safe[A] {
   def memoize: Safe[A]
 }
 
@@ -39,7 +39,7 @@ object Safe {
   def failFinalizer(t: Throwable): Safe[Unit] =
     FailedFinalizer(t)
 
-  implicit val safeSequenceCached: SequenceCached[Safe] =
+  given safeSequenceCached: SequenceCached[Safe] =
     new SequenceCached[Safe] {
       def get[X](cache: Cache, key: AnyRef): Safe[Option[X]] =
         evaluate(cache.get(key))

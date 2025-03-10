@@ -6,7 +6,7 @@ object OptionEffectPage extends UserGuidePage {
 
 Adding an `Option` effect in your stack allows to stop computations when necessary.
 If you create a value with `some(a)` this value will be used downstream but if you use `none` all computations will stop:${snippet {
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
 
       /**
  * Stack declaration

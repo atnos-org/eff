@@ -8,19 +8,19 @@ import scala.concurrent.Promise
 
 trait FutureInterpretation extends FutureTypes {
 
-  def runAsyncOn[R, A](executorServices: ExecutorServices)(e: Eff[R, A])(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+  def runAsyncOn[R, A](executorServices: ExecutorServices)(e: Eff[R, A])(using m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     runAsync(e)(using executorServices.scheduler, executorServices.executionContext, m)
 
-  def runAsync[R, A](e: Eff[R, A])(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+  def runAsync[R, A](e: Eff[R, A])(using scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     Eff.detachA(Eff.effInto[R, Fx1[TimedFuture], A](e))(using TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(scheduler, exc)
 
-  def runSequentialOn[R, A](executorServices: ExecutorServices)(e: Eff[R, A])(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+  def runSequentialOn[R, A](executorServices: ExecutorServices)(e: Eff[R, A])(using m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     runSequential(e)(using executorServices.scheduler, executorServices.executionContext, m)
 
-  def runSequential[R, A](e: Eff[R, A])(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+  def runSequential[R, A](e: Eff[R, A])(using scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     Eff.detach(Eff.effInto[R, Fx1[TimedFuture], A](e)).runNow(scheduler, exc)
 
-  final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, Either[Throwable, A]] =
+  final def futureAttempt[R, A](e: Eff[R, A])(using TimedFuture /= R): Eff[R, Either[Throwable, A]] =
     interpret.interceptNatM[R, TimedFuture, Either[Throwable, *], A](
       e,
       new (TimedFuture ~> ({ type l[a] = TimedFuture[Either[Throwable, a]] })#l) {
@@ -61,7 +61,7 @@ trait FutureInterpretation extends FutureTypes {
     *
     * if this method is called with the same key the previous value will be returned
     */
-  final def futureMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, A] =
+  final def futureMemo[R, A](key: AnyRef, cache: Cache, e: Eff[R, A])(using TimedFuture /= R): Eff[R, A] =
     interpret.interceptNat[R, TimedFuture, A](e)(
       new (TimedFuture ~> TimedFuture) {
         override def apply[X](fa: TimedFuture[X]): TimedFuture[X] = memoize(key, cache, fa)
@@ -73,7 +73,7 @@ trait FutureInterpretation extends FutureTypes {
     *
     * if this method is called with the same key the previous value will be returned
     */
-  final def futureMemoized[R, A](key: AnyRef, e: Eff[R, A])(implicit future: TimedFuture /= R, m: Memoized |= R): Eff[R, A] =
+  final def futureMemoized[R, A](key: AnyRef, e: Eff[R, A])(using TimedFuture /= R, Memoized |= R): Eff[R, A] =
     MemoEffect.getCache[R].flatMap(cache => futureMemo(key, cache, e))
 
 }

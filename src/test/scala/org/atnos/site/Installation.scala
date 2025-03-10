@@ -9,33 +9,11 @@ You add `eff` as an sbt dependency:
 libraryDependencies += "org.atnos" %% "eff" % "$version"
 
 // to write types like Reader[String, *]
-libraryDependencies ++= {
-  if (scalaBinaryVersion.value == "3") {
-    Nil
-  } else {
-    Seq(compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.3" cross CrossVersion.full))
-  }
-}
+// for Scala 3.3.x
+scalacOptions += "-Ykind-projector"
 
-scalacOptions ++= {
-  if (scalaBinaryVersion.value == "3") {
-    Seq("-Ykind-projector")
-  } else {
-    Nil
-  }
-}
-```
-
-To get types like `Reader[String, *]` (with more than one type parameter) correctly inferred, you'll have to use the following compiler option
-
-```scala
-scalacOptions ++= {
-  if (scalaBinaryVersion.value == "2.12") {
-    Seq("-Ypartial-unification")
-  } else {
-    Nil
-  }
-}
+// for latest Scala 3
+scalacOptions += "-Xkind-projector"
 ```
 
 ##### Additional dependencies
@@ -47,7 +25,6 @@ This table lists the other available eff modules:
  `eff-scalaz`      | if you want to use [Scalaz](https://github.com/scalaz/scalaz) as a library for functional programming. This gives you a `Scalaz` `Monad` instance for `Eff` and a Scalaz's `\/` effect
  `eff-monix`       | to use Monix's `Task` effect
  `eff-cats-effect` | to use cats's `IO` effect
- `eff-twitter`     | to use Twitter's `Future` effect
  `eff-doobie`      | to use Doobie's `ConnectionIO` effect
 
 <p/>
@@ -99,7 +76,7 @@ fromOption(Option(1)).runOption
 
 You can also access all the syntax imports at once with:
 ```scala
-import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.all.given
 ```
 
 #### Intellij support

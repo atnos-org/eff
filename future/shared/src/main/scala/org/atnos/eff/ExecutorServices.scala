@@ -24,16 +24,16 @@ case class ExecutorServices(
     finally scheduledExecutorEval.value.shutdown()
   }
 
-  implicit lazy val executorService: ExecutorService =
+  given executorService: ExecutorService =
     executorServiceEval.value
 
-  implicit lazy val scheduledExecutorService: ScheduledExecutorService =
+  given scheduledExecutorService: ScheduledExecutorService =
     scheduledExecutorEval.value
 
-  implicit lazy val executionContext: ExecutionContext =
+  given executionContext: ExecutionContext =
     executionContextEval.value
 
-  implicit lazy val scheduler: Scheduler =
+  given scheduler: Scheduler =
     ExecutorServices.schedulerFromScheduledExecutorService(scheduledExecutorService)
 
   /** convenience method to shutdown the services when the final future has completed */
@@ -48,7 +48,7 @@ object ExecutorServices extends Schedulers {
 
   lazy val threadsNb = Runtime.getRuntime.availableProcessors
 
-  def create(implicit es: ExecutorService, s: ScheduledExecutorService): ExecutorServices =
+  def create(using es: ExecutorService, s: ScheduledExecutorService): ExecutorServices =
     fromExecutorServices(es, s)
 
   def fromExecutorServices(es: => ExecutorService, s: => ScheduledExecutorService): ExecutorServices =

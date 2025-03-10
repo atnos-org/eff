@@ -10,7 +10,7 @@ trait MemberIn[T[_], R] { outer =>
 
   def inject[V](tv: T[V]): Union[R, V]
 
-  final def transform[O[_]](implicit from: O ~> T): MemberIn[O, R] = new MemberIn[O, R] {
+  final def transform[O[_]](using from: O ~> T): MemberIn[O, R] = new MemberIn[O, R] {
     def inject[V](ov: O[V]): Union[R, V] =
       outer.inject(from(ov))
   }
@@ -31,42 +31,42 @@ object MemberIn extends MemberInLower1 {
 }
 
 trait MemberInLower1 extends MemberInLower2 {
-  implicit def MemberIn1[T[_]]: MemberIn[T, Fx1[T]] =
+  given MemberIn1[T[_]]: MemberIn[T, Fx1[T]] =
     TaggedMemberIn(1)
 }
 
 trait MemberInLower2 extends MemberInLower3 {
-  implicit def MemberIn2L[L[_], R[_]]: MemberIn[L, Fx2[L, R]] =
+  given MemberIn2L[L[_], R[_]]: MemberIn[L, Fx2[L, R]] =
     TaggedMemberIn(1)
 
-  implicit def MemberIn3L[L[_], M[_], R[_]]: MemberIn[L, Fx3[L, M, R]] =
+  given MemberIn3L[L[_], M[_], R[_]]: MemberIn[L, Fx3[L, M, R]] =
     TaggedMemberIn(1)
 
-  implicit def MemberInAppendAnyL[T[_], R]: MemberIn[T, FxAppend[Fx1[T], R]] =
+  given MemberInAppendAnyL[T[_], R]: MemberIn[T, FxAppend[Fx1[T], R]] =
     AppendMemberIn(isRight = false, TaggedMemberIn(1))
 }
 
 trait MemberInLower3 extends MemberInLower4 {
-  implicit def MemberIn2R[L[_], R[_]]: MemberIn[R, Fx2[L, R]] =
+  given MemberIn2R[L[_], R[_]]: MemberIn[R, Fx2[L, R]] =
     TaggedMemberIn(2)
 
-  implicit def MemberIn3M[L[_], M[_], R[_]]: MemberIn[M, Fx3[L, M, R]] =
+  given MemberIn3M[L[_], M[_], R[_]]: MemberIn[M, Fx3[L, M, R]] =
     TaggedMemberIn(2)
 
-  implicit def MemberInAppendR[T[_], L, R](implicit append: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] =
+  given MemberInAppendR[T[_], L, R](using append: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] =
     AppendMemberIn(isRight = true, append)
 }
 
 trait MemberInLower4 extends MemberInLower5 {
-  implicit def MemberIn3R[L[_], M[_], R[_]]: MemberIn[R, Fx3[L, M, R]] =
+  given MemberIn3R[L[_], M[_], R[_]]: MemberIn[R, Fx3[L, M, R]] =
     TaggedMemberIn(3)
 }
 
 trait MemberInLower5 {
-  implicit def MemberInAppendL[T[_], L, R](implicit append: MemberIn[T, L]): MemberIn[T, FxAppend[L, R]] =
+  given MemberInAppendL[T[_], L, R](using append: MemberIn[T, L]): MemberIn[T, FxAppend[L, R]] =
     AppendMemberIn(isRight = false, append)
 
-  implicit def MemberInAppendAnyR[T[_], L, R](implicit m: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] =
+  given MemberInAppendAnyR[T[_], L, R](using m: MemberIn[T, R]): MemberIn[T, FxAppend[L, R]] =
     AppendMemberIn(isRight = true, m)
 
 }
@@ -75,7 +75,7 @@ trait MemberInLower5 {
 trait MemberInOut[T[_], R] extends MemberIn[T, R] { outer =>
   def extract[V](union: Union[R, V]): Option[T[V]]
 
-  final def transform[O[_]](implicit to: T ~> O, from: O ~> T): MemberInOut[O, R] =
+  final def transform[O[_]](using to: T ~> O, from: O ~> T): MemberInOut[O, R] =
     new MemberInOut[O, R] {
       def inject[V](ov: O[V]): Union[R, V] =
         outer.inject(from(ov))
@@ -132,42 +132,42 @@ object MemberInOut extends MemberInOutLower1 {
 }
 
 trait MemberInOutLower1 extends MemberInOutLower2 {
-  implicit def MemberInOutOut1[T[_]]: MemberInOut[T, Fx1[T]] =
+  given MemberInOutOut1[T[_]]: MemberInOut[T, Fx1[T]] =
     TaggedMemberInOut(1)
 }
 
 trait MemberInOutLower2 extends MemberInOutLower3 {
-  implicit def MemberInOut2L[L[_], R[_]]: MemberInOut[L, Fx2[L, R]] =
+  given MemberInOut2L[L[_], R[_]]: MemberInOut[L, Fx2[L, R]] =
     TaggedMemberInOut(1)
 
-  implicit def MemberInOut3L[L[_], M[_], R[_]]: MemberInOut[L, Fx3[L, M, R]] =
+  given MemberInOut3L[L[_], M[_], R[_]]: MemberInOut[L, Fx3[L, M, R]] =
     TaggedMemberInOut(1)
 
-  implicit def MemberInOutAppendAnyL[T[_], R]: MemberInOut[T, FxAppend[Fx1[T], R]] =
+  given MemberInOutAppendAnyL[T[_], R]: MemberInOut[T, FxAppend[Fx1[T], R]] =
     AppendMemberInOut(isRight = false, TaggedMemberInOut(1))
 }
 
 trait MemberInOutLower3 extends MemberInOutLower4 {
-  implicit def MemberInOut2R[L[_], R[_]]: MemberInOut[R, Fx2[L, R]] =
+  given MemberInOut2R[L[_], R[_]]: MemberInOut[R, Fx2[L, R]] =
     TaggedMemberInOut(2)
 
-  implicit def MemberInOut3M[L[_], M[_], R[_]]: MemberInOut[M, Fx3[L, M, R]] =
+  given MemberInOut3M[L[_], M[_], R[_]]: MemberInOut[M, Fx3[L, M, R]] =
     TaggedMemberInOut(2)
 
-  implicit def MemberInOutAppendR[T[_], L, R](implicit append: MemberInOut[T, R]): MemberInOut[T, FxAppend[L, R]] =
+  given MemberInOutAppendR[T[_], L, R](using append: MemberInOut[T, R]): MemberInOut[T, FxAppend[L, R]] =
     AppendMemberInOut(isRight = true, append)
 }
 
 trait MemberInOutLower4 extends MemberInOutLower5 {
-  implicit def MemberInOut3R[L[_], M[_], R[_]]: MemberInOut[R, Fx3[L, M, R]] =
+  given MemberInOut3R[L[_], M[_], R[_]]: MemberInOut[R, Fx3[L, M, R]] =
     TaggedMemberInOut(3)
 }
 
 trait MemberInOutLower5 {
-  implicit def MemberInOutAppendL[T[_], L, R](implicit append: MemberInOut[T, L]): MemberInOut[T, FxAppend[L, R]] =
+  given MemberInOutAppendL[T[_], L, R](using append: MemberInOut[T, L]): MemberInOut[T, FxAppend[L, R]] =
     AppendMemberInOut(isRight = false, append)
 
-  implicit def MemberInOutAppendAnyR[T[_], L, R](implicit m: MemberInOut[T, R]): MemberInOut[T, FxAppend[L, R]] =
+  given MemberInOutAppendAnyR[T[_], L, R](using m: MemberInOut[T, R]): MemberInOut[T, FxAppend[L, R]] =
     AppendMemberInOut(isRight = true, m)
 }
 
@@ -187,7 +187,7 @@ trait Member[T[_], R] extends MemberInOut[T, R] {
   def extract[V](union: Union[R, V]): Option[T[V]] =
     project(union).toOption
 
-  def transformUnionInto[N[_], U, S, X](nat: T ~> N)(union: Union[R, X])(implicit n: Member.Aux[N, S, U]): Union[S, X] =
+  def transformUnionInto[N[_], U, S, X](nat: T ~> N)(union: Union[R, X])(using n: Member.Aux[N, S, U]): Union[S, X] =
     project(union) match {
       case Right(tv) => n.inject(nat(tv))
       case Left(u) => n.accept(u.asInstanceOf[Union[n.Out, X]])
@@ -207,18 +207,18 @@ object Member extends MemberLower1 {
   )
   type Aux[T[_], R, U] = Member[T, R] { type Out = U }
 
-  def apply[T[_], R](implicit m: Member[T, R]): Member[T, R] =
+  def apply[T[_], R](using m: Member[T, R]): Member[T, R] =
     m
 
-  def aux[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, R, U] =
+  def aux[T[_], R, U](using m: Member.Aux[T, R, U]): Member.Aux[T, R, U] =
     m
 
-  def unaux[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member[T, R] =
+  def unaux[T[_], R, U](using m: Member.Aux[T, R, U]): Member[T, R] =
     m
 }
 
 trait MemberLower1 extends MemberLower2 {
-  implicit def Member1[T[_]]: Member.Aux[T, Fx1[T], NoFx] = new Member[T, Fx1[T]] {
+  given Member1[T[_]]: Member.Aux[T, Fx1[T], NoFx] = new Member[T, Fx1[T]] {
     type Out = NoFx
 
     def inject[V](tv: T[V]): Union[Fx1[T], V] =
@@ -233,7 +233,7 @@ trait MemberLower1 extends MemberLower2 {
 }
 
 trait MemberLower2 extends MemberLower3 {
-  implicit def Member2L[L[_], R[_]]: Member.Aux[L, Fx2[L, R], Fx1[R]] = new Member[L, Fx2[L, R]] {
+  given Member2L[L[_], R[_]]: Member.Aux[L, Fx2[L, R], Fx1[R]] = new Member[L, Fx2[L, R]] {
     type Out = Fx1[R]
 
     def inject[V](tv: L[V]): Union[Fx2[L, R], V] =
@@ -249,7 +249,7 @@ trait MemberLower2 extends MemberLower3 {
 }
 
 trait MemberLower3 extends MemberLower4 {
-  implicit def Member3L[L[_], M[_], R[_]]: Member.Aux[L, Fx3[L, M, R], Fx2[M, R]] = new Member[L, Fx3[L, M, R]] {
+  given Member3L[L[_], M[_], R[_]]: Member.Aux[L, Fx3[L, M, R], Fx2[M, R]] = new Member[L, Fx3[L, M, R]] {
     type Out = Fx2[M, R]
 
     def inject[V](tv: L[V]): Union[Fx3[L, M, R], V] =
@@ -265,7 +265,7 @@ trait MemberLower3 extends MemberLower4 {
 }
 
 trait MemberLower4 extends MemberLower5 {
-  implicit def Member4L[T[_], L[_], M[_], R[_]]: Member.Aux[T, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[L, M, R]] =
+  given Member4L[T[_], L[_], M[_], R[_]]: Member.Aux[T, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[L, M, R]] =
     new Member[T, FxAppend[Fx1[T], Fx3[L, M, R]]] {
       type Out = Fx3[L, M, R]
 
@@ -285,7 +285,7 @@ trait MemberLower4 extends MemberLower5 {
 }
 
 trait MemberLower5 extends MemberLower6 {
-  implicit def Member4RL[T[_], L[_], M[_], R[_]]: Member.Aux[L, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, M, R]] =
+  given Member4RL[T[_], L[_], M[_], R[_]]: Member.Aux[L, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, M, R]] =
     new Member[L, FxAppend[Fx1[T], Fx3[L, M, R]]] {
       type Out = Fx3[T, M, R]
 
@@ -313,7 +313,7 @@ trait MemberLower5 extends MemberLower6 {
 }
 
 trait MemberLower6 extends MemberLower7 {
-  implicit def Member4RM[T[_], L[_], M[_], R[_]]: Member.Aux[M, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, L, R]] =
+  given Member4RM[T[_], L[_], M[_], R[_]]: Member.Aux[M, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, L, R]] =
     new Member[M, FxAppend[Fx1[T], Fx3[L, M, R]]] {
       type Out = Fx3[T, L, R]
 
@@ -344,7 +344,7 @@ trait MemberLower6 extends MemberLower7 {
 }
 
 trait MemberLower7 extends MemberLower8 {
-  implicit def Member4RR[T[_], L[_], M[_], R[_]]: Member.Aux[R, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, L, M]] =
+  given Member4RR[T[_], L[_], M[_], R[_]]: Member.Aux[R, FxAppend[Fx1[T], Fx3[L, M, R]], Fx3[T, L, M]] =
     new Member[R, FxAppend[Fx1[T], Fx3[L, M, R]]] {
       type Out = Fx3[T, L, M]
 
@@ -369,7 +369,7 @@ trait MemberLower7 extends MemberLower8 {
 }
 
 trait MemberLower8 extends MemberLower9 {
-  implicit def MemberAppend1R[T[_], R]: Member.Aux[T, FxAppend[Fx1[T], R], R] = new Member[T, FxAppend[Fx1[T], R]] {
+  given MemberAppend1R[T[_], R]: Member.Aux[T, FxAppend[Fx1[T], R], R] = new Member[T, FxAppend[Fx1[T], R]] {
     type Out = R
 
     def inject[V](e: T[V]): Union[FxAppend[Fx1[T], R], V] =
@@ -387,32 +387,32 @@ trait MemberLower8 extends MemberLower9 {
 }
 
 trait MemberLower9 extends MemberLower10 {
-  implicit def MemberAppend2L[T1[_], T2[_], R]: Member.Aux[T1, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T2], R]] =
+  given MemberAppend2L[T1[_], T2[_], R]: Member.Aux[T1, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T2], R]] =
     Member.MemberAppendL(using Member.Member2L)
 }
 
 trait MemberLower10 extends MemberLower11 {
-  implicit def MemberAppend2R[T1[_], T2[_], R]: Member.Aux[T2, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T1], R]] =
+  given MemberAppend2R[T1[_], T2[_], R]: Member.Aux[T2, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T1], R]] =
     Member.MemberAppendL(using Member.Member2R)
 }
 
 trait MemberLower11 extends MemberLower12 {
-  implicit def MemberAppend3L[T1[_], T2[_], T3[_], R]: Member.Aux[T1, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T2, T3], R]] =
+  given MemberAppend3L[T1[_], T2[_], T3[_], R]: Member.Aux[T1, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T2, T3], R]] =
     Member.MemberAppendL(using Member.Member3L)
 }
 
 trait MemberLower12 extends MemberLower13 {
-  implicit def MemberAppend3M[T1[_], T2[_], T3[_], R]: Member.Aux[T2, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T1, T3], R]] =
+  given MemberAppend3M[T1[_], T2[_], T3[_], R]: Member.Aux[T2, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T1, T3], R]] =
     Member.MemberAppendL(using Member.Member3M)
 }
 
 trait MemberLower13 extends MemberLower14 {
-  implicit def MemberAppend3R[T1[_], T2[_], T3[_], R]: Member.Aux[T3, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T1, T2], R]] =
+  given MemberAppend3R[T1[_], T2[_], T3[_], R]: Member.Aux[T3, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T1, T2], R]] =
     Member.MemberAppendL(using Member.Member3R)
 }
 
 trait MemberLower14 extends MemberLower15 {
-  implicit def MemberAppendL[T[_], L, R, U](implicit append: Member.Aux[T, L, U]): Member.Aux[T, FxAppend[L, R], FxAppend[U, R]] =
+  given MemberAppendL[T[_], L, R, U](using append: Member.Aux[T, L, U]): Member.Aux[T, FxAppend[L, R], FxAppend[U, R]] =
     new Member[T, FxAppend[L, R]] {
       type Out = FxAppend[U, R]
 
@@ -433,7 +433,7 @@ trait MemberLower14 extends MemberLower15 {
 }
 
 trait MemberLower15 extends MemberLower16 {
-  implicit def Member2R[L[_], R[_]]: Member.Aux[R, Fx2[L, R], Fx1[L]] = new Member[R, Fx2[L, R]] {
+  given Member2R[L[_], R[_]]: Member.Aux[R, Fx2[L, R], Fx1[L]] = new Member[R, Fx2[L, R]] {
     type Out = Fx1[L]
 
     def inject[V](tv: R[V]): Union[Fx2[L, R], V] =
@@ -452,7 +452,7 @@ trait MemberLower15 extends MemberLower16 {
 }
 
 trait MemberLower16 extends MemberLower17 {
-  implicit def Member3M[L[_], M[_], R[_]]: Member.Aux[M, Fx3[L, M, R], Fx2[L, R]] = new Member[M, Fx3[L, M, R]] {
+  given Member3M[L[_], M[_], R[_]]: Member.Aux[M, Fx3[L, M, R], Fx2[L, R]] = new Member[M, Fx3[L, M, R]] {
     type Out = Fx2[L, R]
 
     def inject[V](tv: M[V]): Union[Fx3[L, M, R], V] =
@@ -476,13 +476,13 @@ trait MemberLower16 extends MemberLower17 {
   }
 
   // Specialized version of MemberAppendR with an existential type for the output stack
-  implicit def MemberAppendRNoAux[T[_], L, R](implicit append: Member[T, R]): Member.Aux[T, FxAppend[L, R], FxAppend[L, append.Out]] =
+  given MemberAppendRNoAux[T[_], L, R](using append: Member[T, R]): Member.Aux[T, FxAppend[L, R], FxAppend[L, append.Out]] =
     Member.MemberAppendR[T, L, R, append.Out](using append)
 }
 
 trait MemberLower17 extends MemberLower18 {
 
-  implicit def MemberAppendR[T[_], L, R, U](implicit append: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[L, R], FxAppend[L, U]] =
+  given MemberAppendR[T[_], L, R, U](using append: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[L, R], FxAppend[L, U]] =
     new Member[T, FxAppend[L, R]] {
       type Out = FxAppend[L, U]
 
@@ -507,7 +507,7 @@ trait MemberLower17 extends MemberLower18 {
 }
 
 trait MemberLower18 extends MemberLower19 {
-  implicit def Member3R[L[_], M[_], R[_]]: Member.Aux[R, Fx3[L, M, R], Fx2[L, M]] = new Member[R, Fx3[L, M, R]] {
+  given Member3R[L[_], M[_], R[_]]: Member.Aux[R, Fx3[L, M, R], Fx2[L, M]] = new Member[R, Fx3[L, M, R]] {
     type Out = Fx2[L, M]
 
     def inject[V](tv: R[V]): Union[Fx3[L, M, R], V] =
@@ -525,7 +525,7 @@ trait MemberLower18 extends MemberLower19 {
 }
 
 trait MemberLower19 {
-  implicit def MemberAppendNoFxR[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[R, NoFx], U] =
+  given MemberAppendNoFxR[T[_], R, U](using m: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[R, NoFx], U] =
     new Member[T, FxAppend[R, NoFx]] {
       type Out = U
 
@@ -539,7 +539,7 @@ trait MemberLower19 {
         m.project(union.asInstanceOf[UnionAppendL[R, NoFx, V]].value)
     }
 
-  implicit def MemberAppendNoFxL[T[_], R, U](implicit m: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[NoFx, R], U] =
+  given MemberAppendNoFxL[T[_], R, U](using m: Member.Aux[T, R, U]): Member.Aux[T, FxAppend[NoFx, R], U] =
     new Member[T, FxAppend[NoFx, R]] {
       type Out = U
 

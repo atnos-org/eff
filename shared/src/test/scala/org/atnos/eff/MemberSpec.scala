@@ -1,15 +1,16 @@
 package org.atnos.eff
 
 import cats.Eval
+import cats.arrow.FunctionK
 import cats.data.*
 import cats.~>
 import org.atnos.eff.option.*
 import org.atnos.eff.reader.*
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.all.given
 import org.scalacheck.*
 import org.specs2.*
 
-class MemberSpec extends Specification with ScalaCheck with Specs2Compat {
+class MemberSpec extends Specification with ScalaCheck {
   def is = s2"""
 
 for 3-element stacks:
@@ -142,12 +143,12 @@ for 4-element stacks:
   type ReadStr[E] = Reader[String, *] /= E
   type StateStr[E] = State[String, *] /= E
 
-  implicit def readerStateNat[S1]: Reader[S1, *] ~> State[S1, *] = new (Reader[S1, *] ~> State[S1, *]) {
+  given readerStateNat[S1]: FunctionK[Reader[S1, *], State[S1, *]] = new (Reader[S1, *] ~> State[S1, *]) {
     def apply[X](r: Reader[S1, X]): State[S1, X] =
       State((s: S1) => (s, r.run(s)))
   }
 
-  implicit def stateReaderNat[S1]: State[S1, *] ~> Reader[S1, *] = new (State[S1, *] ~> Reader[S1, *]) {
+  given stateReaderNat[S1]: FunctionK[State[S1, *], Reader[S1, *]] = new (State[S1, *] ~> Reader[S1, *]) {
     def apply[X](state: State[S1, X]): Reader[S1, X] =
       Reader((s: S1) => state.runA(s).value)
   }
@@ -158,7 +159,7 @@ for 4-element stacks:
       _ <- option.some(s)
     } yield s.size
 
-  def stateIn[E](implicit state: State[String, *] |= E, option: Option |= E): Eff[E, Int] =
+  def stateIn[E](using state: State[String, *] |= E, option: Option |= E): Eff[E, Int] =
     readIn[E](using state.transform[Reader[String, *]], option)
 
   def readInOut[E: ReadStr: _option]: Eff[E, Int] =
@@ -167,6 +168,6 @@ for 4-element stacks:
       _ <- option.some(s)
     } yield s.size
 
-  def stateInOut[E](implicit state: State[String, *] /= E, option: Option |= E): Eff[E, Int] =
+  def stateInOut[E](using state: State[String, *] /= E, option: Option |= E): Eff[E, Int] =
     readInOut[E](using state.transform[Reader[String, *]], option)
 }

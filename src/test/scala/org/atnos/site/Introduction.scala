@@ -52,7 +52,7 @@ The stack `Stack` above declares 3 effects:
 
 Now we can write a program with those 3 effects, using the primitive operations provided by `ReaderEffect`, `WriterEffect` and `EvalEffect`:${snippet {
       import org.atnos.eff.all._
-      import org.atnos.eff.syntax.all._
+      import org.atnos.eff.syntax.all.given
 
 // useful type aliases showing that the ReaderInt and the WriterString effects are "members" of R
 // note that R could have more effects

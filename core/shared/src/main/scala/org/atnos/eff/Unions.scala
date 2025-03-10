@@ -44,14 +44,14 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
    * collect all the M effects and create a continuation for other effects
    * in a stack containing no more M effects
    */
-  def project[M[_], U](implicit m: Member.Aux[M, R, U]): CollectedUnions[M, R, U] =
+  def project[M[_], U](using m: Member.Aux[M, R, U]): CollectedUnions[M, R, U] =
     collect[M, U](m.project)
 
   /**
    * collect all the M effects and create a continuation for other effects
    * in the same stack
    */
-  def extract[M[_]](implicit m: M /= R): CollectedUnions[M, R, R] =
+  def extract[M[_]](using m: M /= R): CollectedUnions[M, R, R] =
     collect[M, R](u =>
       m.extract(u) match {
         case Some(mx) => Right(mx)
@@ -74,14 +74,14 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
     CollectedUnions[M, R, U](effects, otherEffects, indices, otherIndices)
   }
 
-  def transform[M[_]](nat: M ~> M)(implicit m: M /= R): Unions[R, A] =
+  def transform[M[_]](nat: M ~> M)(using m: M /= R): Unions[R, A] =
     Unions(m.transformUnion(nat)(first), rest.map(m.transformUnion(nat)))
 
-  def transformInto[M[_], N[_], U, S](nat: M ~> N)(implicit m: Member.Aux[M, R, U], n: Member.Aux[N, S, U]): Unions[S, A] =
+  def transformInto[M[_], N[_], U, S](nat: M ~> N)(using m: Member.Aux[M, R, U], n: Member.Aux[N, S, U]): Unions[S, A] =
     Unions[S, A](m.transformUnionInto(nat)(first), rest.map(u => m.transformUnionInto(nat)(u)))
 }
 
 object Unions {
-  def send[M[_], R, X](mx: M[X])(implicit m: MemberIn[M, R]): Unions[R, X] =
+  def send[M[_], R, X](mx: M[X])(using m: MemberIn[M, R]): Unions[R, X] =
     Unions[R, X](m.inject(mx), Vector.empty)
 }

@@ -36,7 +36,7 @@ import org.atnos.eff.Eff.send
  */
 trait Interpret {
 
-  def runInterpreter[R, U, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, U, A, B])(implicit m: Member.Aux[T, R, U]): Eff[U, B] = {
+  def runInterpreter[R, U, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, U, A, B])(using m: Member.Aux[T, R, U]): Eff[U, B] = {
 
     def interpretContinuation[X](c: Continuation[R, X, A]): Continuation[U, X, B] =
       Continuation.lift((x: X) => runInterpreter(c(x))(interpreter), interpretLast(c.onNone))
@@ -95,14 +95,14 @@ trait Interpret {
   /**
    * Interpret an effect with a Recurser
    */
-  def recurse[R, U, T[_], A, B](e: Eff[R, A])(recurser: Recurser[T, U, A, B])(implicit m: Member.Aux[T, R, U]): Eff[U, B] =
+  def recurse[R, U, T[_], A, B](e: Eff[R, A])(recurser: Recurser[T, U, A, B])(using Member.Aux[T, R, U]): Eff[U, B] =
     runInterpreter(e)(Interpreter.fromRecurser(recurser))
 
   /**
    * transform an effect into another one
    * using a natural transformation, leaving the rest of the stack untouched
    */
-  def transform[SR, BR, U1, U2, TS[_], TB[_], A](effect: Eff[SR, A], nat: TS ~> TB)(implicit
+  def transform[SR, BR, U1, U2, TS[_], TB[_], A](effect: Eff[SR, A], nat: TS ~> TB)(using
     sr: Member.Aux[TS, SR, U1],
     br: Member.Aux[TB, BR, U2],
     into: IntoPoly[U1, U2]
@@ -130,14 +130,14 @@ trait Interpret {
   /**
    * Translate one effect of the stack into some of the other effects in the stack
    */
-  def translate[R, U, T[_], A](effect: Eff[R, A])(tr: Translate[T, U])(implicit m: Member.Aux[T, R, U]): Eff[U, A] =
+  def translate[R, U, T[_], A](effect: Eff[R, A])(tr: Translate[T, U])(using Member.Aux[T, R, U]): Eff[U, A] =
     runInterpreter(effect)(Interpreter.fromTranslate(tr))
 
   /**
    * Translate one effect of the stack into some of the other effects in the stack
    * Using a natural transformation
    */
-  def translateNat[R, U, T[_], A](effects: Eff[R, A])(nat: T ~> Eff[U, *])(implicit m: Member.Aux[T, R, U]): Eff[U, A] =
+  def translateNat[R, U, T[_], A](effects: Eff[R, A])(nat: T ~> Eff[U, *])(using Member.Aux[T, R, U]): Eff[U, A] =
     translate(effects)(new Translate[T, U] {
       def apply[X](tx: T[X]): Eff[U, X] = nat(tx)
     })
@@ -145,7 +145,7 @@ trait Interpret {
   /**
    * Translate one effect of the stack into other effects in a larger stack
    */
-  def translateInto[R, T[_], U, A](effect: Eff[R, A])(tr: Translate[T, U])(implicit t: T /= R, into: IntoPoly[R, U]): Eff[U, A] = {
+  def translateInto[R, T[_], U, A](effect: Eff[R, A])(tr: Translate[T, U])(using t: T /= R, into: IntoPoly[R, U]): Eff[U, A] = {
     val m: Member.Aux[T, R, U] = new Member[T, R] {
       type Out = U
 
@@ -166,26 +166,26 @@ trait Interpret {
   }
 
   /** interpret an effect by running side-effects */
-  def interpretUnsafe[R, U, T[_], A](effect: Eff[R, A])(sideEffect: SideEffect[T])(implicit m: Member.Aux[T, R, U]): Eff[U, A] =
+  def interpretUnsafe[R, U, T[_], A](effect: Eff[R, A])(sideEffect: SideEffect[T])(using Member.Aux[T, R, U]): Eff[U, A] =
     runInterpreter[R, U, T, A, A](effect)(Interpreter.fromSideEffect(sideEffect))
 
-  def intercept[R, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, R, A, B])(implicit m: T /= R): Eff[R, B] =
+  def intercept[R, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, R, A, B])(using m: T /= R): Eff[R, B] =
     runInterpreter[R, R, T, A, B](e)(interpreter)(using m.toMember)
 
   /**
    * Intercept the values for one effect and transform them into
    * other values for the same effect
    */
-  def interceptNat[R, T[_], A](effect: Eff[R, A])(nat: T ~> T)(implicit m: T /= R): Eff[R, A] =
+  def interceptNat[R, T[_], A](effect: Eff[R, A])(nat: T ~> T)(using T /= R): Eff[R, A] =
     intercept(effect)(Interpreter.fromNat(nat))
 
-  type of[F[_], G[_]] = { type l[A] = F[G[A]] }
+  infix type of[F[_], G[_]] = { type l[A] = F[G[A]] }
 
   /**
    * Intercept the values for one effect,
    * emitting new values for the same effect inside a monad which is interleaved in
    */
-  def interceptNatM[R, M[_], F[_], A](effect: Eff[R, A], nat: M ~> (M `of` F)#l)(implicit
+  def interceptNatM[R, M[_], F[_], A](effect: Eff[R, A], nat: M ~> (M `of` F)#l)(using
     m: MemberInOut[M, R],
     FT: Traverse[F],
     FM: Monad[F]
@@ -214,7 +214,7 @@ trait Interpret {
   /**
    * Interpret the effect T with a side-effect O (see the write method below)
    */
-  def augment[R, T[_], O[_], A](eff: Eff[R, A])(w: Augment[T, O])(implicit memberT: MemberInOut[T, R], memberO: MemberIn[O, R]): Eff[R, A] = {
+  def augment[R, T[_], O[_], A](eff: Eff[R, A])(w: Augment[T, O])(using MemberInOut[T, R], MemberIn[O, R]): Eff[R, A] = {
     translateInto(eff)(new Translate[T, R] {
       def apply[X](tx: T[X]): Eff[R, X] = send[O, R, Unit](w(tx)) >> send[T, R, X](tx)
     })
@@ -223,19 +223,11 @@ trait Interpret {
   /**
    * For each effect T add some "log statements" O using the Writer effect
    */
-  def write[R, T[_], O, A](eff: Eff[R, A])(w: Write[T, O])(implicit memberT: MemberInOut[T, R], memberW: MemberIn[Writer[O, *], R]): Eff[R, A] = {
+  def write[R, T[_], O, A](eff: Eff[R, A])(w: Write[T, O])(using MemberInOut[T, R], MemberIn[Writer[O, *], R]): Eff[R, A] = {
     augment[R, T, Writer[O, *], A](eff)(new Augment[T, Writer[O, *]] {
       def apply[X](tx: T[X]) = Writer.tell[O](w(tx))
     })
   }
-
-  /**
-   * For a single effect T log every value of that effect
-   */
-  def trace[R, T[_], A](eff: Eff[R, A])(implicit memberT: MemberInOut[T, R], memberW: MemberInOut[Writer[T[?], *], R]): Eff[R, A] =
-    write[R, T, T[?], A](eff)(new Write[T, T[?]] {
-      def apply[X](tx: T[X]): T[?] = tx
-    })
 
 }
 

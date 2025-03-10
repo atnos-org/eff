@@ -2,10 +2,10 @@ package org.atnos.eff
 
 import cats.syntax.all.*
 import org.atnos.eff.all.*
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.all.given
 import org.specs2.Specification
 
-class ChooseEffectSpec extends Specification with Specs2Compat {
+class ChooseEffectSpec extends Specification {
   def is = s2"""
 
  An action can use some non-deterministic choice

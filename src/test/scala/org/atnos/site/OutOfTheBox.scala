@@ -26,7 +26,7 @@ This library comes with the following effects:
 
 <small>(from `org.atnos.eff._`)</small>
 
-Other modules listed in $Installation provide additional effects (Twitter Future, Scalaz Task, Doobie ConnectionIO,...).
+Other modules listed in $Installation provide additional effects (Scalaz Task, Doobie ConnectionIO,...).
 
 <br/>
 

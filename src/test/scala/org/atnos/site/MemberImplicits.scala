@@ -9,14 +9,6 @@ object MemberImplicits extends UserGuidePage {
 Type inference with the Eff monad can be a bit tricky to get right if we want to avoid type annotations. Here are some
 tips to help you.
 
-### Running effects with several type parameters
-
-Some effects use 2 type variables, like `Reader` or `Writer`. If you want to use those effects in an effect stack you need
-to make sure you have the following `scalac` option:
-```scala
-scalacOptions += "-Ypartial-unification"
-```
-
 ### Use context bounds and type aliases
 
 When creating effects you can always "require" a stack containing the right effects with the `MemberIn` typeclass:${snippet {
@@ -27,7 +19,7 @@ When creating effects you can always "require" a stack containing the right effe
       type WriterString[A] = Writer[String, A]
 
 // for creating state effects
-      def putAndTell[R](i: Int)(implicit s: StateInt |= R, w: WriterString |= R): Eff[R, Int] =
+      def putAndTell[R](i: Int)(using StateInt |= R, WriterString |= R): Eff[R, Int] =
         for {
           // no type annotations needed!
           _ <- put(i)

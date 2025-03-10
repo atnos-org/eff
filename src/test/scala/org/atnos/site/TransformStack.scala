@@ -52,7 +52,7 @@ ${snippet {
 
 // but this works
       val member: Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]] =
-        implicitly[Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]]]
+        summon[Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]]]
     }}
 
 More importantly the compiler is still able to track the right types resulting of the interpretation of a given effect
@@ -61,10 +61,10 @@ so the following compiles ok:
 ${snippet {
       import org.atnos.eff._
 
-      def runT3[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T3, R, U]): Eff[U, A] = ???
-      def runT2[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T2, R, U]): Eff[U, A] = ???
-      def runT1[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T1, R, U]): Eff[U, A] = ???
-      def runT4[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[T4, R, U]): Eff[U, A] = ???
+      def runT3[R, U, A](e: Eff[R, A])(using Member.Aux[T3, R, U]): Eff[U, A] = ???
+      def runT2[R, U, A](e: Eff[R, A])(using Member.Aux[T2, R, U]): Eff[U, A] = ???
+      def runT1[R, U, A](e: Eff[R, A])(using Member.Aux[T1, R, U]): Eff[U, A] = ???
+      def runT4[R, U, A](e: Eff[R, A])(using Member.Aux[T4, R, U]): Eff[U, A] = ???
 
       type S = FxAppend[Fx1[T1], Fx3[T2, T3, T4]]
 
@@ -79,7 +79,7 @@ ${snippet {
 A typical use case for this is to transform a stack having a `Reader[S, *]` effect to a stack having a `Reader[B, *]` effect
  where `S` is "contained" in `B` (meaning that there is a mapping from `B`, "big", to `S`, "small"). Here is an example:${snippet {
       import org.atnos.eff._, all._
-      import org.atnos.eff.syntax.all._
+      import org.atnos.eff.syntax.all.given
       import cats._
       import cats.data._
 
@@ -135,7 +135,7 @@ type S = Fx.fx3[Authenticated, TimedFuture, Either[AuthError, *]]
 
 And you want to write an interpreter which will translate authentication actions into `TimedFuture` and `Either`:${snippet {
       import org.atnos.eff._
-      import org.atnos.eff.syntax.eff._
+      import org.atnos.eff.syntax.eff.given
       import org.atnos.eff.future._
       import org.atnos.eff.interpret._
       import scala.concurrent.Future
@@ -158,7 +158,7 @@ And you want to write an interpreter which will translate authentication actions
  * The order of implicit parameters is really important for type inference!
  * see below
  */
-      def runAuth[R, U, A](e: Eff[R, A])(implicit authenticated: Member.Aux[Authenticated, R, U], future: _future[U], either: _error[U]): Eff[U, A] =
+      def runAuth[R, U, A](e: Eff[R, A])(using Member.Aux[Authenticated, R, U], _future[U], _error[U]): Eff[U, A] =
         translate(e)(new Translate[Authenticated, U] {
           def apply[X](ax: Authenticated[X]): Eff[U, X] =
             ax match {
@@ -217,7 +217,7 @@ ${snippet {
       trait Db[A]
       type _writerString[R] = Writer[String, *] |= R
 
-      def runDb[R, U, A](queries: Eff[R, A])(implicit db: Member.Aux[Db, R, U], eval: _eval[U], writer: _writerString[U]): Eff[U, A] = ???
+      def runDb[R, U, A](queries: Eff[R, A])(using Member.Aux[Db, R, U], _eval[U], _writerString[U]): Eff[U, A] = ???
     }}
 
 The database queries (the `Db` effect) are being executed by the `runDb` method inside the `Eval` effect, and they use
@@ -238,7 +238,7 @@ ${snippet {
       type _writerString[R] = WriterString |= R
 // 8<--
 
-      def executeOnDb[R, U, A](queries: Eff[R, A])(implicit db: Member.Aux[Db, R, U], eval: _eval[U]): Eff[U, A] = ???
+      def executeOnDb[R, U, A](queries: Eff[R, A])(using Member.Aux[Db, R, U], _eval[U]): Eff[U, A] = ???
     }}
 
 How can you implement `executeOnDb` with `runDb`?
@@ -252,11 +252,11 @@ ${snippet {
       type WriterString[A] = Writer[String, A]
       type _writerString[R] = WriterString |= R
 
-      def runDb[R, U, A](queries: Eff[R, A])(implicit m: Member.Aux[Db, R, U], e: _eval[U], w: _writerString[U]): Eff[U, A] = ???
+      def runDb[R, U, A](queries: Eff[R, A])(using Member.Aux[Db, R, U], _eval[U], _writerString[U]): Eff[U, A] = ???
 // 8<--
-      import org.atnos.eff.syntax.all._
+      import org.atnos.eff.syntax.all.given
 
-      def executeOnDb[R, U, A](queries: Eff[R, A])(implicit db: Member.Aux[Db, R, U], eval: _eval[U]): Eff[U, A] = {
+      def executeOnDb[R, U, A](queries: Eff[R, A])(using Member.Aux[Db, R, U], _eval[U]): Eff[U, A] = {
 
         type S = Fx.prepend[WriterString, R]
         runDb(queries.into[S]).runWriterNoLog[String]
@@ -275,7 +275,6 @@ We can also define another stack, for storing and retrieving data on [S3](https:
 
 So what happens when you want to both use S3 and Hadoop? As you can see from the definition above those 2 stacks share
 some common effects, so the resulting stack we want to work with is:${snippet {
-      import org.atnos.eff._
       import cats.Eval
       import HadoopStack._
       import S3Stack.{WriterString as _, _}
@@ -290,7 +289,7 @@ Then we can use the `into` method to inject effects from each stack into this co
       import S3Stack._
       import HadoopStack._
 // this imports the `into` and runXXX syntax
-      import org.atnos.eff.syntax.all._
+      import org.atnos.eff.syntax.all.given
 
       val action = for {
         // read a file from hadoop

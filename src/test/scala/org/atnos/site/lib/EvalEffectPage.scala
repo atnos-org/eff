@@ -13,7 +13,7 @@ Two methods are available to execute this effect:
  - `attemptEval: Eff[U, Throwable Either A]` to execute the computations but also catch any `Throwable` that would be thrown
 
 ${snippet {
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
 
       delay(1 + 1).runEval.run
     }.eval}

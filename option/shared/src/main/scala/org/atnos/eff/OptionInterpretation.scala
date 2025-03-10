@@ -11,7 +11,7 @@ trait OptionInterpretation {
    *
    * Stop all computations if None is present once
    */
-  def runOption[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Option, R, U]): Eff[U, Option[A]] =
+  def runOption[R, U, A](effect: Eff[R, A])(using m: Member.Aux[Option, R, U]): Eff[U, Option[A]] =
     recurse(effect)(new Recurser[Option, U, A, Option[A]] {
       def onPure(a: A): Option[A] =
         Some(a)

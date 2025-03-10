@@ -1,6 +1,8 @@
 package org.atnos.eff
 
 import cats.Monad
+import cats.data.Writer
+import cats.~>
 
 /**
  * Effects of type R, returning a value of type A
@@ -47,7 +49,7 @@ import cats.Monad
  * @see [[https://okmij.org/ftp/Haskell/extensible/more.pdf]]
  *
  */
-sealed trait Eff[R, A] {
+sealed abstract class Eff[R, A] {
   import Eff.EffApplicative
 
   def map[B](f: A => B): Eff[R, B] =
@@ -63,7 +65,7 @@ sealed trait Eff[R, A] {
     EffApplicative[R].map2(this, fb)(f)
 
   def map2Flatten[B, C](fb: Eff[R, B])(f: (A, B) => Eff[R, C]): Eff[R, C] =
-    Monad[Eff[R, *]].flatMap(EffApplicative[R].product(this, fb)) { case (a, b) => f(a, b) }
+    Monad[Eff[R, *]].flatMap(EffApplicative[R].product(this, fb)) { (a, b) => f(a, b) }
 
   def *>[B](fb: Eff[R, B]): Eff[R, B] =
     EffApplicative[R].map2(this, fb) { case (_, b) => b }
@@ -83,7 +85,7 @@ sealed trait Eff[R, A] {
   def flatMap[B](f: A => Eff[R, B]): Eff[R, B] =
     Monad[Eff[R, *]].flatMap(this)(f)
 
-  def flatten[B](implicit ev: A <:< Eff[R, B]): Eff[R, B] =
+  def flatten[B](using ev: A <:< Eff[R, B]): Eff[R, B] =
     flatMap(ev)
 
   /** add one last action to be executed after any computation chained to this Eff value */
@@ -93,6 +95,26 @@ sealed trait Eff[R, A] {
   /** add one last action to be executed after any computation chained to this Eff value */
   def addLast(l: Last[R]): Eff[R, A]
 
+  def into[U](using f: IntoPoly[R, U]): Eff[U, A] =
+    Eff.effInto(this)(using f)
+
+  def transform[BR, U, M[_], N[_]](t: ~>[M, N])(using m: Member.Aux[M, R, U], n: Member.Aux[N, BR, U]): Eff[BR, A] =
+    Interpret.transform(this, t)(using m, n, IntoPoly.intoSelf[U])
+
+  def translate[M[_], U](t: Translate[M, U])(using m: Member.Aux[M, R, U]): Eff[U, A] =
+    Interpret.translate(this)(t)(using m)
+
+  def translateInto[T[_], U](t: Translate[T, U])(using m: MemberInOut[T, R], into: IntoPoly[R, U]): Eff[U, A] =
+    interpret.translateInto(this)(t)(using m, into)
+
+  def write[T[_], O](w: Write[T, O])(using MemberInOut[T, R], MemberInOut[Writer[O, *], R]): Eff[R, A] =
+    interpret.write(this)(w)
+
+  def augment[T[_], O[_]](w: Augment[T, O])(using MemberInOut[T, R], MemberIn[O, R]): Eff[R, A] =
+    interpret.augment(this)(w)
+
+  def runPure: Option[A] =
+    Eff.runPure(this)
 }
 
 case class Pure[R, A](value: A, last: Last[R] = Last.none[R]) extends Eff[R, A] {

@@ -14,6 +14,5 @@ trait all
     with list
     with state
     with safe
-    with batch
     with memo
     with eff

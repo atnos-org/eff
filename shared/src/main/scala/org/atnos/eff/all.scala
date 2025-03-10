@@ -27,7 +27,6 @@ object all
     with ChooseEffect
     with SafeEffect
     with MemoEffect
-    with Batch
     with EffInterpretation
     with EffCreation
     with EffImplicits

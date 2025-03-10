@@ -24,7 +24,7 @@ ${snippet {
       import cats.syntax.all._
       import org.atnos.eff._
       import org.atnos.eff.all._
-      import org.atnos.eff.syntax.all._
+      import org.atnos.eff.syntax.all.given
 
 // Some type definitions for the effects we will use
       type EitherString[A] = Either[String, A]

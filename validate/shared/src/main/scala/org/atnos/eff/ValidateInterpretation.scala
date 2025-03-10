@@ -8,23 +8,23 @@ import org.atnos.eff.Interpret.*
 trait ValidateInterpretation extends ValidateCreation {
 
   /** run the validate effect, yielding a ValidatedNel */
-  def runValidatedNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, ValidatedNel[E, A]] =
+  def runValidatedNel[R, U, E, A](r: Eff[R, A])(using Member.Aux[Validate[E, *], R, U]): Eff[U, ValidatedNel[E, A]] =
     runNel(r).map(result => Validated.fromEither(result))
 
   /** run the validate effect, yielding a non-empty list of failures Either A */
-  def runNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, Either[NonEmptyList[E], A]] =
+  def runNel[R, U, E, A](r: Eff[R, A])(using Member.Aux[Validate[E, *], R, U]): Eff[U, Either[NonEmptyList[E], A]] =
     runMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.of(e))
 
   /** run the validate effect, yielding a list of failures Either A */
-  def runMap[R, U, E, L: Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, Either[L, A]] =
+  def runMap[R, U, E, L: Semigroup, A](effect: Eff[R, A])(map: E => L)(using Member.Aux[Validate[E, *], R, U]): Eff[U, Either[L, A]] =
     runMapGen(effect)(map) { (a, l) => l.map(_ => a) }
 
   /** run the validate effect, yielding a non-empty list of failures or A or both */
-  def runIorNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, IorNel[E, A]] =
+  def runIorNel[R, U, E, A](r: Eff[R, A])(using Member.Aux[Validate[E, *], R, U]): Eff[U, IorNel[E, A]] =
     runIorMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.one(e))
 
   /** run the validate effect, yielding a list of failures or A or both */
-  def runIorMap[R, U, E, L: Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, Ior[L, A]] =
+  def runIorMap[R, U, E, L: Semigroup, A](effect: Eff[R, A])(map: E => L)(using Member.Aux[Validate[E, *], R, U]): Eff[U, Ior[L, A]] =
     runMapGen(effect)(map) { (a, l) =>
       l match {
         case Left(errs) => Ior.Left(errs)
@@ -35,10 +35,10 @@ trait ValidateInterpretation extends ValidateCreation {
 
   private def runMapGen[R, U, E, L: Semigroup, A, SomeOr[_, _]](
     effect: Eff[R, A]
-  )(map: E => L)(pure: (A, Either[L, Option[L]]) => SomeOr[L, A])(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, SomeOr[L, A]] =
+  )(map: E => L)(pure: (A, Either[L, Option[L]]) => SomeOr[L, A])(using Member.Aux[Validate[E, *], R, U]): Eff[U, SomeOr[L, A]] =
     runInterpreter(effect)(new Interpreter[Validate[E, *], U, A, SomeOr[L, A]] {
       // Left means failed, Right means not failed (Option contains warnings)
-      private[this] var l: Either[L, Option[L]] = Right(None)
+      private var l: Either[L, Option[L]] = Right(None)
 
       def onPure(a: A): Eff[U, SomeOr[L, A]] =
         Eff.pure(pure(a, l))
@@ -78,9 +78,9 @@ trait ValidateInterpretation extends ValidateCreation {
   /** catch and handle possible wrong values */
   def catchWrongs[R, E, A, S[_]: Applicative](
     effect: Eff[R, A]
-  )(handle: S[E] => Eff[R, A])(implicit member: Validate[E, *] <= R, semi: Semigroup[S[E]]): Eff[R, A] =
+  )(handle: S[E] => Eff[R, A])(using Validate[E, *] <= R, Semigroup[S[E]]): Eff[R, A] =
     intercept(effect)(new Interpreter[Validate[E, *], R, A, A] {
-      private[this] var errs: Option[S[E]] = None
+      private var errs: Option[S[E]] = None
 
       def onPure(a: A): Eff[R, A] =
         errs.map(handle).getOrElse(Eff.pure(a))
@@ -111,19 +111,19 @@ trait ValidateInterpretation extends ValidateCreation {
     })
 
   /** catch and handle the first wrong value */
-  def catchFirstWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, *] <= R): Eff[R, A] = {
-    implicit val first: Semigroup[E] = Semigroup.instance { (a, _) => a }
+  def catchFirstWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(using Validate[E, *] <= R): Eff[R, A] = {
+    given Semigroup[E] = Semigroup.instance { (a, _) => a }
     catchWrongs[R, E, A, Id](effect)(handle)
   }
 
   /** catch and handle the last wrong value */
-  def catchLastWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Validate[E, *] <= R): Eff[R, A] = {
-    implicit val last: Semigroup[E] = Semigroup.instance { (_, b) => b }
+  def catchLastWrong[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(using Validate[E, *] <= R): Eff[R, A] = {
+    given Semigroup[E] = Semigroup.instance { (_, b) => b }
     catchWrongs[R, E, A, Id](effect)(handle)
   }
 
   /** catch and handle all wrong values */
-  def catchAllWrongs[R, E, A](effect: Eff[R, A])(handle: NonEmptyList[E] => Eff[R, A])(implicit member: Validate[E, *] <= R): Eff[R, A] =
+  def catchAllWrongs[R, E, A](effect: Eff[R, A])(handle: NonEmptyList[E] => Eff[R, A])(using Validate[E, *] <= R): Eff[R, A] =
     catchWrongs(effect)(handle)
 
 }

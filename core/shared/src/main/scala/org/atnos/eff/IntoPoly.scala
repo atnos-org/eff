@@ -25,7 +25,7 @@ object IntoPoly extends IntoPolyLower1
 
 trait IntoPolyLower1 extends IntoPolyLower2 {
 
-  implicit def intoNil[R]: IntoPoly[NoFx, R] =
+  given intoNil[R]: IntoPoly[NoFx, R] =
     new IntoPoly[NoFx, R] {
       val unionInto: UnionInto[NoFx, R] = new UnionInto[NoFx, R] {
         def apply[A](union: Union[NoFx, A]): Union[R, A] =
@@ -33,7 +33,7 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
       }
     }
 
-  implicit def intoNoFxAppendL[R]: IntoPoly[FxAppend[NoFx, R], R] =
+  given intoNoFxAppendL[R]: IntoPoly[FxAppend[NoFx, R], R] =
     new IntoPoly[FxAppend[NoFx, R], R] {
       val unionInto: UnionInto[FxAppend[NoFx, R], R] = new UnionInto[FxAppend[NoFx, R], R] {
         def apply[A](union: Union[FxAppend[NoFx, R], A]): Union[R, A] =
@@ -45,7 +45,7 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
       }
     }
 
-  implicit def intoNoFxAppendR[R]: IntoPoly[FxAppend[R, NoFx], R] =
+  given intoNoFxAppendR[R]: IntoPoly[FxAppend[R, NoFx], R] =
     new IntoPoly[FxAppend[R, NoFx], R] {
       val unionInto: UnionInto[FxAppend[R, NoFx], R] = new UnionInto[FxAppend[R, NoFx], R] {
         def apply[A](union: Union[FxAppend[R, NoFx], A]): Union[R, A] =
@@ -61,7 +61,7 @@ trait IntoPolyLower1 extends IntoPolyLower2 {
 
 trait IntoPolyLower2 extends IntoPolyLower3 {
 
-  implicit def intoSelf[R]: IntoPoly[R, R] =
+  given intoSelf[R]: IntoPoly[R, R] =
     new IntoPoly[R, R] {
       val unionInto: UnionInto[R, R] =
         new UnionInto[R, R] {
@@ -70,7 +70,7 @@ trait IntoPolyLower2 extends IntoPolyLower3 {
         }
     }
 
-  implicit def intoAppendL2L[T1[_], T2[_], R]: IntoPoly[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] =
+  given intoAppendL2L[T1[_], T2[_], R]: IntoPoly[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] =
     new IntoPoly[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] {
       val unionInto: UnionInto[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] =
         new UnionInto[FxAppend[Fx1[T2], R], FxAppend[Fx2[T1, T2], R]] {
@@ -82,7 +82,7 @@ trait IntoPolyLower2 extends IntoPolyLower3 {
         }
     }
 
-  implicit def intoAppendL2R[T1[_], T2[_], R]: IntoPoly[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] =
+  given intoAppendL2R[T1[_], T2[_], R]: IntoPoly[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] =
     new IntoPoly[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] {
       val unionInto: UnionInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] =
         new UnionInto[FxAppend[Fx1[T1], R], FxAppend[Fx2[T1, T2], R]] {
@@ -94,7 +94,7 @@ trait IntoPolyLower2 extends IntoPolyLower3 {
         }
     }
 
-  implicit def intoAppendL3L[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] =
+  given intoAppendL3L[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] =
     new IntoPoly[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
       val unionInto: UnionInto[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] =
         new UnionInto[FxAppend[Fx2[T2, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
@@ -106,7 +106,7 @@ trait IntoPolyLower2 extends IntoPolyLower3 {
         }
     }
 
-  implicit def intoAppendL3M[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] =
+  given intoAppendL3M[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] =
     new IntoPoly[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
       val unionInto: UnionInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] =
         new UnionInto[FxAppend[Fx2[T1, T3], R], FxAppend[Fx3[T1, T2, T3], R]] {
@@ -120,7 +120,7 @@ trait IntoPolyLower2 extends IntoPolyLower3 {
         }
     }
 
-  implicit def intoAppendL3R[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] =
+  given intoAppendL3R[T1[_], T2[_], T3[_], R]: IntoPoly[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] =
     new IntoPoly[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] {
       val unionInto: UnionInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] =
         new UnionInto[FxAppend[Fx2[T1, T2], R], FxAppend[Fx3[T1, T2, T3], R]] {
@@ -134,7 +134,7 @@ trait IntoPolyLower2 extends IntoPolyLower3 {
 }
 
 trait IntoPolyLower3 extends IntoPolyLower4 {
-  implicit def intoAppendL1[T[_], R]: IntoPoly[R, FxAppend[Fx1[T], R]] =
+  given intoAppendL1[T[_], R]: IntoPoly[R, FxAppend[Fx1[T], R]] =
     new IntoPoly[R, FxAppend[Fx1[T], R]] {
       val unionInto: UnionInto[R, FxAppend[Fx1[T], R]] =
         new UnionInto[R, FxAppend[Fx1[T], R]] {
@@ -146,7 +146,7 @@ trait IntoPolyLower3 extends IntoPolyLower4 {
 
 trait IntoPolyLower4 extends IntoPolyLower5 {
 
-  implicit def into[T[_], R, U, S](implicit t: Member.Aux[T, R, S], m: T |= U, recurse: IntoPoly[S, U]): IntoPoly[R, U] =
+  given into[T[_], R, U, S](using t: Member.Aux[T, R, S], m: T |= U, recurse: IntoPoly[S, U]): IntoPoly[R, U] =
     new IntoPoly[R, U] {
       val unionInto: UnionInto[R, U] = new UnionInto[R, U] {
         def apply[X](union: Union[R, X]): Union[U, X] =
@@ -160,7 +160,7 @@ trait IntoPolyLower4 extends IntoPolyLower5 {
 
 trait IntoPolyLower5 {
 
-  implicit def intoMember[T[_], R, U](implicit m: Member.Aux[T, R, U]): IntoPoly[U, R] = new IntoPoly[U, R] {
+  given intoMember[T[_], R, U](using m: Member.Aux[T, R, U]): IntoPoly[U, R] = new IntoPoly[U, R] {
     val unionInto: UnionInto[U, R] = new UnionInto[U, R] {
       def apply[X](union: Union[U, X]): Union[R, X] =
         m.accept(union)

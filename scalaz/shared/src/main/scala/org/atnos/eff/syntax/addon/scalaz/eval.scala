@@ -8,13 +8,12 @@ object eval extends org.atnos.eff.syntax.eval with eval
 
 trait eval {
 
-  implicit def toEvalEffectScalazOps[R, A](e: Eff[R, A]): EvalEffectScalazOps[R, A] = new EvalEffectScalazOps[R, A](e)
+  given scalazEvalExtension: AnyRef with {
 
-}
-
-final class EvalEffectScalazOps[R, A](private val e: Eff[R, A]) extends AnyVal {
-
-  def attemptEvalDisjunction[U](implicit member: Member.Aux[Eval, R, U]): Eff[U, Throwable \/ A] =
-    addon.scalaz.eval.attemptEvalDisjunction(e)
+    extension [R, A](e: Eff[R, A]) {
+      def attemptEvalDisjunction[U](using Member.Aux[Eval, R, U]): Eff[U, Throwable \/ A] =
+        addon.scalaz.eval.attemptEvalDisjunction(e)
+    }
+  }
 
 }

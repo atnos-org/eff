@@ -7,15 +7,14 @@ object eval extends eval
 
 trait eval {
 
-  implicit def toEvalEffectOps[R, A](e: Eff[R, A]): EvalEffectOps[R, A] = new EvalEffectOps[R, A](e)
-}
+  given evalExtension: AnyRef with {
+    extension [R, A](e: Eff[R, A]) {
+      def runEval(using member: Member[Eval, R]): Eff[member.Out, A] =
+        EvalInterpretation.runEval(e)(using member.aux)
 
-final class EvalEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
-
-  def runEval(implicit member: Member[Eval, R]): Eff[member.Out, A] =
-    EvalInterpretation.runEval(e)(using member.aux)
-
-  def attemptEval(implicit member: Member[Eval, R]): Eff[member.Out, Either[Throwable, A]] =
-    EvalInterpretation.attemptEval(e)(using member.aux)
+      def attemptEval(using member: Member[Eval, R]): Eff[member.Out, Either[Throwable, A]] =
+        EvalInterpretation.attemptEval(e)(using member.aux)
+    }
+  }
 
 }

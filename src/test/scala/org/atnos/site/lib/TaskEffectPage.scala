@@ -2,7 +2,7 @@ package org.atnos.site
 package lib
 
 import java.util.concurrent.Executors
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.all.given
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
 
@@ -16,7 +16,7 @@ Now, let's create some `Task` effects:${snippet {
 
       import org.atnos.eff._
       import org.atnos.eff.addon.monix.task._
-      import org.atnos.eff.syntax.addon.monix.task._
+      import org.atnos.eff.syntax.addon.monix.task.given
 
       import monix.eval.Task
 
@@ -35,7 +35,7 @@ Now, let's create some `Task` effects:${snippet {
 Then we need to pass a Monix `Scheduler`  in to begin the computation.
        */
 
-      implicit val scheduler: monix.execution.Scheduler =
+      given monix.execution.Scheduler =
         monix.execution.Scheduler(ExecutionContext.fromExecutorService(Executors.newScheduledThreadPool(10)): ExecutionContext)
 
       /*p

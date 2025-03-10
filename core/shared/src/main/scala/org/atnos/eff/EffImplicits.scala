@@ -1,14 +1,13 @@
 package org.atnos.eff
 
 import cats.*
-import org.atnos.eff.EffCompat.*
 
 trait EffImplicits {
 
   /**
     * Monad implementation for the Eff[R, *] type
     */
-  private[this] final val effMonadUnsafeImpl: Monad[Eff[AnyRef, *]] = new Monad[Eff[AnyRef, *]] {
+  private final val effMonadUnsafeImpl: Monad[Eff[AnyRef, *]] = new Monad[Eff[AnyRef, *]] {
 
     def pure[A](a: A): Eff[AnyRef, A] =
       Pure[AnyRef, A](a)
@@ -55,7 +54,7 @@ trait EffImplicits {
       }
   }
 
-  private[this] final val effApplicativeUnsafeImpl: Applicative[Eff[AnyRef, *]] = new Applicative[Eff[AnyRef, *]] {
+  private final val effApplicativeUnsafeImpl: Applicative[Eff[AnyRef, *]] = new Applicative[Eff[AnyRef, *]] {
 
     def pure[A](a: A): Eff[AnyRef, A] =
       Pure[AnyRef, A](a)
@@ -70,7 +69,7 @@ trait EffImplicits {
             case Pure(f, last1) =>
               Pure(f(a), last1 *> last)
             case Impure(NoEffect(f), c, last1) =>
-              Impure[AnyRef, Any, B](NoEffect[AnyRef, Any](f), c.append(f1 => pure(f1(a))).cast[Continuation[Object, Any, B]], c.onNone)
+              Impure[AnyRef, Any, B](NoEffect[AnyRef, Any](f), c.append(f1 => pure(f1(a))).asInstanceOf[Continuation[Object, Any, B]], c.onNone)
                 .addLast(last1 *> last)
             case Impure(u: Union[?, ?], c: Continuation[AnyRef, Any, A => B], last1) =>
               ImpureAp(Unions(u, Vector.empty), c.dimapEff((x: Vector[Any]) => x.head)(_.map(_(a))), last1 *> last)
@@ -125,7 +124,7 @@ trait EffImplicits {
       }
   }
 
-  implicit final def EffMonad[R]: Monad[Eff[R, *]] = effMonadUnsafeImpl.asInstanceOf[Monad[Eff[R, *]]]
+  given EffMonad[R]: Monad[Eff[R, *]] = effMonadUnsafeImpl.asInstanceOf[Monad[Eff[R, *]]]
 
   final def EffApplicative[R]: Applicative[Eff[R, *]] = effApplicativeUnsafeImpl.asInstanceOf[Applicative[Eff[R, *]]]
 

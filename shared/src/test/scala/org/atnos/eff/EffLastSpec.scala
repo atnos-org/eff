@@ -5,12 +5,12 @@ import cats.syntax.all.*
 import org.atnos.eff.EitherEffect.left as leftE
 import org.atnos.eff.EitherEffect.right as rightE
 import org.atnos.eff.all.*
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.all.given
 import org.scalacheck.Gen
 import org.specs2.*
 import scala.collection.mutable.ListBuffer
 
-class EffLastSpec extends Specification with ScalaCheck with Specs2Compat {
+class EffLastSpec extends Specification with ScalaCheck {
   def is = sequential ^ s2"""
 
   An action can run completely at the end, regardless of the number of flatmaps $runLast
@@ -35,7 +35,7 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat {
     val messages = new ListBuffer[String]
 
     import org.atnos.eff.all._
-    import org.atnos.eff.syntax.all._
+    import org.atnos.eff.syntax.all.given
 
     val act = for {
       _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit](messages.append("end")))
@@ -52,7 +52,7 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat {
     val messages = new ListBuffer[String]
 
     import org.atnos.eff.all._
-    import org.atnos.eff.syntax.all._
+    import org.atnos.eff.syntax.all.given
 
     val act = (for {
       _ <- protect[R, Unit](messages.append("a"))
@@ -73,7 +73,7 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat {
     val messages = new ListBuffer[String]
 
     import org.atnos.eff.all._
-    import org.atnos.eff.syntax.all._
+    import org.atnos.eff.syntax.all.given
 
     val act = (for {
       _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit](messages.append("end1")))
@@ -94,7 +94,7 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat {
     val messages = new ListBuffer[String]
 
     import org.atnos.eff.all._
-    import org.atnos.eff.syntax.all._
+    import org.atnos.eff.syntax.all.given
 
     val act = for {
       _ <- protect[R, Unit](messages.append("a")).addLast(protect[R, Unit] { messages.append("boom"); throw new Exception("boom") })
@@ -106,7 +106,7 @@ class EffLastSpec extends Specification with ScalaCheck with Specs2Compat {
     messages.toList ==== List("a", "b", "boom")
   }.setGen(Gen.listOf(Gen.oneOf("a", "b", "c")))
 
-  private[this] var i = 0
+  private var i = 0
 
   def e1 = checkRelease {
     rightE[S, String, Int](1) >>= (v => protect[S, Int](v))

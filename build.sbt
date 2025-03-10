@@ -3,8 +3,7 @@ import sbtcrossproject.CrossProject
 
 Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
 
-lazy val specs2Version = Def.setting("4.21.0")
-lazy val twitterUtilVersion = "24.2.0"
+lazy val specs2Version = "4.21.0"
 lazy val doobieVersion = "0.13.4"
 
 enablePlugins(BuildInfoPlugin)
@@ -15,29 +14,14 @@ moduleName := "root"
 effSettings
 noPublishSettings
 commonJvmSettings
-libraryDependencies ++= scalameter.value
-libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version.value % "test"
-libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0" % Test
+libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
 
 dependsOn(
   all.jvm % "test->test;compile->compile",
   doobie,
-  macros,
   monixJVM,
   scalazJVM,
 )
-
-def scala3migrationOption(xs: Configuration*) = Def.settings {
-  xs.map { c =>
-    c / scalacOptions ++= {
-      if (scalaBinaryVersion.value == "3") {
-        Seq("-source:3.0-migration")
-      } else {
-        Nil
-      }
-    }
-  }
-}
 
 def p(id: String) = CrossProject(id, file(id))(JSPlatform, JVMPlatform, NativePlatform)
   .settings(moduleName := s"eff-$id")
@@ -55,7 +39,6 @@ lazy val core = CrossProject("core", file("core"))(JSPlatform, JVMPlatform, Nati
   .jvmSettings(commonJvmSettings)
   .settings(
     effSettings,
-    scala3migrationOption(Compile),
   )
   .nativeSettings(commonNativeSettings)
 
@@ -70,9 +53,6 @@ lazy val choose = p("choose")
 lazy val list = p("list")
 lazy val state = p("state")
 lazy val safe = p("safe").dependsOn(either)
-lazy val batch = p("batch").settings(
-  scala3migrationOption(Compile),
-)
 lazy val future = p("future").dependsOn(eval)
 
 lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
@@ -107,7 +87,6 @@ lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     list,
     state,
     safe,
-    batch,
     future
   )
 
@@ -131,27 +110,6 @@ lazy val catsEffect = crossProject(JVMPlatform)
   .settings(effSettings)
 
 lazy val catsEffectJVM = catsEffect.jvm
-
-lazy val macros = project
-  .in(file("macros"))
-  .settings(moduleName := "eff-macros")
-  .dependsOn(coreJVM, all.jvm % "test->test")
-  .settings(libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value)
-  .settings(
-    disableScala3,
-    libraryDependencies ++= {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, v)) if v <= 12 =>
-          Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
-        case _ =>
-          // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
-          // https://github.com/scala/scala/pull/6606
-          Nil
-      }
-    }
-  )
-  .settings(commonJvmSettings)
-  .settings(effSettings)
 
 lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .in(file("monix"))
@@ -193,37 +151,13 @@ lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 lazy val scalazJVM = scalaz.jvm
 lazy val scalazJS = scalaz.js
 
-lazy val twitter = project
-  .settings(moduleName := "eff-twitter")
-  .dependsOn(
-    core.jvm % "test->test",
-    option.jvm % Test,
-    choose.jvm % Test,
-    future.jvm
-  )
-  .settings(libraryDependencies ++= twitterUtilCore)
-  .settings(effSettings ++ commonJvmSettings)
-  .settings(
-    scala3migrationOption(Test),
-    conflictWarning := {
-      if (scalaBinaryVersion.value == "3") {
-        // TODO
-        ConflictWarning("warn", Level.Warn, false)
-      } else {
-        conflictWarning.value
-      }
-    },
-  )
-
-def Scala212 = "2.12.20"
-
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := Scala212,
-  crossScalaVersions := Seq(Scala212, "2.13.16", "3.3.5")
+  scalaVersion := "3.3.5"
 )
 
 lazy val commonSettings = Def.settings(
+  semanticdbEnabled := scalaVersion.value.startsWith("3.3"),
   libraryDependencies += "org.typelevel" %%% "cats-core" % "2.13.0",
   scalacOptions ++= commonScalacOptions.value,
   (Compile / doc / scalacOptions) ++= {
@@ -235,16 +169,6 @@ lazy val commonSettings = Def.settings(
     )
   },
   (Compile / doc / scalacOptions) := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
-  libraryDependencies ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((3, _)) =>
-        Nil
-      case _ =>
-        Seq(
-          compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.3" cross CrossVersion.full)
-        )
-    }
-  }
 ) ++ warnUnusedImport ++ prompt
 
 lazy val commonJsSettings = Def.settings(
@@ -273,22 +197,10 @@ lazy val commonJsSettings = Def.settings(
   } else {
     Def.settings()
   },
-  scalacOptions ++= {
-    if (scalaBinaryVersion.value == "3") {
-      Nil
-    } else {
-      Seq("-P:scalajs:nowarnGlobalExecutionContext")
-    }
-  },
   scalacOptions += {
     val a = (LocalRootProject / baseDirectory).value.toURI.toString
     val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
-    val key = CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((3, _)) =>
-        "-scalajs-mapSourceURI"
-      case _ =>
-        "-P:scalajs:mapSourceURI"
-    }
+    val key = "-scalajs-mapSourceURI"
     s"${key}:$a->$g/"
   }
 )
@@ -298,13 +210,6 @@ lazy val commonJvmSettings = Seq(
   Test / fork := true,
   Global / cancelable := true,
   Test / scalacOptions ~= (_.filterNot(_ == "-Xfatal-warnings")),
-  Test / scalacOptions ++= {
-    if (scalaBinaryVersion.value == "3") {
-      Nil
-    } else {
-      Seq("-Yrangepos")
-    }
-  },
 )
 
 lazy val commonNativeSettings = Def.settings(
@@ -353,47 +258,9 @@ lazy val commonScalacOptions = Def.setting {
     "-feature",
     "-language:implicitConversions,higherKinds,existentials",
     "-unchecked",
-  ) ++ {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 13)) =>
-        Seq("-Xsource:3-cross")
-      case Some((2, 12)) =>
-        Seq("-Xsource:3")
-      case _ =>
-        Nil
-    }
-  } ++ {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, _)) =>
-        Seq(
-          "-Xlint",
-          "-Xlint:-nullary-unit",
-          "-Ywarn-numeric-widen",
-          "-Ywarn-value-discard",
-        )
-      case _ =>
-        Nil
-    }
-  } ++ {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, v)) if v >= 13 =>
-        Seq(
-          "-Ymacro-annotations"
-        )
-      case Some((3, _)) =>
-        Seq(
-          "-no-indent",
-          "-Ykind-projector",
-        )
-      case _ =>
-        Seq(
-          "-Xfatal-warnings",
-          "-Yno-adapted-args",
-          "-Ypartial-unification",
-          "-Xfuture"
-        )
-    }
-  }
+    "-no-indent",
+    "-Ykind-projector",
+  )
 }
 
 lazy val sharedPublishSettings = Seq(
@@ -422,15 +289,8 @@ buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
 buildInfoPackage := "org.atnos.eff"
 
 lazy val warnUnusedImport = Seq(
-  scalacOptions += {
-    scalaBinaryVersion.value match {
-      case "3" | "2.13" =>
-        "-Wunused:imports"
-      case _ =>
-        "-Ywarn-unused-import"
-    }
-  },
-  Compile / console / scalacOptions ~= (_.filterNot(Set("-Yunused:imports", "-Ywarn-unused-import"))),
+  scalacOptions += "-Wunused:imports",
+  Compile / console / scalacOptions ~= { _.filterNot("-Wunused:imports" == _) },
   (Test / console / scalacOptions) := (Compile / console / scalacOptions).value
 )
 
@@ -448,46 +308,8 @@ lazy val specs2 = Def.setting(
     "org.specs2" %%% "specs2-scalacheck",
     "org.specs2" %%% "specs2-junit",
   ).map(
-    _ % specs2Version.value % "test"
-  ).map(
-    _.exclude(
-      "org.specs2",
-      "xml_sjs1_" + scalaBinaryVersion.value
-    ).exclude(
-      "org.specs2",
-      "xml_native0.5_" + scalaBinaryVersion.value
-    )
+    _ % specs2Version % "test"
   )
-)
-
-lazy val scalameter = Def.setting(
-  if (scalaBinaryVersion.value == "3") {
-    Nil
-  } else {
-    Seq("com.storm-enroute" %% "scalameter" % "0.19" % "test")
-  }
-)
-
-lazy val twitterUtilCore = Seq(
-  "com.twitter" %% "util-core" % twitterUtilVersion
-)
-
-lazy val disableScala3 = Def.settings(
-  libraryDependencies := {
-    if (scalaBinaryVersion.value == "3") {
-      Nil
-    } else {
-      libraryDependencies.value
-    }
-  },
-  Test / test := {
-    if (scalaBinaryVersion.value == "3") {
-      ()
-    } else {
-      (Test / test).value
-    }
-  },
-  publish / skip := (scalaBinaryVersion.value == "3"),
 )
 
 Global / excludeLintKeys ++= Set(
@@ -498,9 +320,6 @@ Global / excludeLintKeys ++= Set(
 
 inThisBuild(
   Seq(
-    semanticdbEnabled := (
-      Set("2.12", "2.13").contains(scalaBinaryVersion.value) || scalaVersion.value.startsWith("3.3")
-    ),
     semanticdbVersion := scalafixSemanticdb.revision
   )
 )

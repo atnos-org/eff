@@ -7,11 +7,11 @@ import scala.concurrent.duration.FiniteDuration
 trait EffCreation {
 
   /** create an Eff[R, A] value from an effectful value of type T[V] provided that T is one of the effects of R */
-  def send[T[_], R, V](tv: T[V])(implicit member: T |= R): Eff[R, V] =
+  def send[T[_], R, V](tv: T[V])(using member: T |= R): Eff[R, V] =
     ImpureAp(Unions(member.inject(tv), Vector.empty), Continuation.lift(xs => pure[R, V](xs.head.asInstanceOf[V])))
 
   /** use the internal effect as one of the stack effects */
-  def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: M |= R): Eff[R, A] =
+  def collapse[R, M[_], A](r: Eff[R, M[A]])(using m: M |= R): Eff[R, A] =
     Monad[Eff[R, *]].flatMap(r)(mx => send(mx)(using m))
 
   /** create an Eff value for () */
@@ -47,11 +47,11 @@ trait EffCreation {
     Traverse[F].sequence(fs)(using EffImplicits.EffApplicative[R])
 
   /** use the applicative instance of Eff to traverse a list of values, then flatten it */
-  def flatTraverseA[R, F[_], A, B](fs: F[A])(f: A => Eff[R, F[B]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[B]] =
+  def flatTraverseA[R, F[_], A, B](fs: F[A])(f: A => Eff[R, F[B]])(using FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[B]] =
     FT.flatTraverse[Eff[R, *], A, B](fs)(f)(using EffImplicits.EffApplicative[R], FM)
 
   /** use the applicative instance of Eff to sequence a list of values, then flatten it */
-  def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[A]] =
+  def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(using FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[A]] =
     FT.flatSequence[Eff[R, *], A](fs)(using EffImplicits.EffApplicative[R], FM)
 
   /** bracket an action with one last action to execute at the end of the program */

@@ -12,7 +12,7 @@ A `State` effect can be seen as the combination of both a `Reader` and a `Writer
 
 Let's see an example showing that we can also use tags to track different states at the same time:${snippet {
       import cats.data._
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
 
       type S1[A] = State[Int, A]
       type S2[A] = State[String, A]
@@ -36,7 +36,7 @@ In the example above we have used an `eval` method to get the `A` in `Eff[R, A]`
 
 Instead of tagging state effects it is also possible to transform a State effect acting on a "small" state into a State
 effect acting on a "bigger" state:${snippet {
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
       import cats.data.State
 
       type Count[A] = State[Int, A]

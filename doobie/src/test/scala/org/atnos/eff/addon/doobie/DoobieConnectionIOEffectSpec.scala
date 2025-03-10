@@ -6,14 +6,13 @@ import doobie.free.connection
 import doobie.implicits.*
 import org.atnos.eff.Eff
 import org.atnos.eff.Fx
-import org.atnos.eff.Specs2Compat
-import org.atnos.eff.syntax.addon.doobie.*
-import org.atnos.eff.syntax.eff.*
+import org.atnos.eff.syntax.addon.doobie.given
+import org.atnos.eff.syntax.eff.given
 import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
 import org.specs2.matcher.ValueCheck
 
-class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations with Specs2Compat {
+class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations {
   def is = sequential ^ s2"""
   ConnectionIO effects can be converted to IO-like effects $t1
 
@@ -25,7 +24,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
     in strategy.always          $t6
 """
 
-  implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContexts.synchronous)
+  given ContextShift[IO] = IO.contextShift(ExecutionContexts.synchronous)
 
   type Stack = Fx.fx2[ConnectionIO, IO]
 
@@ -103,7 +102,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
    * HELPERS
    */
 
-  implicit class RunConnectionOps[A](e: Eff[Stack, A]) {
+  extension [A](e: Eff[Stack, A]) {
     def runConnection(xa: Transactor[IO]): Either[Throwable, A] =
       e.runConnectionIO(xa).detach.attempt.unsafeRunSync()
   }

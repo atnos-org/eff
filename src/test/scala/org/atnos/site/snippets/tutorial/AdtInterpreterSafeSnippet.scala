@@ -45,7 +45,7 @@ trait AdtInterpreterSafeSnippet {
  */
   def runKVStore[R, U, A](
     effects: Eff[R, A]
-  )(implicit m: Member.Aux[KVStore, R, U], throwable: _throwableEither[U], writer: _writerString[U], state: _stateMap[U]): Eff[U, A] = {
+  )(using m: Member.Aux[KVStore, R, U], throwable: _throwableEither[U], writer: _writerString[U], state: _stateMap[U]): Eff[U, A] = {
 
     translate(effects)(new Translate[KVStore, U] {
       def apply[X](kv: KVStore[X]): Eff[U, X] =

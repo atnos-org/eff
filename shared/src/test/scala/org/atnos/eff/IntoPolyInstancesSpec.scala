@@ -2,7 +2,7 @@ package org.atnos.eff
 
 import org.specs2.Specification
 
-class IntoPolyInstancesSpec extends Specification with Specs2Compat {
+class IntoPolyInstancesSpec extends Specification {
   def is = s2"""
 
  The IntoPoly implicit definitions must create lawful instances:
