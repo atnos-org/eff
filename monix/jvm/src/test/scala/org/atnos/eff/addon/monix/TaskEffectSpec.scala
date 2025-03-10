@@ -78,7 +78,7 @@ class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with Scala
       val scheduler = monix.execution.Scheduler(scala.concurrent.ExecutionContext.fromExecutor(executor))
       try {
         messages.clear()
-        Await.result(run.runOption.runAsync.runToFuture(scheduler), 3.seconds)
+        Await.result(run.runOption.runAsync.runToFuture(using scheduler), 3.seconds)
         "the messages are ordered" ==> {
           messages.toList ==== delays.sorted
         }

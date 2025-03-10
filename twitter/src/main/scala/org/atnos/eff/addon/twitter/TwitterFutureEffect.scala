@@ -124,7 +124,7 @@ trait TwitterFutureCreation extends TwitterFutureTypes {
     Eff.retryUntil(e, condition, durations, d => waitFor(d))
 
   def waitFor[R: _future](duration: FiniteDuration): Eff[R, Unit] =
-    Eff.send(TwitterTimedFuture((_, scheduler) => Future.Unit.delayed(Duration.fromNanoseconds(duration.toNanos))(twitterTimer)))
+    Eff.send(TwitterTimedFuture((_, scheduler) => Future.Unit.delayed(Duration.fromNanoseconds(duration.toNanos))(using twitterTimer)))
 
   val twitterTimer: JavaTimer =
     new JavaTimer()
@@ -133,10 +133,10 @@ trait TwitterFutureCreation extends TwitterFutureTypes {
 trait TwitterFutureInterpretation extends TwitterFutureTypes {
 
   def runAsync[R, A](e: Eff[R, A])(implicit pool: FuturePool, scheduler: Scheduler, m: Member.Aux[TwitterTimedFuture, R, NoFx]): Future[A] =
-    Eff.detachA(e)(TwitterTimedFuture.MonadTwitterTimedFuture, TwitterTimedFuture.ApplicativeTwitterTimedFuture, m).runNow(pool, scheduler)
+    Eff.detachA(e)(using TwitterTimedFuture.MonadTwitterTimedFuture, TwitterTimedFuture.ApplicativeTwitterTimedFuture, m).runNow(pool, scheduler)
 
   def runSequential[R, A](e: Eff[R, A])(implicit pool: FuturePool, scheduler: Scheduler, m: Member.Aux[TwitterTimedFuture, R, NoFx]): Future[A] =
-    Eff.detach(e)(TwitterTimedFuture.MonadTwitterTimedFuture, m).runNow(pool, scheduler)
+    Eff.detach(e)(using TwitterTimedFuture.MonadTwitterTimedFuture, m).runNow(pool, scheduler)
 
   import interpret.of
 
