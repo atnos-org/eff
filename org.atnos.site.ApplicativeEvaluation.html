@@ -394,11 +394,16 @@ example:</p>
         @tailrec
         def go(e: Eff[Fx1[UserDsl], A], trace: Vector[String]): (A, Vector[String]) =
           e match {
-            case Pure(a, _) =&gt; (a, trace)
-            case Impure(UnionTagged(GetUser(i), _), c, _) =&gt; go(c(getWebUser(i)), trace :+ &quot;getWebUser&quot;)
-            case Impure(UnionTagged(GetUsers(is), _), c, _) =&gt; go(c(getWebUsers(is)), trace :+ &quot;getWebUsers&quot;)
-            case ap @ ImpureAp(_, _, _) =&gt; go(ap.toMonadic, trace)
-            case Impure(_, _, _) =&gt; sys.error(&quot;this should not happen with just one effect&quot;)
+            case Pure(a, _) =&gt;
+              (a, trace)
+            case Impure(UnionTagged(GetUser(i), _), c, _) =&gt;
+              go(c.asInstanceOf[User =&gt; Eff[Fx1[UserDsl], A]].apply(getWebUser(i)), trace :+ &quot;getWebUser&quot;)
+            case Impure(UnionTagged(GetUsers(is), _), c, _) =&gt;
+              go(c.asInstanceOf[List[User] =&gt; Eff[Fx1[UserDsl], A]].apply(getWebUsers(is)), trace :+ &quot;getWebUsers&quot;)
+            case ap @ ImpureAp(_, _, _) =&gt;
+              go(ap.toMonadic, trace)
+            case Impure(_, _, _) =&gt;
+              sys.error(&quot;this should not happen with just one effect&quot;)
           }
         go(eff, Vector())
       }
