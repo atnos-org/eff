@@ -4,7 +4,7 @@ import cats.Eval
 
 trait MemoInterpretation extends MemoTypes {
 
-  def runMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], eval: Eval |= U): Eff[U, A] = {
+  def runMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(using Member.Aux[Memoized, R, U], Eval |= U): Eff[U, A] = {
     interpret.translate(effect)(new Translate[Memoized, U] {
       def apply[X](mx: Memoized[X]): Eff[U, X] =
         mx match {
@@ -14,7 +14,7 @@ trait MemoInterpretation extends MemoTypes {
     })
   }
 
-  def runFutureMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(implicit m: Member.Aux[Memoized, R, U], future: TimedFuture |= U): Eff[U, A] = {
+  def runFutureMemo[R, U, A](cache: Cache)(effect: Eff[R, A])(using Member.Aux[Memoized, R, U], TimedFuture |= U): Eff[U, A] = {
     interpret.translate(effect)(new Translate[Memoized, U] {
       def apply[X](mx: Memoized[X]): Eff[U, X] =
         mx match {

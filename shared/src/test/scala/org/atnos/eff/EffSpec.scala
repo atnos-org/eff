@@ -3,9 +3,9 @@ package org.atnos.eff
 import cats.*
 import cats.data.*
 import cats.syntax.all.*
-import cats.syntax.all.catsSyntaxEq as _
 import org.atnos.eff.all.*
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.all.given
+import org.atnos.eff.syntax.all.given
 import org.scalacheck.*
 import org.scalacheck.Arbitrary.*
 import org.specs2.ScalaCheck
@@ -13,7 +13,7 @@ import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
 import scala.annotation.tailrec
 
-class EffSpec extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
+class EffSpec extends Specification with ScalaCheck with ThrownExpectations {
   def is = s2"""
 
  The Eff monad respects the laws            $laws
@@ -47,7 +47,6 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
  An effect can be intercepted and transformed to other values for the same effect  $interceptEffectNat
  An effect can be augmented with other effects                                     $augmentEffect
  An effect can be logged using a custom logger                                     $writeEffect
- An effect can be logged using its execution trace                                 $traceEffect
 
 """
 
@@ -177,7 +176,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
     e.runWriter.runEither.detachA(Applicative[Option]) must beSome(Right[String, (Int, List[Int])]((1, Nil)))
   }
 
-  def functionReader[R, U, A, B](f: A => Eff[R, B])(implicit into: IntoPoly[R, U], m: MemberIn[Reader[A, *], U]): Eff[U, B] =
+  def functionReader[R, U, A, B](f: A => Eff[R, B])(using into: IntoPoly[R, U], m: MemberIn[Reader[A, *], U]): Eff[U, B] =
     ask[U, A].flatMap(f(_).into[U])
 
   def notInStack = {
@@ -200,10 +199,10 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
   }
 
   def transformEffect = {
-    def readSize[R](implicit m: ReaderString |= R): Eff[R, Int] =
+    def readSize[R](using ReaderString |= R): Eff[R, Int] =
       ReaderEffect.ask.map(_.size)
 
-    def setString[R](implicit m: StateString |= R): Eff[R, Unit] =
+    def setString[R](using StateString |= R): Eff[R, Unit] =
       StateEffect.put("hello")
 
     val readerToState = new ~>[ReaderString, StateString] {
@@ -226,10 +225,10 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
     type S0 = Fx.fx3[ReaderString, StateString, Option]
     type S1 = Fx.fx2[StateString, Option]
 
-    def readSize[R](implicit m: ReaderString |= R): Eff[R, Int] =
+    def readSize[R](using ReaderString |= R): Eff[R, Int] =
       ReaderEffect.ask.map(_.size)
 
-    def readerToStateTranslation[R](implicit m: StateString |= R) = new Translate[ReaderString, R] {
+    def readerToStateTranslation[R](using StateString |= R) = new Translate[ReaderString, R] {
       def apply[A](fa: Reader[String, A]): Eff[R, A] =
         Eff.send(State((s: String) => (s, fa.run(s))))
     }
@@ -241,18 +240,18 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
   def translateEffectLocal = {
     type S2 = Fx.fx2[StateString, Option]
 
-    def readSize[R](implicit m: ReaderString |= R): Eff[R, Int] =
+    def readSize[R](using ReaderString |= R): Eff[R, Int] =
       ReaderEffect.ask.map(_.size)
 
-    def setString[R](implicit m: StateString |= R): Eff[R, Unit] =
+    def setString[R](using StateString |= R): Eff[R, Unit] =
       StateEffect.put("hello")
 
-    def readerToState[R](implicit s: StateString |= R): Translate[ReaderString, R] = new Translate[ReaderString, R] {
+    def readerToState[R](using s: StateString |= R): Translate[ReaderString, R] = new Translate[ReaderString, R] {
       def apply[A](fa: Reader[String, A]): Eff[R, A] =
         send(State((s: String) => (s, fa.run(s))))
     }
 
-    def both[R](implicit s: StateString |= R): Eff[R, Int] = {
+    def both[R](using s: StateString |= R): Eff[R, Int] = {
       type R1 = Fx.prepend[ReaderString, R]
 
       val action: Eff[R1, Int] = for {
@@ -296,7 +295,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
   case class Update(k: String, i: Int) extends Stored[Unit]
   case class Remove(k: String) extends Stored[Unit]
 
-  def runStored[R, U, A](e: Eff[R, A])(implicit m: Member.Aux[Stored, R, U]): Eff[U, A] =
+  def runStored[R, U, A](e: Eff[R, A])(using Member.Aux[Stored, R, U]): Eff[U, A] =
     interpret.translate[R, U, Stored, A](e)(new Translate[Stored, U] {
       def apply[X](tx: Stored[X]) = pure[U, X](().asInstanceOf[X])
     })
@@ -333,32 +332,27 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
 
   }
 
-  def traceEffect = {
-    runStored(action[Fx.fx2[Writer[Stored[?], *], Stored]].trace[Stored]).runWriterLog.run ====
-      List[Stored[?]](Update("a", 1), Get("b"), Remove("c"))
-  }
-
   /**
    * Helpers
    */
   type F[A] = Eff[Fx.fx1[Option], A]
 
-  implicit def ArbitraryEff[R]: Arbitrary[Eff[R, Int]] = Arbitrary[Eff[R, Int]] {
+  given ArbitraryEff[R]: Arbitrary[Eff[R, Int]] = Arbitrary[Eff[R, Int]] {
     Gen.oneOf(
       Gen.choose(0, 100).map(i => Monad[Eff[R, *]].pure(i)),
       Gen.choose(0, 100).map(i => Monad[Eff[R, *]].pure(i).map(_ + 10))
     )
   }
 
-  implicit def ArbitraryEffFunction[R]: Arbitrary[Eff[R, Int => Int]] =
+  given ArbitraryEffFunction[R]: Arbitrary[Eff[R, Int => Int]] =
     Arbitrary(arbitrary[Int => Int].map(f => Monad[Eff[R, *]].pure(f)))
 
   import OptionEffect._
 
-  implicit val eqEffInt: Eq[F[Int]] =
+  given eqEffInt: Eq[F[Int]] =
     (x: F[Int], y: F[Int]) => runOption(x).run == runOption(y).run
 
-  implicit val eqEffInt3: Eq[F[(Int, Int, Int)]] =
+  given eqEffInt3: Eq[F[(Int, Int, Int)]] =
     (x: F[(Int, Int, Int)], y: F[(Int, Int, Int)]) => runOption(x).run == runOption(y).run
 
 }

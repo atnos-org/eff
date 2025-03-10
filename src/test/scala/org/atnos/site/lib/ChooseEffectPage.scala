@@ -15,7 +15,7 @@ The `Choose` effect is used for non-deterministic computations. With the `Choose
 That behaviour is controlled by the `Alternative[F]` instance you use when running `Choose`.
 
 For example if we take `List` to run a similar example as before, we get the list of all the accepted pairs: ${snippet {
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
 
       type S = Fx.fx1[Choose]
 

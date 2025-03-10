@@ -5,14 +5,14 @@ import cats.syntax.all.*
 import org.atnos.eff.EitherEffect.left as leftEffect
 import org.atnos.eff.EitherEffect.right as rightEffect
 import org.atnos.eff.all.*
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.all.given
 import org.scalacheck.Gen
 import org.specs2.*
 import org.specs2.matcher.Matcher
 import org.specs2.matcher.ThrownExpectations
 import scala.collection.mutable.ListBuffer
 
-class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
+class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectations {
   def is = sequential ^ s2"""
 
   The Safe effect can be used to protect resources and computations
@@ -240,7 +240,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
     invocationsNumber must be_==(1)
   }
 
-  private[this] var i = 0
+  private var i = 0
 
   def bracket1 = checkRelease {
     rightEffect[U, String, Int](1) >>= (v => protect[U, Int](v))

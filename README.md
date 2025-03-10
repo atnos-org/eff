@@ -20,37 +20,17 @@ You can also check out [this presentation](https://bit.ly/eff_flatmap_2016) at f
 
 ## Installation
 
-Eff is published for Scala 2.12, 2.13 and 3. `eff` core is available for the JVM, ScalaJS and scala-native. Sbt dependency:
+Eff is published for Scala 3. `eff` core is available for the JVM, ScalaJS and scala-native. Sbt dependency:
 
 ```scala
 // check maven badge above for latest version
 libraryDependencies += "org.atnos" %% "eff" % "7.0.6"
 
-// to write types like Reader[String, *]
-libraryDependencies ++= {
-  if (scalaBinaryVersion.value == "3") {
-    Nil
-  } else {
-    Seq(compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.3" cross CrossVersion.full))
-  }
-}
+// for Scala 3.3.x
+scalacOptions += "-Ykind-projector"
 
-scalacOptions ++= {
-  if (scalaBinaryVersion.value == "3") {
-    Seq("-Ykind-projector")
-  } else {
-    Nil
-  }
-}
-
-// to get types like Reader[String, *] (with more than one type parameter) correctly inferred for scala 2.12.x
-scalacOptions ++= {
-  if (scalaBinaryVersion.value == "2.12") {
-    Seq("-Ypartial-unification")
-  } else {
-    Nil
-  }
-}
+// for latest Scala 3
+scalacOptions += "-Xkind-projector"
 ```
 
 # Contributing
@@ -67,7 +47,6 @@ Feel free to open an issue if you notice a bug, have an idea for a feature, or h
 - [scalaz](./scalaz)
 - [monix](./monix)
 - [doobie](./doobie)
-- [twitter](./twitter) (deprecated)
 
 ## External
 

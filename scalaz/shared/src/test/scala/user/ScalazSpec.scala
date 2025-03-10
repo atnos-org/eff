@@ -2,14 +2,14 @@ package user
 
 import cats.Eval
 import org.atnos.eff.*
-import org.atnos.eff.addon.scalaz.*
+import org.atnos.eff.addon.scalaz.given
 import org.atnos.eff.eval.*
-import org.atnos.eff.syntax.addon.scalaz.all.*
-import org.atnos.eff.syntax.eval.*
+import org.atnos.eff.syntax.addon.scalaz.all.given
+import org.atnos.eff.syntax.eval.given
 import org.specs2.*
 import scalaz.Scalaz.*
 
-class ScalazSpec extends Specification with Specs2Compat {
+class ScalazSpec extends Specification {
   def is = s2"""
 
  The Eff monad must be usable with Scalaz typeclasses

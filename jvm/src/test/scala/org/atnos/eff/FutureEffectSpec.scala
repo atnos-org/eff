@@ -3,8 +3,8 @@ package org.atnos.eff
 import cats.syntax.all.*
 import org.atnos.eff.all.*
 import org.atnos.eff.future.*
-import org.atnos.eff.syntax.all.*
-import org.atnos.eff.syntax.future.*
+import org.atnos.eff.syntax.all.given
+import org.atnos.eff.syntax.future.given
 import org.specs2.*
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.ThrownExpectations
@@ -12,7 +12,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.*
 import scala.concurrent.duration.*
 
-class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
+class FutureEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations {
   def is = sequential ^ s2"""
 
  Future effects can work as normal values                      $e1
@@ -42,8 +42,8 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
 
   type S = Fx.fx2[TimedFuture, Option]
 
-  implicit val scheduler: org.atnos.eff.concurrent.Scheduler = ExecutorServices.schedulerFromScheduledExecutorService(ee.ses)
-  implicit val ec: scala.concurrent.ExecutionContext = ee.ec
+  given scheduler: org.atnos.eff.concurrent.Scheduler = ExecutorServices.schedulerFromScheduledExecutorService(ee.ses)
+  given ec: scala.concurrent.ExecutionContext = ee.ec
 
   def e1 = {
     def action[R: _future: _option]: Eff[R, Int] = for {
@@ -80,7 +80,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
       val ec = ExecutionContext.fromExecutor(executor)
       try {
         messages.clear()
-        Await.result(run.runOption.runAsync(using scheduler = implicitly, exc = ec, m = implicitly), 4.seconds)
+        Await.result(run.runOption.runAsync(using scheduler = summon, exc = ec, m = summon), 4.seconds)
 
         "the messages are ordered" ==> {
           messages.toList ==== delays.sorted

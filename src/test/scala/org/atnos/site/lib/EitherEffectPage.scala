@@ -5,7 +5,7 @@ object EitherEffectPage extends UserGuidePage {
   def is = "Either".title ^ s2"""
 
 The `Either` effect is similar to the `Option` effect but adds the possibility to specify why a computation stopped: ${snippet {
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
 
       /**
    * Stack declaration
@@ -30,7 +30,7 @@ type lambdas.
 
 A `catchLeft` method can also be used to intercept an error and possibly recover from it:${snippet {
       // 8<--
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
       // 8<--
       case class TooBig(value: Int)
       type E = Fx.fx1[Either[TooBig, *]]

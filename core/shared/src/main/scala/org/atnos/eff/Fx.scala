@@ -39,19 +39,15 @@ object Fx {
 /**
  * Append a tree of effects to another one
  */
-@deprecatedInheritance
-trait FxAppend[+L, +R] extends Fx
+sealed trait FxAppend[+L, +R] extends Fx
 
-@deprecatedInheritance
-trait Fx1[+F[_]] extends Fx
-@deprecatedInheritance
-trait Fx2[+L[_], +R[_]] extends Fx
-@deprecatedInheritance
-trait Fx3[+L[_], +M[_], +R[_]] extends Fx
+sealed trait Fx1[+F[_]] extends Fx
+sealed trait Fx2[+L[_], +R[_]] extends Fx
+sealed trait Fx3[+L[_], +M[_], +R[_]] extends Fx
 
 /**
  * The "empty" tree of effects
  */
-class NoFx extends Fx
+sealed abstract class NoFx extends Fx
 
 object NoFx extends NoFx

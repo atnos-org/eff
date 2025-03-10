@@ -13,7 +13,7 @@ object Rand {
   def none[A]: Rand[A] =
     Rand(_ => None)
 
-  implicit val MonadCombineRandom: Alternative[Rand] = new Alternative[Rand] with Monad[Rand] {
+  given MonadCombineRandom: Alternative[Rand] = new Alternative[Rand] with Monad[Rand] {
     def pure[A](x: A): Rand[A] = Rand(_ => Option(x))
 
     def empty[A]: Rand[A] = Rand.none[A]

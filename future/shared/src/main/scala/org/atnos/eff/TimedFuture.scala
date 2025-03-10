@@ -36,7 +36,7 @@ object TimedFuture {
     override def toString = "Applicative[TimedFuture]"
   }
 
-  implicit final val MonadTimedFuture: MonadError[TimedFuture, Throwable] = new MonadError[TimedFuture, Throwable] {
+  given MonadTimedFuture: MonadError[TimedFuture, Throwable] = new MonadError[TimedFuture, Throwable] {
     def pure[A](x: A): TimedFuture[A] =
       TimedFuture((_, _) => Future.successful(x))
 

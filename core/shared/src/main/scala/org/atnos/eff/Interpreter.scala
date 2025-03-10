@@ -85,7 +85,7 @@ object Interpreter {
         whenStopped(Eff.traverseA(xs)(translate.apply).flatMap(continuation), continuation.onNone)
     }
 
-  def fromNat[M[_], N[_], R, A](nat: M ~> N)(implicit n: N |= R): Interpreter[M, R, A, A] =
+  def fromNat[M[_], N[_], R, A](nat: M ~> N)(using N |= R): Interpreter[M, R, A, A] =
     fromTranslate(new Translate[M, R] {
       def apply[X](x: M[X]): Eff[R, X] =
         Eff.send[N, R, X](nat(x))

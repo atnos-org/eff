@@ -7,7 +7,7 @@ import scala.util.control.NonFatal
 
 trait EvalInterpretation extends EvalTypes {
 
-  def runEval[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, A] =
+  def runEval[R, U, A](effect: Eff[R, A])(using Member.Aux[Eval, R, U]): Eff[U, A] =
     interpret.runInterpreter(effect)(new Interpreter[Eval, U, A, A] {
       def onPure(a: A): Eff[U, A] =
         pure(a)
@@ -22,7 +22,7 @@ trait EvalInterpretation extends EvalTypes {
         Eff.impure(xs.map(_.value), continuation)
     })
 
-  def attemptEval[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Eval, R, U]): Eff[U, Either[Throwable, A]] =
+  def attemptEval[R, U, A](effect: Eff[R, A])(using Member.Aux[Eval, R, U]): Eff[U, Either[Throwable, A]] =
     interpret.runInterpreter(effect)(new Interpreter[Eval, U, A, Either[Throwable, A]] {
       def onPure(a: A): Eff[U, Either[Throwable, A]] =
         pure(Right(a))
@@ -42,8 +42,8 @@ trait EvalInterpretation extends EvalTypes {
     })
 
   /** the monad error instance for Eval is useful for using detach on Eff[Fx1[Eval], A] */
-  implicit final val monadErrorEval: MonadError[Eval, Throwable] = new MonadError[Eval, Throwable] {
-    private[this] val m: Monad[Eval] = Eval.catsBimonadForEval
+  given monadErrorEval: MonadError[Eval, Throwable] = new MonadError[Eval, Throwable] {
+    private val m: Monad[Eval] = Eval.catsBimonadForEval
 
     def pure[A](x: A): Eval[A] =
       m.pure(x)

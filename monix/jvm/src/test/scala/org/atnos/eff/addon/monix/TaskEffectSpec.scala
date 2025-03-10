@@ -5,16 +5,16 @@ import monix.execution.Scheduler.Implicits.global
 import org.atnos.eff.*
 import org.atnos.eff.addon.monix.task.*
 import org.atnos.eff.option.*
-import org.atnos.eff.syntax.addon.monix.task.*
-import org.atnos.eff.syntax.eff.*
-import org.atnos.eff.syntax.option.*
+import org.atnos.eff.syntax.addon.monix.task.given
+import org.atnos.eff.syntax.eff.given
+import org.atnos.eff.syntax.option.given
 import org.specs2.*
 import org.specs2.concurrent.ExecutionEnv
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.*
 
-class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with Specs2Compat {
+class TaskEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaCheck {
   def is = "monix task".title ^ sequential ^ s2"""
 
  Tasks can work as normal values                           $e1

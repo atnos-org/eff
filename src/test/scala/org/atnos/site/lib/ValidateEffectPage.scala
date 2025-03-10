@@ -5,7 +5,7 @@ object ValidateEffectPage extends UserGuidePage {
   def is = "Validate".title ^ s2"""
 
 The `Validate` effect is similar to the `Either` effect but let you accumulate failures: ${snippet {
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
 
       /**
    * Stack declaration

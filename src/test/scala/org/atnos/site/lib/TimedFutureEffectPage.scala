@@ -15,7 +15,7 @@ Now, let's create some `TimedFuture` effects:${snippet {
 
       import org.atnos.eff._
       import org.atnos.eff.future._
-      import org.atnos.eff.syntax.all._
+      import org.atnos.eff.syntax.all.given
       import org.atnos.eff.concurrent.Scheduler
 
       import scala.concurrent._, duration._
@@ -36,20 +36,18 @@ Now, let's create some `TimedFuture` effects:${snippet {
 Then we need to pass a `Scheduler` and an `ExecutionContext` in to begin the computation.
        */
 
-      implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
-      import org.atnos.eff.syntax.future._
+      given Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+      import org.atnos.eff.syntax.future.given
 
       Await.result(action.runOption.runSequential, 1.second)
     }.eval}
 
 You can also use other `Future` or `Task` effects:
 
- - `twitter`: depend on `eff-twitter` and import `org.atnos.eff.addon.twitter.future._`
  - `monix`: depend on `eff-monix` and import `org.atnos.eff.addon.monix.task._`
 
 There are corresponding syntax imports to be able to call `runAsync` methods in:
 
- - `twitter`: `org.atnos.eff.syntax.addon.twitter.future._`
  - `monix`: `org.atnos.eff.syntax.addon.monix.task._`
 
 `Future` and `Task` computations can also be memoized to avoid expensive computations to be done several times. You can either
@@ -62,8 +60,8 @@ ${snippet {
       import cats.syntax.all._
       import org.atnos.eff._, future._, all._
       import org.atnos.eff.concurrent.Scheduler
-      import org.atnos.eff.syntax.all._
-      import org.atnos.eff.syntax.future._
+      import org.atnos.eff.syntax.all.given
+      import org.atnos.eff.syntax.future.given
       import scala.concurrent._, duration._
       import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -74,7 +72,7 @@ ${snippet {
 
       type S = Fx.fx2[Memoized, TimedFuture]
 
-      implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
+      given Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
 
       val futureMemo: Future[Int] =
         (expensive[S] >> expensive[S]).runFutureMemo(ConcurrentHashMapCache()).runSequential

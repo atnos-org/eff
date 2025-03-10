@@ -5,14 +5,14 @@ import cats.effect.unsafe.implicits.global
 import org.atnos.eff.*
 import org.atnos.eff.addon.cats.effect.IOEffect.*
 import org.atnos.eff.option.*
-import org.atnos.eff.syntax.addon.cats.effect.*
-import org.atnos.eff.syntax.eff.*
-import org.atnos.eff.syntax.option.*
+import org.atnos.eff.syntax.addon.cats.effect.given
+import org.atnos.eff.syntax.eff.given
+import org.atnos.eff.syntax.option.given
 import org.specs2.*
 import org.specs2.concurrent.ExecutionEnv
 import scala.concurrent.duration.*
 
-class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck {
+class IOEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaCheck {
   def is = "io".title ^ sequential ^ s2"""
 
  IO effects can work as normal values                    $e1

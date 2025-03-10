@@ -5,10 +5,10 @@ import cats.data.*
 
 trait StateImplicits {
 
-  implicit def stateMemberInToReaderMemberIn[E, S](implicit m: MemberIn[State[S, *], E]): MemberIn[Reader[S, *], E] =
+  given stateMemberInToReaderMemberIn[E, S](using m: MemberIn[State[S, *], E]): MemberIn[Reader[S, *], E] =
     m.transform(using readerToStateNat)
 
-  implicit def stateMemberInLens[E, S, T](implicit m: MemberIn[State[S, *], E], get: S => T, set: T => S => S): MemberIn[State[T, *], E] =
+  given stateMemberInLens[E, S, T](using m: MemberIn[State[S, *], E], get: S => T, set: T => S => S): MemberIn[State[T, *], E] =
     m.transform(using via(get, set))
 
   def readerToStateNat[S1]: Reader[S1, *] ~> State[S1, *] = new (Reader[S1, *] ~> State[S1, *]) {

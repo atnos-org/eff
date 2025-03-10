@@ -5,7 +5,7 @@ object WriterEffectPage extends UserGuidePage {
   def is = "Writer".title ^ s2"""
 
 You can then define your own custom `Fold` to log the values to a file:${snippet {
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
       import cats.data.Writer
       import java.io.PrintWriter
       import scala.io

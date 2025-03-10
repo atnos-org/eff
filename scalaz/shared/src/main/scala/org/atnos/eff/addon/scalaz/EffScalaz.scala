@@ -16,14 +16,14 @@ object EffScalaz {
 
   def flatTraverseA[R, F[_], A, B](fs: F[A])(
     f: A => Eff[R, F[B]]
-  )(implicit FT: Traverse[F], FM: Bind[F]): Eff[R, F[B]] =
+  )(using FT: Traverse[F], FM: Bind[F]): Eff[R, F[B]] =
     FT.traverseM[A, Eff[R, *], B](fs)(f)(using EffScalazApplicative[R], FM)
 
   /** use the applicative instance of Eff to sequence a list of values, then flatten it */
-  def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(implicit FT: Traverse[F], FM: Bind[F]): Eff[R, F[A]] =
+  def flatSequenceA[R, F[_], A](fs: F[Eff[R, F[A]]])(using FT: Traverse[F], FM: Bind[F]): Eff[R, F[A]] =
     FT.traverseM[Eff[R, F[A]], Eff[R, *], A](fs)(identity)(using EffScalazApplicative[R], FM)
 
-  def detach[M[_], A](eff: Eff[Fx1[M], A])(implicit m: Monad[M], b: BindRec[M]): M[A] =
+  def detach[M[_], A](eff: Eff[Fx1[M], A])(using Monad[M], BindRec[M]): M[A] =
     BindRec[M].tailrecM[Eff[Fx1[M], A], A](eff) {
       case Pure(a, Last(Some(l))) => Monad[M].point(-\/(l.value.as(a)))
       case Pure(a, Last(None)) => Monad[M].point(\/-(a))
@@ -47,7 +47,7 @@ object EffScalaz {
 
   def detachA[M[_], A](
     eff: Eff[Fx1[M], A]
-  )(implicit monad: Monad[M], bindRec: BindRec[M], applicative: Applicative[M]): M[A] =
+  )(using monad: Monad[M], bindRec: BindRec[M], applicative: Applicative[M]): M[A] =
     BindRec[M].tailrecM[Eff[Fx1[M], A], A](eff) {
       case Pure(a, Last(Some(l))) => monad.point(-\/(l.value.as(a)))
       case Pure(a, Last(None)) => monad.point(\/-(a))

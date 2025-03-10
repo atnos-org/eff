@@ -6,14 +6,14 @@ import org.atnos.eff.*
 import org.atnos.eff.ErrorEffect.*
 import org.atnos.eff.EvalEffect.*
 import org.atnos.eff.Member.<=
-import org.atnos.eff.syntax.error.*
+import org.atnos.eff.syntax.error.given
 import org.atnos.example.Action.runAction
 import org.atnos.example.ActionCreation.*
 import org.atnos.example.ConsoleEffect.*
 import org.atnos.example.WarningsEffect.*
 import org.specs2.*
 
-class ActionSpec extends Specification with ScalaCheck with Specs2Compat {
+class ActionSpec extends Specification with ScalaCheck {
   def is = s2"""
 
  The action stack can be used to
@@ -80,12 +80,12 @@ class ActionSpec extends Specification with ScalaCheck with Specs2Compat {
   def actions(i: Int, j: Int): Eff[ActionStack, Int] = {
     import ActionImplicits._
     for {
-      x <- delay(i)
-      _ <- log("got the value " + x)
-      y <- delay(j)
-      _ <- log("got the value " + y)
-      s <- if (x + y > 10) fail("too big") else ErrorEffect.ok(x + y)
-      _ <- if (s >= 5) warn("the sum is big: " + s) else Eff.unit[ActionStack]
+      x <- delay[ActionStack, Int](i)
+      _ <- log[ActionStack]("got the value " + x)
+      y <- delay[ActionStack, Int](j)
+      _ <- log[ActionStack]("got the value " + y)
+      s <- if (x + y > 10) fail[ActionStack, Int]("too big") else ErrorEffect.ok[ActionStack, Int](x + y)
+      _ <- if (s >= 5) warn[ActionStack]("the sum is big: " + s) else Eff.unit[ActionStack]
     } yield s
   }
 
@@ -93,11 +93,11 @@ class ActionSpec extends Specification with ScalaCheck with Specs2Compat {
    * "open" effects version of the same actions
    * this one can be reused with more effects
    */
-  def unboundActions[R](i: Int, j: Int)(implicit
-    m1: Eval <= R,
-    m2: Console <= R,
-    m3: Warnings <= R,
-    m4: ErrorOrOk <= R
+  def unboundActions[R](i: Int, j: Int)(using
+    Eval <= R,
+    Console <= R,
+    Warnings <= R,
+    ErrorOrOk <= R
   ): Eff[R, Int] = for {
     x <- delay(i)
     _ <- log("got the value " + x)

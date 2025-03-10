@@ -22,7 +22,7 @@ trait HadoopS3Snippet {
         _ <- tell[Hadoop, String]("Reading from " + path)
       } yield c.mappers.toString
 
-    def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(implicit r: Member.Aux[HadoopReader, R, U]): Eff[U, A] =
+    def runHadoopReader[R, U, A](conf: HadoopConf)(e: Eff[R, A])(using Member.Aux[HadoopReader, R, U]): Eff[U, A] =
       ReaderEffect.runReader(conf)(e)
 
   }
@@ -42,7 +42,7 @@ trait HadoopS3Snippet {
         _ <- tell[S3, String]("Writing to bucket " + c.bucket + ": " + content)
       } yield ()
 
-    def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(implicit r: Member.Aux[S3Reader, R, U]): Eff[U, A] =
+    def runS3Reader[R, U, A](conf: S3Conf)(e: Eff[R, A])(using Member.Aux[S3Reader, R, U]): Eff[U, A] =
       ReaderEffect.runReader(conf)(e)
   }
 

@@ -3,7 +3,7 @@ package org.atnos.eff
 import org.specs2.Specification
 import scala.concurrent.ExecutionContext
 
-class ExecutorServicesSpec(implicit ec: ExecutionContext) extends Specification with Specs2Compat {
+class ExecutorServicesSpec(using ec: ExecutionContext) extends Specification {
   def is = s2"""
 
  Executor services can be created from an execution context $fromExecutionContext

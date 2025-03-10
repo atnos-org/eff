@@ -10,7 +10,7 @@ class MemberImplicitsSpec extends Specification {
 """
   /*
 import cats.data._
-import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.all.given
 
 // UNCOMMENT TO TEST COMPILATION TIMES AND IMPLICIT SEARCH
   sealed trait OptionN[A] { def a: A }
@@ -240,7 +240,7 @@ import org.atnos.eff.syntax.all._
    */
   // PERMUTATIONS OF 4 effects
   import cats.data._
-  import org.atnos.eff.syntax.all._
+  import org.atnos.eff.syntax.all.given
   import org.atnos.eff.option._
 
   type StateString[A] = State[String, A]

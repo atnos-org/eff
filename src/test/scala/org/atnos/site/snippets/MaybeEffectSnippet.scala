@@ -23,7 +23,7 @@ trait MaybeEffectSnippet {
     def nothing[R: _maybe, A]: Eff[R, A] =
       send[Maybe, R, A](Nothing())
 
-    def runMaybe[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
+    def runMaybe[R, U, A](effect: Eff[R, A])(using m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
       recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
         def onPure(a: A): Option[A] = Some(a)
 
@@ -37,7 +37,7 @@ trait MaybeEffectSnippet {
           Right(ms.sequence)
       })
 
-    implicit val applicativeMaybe: Applicative[Maybe] = new Applicative[Maybe] {
+    given Applicative[Maybe] = new Applicative[Maybe] {
       def pure[A](a: A): Maybe[A] = Just(a)
 
       def ap[A, B](ff: Maybe[A => B])(fa: Maybe[A]): Maybe[B] =

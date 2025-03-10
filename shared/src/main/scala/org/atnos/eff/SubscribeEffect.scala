@@ -2,9 +2,8 @@ package org.atnos.eff
 
 import cats.*
 import org.atnos.eff.Eff.send
-import org.atnos.eff.EffCompat.*
 import org.atnos.eff.either.*
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.all.given
 import scala.util.control.NonFatal
 
 /**
@@ -14,7 +13,7 @@ object SubscribeEffect {
 
   type Callback[A] = (Either[Throwable, A]) => Unit
 
-  sealed trait Subscribe[A] extends (Callback[A] => Unit) {
+  sealed abstract class Subscribe[A] extends (Callback[A] => Unit) {
     def memoizeKey: Option[(AnyRef, Cache)]
     def unmemoize: Subscribe[A]
   }
@@ -112,14 +111,14 @@ object SubscribeEffect {
 
       case Impure(u: Union[?, ?], c, last) =>
         Impure(
-          materialize(u.cast[Union[FS, Any]]),
-          c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r)).cast[Continuation[Fx1[Subscribe], Any, A]],
+          materialize(u.asInstanceOf[Union[FS, Any]]),
+          c.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r)).asInstanceOf[Continuation[Fx1[Subscribe], Any, A]],
           last
         )
 
       case ImpureAp(unions, continuation, last) =>
         val materializedUnions =
-          Unions(materialize(unions.first.cast[Union[FS, Any]]), unions.rest.map(materialize))
+          Unions(materialize(unions.first.asInstanceOf[Union[FS, Any]]), unions.rest.map(materialize))
 
         val continuation1 = continuation.mapLast(r => memoizeSubsequence(key, sequenceKey, sub, cache, r))
         ImpureAp(materializedUnions, continuation1, last)

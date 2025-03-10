@@ -16,13 +16,13 @@ package org.atnos.eff
  *  In that respect UnionTagged behaves similarly to a tagged union in C or C++.
  *
  */
-sealed trait Effect[R, A] {
+sealed abstract class Effect[R, A] {
   type X = A
 }
 
 case class NoEffect[R, A](a: A) extends Effect[R, A]
 
-sealed trait Union[R, A] extends Effect[R, A] {
+sealed abstract class Union[R, A] extends Effect[R, A] {
   final private[eff] def forget[E, B]: Union[E, B] =
     asInstanceOf[Union[E, B]]
 

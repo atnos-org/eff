@@ -13,7 +13,7 @@ trait UserInteractionInterpretersSnippet {
   def readLine(): String =
     "snuggles"
 
-  def runInteract[R, A](effect: Eff[R, A])(implicit m: Interact <= R): Eff[m.Out, A] =
+  def runInteract[R, A](effect: Eff[R, A])(using m: Interact <= R): Eff[m.Out, A] =
     recurse(effect)(new Recurser[Interact, m.Out, A, A] {
       def onPure(a: A): A = a
 
@@ -36,7 +36,7 @@ trait UserInteractionInterpretersSnippet {
 
     })(using m)
 
-  def runDataOp[R, A](effect: Eff[R, A])(implicit m: DataOp <= R): Eff[m.Out, A] = {
+  def runDataOp[R, A](effect: Eff[R, A])(using m: DataOp <= R): Eff[m.Out, A] = {
     val memDataSet = new scala.collection.mutable.ListBuffer[String]
 
     recurse(effect)(new Recurser[DataOp, m.Out, A, A] {

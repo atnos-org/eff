@@ -29,7 +29,7 @@ trait AdtInterpreterSnippet {
  * The resulting effect stack is m.Out which is R without the KVStore effects
  *
  */
-  def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore <= R): Eff[m.Out, A] = {
+  def runKVStoreUnsafe[R, A](effects: Eff[R, A])(using m: KVStore <= R): Eff[m.Out, A] = {
     // a very simple (and imprecise) key-value store
     val kvs = Map.empty[String, Any]
 

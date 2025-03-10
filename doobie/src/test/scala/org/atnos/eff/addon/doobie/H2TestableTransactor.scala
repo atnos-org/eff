@@ -34,7 +34,7 @@ object H2TestableTransactor {
     after: ConnectionIO[Unit] = commit,
     oops: ConnectionIO[Unit] = rollback,
     always: ConnectionIO[Unit] = close
-  )(implicit async: Async[M]): (Transactor[M], OpHistory) = {
+  )(using async: Async[M]): (Transactor[M], OpHistory) = {
 
     val pool = JdbcConnectionPool.create(url, user, pass)
 

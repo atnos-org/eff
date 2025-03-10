@@ -2,14 +2,13 @@ package org.atnos.eff
 
 import cats.data.*
 import cats.syntax.all.*
-import cats.syntax.all.catsSyntaxEq as _
 import org.atnos.eff.all.*
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.all.given
 import org.scalacheck.Gen.posNum
 import org.specs2.ScalaCheck
 import org.specs2.Specification
 
-class OptionEffectSpec extends Specification with ScalaCheck with Specs2Compat {
+class OptionEffectSpec extends Specification with ScalaCheck {
   def is = s2"""
 
  run the option monad                     $optionMonad

@@ -94,7 +94,7 @@ case class Continuation[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: 
 
   def transform[U1, U2, M[_], N[_]](
     t: ~>[M, N]
-  )(implicit m: Member.Aux[M, R, U1], n: Member.Aux[N, R, U2], into: IntoPoly[U1, U2]): Continuation[R, A, B] =
+  )(using m: Member.Aux[M, R, U1], n: Member.Aux[N, R, U2], into: IntoPoly[U1, U2]): Continuation[R, A, B] =
     Continuation(functions.map(f => (x: Any) => Interpret.transform(f(x): Eff[R, Any], t)(using m, n, into)), onNone)
 
   def runOnNone: Eff[R, Unit] =
@@ -111,7 +111,7 @@ object Continuation {
   def unit[R, A]: Continuation[R, A, A] =
     Continuation(Vector.empty)
 
-  implicit def ArrsFunctor[R, X]: Functor[Continuation[R, X, *]] = new Functor[Continuation[R, X, *]] {
+  given ArrsFunctor[R, X]: Functor[Continuation[R, X, *]] = new Functor[Continuation[R, X, *]] {
     def map[A, B](fa: Continuation[R, X, A])(f: A => B): Continuation[R, X, B] =
       fa.map(f)
   }

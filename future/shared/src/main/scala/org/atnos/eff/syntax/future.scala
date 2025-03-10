@@ -8,31 +8,30 @@ import scala.concurrent.duration.FiniteDuration
 
 trait future {
 
-  implicit final def toFutureOps[R, A](e: Eff[R, A]): FutureOps[R, A] = new FutureOps[R, A](e)
+  given futureExtension: AnyRef with {
+    extension [R, A](e: Eff[R, A]) {
+      def futureAttempt(using TimedFuture /= R): Eff[R, Either[Throwable, A]] =
+        FutureInterpretation.futureAttempt(e)
 
+      def futureMemo(key: AnyRef, cache: Cache)(using TimedFuture /= R): Eff[R, A] =
+        FutureInterpretation.futureMemo(key, cache, e)
+
+      def runAsync(using scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+        FutureInterpretation.runAsync(e)
+
+      def runAsyncOn(executorServices: ExecutorServices)(using Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+        FutureInterpretation.runAsyncOn(executorServices)(e)
+
+      def runSequentialOn(executorServices: ExecutorServices)(using Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+        FutureInterpretation.runSequentialOn(executorServices)(e)
+
+      def runSequential(using Scheduler, ExecutionContext, Member.Aux[TimedFuture, R, NoFx]): Future[A] =
+        FutureInterpretation.runSequential(e)
+
+      def retryUntil(condition: A => Boolean, durations: List[FiniteDuration])(using TimedFuture |= R): Eff[R, A] =
+        FutureCreation.retryUntil(e, condition, durations)
+    }
+  }
 }
 
 object future extends future
-
-final class FutureOps[R, A](private val e: Eff[R, A]) extends AnyVal {
-  def futureAttempt(implicit future: TimedFuture /= R): Eff[R, Either[Throwable, A]] =
-    FutureInterpretation.futureAttempt(e)
-
-  def futureMemo(key: AnyRef, cache: Cache)(implicit future: TimedFuture /= R): Eff[R, A] =
-    FutureInterpretation.futureMemo(key, cache, e)
-
-  def runAsync(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
-    FutureInterpretation.runAsync(e)
-
-  def runAsyncOn(executorServices: ExecutorServices)(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
-    FutureInterpretation.runAsyncOn(executorServices)(e)
-
-  def runSequentialOn(executorServices: ExecutorServices)(implicit m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
-    FutureInterpretation.runSequentialOn(executorServices)(e)
-
-  def runSequential(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
-    FutureInterpretation.runSequential(e)
-
-  def retryUntil(condition: A => Boolean, durations: List[FiniteDuration])(implicit future: TimedFuture |= R): Eff[R, A] =
-    FutureCreation.retryUntil(e, condition, durations)
-}

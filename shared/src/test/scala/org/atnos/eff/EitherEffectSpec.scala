@@ -4,14 +4,14 @@ import cats.Eval
 import cats.data.*
 import cats.syntax.all.*
 import org.atnos.eff.all.*
-import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.all.given
 import org.scalacheck.Gen
 import org.scalacheck.Gen.posNum
 import org.specs2.ScalaCheck
 import org.specs2.Specification
 import org.specs2.matcher.EitherMatchers
 
-class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers with Specs2Compat {
+class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers {
   def is = s2"""
 
  an Either value can be injected in the stack    $EitherCreation
@@ -176,13 +176,13 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
   def implicitRequireLeft = {
     case class Error1(m: String)
     case class Error2(e1: Error1)
-    implicit def e1Toe2: Error1 => Error2 = (e1: Error1) => Error2(e1)
-    import either._
+    given e1Toe2: (Error1 => Error2) = (e1: Error1) => Error2(e1)
+    import either.given
 
-    def withE1[R](i: Int)(implicit m: Either[Error1, *] |= R): Eff[R, Int] =
+    def withE1[R](i: Int)(using Either[Error1, *] |= R): Eff[R, Int] =
       either.right[R, Error1, Int](i)
 
-    def withE2[R](implicit m: Either[Error2, *] |= R): Eff[R, String] =
+    def withE2[R](using Either[Error2, *] |= R): Eff[R, String] =
       withE1[R](10).map(_.toString)
 
     withE2[Fx.fx1[Either[Error2, *]]].runEither.run ==== Right("10")

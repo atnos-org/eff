@@ -6,7 +6,7 @@ import org.atnos.eff.Eff.send
 trait WriterCreation {
 
   /** write a given value */
-  def tell[R, O](o: O)(implicit member: Writer[O, *] |= R): Eff[R, Unit] =
+  def tell[R, O](o: O)(using Writer[O, *] |= R): Eff[R, Unit] =
     send[Writer[O, *], R, Unit](Writer(o, ()))
 
 }

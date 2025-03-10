@@ -6,7 +6,7 @@ object ListEffectPage extends UserGuidePage {
 
 The `List` effect is used for computations which may return several values.
 A simple example using this effect would be ${snippet {
-      import org.atnos.eff._, all._, syntax.all._
+      import org.atnos.eff._, all._, syntax.all.given
 
       type S = Fx.fx1[List]
 
