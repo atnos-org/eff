@@ -388,27 +388,27 @@ trait MemberLower8 extends MemberLower9 {
 
 trait MemberLower9 extends MemberLower10 {
   implicit def MemberAppend2L[T1[_], T2[_], R]: Member.Aux[T1, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T2], R]] =
-    Member.MemberAppendL(Member.Member2L)
+    Member.MemberAppendL(using Member.Member2L)
 }
 
 trait MemberLower10 extends MemberLower11 {
   implicit def MemberAppend2R[T1[_], T2[_], R]: Member.Aux[T2, FxAppend[Fx2[T1, T2], R], FxAppend[Fx1[T1], R]] =
-    Member.MemberAppendL(Member.Member2R)
+    Member.MemberAppendL(using Member.Member2R)
 }
 
 trait MemberLower11 extends MemberLower12 {
   implicit def MemberAppend3L[T1[_], T2[_], T3[_], R]: Member.Aux[T1, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T2, T3], R]] =
-    Member.MemberAppendL(Member.Member3L)
+    Member.MemberAppendL(using Member.Member3L)
 }
 
 trait MemberLower12 extends MemberLower13 {
   implicit def MemberAppend3M[T1[_], T2[_], T3[_], R]: Member.Aux[T2, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T1, T3], R]] =
-    Member.MemberAppendL(Member.Member3M)
+    Member.MemberAppendL(using Member.Member3M)
 }
 
 trait MemberLower13 extends MemberLower14 {
   implicit def MemberAppend3R[T1[_], T2[_], T3[_], R]: Member.Aux[T3, FxAppend[Fx3[T1, T2, T3], R], FxAppend[Fx2[T1, T2], R]] =
-    Member.MemberAppendL(Member.Member3R)
+    Member.MemberAppendL(using Member.Member3R)
 }
 
 trait MemberLower14 extends MemberLower15 {
@@ -477,7 +477,7 @@ trait MemberLower16 extends MemberLower17 {
 
   // Specialized version of MemberAppendR with an existential type for the output stack
   implicit def MemberAppendRNoAux[T[_], L, R](implicit append: Member[T, R]): Member.Aux[T, FxAppend[L, R], FxAppend[L, append.Out]] =
-    Member.MemberAppendR[T, L, R, append.Out](append)
+    Member.MemberAppendR[T, L, R, append.Out](using append)
 }
 
 trait MemberLower17 extends MemberLower18 {
