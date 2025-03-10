@@ -61,7 +61,7 @@ trait AdtInterpreterSafeSnippet {
             for {
               _ <- tell(s"get($key)")
               m <- get[U, Map[String, Any]]
-              r <- fromEither(Either.catchNonFatal(m.get(key)))
+              r <- fromEither(Either.catchNonFatal(m.get(key).asInstanceOf[X]))
             } yield r
 
           case Delete(key) =>
