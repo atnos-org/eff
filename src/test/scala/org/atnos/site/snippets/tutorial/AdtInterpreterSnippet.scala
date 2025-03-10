@@ -43,7 +43,7 @@ trait AdtInterpreterSnippet {
 
           case Get(key) =>
             println(s"get($key)")
-            kvs.get(key)
+            kvs.get(key).asInstanceOf[X]
 
           case Delete(key) =>
             println(s"delete($key)")

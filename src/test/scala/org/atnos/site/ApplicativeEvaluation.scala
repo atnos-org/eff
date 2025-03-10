@@ -106,11 +106,16 @@ Let's create an interpreter for this DSL:
         @tailrec
         def go(e: Eff[Fx1[UserDsl], A], trace: Vector[String]): (A, Vector[String]) =
           e match {
-            case Pure(a, _) => (a, trace)
-            case Impure(UnionTagged(GetUser(i), _), c, _) => go(c(getWebUser(i)), trace :+ "getWebUser")
-            case Impure(UnionTagged(GetUsers(is), _), c, _) => go(c(getWebUsers(is)), trace :+ "getWebUsers")
-            case ap @ ImpureAp(_, _, _) => go(ap.toMonadic, trace)
-            case Impure(_, _, _) => sys.error("this should not happen with just one effect")
+            case Pure(a, _) =>
+              (a, trace)
+            case Impure(UnionTagged(GetUser(i), _), c, _) =>
+              go(c.asInstanceOf[User => Eff[Fx1[UserDsl], A]].apply(getWebUser(i)), trace :+ "getWebUser")
+            case Impure(UnionTagged(GetUsers(is), _), c, _) =>
+              go(c.asInstanceOf[List[User] => Eff[Fx1[UserDsl], A]].apply(getWebUsers(is)), trace :+ "getWebUsers")
+            case ap @ ImpureAp(_, _, _) =>
+              go(ap.toMonadic, trace)
+            case Impure(_, _, _) =>
+              sys.error("this should not happen with just one effect")
           }
         go(eff, Vector())
       }
