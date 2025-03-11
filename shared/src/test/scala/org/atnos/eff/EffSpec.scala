@@ -132,7 +132,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
     type S = Fx.fx1[Eval]
 
     val action: Eff[S, Int] =
-      EffMonad[S].tailRecM(1) { i =>
+      Monad[Eff[S, *]].tailRecM(1) { i =>
         if (i >= 5000) Pure(Right(i))
         else Pure(Left(i + 1))
       }
@@ -152,7 +152,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
   }
 
   def runPureValue =
-    (EffMonad[Fx.fx1[Eval]].pure(1).runPure === Option(1)) and
+    (Monad[Eff[Fx.fx1[Eval], *]].pure(1).runPure === Option(1)) and
       (delay(1).runPure === None)
 
   def runOneEffect =
@@ -349,13 +349,13 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
 
   implicit def ArbitraryEff[R]: Arbitrary[Eff[R, Int]] = Arbitrary[Eff[R, Int]] {
     Gen.oneOf(
-      Gen.choose(0, 100).map(i => EffMonad[R].pure(i)),
-      Gen.choose(0, 100).map(i => EffMonad[R].pure(i).map(_ + 10))
+      Gen.choose(0, 100).map(i => Monad[Eff[R, *]].pure(i)),
+      Gen.choose(0, 100).map(i => Monad[Eff[R, *]].pure(i).map(_ + 10))
     )
   }
 
   implicit def ArbitraryEffFunction[R]: Arbitrary[Eff[R, Int => Int]] =
-    Arbitrary(arbitrary[Int => Int].map(f => EffMonad[R].pure(f)))
+    Arbitrary(arbitrary[Int => Int].map(f => Monad[Eff[R, *]].pure(f)))
 
   import OptionEffect._
 

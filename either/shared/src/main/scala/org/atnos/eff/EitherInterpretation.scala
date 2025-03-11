@@ -19,7 +19,7 @@ trait EitherInterpretation {
   private def interpretEither[R, U, E, A](effect: Eff[R, A])(ap: Applicative[Either[E, *]])(implicit
     m: Member.Aux[Either[E, *], R, U]
   ): Eff[U, E Either A] =
-    Interpret.recurse(effect)(eitherRecurser[U, E, A, E Either A](a => Right(a), e => EffMonad[U].pure(Left(e)))(ap))
+    Interpret.recurse(effect)(eitherRecurser[U, E, A, E Either A](a => Right(a), e => Monad[Eff[U, *]].pure(Left(e)))(ap))
 
   /** catch possible left values */
   def attemptEither[R, E, A](effect: Eff[R, A])(implicit member: Either[E, *] /= R): Eff[R, E Either A] =

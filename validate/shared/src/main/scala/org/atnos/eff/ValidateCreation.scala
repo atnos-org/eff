@@ -23,7 +23,7 @@ trait ValidateCreation {
 
   /** create a correct value */
   def correct[R, E, A](a: A)(implicit m: Validate[E, *] |= R): Eff[R, A] =
-    Eff.send[Validate[E, *], R, Unit](Correct[E]()) >> Eff.EffMonad[R].pure(a)
+    Eff.send[Validate[E, *], R, Unit](Correct[E]()) >> Monad[Eff[R, *]].pure(a)
 
   /** create a pure warning */
   def warning[R, E](e: E)(implicit m: Validate[E, *] |= R): Eff[R, Unit] =
@@ -31,7 +31,7 @@ trait ValidateCreation {
 
   /** create a correct value with warning */
   def warning[R, E, A](a: A, e: E)(implicit m: Validate[E, *] |= R): Eff[R, A] =
-    warning(e) >> Eff.EffMonad[R].pure(a)
+    warning(e) >> Monad[Eff[R, *]].pure(a)
 
   /** check a correct condition */
   def validateCheck[R, E](condition: Boolean, e: => E)(implicit m: Validate[E, *] |= R): Eff[R, Unit] =
@@ -39,7 +39,7 @@ trait ValidateCreation {
 
   /** check a correct value */
   def validateValue[R, E, A](condition: Boolean, a: => A, e: => E)(implicit m: Validate[E, *] |= R): Eff[R, A] =
-    if (condition) correct(a) else wrong(e) >> Eff.EffMonad[R].pure(a)
+    if (condition) correct(a) else wrong(e) >> Monad[Eff[R, *]].pure(a)
 }
 
 object ValidateCreation extends ValidateCreation

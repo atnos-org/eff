@@ -14,17 +14,17 @@ object ConsoleEffect {
 
   def log[R](message: String, doIt: Boolean = true)(implicit m: Member[Console, R]): Eff[R, Unit] =
     if (doIt) WriterEffect.tell(ConsoleString(message))
-    else EffMonad.pure(())
+    else Monad[Eff[R, *]].pure(())
 
   def logThrowable[R](t: Throwable, doIt: Boolean = true)(implicit m: Member[Console, R]): Eff[R, Unit] =
     if (doIt) logThrowable(t)
-    else EffMonad.pure(())
+    else Monad[Eff[R, *]].pure(())
 
   def logThrowable[R](t: Throwable)(implicit m: Member[Console, R]): Eff[R, Unit] =
     log(t.getMessage, doIt = true)(using m) >>
       log(t.getStackTrace.mkString("\n"), doIt = true) >>
       (if (t.getCause != null) logThrowable(t.getCause)
-       else EffMonad.pure(()))
+       else Monad[Eff[R, *]].pure(()))
 
   /**
    * This interpreter prints messages to the console

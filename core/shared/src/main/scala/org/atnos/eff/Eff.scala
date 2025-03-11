@@ -1,5 +1,7 @@
 package org.atnos.eff
 
+import cats.Monad
+
 /**
  * Effects of type R, returning a value of type A
  *
@@ -47,7 +49,6 @@ package org.atnos.eff
  */
 sealed trait Eff[R, A] {
   import Eff.EffApplicative
-  import Eff.EffMonad
 
   def map[B](f: A => B): Eff[R, B] =
     EffApplicative[R].map(this)(f)
@@ -62,7 +63,7 @@ sealed trait Eff[R, A] {
     EffApplicative[R].map2(this, fb)(f)
 
   def map2Flatten[B, C](fb: Eff[R, B])(f: (A, B) => Eff[R, C]): Eff[R, C] =
-    EffMonad[R].flatMap(EffApplicative[R].product(this, fb)) { case (a, b) => f(a, b) }
+    Monad[Eff[R, *]].flatMap(EffApplicative[R].product(this, fb)) { case (a, b) => f(a, b) }
 
   def *>[B](fb: Eff[R, B]): Eff[R, B] =
     EffApplicative[R].map2(this, fb) { case (_, b) => b }
@@ -80,7 +81,7 @@ sealed trait Eff[R, A] {
     flatMap(a => fb.map(_ => a))
 
   def flatMap[B](f: A => Eff[R, B]): Eff[R, B] =
-    EffMonad[R].flatMap(this)(f)
+    Monad[Eff[R, *]].flatMap(this)(f)
 
   def flatten[B](implicit ev: A <:< Eff[R, B]): Eff[R, B] =
     flatMap(ev)

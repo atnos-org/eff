@@ -1,6 +1,8 @@
 package org.atnos.site
 package lib
 
+import cats.Monad
+
 object ChooseEffectPage extends UserGuidePage {
   def is = "Choose".title ^ s2"""
 
@@ -23,7 +25,7 @@ For example if we take `List` to run a similar example as before, we get the lis
         a <- chooseFrom(list)
         b <- chooseFrom(list)
         found <-
-          if (a + b > n) EffMonad[R].pure((a, b))
+          if (a + b > n) Monad[Eff[R, *]].pure((a, b))
           else zero
       } yield found
 

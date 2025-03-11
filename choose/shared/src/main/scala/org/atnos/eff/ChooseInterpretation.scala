@@ -17,7 +17,11 @@ trait ChooseInterpretation {
     val alternativeF = Alternative[F]
 
     @tailrec
-    def go(stack: List[Eff[R, A]], result: Eff[U, F[A]] = EffMonad[U].pure(alternativeF.empty), resultLast: Option[Last[U]] = None): Eff[U, F[A]] =
+    def go(
+      stack: List[Eff[R, A]],
+      result: Eff[U, F[A]] = Monad[Eff[U, *]].pure(alternativeF.empty),
+      resultLast: Option[Last[U]] = None
+    ): Eff[U, F[A]] =
       stack match {
         case Nil =>
           resultLast match {
@@ -28,7 +32,7 @@ trait ChooseInterpretation {
         case e :: rest =>
           e match {
             case Pure(a, last) =>
-              go(rest, (EffMonad[U].pure(alternativeF.pure(a)), result).mapN(alternativeF.combineK), resultLast.map(_ <* lastRun(last)))
+              go(rest, (Monad[Eff[U, *]].pure(alternativeF.pure(a)), result).mapN(alternativeF.combineK), resultLast.map(_ <* lastRun(last)))
 
             case Impure(NoEffect(a), c, last) =>
               runChoose(c(a).addLast(last))

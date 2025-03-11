@@ -109,7 +109,7 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
       (_: A) => (),
       {
         case Left(t) if implicitly[ClassTag[E]].runtimeClass.isInstance(t) =>
-          EffMonad[R].pure(())
+          Monad[Eff[R, *]].pure(())
         case other => outer.error(other)
       }
     )
