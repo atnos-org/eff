@@ -343,7 +343,7 @@ the <code class="prettyprint">eff-monix</code> extension to use.</p>
 <p>Then we need to pass a Monix <code class="prettyprint">Scheduler</code> in to begin the
 computation.</p>
 <pre><code class="prettyprint">
-      implicit val scheduler =
+      implicit val scheduler: monix.execution.Scheduler =
         monix.execution.Scheduler(ExecutionContext.fromExecutorService(Executors.newScheduledThreadPool(10)): ExecutionContext)
 
 </code></pre>
