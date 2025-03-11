@@ -5,6 +5,7 @@ import org.scalacheck._
 import org.specs2.ScalaCheck
 import org.specs2.Specification
 import cats.Eq
+import cats.Monad
 import org.atnos.eff.EffCompat._
 import org.atnos.eff.Batchable
 import org.atnos.eff.all._
@@ -180,13 +181,13 @@ class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with S
 
   implicit def ArbitraryEff[R]: Arbitrary[Eff[R, Int]] = Arbitrary[Eff[R, Int]] {
     Gen.oneOf(
-      Gen.choose(0, 100).map(i => EffMonad[R].pure(i)),
-      Gen.choose(0, 100).map(i => EffMonad[R].pure(i).map(_ + 10))
+      Gen.choose(0, 100).map(i => Monad[Eff[R, *]].pure(i)),
+      Gen.choose(0, 100).map(i => Monad[Eff[R, *]].pure(i).map(_ + 10))
     )
   }
 
   implicit def ArbitraryEffFunction[R]: Arbitrary[Eff[R, Int => Int]] =
-    Arbitrary(arbitrary[Int => Int].map(f => EffMonad[R].pure(f)))
+    Arbitrary(arbitrary[Int => Int].map(f => Monad[Eff[R, *]].pure(f)))
 
   import OptionEffect._
 

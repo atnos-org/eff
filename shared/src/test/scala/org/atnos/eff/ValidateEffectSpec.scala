@@ -1,5 +1,6 @@
 package org.atnos.eff
 
+import cats.Monad
 import cats.data._
 import cats.syntax.all._
 import org.atnos.eff.all._
@@ -45,7 +46,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat
       for {
         _ <- ValidateEffect.correct[S, String, Int](1)
         _ <- ValidateEffect.correct[S, String, Int](2)
-        a <- EffMonad[S].pure(3)
+        a <- Monad[Eff[S, *]].pure(3)
       } yield a
 
     validate.runNel.run ==== Right(3)
@@ -57,7 +58,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat
         _ <- ValidateEffect.correct[S, String, Int](1)
         _ <- ValidateEffect.wrong[S, String]("error1")
         _ <- ValidateEffect.wrong[S, String]("error2")
-        a <- EffMonad[S].pure(3)
+        a <- Monad[Eff[S, *]].pure(3)
       } yield a
 
     validate.runNel.run ==== Left(NonEmptyList.of("error1", "error2"))
@@ -107,7 +108,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat
       for {
         _ <- ValidateEffect.correct[S, String, Int](1)
         _ <- ValidateEffect.wrong[S, String]("error!")
-        a <- EffMonad[S].pure(3)
+        a <- Monad[Eff[S, *]].pure(3)
       } yield a
 
     validate.catchFirstWrong((s: String) => pure(4)).runNel.run ==== Right(4)
@@ -142,7 +143,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat
       for {
         _ <- ValidateEffect.correct[S, String, Int](1)
         _ <- intermediate
-        a <- EffMonad[S].pure(3)
+        a <- Monad[Eff[S, *]].pure(3)
         _ <- ValidateEffect.wrong[S, String]("error2")
       } yield a.toString
 
@@ -189,7 +190,7 @@ class ValidateEffectSpec extends Specification with ScalaCheck with Specs2Compat
       for {
         v <- ListEffect.values[C, Int](1, 2)
         _ <- ValidateEffect.wrong[C, String]("error" + v.toString)
-        a <- EffMonad[C].pure(3)
+        a <- Monad[Eff[C, *]].pure(3)
       } yield a.toString
 
     validate.runList.catchAllWrongs((ss: NonEmptyList[String]) => pure(ss.toList)).runNel.run ==== Right(List("error1", "error2"))

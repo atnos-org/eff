@@ -178,7 +178,7 @@ trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
       fa.flatMap(f)
 
     def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
-      Eff.EffMonad[R].tailRecM(a)(f)
+      Monad[Eff[R, *]].tailRecM(a)(f)
 
   }
 
@@ -218,7 +218,7 @@ trait TaskEffect extends TaskInterpretation with TaskCreation { outer =>
         fa.flatMap(f)
 
       def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
-        Eff.EffMonad[R].tailRecM(a)(f)
+        Monad[Eff[R, *]].tailRecM(a)(f)
     }
 
 }

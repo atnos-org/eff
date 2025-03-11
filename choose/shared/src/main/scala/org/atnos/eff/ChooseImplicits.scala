@@ -10,10 +10,10 @@ trait ChooseImplicits {
    */
   def EffMonadAlternative[R](implicit m: Member[Choose, R]): Alternative[Eff[R, *]] = new Alternative[Eff[R, *]] with Monad[Eff[R, *]] {
     def pure[A](a: A): Eff[R, A] =
-      EffMonad[R].pure(a)
+      Monad[Eff[R, *]].pure(a)
 
     def flatMap[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
-      EffMonad[R].flatMap(fa)(f)
+      Monad[Eff[R, *]].flatMap(fa)(f)
 
     def tailRecM[A, B](a: A)(f: A => Eff[R, Either[A, B]]): Eff[R, B] =
       flatMap(f(a)) {

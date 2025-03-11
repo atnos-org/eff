@@ -13,11 +13,11 @@ trait EffCreation {
 
   /** use the internal effect as one of the stack effects */
   def collapse[R, M[_], A](r: Eff[R, M[A]])(implicit m: M |= R): Eff[R, A] =
-    EffMonad[R].flatMap(r)(mx => send(mx)(using m))
+    Monad[Eff[R, *]].flatMap(r)(mx => send(mx)(using m))
 
   /** create an Eff value for () */
   def unit[R]: Eff[R, Unit] =
-    EffMonad.pure(())
+    Monad[Eff[R, *]].pure(())
 
   /** create a pure value */
   def pure[R, A](a: A): Eff[R, A] =

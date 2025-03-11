@@ -10,16 +10,16 @@ package object scalaz {
    */
   implicit final def EffScalazMonad[R]: Monad[Eff[R, *]] & BindRec[Eff[R, *]] = new Monad[Eff[R, *]] with BindRec[Eff[R, *]] {
     def point[A](a: => A): Eff[R, A] =
-      Eff.EffMonad[R].pure(a)
+      cats.Monad[Eff[R, *]].pure(a)
 
     override def map[A, B](fa: Eff[R, A])(f: A => B): Eff[R, B] =
-      Eff.EffMonad[R].map(fa)(f)
+      cats.Monad[Eff[R, *]].map(fa)(f)
 
     def bind[A, B](fa: Eff[R, A])(f: A => Eff[R, B]): Eff[R, B] =
-      Eff.EffMonad[R].flatMap(fa)(f)
+      cats.Monad[Eff[R, *]].flatMap(fa)(f)
 
     def tailrecM[A, B](a: A)(f: A => Eff[R, A \/ B]): Eff[R, B] =
-      Eff.EffMonad[R].tailRecM(a)(a1 => f(a1).map(_.toEither))
+      cats.Monad[Eff[R, *]].tailRecM(a)(a1 => f(a1).map(_.toEither))
   }
 
   def EffScalazApplicative[R]: Applicative[Eff[R, *]] = new Applicative[Eff[R, *]] {

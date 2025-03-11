@@ -2,6 +2,7 @@ package org.atnos.eff
 
 import org.specs2.ScalaCheck
 import org.specs2.Specification
+import cats.Monad
 import cats.data._
 import cats.syntax.all._
 import org.atnos.eff.all._
@@ -29,11 +30,11 @@ class StateEffectSpec extends Specification with ScalaCheck with Specs2Compat {
 
     def action[R: _stateInt]: Eff[R, String] = for {
       a <- get
-      h <- EffMonad.pure("hello")
+      h <- Monad[Eff[R, *]].pure("hello")
       _ <- put(a + 5)
       b <- get
       _ <- put(b + 10)
-      w <- EffMonad.pure("world")
+      w <- Monad[Eff[R, *]].pure("world")
     } yield h + " " + w
 
     action[SI].runState(5).run ==== (("hello world", 20))

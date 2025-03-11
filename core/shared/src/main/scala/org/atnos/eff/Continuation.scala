@@ -107,7 +107,7 @@ object Continuation {
   def lift[R, A, B](f: A => Eff[R, B], otherwise: Last[R] = Last.none[R]): Continuation[R, A, B] =
     Continuation(Vector.empty :+ f.asInstanceOf[Any => Eff[R, Any]], otherwise)
 
-  /** create an Arrs function with no effect, which is similar to using an identity a => EffMonad[R].pure(a) */
+  /** create an Arrs function with no effect, which is similar to using an identity `a => Monad[Eff[R, *]].pure(a)` */
   def unit[R, A]: Continuation[R, A, A] =
     Continuation(Vector.empty)
 
