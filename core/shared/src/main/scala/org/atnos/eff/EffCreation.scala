@@ -41,11 +41,11 @@ trait EffCreation {
 
   /** use the applicative instance of Eff to traverse a list of values */
   def traverseA[R, F[_]: Traverse, A, B](fs: F[A])(f: A => Eff[R, B]): Eff[R, F[B]] =
-    Traverse[F].traverse(fs)(f)(EffImplicits.EffApplicative[R])
+    Traverse[F].traverse(fs)(f)(using EffImplicits.EffApplicative[R])
 
   /** use the applicative instance of Eff to sequence a list of values */
   def sequenceA[R, F[_]: Traverse, A](fs: F[Eff[R, A]]): Eff[R, F[A]] =
-    Traverse[F].sequence(fs)(EffImplicits.EffApplicative[R])
+    Traverse[F].sequence(fs)(using EffImplicits.EffApplicative[R])
 
   /** use the applicative instance of Eff to traverse a list of values, then flatten it */
   def flatTraverseA[R, F[_], A, B](fs: F[A])(f: A => Eff[R, F[B]])(implicit FT: Traverse[F], FM: FlatMap[F]): Eff[R, F[B]] =
