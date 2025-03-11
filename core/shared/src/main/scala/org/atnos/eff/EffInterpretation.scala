@@ -78,7 +78,7 @@ trait EffInterpretation {
 
       case ImpureAp(unions, continuation, last) =>
         val effects = unions.unions.map(_.tagged.valueUnsafe.asInstanceOf[M[Any]])
-        val sequenced = Traverse[Vector].sequence(effects)(applicative)
+        val sequenced = Traverse[Vector].sequence(effects)(using applicative)
 
         val result: M[Either[Eff[Fx1[M], A], A]] =
           sequenced.map(xs => Left(Impure(NoEffect(xs), continuation, last)))
