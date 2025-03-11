@@ -479,7 +479,7 @@ abstract language into concrete values.</p>
       def applicative[X, Tr[_]: Traverse](ms: Tr[KVStore[X]]): Tr[X] =
         ms.map(apply)
     }
-    interpretUnsafe(effects)(sideEffect)(m)
+    interpretUnsafe(effects)(sideEffect)(using m)
 
   }
 </code></pre>
@@ -741,7 +741,7 @@ instances for those effects:</p>
           case Tell(msg) =&gt; println(msg)
         })
 
-    })(m)
+    })(using m)
 
   def runDataOp[R, A](effect: Eff[R, A])(implicit m: DataOp &lt;= R): Eff[m.Out, A] = {
     val memDataSet = new scala.collection.mutable.ListBuffer[String]
@@ -761,7 +761,7 @@ instances for those effects:</p>
           case AddCat(a) =&gt; memDataSet.append(a); ()
           case GetAllCats() =&gt; memDataSet.toList
         })
-    })(m)
+    })(using m)
 
   }
 </code></pre>
