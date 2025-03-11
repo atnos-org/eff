@@ -8,7 +8,7 @@ object Members {
   type &:[H, T <: Members] = Cons[H, T]
   type &&:[H1, H2] = Cons[H1, Cons[H2, NoMember]]
 
-  implicit def extractMember[T <: Members, H[_], Op[_[_], _], R](implicit effects: T, extract: ExtractMember[T, H Op R]): H Op R =
+  implicit def extractMember[T <: Members, H[_], Op[_[_], _], R](implicit effects: T, extract: ExtractMember[T, H Op R]): Op[H, R] =
     extract.member(effects)
 }
 
