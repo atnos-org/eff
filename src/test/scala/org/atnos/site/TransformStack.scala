@@ -48,7 +48,7 @@ ${snippet {
 
 // so you need to explicitly define the implicit
       val member_ : Member.Aux[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]], FxAppend[Fx1[T1], Fx2[T2, T4]]] =
-        Member.MemberAppendR(Member.Member3M)
+        Member.MemberAppendR(using Member.Member3M)
 
 // but this works
       val member: Member[T3, FxAppend[Fx1[T1], Fx3[T2, T3, T4]]] =
