@@ -35,7 +35,7 @@ Now, let's create some `Task` effects:${snippet {
 Then we need to pass a Monix `Scheduler`  in to begin the computation.
        */
 
-      implicit val scheduler =
+      implicit val scheduler: monix.execution.Scheduler =
         monix.execution.Scheduler(ExecutionContext.fromExecutorService(Executors.newScheduledThreadPool(10)): ExecutionContext)
 
       /*p
