@@ -50,7 +50,7 @@ trait EffInterpretation {
    * peel-off the only present effect, using an Applicative instance where possible
    */
   def detachA[M[_], R, A, E](eff: Eff[R, A])(implicit monad: MonadError[M, E], applicative: Applicative[M], member: Member.Aux[M, R, NoFx]): M[A] =
-    detachA(Eff.effInto[R, Fx1[M], A](eff))(monad, applicative)
+    detachA(Eff.effInto[R, Fx1[M], A](eff))(using monad, applicative)
 
   /**
    * peel-off the only present effect, using an Applicative instance where possible

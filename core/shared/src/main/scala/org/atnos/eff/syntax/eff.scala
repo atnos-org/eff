@@ -42,7 +42,7 @@ final class EffOps[R, A](private val e: Eff[R, A]) extends AnyVal {
 
 final class EffTranslateIntoOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def translateInto[T[_], U](t: Translate[T, U])(implicit m: MemberInOut[T, R], into: IntoPoly[R, U]): Eff[U, A] =
-    interpret.translateInto(e)(t)(m, into)
+    interpret.translateInto(e)(t)(using m, into)
 
   def write[T[_], O](w: Write[T, O])(implicit memberT: MemberInOut[T, R], memberW: MemberInOut[Writer[O, *], R]): Eff[R, A] =
     interpret.write(e)(w)
@@ -73,7 +73,7 @@ final class EffOneEffectOps[M[_], A](private val e: Eff[Fx1[M], A]) extends AnyV
     Eff.detach(e)
 
   def detachA[E](applicative: Applicative[M])(implicit monad: MonadError[M, E]): M[A] =
-    Eff.detachA(e)(monad, applicative)
+    Eff.detachA(e)(using monad, applicative)
 }
 
 final class EffOnePureValueOps[R, A](private val e: Eff[R, A]) extends AnyVal {
