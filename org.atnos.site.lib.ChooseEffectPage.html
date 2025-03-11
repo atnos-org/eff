@@ -341,7 +341,7 @@ before, we get the list of all the accepted pairs:</p>
         a &lt;- chooseFrom(list)
         b &lt;- chooseFrom(list)
         found &lt;-
-          if (a + b &gt; n) EffMonad[R].pure((a, b))
+          if (a + b &gt; n) Monad[Eff[R, *]].pure((a, b))
           else zero
       } yield found
 
