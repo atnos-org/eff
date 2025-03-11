@@ -124,7 +124,7 @@ trait Interpret {
 
     }
 
-    runInterpreter[SR, BR, TS, A, A](effect)(Interpreter.fromNat[TS, TB, BR, A](nat)(br))(m)
+    runInterpreter[SR, BR, TS, A, A](effect)(Interpreter.fromNat[TS, TB, BR, A](nat)(using br))(using m)
   }
 
   /**
@@ -162,7 +162,7 @@ trait Interpret {
         }
     }
 
-    translate[R, U, T, A](effect)(tr)(m)
+    translate[R, U, T, A](effect)(tr)(using m)
   }
 
   /** interpret an effect by running side-effects */
@@ -170,7 +170,7 @@ trait Interpret {
     runInterpreter[R, U, T, A, A](effect)(Interpreter.fromSideEffect(sideEffect))
 
   def intercept[R, T[_], A, B](e: Eff[R, A])(interpreter: Interpreter[T, R, A, B])(implicit m: T /= R): Eff[R, B] =
-    runInterpreter[R, R, T, A, B](e)(interpreter)(m.toMember)
+    runInterpreter[R, R, T, A, B](e)(interpreter)(using m.toMember)
 
   /**
    * Intercept the values for one effect and transform them into

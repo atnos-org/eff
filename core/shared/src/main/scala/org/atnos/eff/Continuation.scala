@@ -95,7 +95,7 @@ case class Continuation[R, A, B](functions: Vector[Any => Eff[R, Any]], onNone: 
   def transform[U1, U2, M[_], N[_]](
     t: ~>[M, N]
   )(implicit m: Member.Aux[M, R, U1], n: Member.Aux[N, R, U2], into: IntoPoly[U1, U2]): Continuation[R, A, B] =
-    Continuation(functions.map(f => (x: Any) => Interpret.transform(f(x): Eff[R, Any], t)(m, n, into)), onNone)
+    Continuation(functions.map(f => (x: Any) => Interpret.transform(f(x): Eff[R, Any], t)(using m, n, into)), onNone)
 
   def runOnNone: Eff[R, Unit] =
     onNone.value.map(_.value).getOrElse(Eff.pure(()))
