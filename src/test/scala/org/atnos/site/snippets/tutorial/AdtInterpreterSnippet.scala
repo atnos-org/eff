@@ -54,7 +54,7 @@ trait AdtInterpreterSnippet {
       def applicative[X, Tr[_]: Traverse](ms: Tr[KVStore[X]]): Tr[X] =
         ms.map(apply)
     }
-    interpretUnsafe(effects)(sideEffect)(m)
+    interpretUnsafe(effects)(sideEffect)(using m)
 
   }
 

@@ -67,7 +67,9 @@ We can however run all those computations concurrently using the applicative exe
         List(1000, 500, 50).traverseA(execute[S])
 
       Await.result(
-        Eff.detachA(action.runEval.runWriterLog[String])(TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture).runNow(scheduler, global),
+        Eff
+          .detachA(action.runEval.runWriterLog[String])(using TimedFuture.MonadTimedFuture, TimedFuture.ApplicativeTimedFuture)
+          .runNow(scheduler, global),
         2.seconds
       )
     }.eval}

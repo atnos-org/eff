@@ -34,7 +34,7 @@ trait UserInteractionInterpretersSnippet {
           case Tell(msg) => println(msg)
         })
 
-    })(m)
+    })(using m)
 
   def runDataOp[R, A](effect: Eff[R, A])(implicit m: DataOp <= R): Eff[m.Out, A] = {
     val memDataSet = new scala.collection.mutable.ListBuffer[String]
@@ -54,7 +54,7 @@ trait UserInteractionInterpretersSnippet {
           case AddCat(a) => memDataSet.append(a); ()
           case GetAllCats() => memDataSet.toList
         })
-    })(m)
+    })(using m)
 
   }
 
