@@ -14,7 +14,7 @@ trait ValidateCreation {
     either.fold(e => wrong(e), _ => correct(()))
 
   /** create an Validate effect from a single Ior value */
-  def validateIor[R, E, A](ior: E Ior A)(implicit m: Validate[E, *] |= R): Eff[R, Unit] =
+  def validateIor[R, E, A](ior: Ior[E, A])(implicit m: Validate[E, *] |= R): Eff[R, Unit] =
     ior.fold(e => wrong(e), _ => correct(()), (w, _) => warning(w))
 
   /** create a failed value */

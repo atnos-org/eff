@@ -20,11 +20,11 @@ trait ValidateInterpretation extends ValidateCreation {
     runMapGen(effect)(map) { (a, l) => l.map(_ => a) }
 
   /** run the validate effect, yielding a non-empty list of failures or A or both */
-  def runIorNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, E IorNel A] =
+  def runIorNel[R, U, E, A](r: Eff[R, A])(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, IorNel[E, A]] =
     runIorMap[R, U, E, NonEmptyList[E], A](r)((e: E) => NonEmptyList.one(e))
 
   /** run the validate effect, yielding a list of failures or A or both */
-  def runIorMap[R, U, E, L: Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, L Ior A] =
+  def runIorMap[R, U, E, L: Semigroup, A](effect: Eff[R, A])(map: E => L)(implicit m: Member.Aux[Validate[E, *], R, U]): Eff[U, Ior[L, A]] =
     runMapGen(effect)(map) { (a, l) =>
       l match {
         case Left(errs) => Ior.Left(errs)
