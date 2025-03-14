@@ -16,10 +16,10 @@ trait ReaderInterpretation {
       def onPure(b: B): B =
         b
 
-      def onEffect[X](r: Reader[A, X]): X Either Eff[U, B] =
+      def onEffect[X](r: Reader[A, X]): Either[X, Eff[U, B]] =
         Left(r.run(env))
 
-      def onApplicative[X, T[_]: Traverse](ms: T[Reader[A, X]]): T[X] Either Reader[A, T[X]] =
+      def onApplicative[X, T[_]: Traverse](ms: T[Reader[A, X]]): Either[T[X], Reader[A, T[X]]] =
         Left(ms.map(_.run(env)))
     })
 

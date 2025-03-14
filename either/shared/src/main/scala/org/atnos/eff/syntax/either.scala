@@ -14,13 +14,13 @@ final class EitherEffectOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def runEither[E](implicit m: Member[Either[E, *], R]): Eff[m.Out, Either[E, A]] =
     EitherInterpretation.runEither[R, m.Out, E, A](e)(using m)
 
-  def runEitherU[E, U](implicit m: Member.Aux[Either[E, *], R, U]): Eff[U, E Either A] =
+  def runEitherU[E, U](implicit m: Member.Aux[Either[E, *], R, U]): Eff[U, Either[E, A]] =
     EitherInterpretation.runEither(e)(using m)
 
-  def runEitherCombine[E, U](implicit m: Member.Aux[Either[E, *], R, U], s: Semigroup[E]): Eff[U, E Either A] =
+  def runEitherCombine[E, U](implicit m: Member.Aux[Either[E, *], R, U], s: Semigroup[E]): Eff[U, Either[E, A]] =
     EitherInterpretation.runEitherCombine(e)(using m, s)
 
-  def attemptEither[E](implicit m: Either[E, *] /= R): Eff[R, E Either A] =
+  def attemptEither[E](implicit m: Either[E, *] /= R): Eff[R, Either[E, A]] =
     EitherInterpretation.attemptEither(e)(using m)
 
   def catchLeft[E](handle: E => Eff[R, A])(implicit member: Either[E, *] /= R): Eff[R, A] =

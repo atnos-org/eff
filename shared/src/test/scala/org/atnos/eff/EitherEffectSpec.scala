@@ -40,7 +40,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
 """
 
-  def EitherCreation = prop { (stringOrInt: String Either Int) =>
+  def EitherCreation = prop { (stringOrInt: Either[String, Int]) =>
     type S = Fx.fx1[EitherString]
 
     val either1 = stringOrInt
@@ -90,7 +90,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
   }.setGens(posNum[Long], posNum[Int])
 
-  type EitherString[A] = String Either A
+  type EitherString[A] = Either[String, A]
 
   def stacksafeRun = {
     type E = Fx.fx1[EitherString]
@@ -105,7 +105,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
     sealed trait Err
     case class ValueErr(value: Int) extends Err
     case class ActionErr(value: Int) extends Err
-    type D[A] = Err Either A
+    type D[A] = Either[Err, A]
     type R = Fx1[D]
 
     val value: Eff[R, Int] =
@@ -120,7 +120,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
         sys.error("should not reach here")
     }
 
-    val actual: Err Either Int = action.runEither.run
+    val actual: Either[Err, Int] = action.runEither.run
 
     if (i > 10) actual must beLeft(ActionErr(i))
     else actual must beRight(i)
@@ -128,7 +128,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
 
   def handleLeft = prop { (i: Int) =>
     case class Err(value: Int)
-    type D[A] = Err Either A
+    type D[A] = Either[Err, A]
     type R = Fx2[D, Eval]
 
     val value: Eff[R, Int] =
@@ -221,7 +221,7 @@ class EitherEffectSpec extends Specification with ScalaCheck with EitherMatchers
   }
 
   def runTwoEither = {
-    type EitherInt[A] = Int Either A
+    type EitherInt[A] = Either[Int, A]
     type S = Fx.fx2[EitherString, EitherInt]
 
     val either: Eff[S, Int] = fromEither(Right[Int, Int](3))

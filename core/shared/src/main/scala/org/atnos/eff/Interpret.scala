@@ -116,7 +116,7 @@ trait Interpret {
       def accept[V](union: Union[Out, V]): Union[SR, V] =
         ??? // not used
 
-      def project[V](union: Union[SR, V]): Union[Out, V] Either TS[V] =
+      def project[V](union: Union[SR, V]): Either[Union[Out, V], TS[V]] =
         sr.project(union) match {
           case Right(u) => Right(u)
           case Left(o) => Left(br.accept(into.unionInto(o)))
@@ -155,7 +155,7 @@ trait Interpret {
       def accept[V](union: Union[Out, V]): Union[R, V] =
         ??? // not used
 
-      def project[V](union: Union[R, V]): Union[Out, V] Either T[V] =
+      def project[V](union: Union[R, V]): Either[Union[Out, V], T[V]] =
         t.extract(union) match {
           case Some(u) => Right(u)
           case None => Left(into.unionInto(union))

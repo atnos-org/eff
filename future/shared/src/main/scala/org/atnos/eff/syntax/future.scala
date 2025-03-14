@@ -15,7 +15,7 @@ trait future {
 object future extends future
 
 final class FutureOps[R, A](private val e: Eff[R, A]) extends AnyVal {
-  def futureAttempt(implicit future: TimedFuture /= R): Eff[R, Throwable Either A] =
+  def futureAttempt(implicit future: TimedFuture /= R): Eff[R, Either[Throwable, A]] =
     FutureInterpretation.futureAttempt(e)
 
   def futureMemo(key: AnyRef, cache: Cache)(implicit future: TimedFuture /= R): Eff[R, A] =

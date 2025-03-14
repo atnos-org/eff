@@ -111,7 +111,7 @@ trait TwitterFutureCreation extends TwitterFutureTypes {
   final def futureFail[R: _future, A](t: Throwable): Eff[R, A] =
     send[TwitterTimedFuture, R, A](TwitterTimedFuture((_, _) => Future.exception(t)))
 
-  final def futureFromEither[R: _future, A](e: Throwable Either A): Eff[R, A] =
+  final def futureFromEither[R: _future, A](e: Either[Throwable, A]): Eff[R, A] =
     e.fold(futureFail[R, A], Eff.pure[R, A])
 
   final def futureDelay[R: _future, A](a: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =
@@ -140,16 +140,16 @@ trait TwitterFutureInterpretation extends TwitterFutureTypes {
 
   import interpret.of
 
-  final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, Throwable Either A] =
+  final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TwitterTimedFuture /= R): Eff[R, Either[Throwable, A]] =
     interpret.interceptNatM[R, TwitterTimedFuture, Either[Throwable, *], A](
       e,
       new (TwitterTimedFuture ~> (TwitterTimedFuture of Either[Throwable, *])#l) {
-        override def apply[X](fa: TwitterTimedFuture[X]): TwitterTimedFuture[Throwable Either X] = attempt(fa)
+        override def apply[X](fa: TwitterTimedFuture[X]): TwitterTimedFuture[Either[Throwable, X]] = attempt(fa)
       }
     )
 
-  final def attempt[A](a: TwitterTimedFuture[A]): TwitterTimedFuture[Throwable Either A] = {
-    TwitterTimedFuture[Throwable Either A](callback = a.runNow(_, _).liftToTry.map {
+  final def attempt[A](a: TwitterTimedFuture[A]): TwitterTimedFuture[Either[Throwable, A]] = {
+    TwitterTimedFuture[Either[Throwable, A]](callback = a.runNow(_, _).liftToTry.map {
       case Throw(ex) => Either.left(ex)
       case Return(v) => Either.right(v)
     })

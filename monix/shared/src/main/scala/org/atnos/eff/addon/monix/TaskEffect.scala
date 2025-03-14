@@ -43,7 +43,7 @@ trait TaskCreation extends TaskTypes {
   private[this] val forkedUnit: Task[Unit] =
     Task.unit.executeAsync
 
-  final def taskAsync[R: _task, A](callbackConsumer: ((Throwable Either A) => Unit) => Unit, timeout: Option[FiniteDuration] = None): Eff[R, A] = {
+  final def taskAsync[R: _task, A](callbackConsumer: ((Either[Throwable, A]) => Unit) => Unit, timeout: Option[FiniteDuration] = None): Eff[R, A] = {
     val async = Task.create[A] { (_, cb) =>
       callbackConsumer(tea => cb(tea.fold(Failure(_), Success(_))))
       Cancelable.empty
@@ -87,11 +87,11 @@ trait TaskInterpretation extends TaskTypes {
 
   import interpret.of
 
-  def taskAttempt[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, Throwable Either A] =
+  def taskAttempt[R, A](e: Eff[R, A])(implicit task: Task /= R): Eff[R, Either[Throwable, A]] =
     interpret.interceptNatM[R, Task, Either[Throwable, *], A](
       e,
       new (Task ~> (Task of Either[Throwable, *])#l) {
-        def apply[X](fa: Task[X]): Task[Throwable Either X] =
+        def apply[X](fa: Task[X]): Task[Either[Throwable, X]] =
           fa.attempt
       }
     )

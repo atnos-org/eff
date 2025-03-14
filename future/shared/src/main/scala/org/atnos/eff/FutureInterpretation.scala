@@ -20,17 +20,17 @@ trait FutureInterpretation extends FutureTypes {
   def runSequential[R, A](e: Eff[R, A])(implicit scheduler: Scheduler, exc: ExecutionContext, m: Member.Aux[TimedFuture, R, NoFx]): Future[A] =
     Eff.detach(Eff.effInto[R, Fx1[TimedFuture], A](e)).runNow(scheduler, exc)
 
-  final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, Throwable Either A] =
+  final def futureAttempt[R, A](e: Eff[R, A])(implicit future: TimedFuture /= R): Eff[R, Either[Throwable, A]] =
     interpret.interceptNatM[R, TimedFuture, Either[Throwable, *], A](
       e,
       new (TimedFuture ~> ({ type l[a] = TimedFuture[Either[Throwable, a]] })#l) {
-        override def apply[X](fa: TimedFuture[X]): TimedFuture[Throwable Either X] = attempt(fa)
+        override def apply[X](fa: TimedFuture[X]): TimedFuture[Either[Throwable, X]] = attempt(fa)
       }
     )
 
-  final def attempt[A](a: TimedFuture[A]): TimedFuture[Throwable Either A] = {
-    TimedFuture[Throwable Either A](callback = (scheduler, ec) => {
-      val prom = Promise[Throwable Either A]()
+  final def attempt[A](a: TimedFuture[A]): TimedFuture[Either[Throwable, A]] = {
+    TimedFuture[Either[Throwable, A]](callback = (scheduler, ec) => {
+      val prom = Promise[Either[Throwable, A]]()
       a.runNow(scheduler, ec)
         .onComplete { t =>
           prom.success(t.toEither)

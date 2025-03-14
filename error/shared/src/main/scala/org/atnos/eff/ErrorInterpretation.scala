@@ -14,8 +14,8 @@ trait ErrorInterpretation[F] extends ErrorCreation[F] { outer =>
    *
    * Stop all computation if there is an exception or a failure.
    */
-  def runError[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Error Either A] =
-    runInterpreter(r)(errorInterpreter[U, A, Error Either A](a => Right(a), e => Eff.pure(Left(e))))
+  def runError[R, U, A](r: Eff[R, A])(implicit m: Member.Aux[ErrorOrOk, R, U]): Eff[U, Either[Error, A]] =
+    runInterpreter(r)(errorInterpreter[U, A, Either[Error, A]](a => Right(a), e => Eff.pure(Left(e))))
 
   /**
    * evaluate 1 action possibly having error effects

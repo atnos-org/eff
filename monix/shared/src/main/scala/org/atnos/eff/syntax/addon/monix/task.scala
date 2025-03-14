@@ -21,7 +21,7 @@ final class TaskOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def asyncBoundary(s: Scheduler)(implicit task: Task |= R): Eff[R, A] =
     e.flatMap(a => TaskEffect.asyncBoundary(s).map(_ => a))
 
-  def taskAttempt(implicit task: Task /= R): Eff[R, Throwable Either A] =
+  def taskAttempt(implicit task: Task /= R): Eff[R, Either[Throwable, A]] =
     TaskInterpretation.taskAttempt(e)
 
   def taskMemo(key: AnyRef, cache: Cache)(implicit task: Task /= R): Eff[R, A] =

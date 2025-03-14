@@ -224,7 +224,7 @@ trait SafeInterpretation extends SafeCreation { outer =>
   /**
    * try to execute an action an report any issue
    */
-  def attempt[R, A](action: Eff[R, A])(implicit m: Safe /= R): Eff[R, Throwable Either A] =
+  def attempt[R, A](action: Eff[R, A])(implicit m: Safe /= R): Eff[R, Either[Throwable, A]] =
     catchThrowable(action, Right[Throwable, A], (t: Throwable) => pure(Left(t)))
 
   /**

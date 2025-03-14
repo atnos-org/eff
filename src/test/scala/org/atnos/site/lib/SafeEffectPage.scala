@@ -35,7 +35,7 @@ Let's see an example for the protection of a resource: ${snippet {
       def useResource(ok: Boolean) = (r: Resource) => protect[S, Int](if (ok) r.values.sum else throw new Exception("boo"))
 
 // this program uses the resource safely even if there is an exception
-      def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
+      def program(ok: Boolean): (Either[Throwable, Int], List[Throwable]) =
         bracket(openResource)(useResource(ok))(closeResource).runSafe.run
 // 8<--
       "Results" +
@@ -63,7 +63,7 @@ This example show how to use `finally` but also what happens if a finalizer fail
         protect[S, Unit](if (ok) sumDone = true else throw new Exception("failed!!"))
 
 // this program tries to set sumDone to true when the computation is done
-      def program(ok: Boolean, finalizeOk: Boolean): (Throwable Either Int, List[Throwable]) =
+      def program(ok: Boolean, finalizeOk: Boolean): (Either[Throwable, Int], List[Throwable]) =
         (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception("boo")) `finally` setDone(finalizeOk)).runSafe.run
 
 // 8<--
@@ -80,7 +80,7 @@ Finally (no pun intended!) note that you can use `execSafe` if you are not inter
 
   import cats.syntax.all._
 
-  def showResult1(message: String, result: (Throwable Either Int, List[Throwable]), resourceMessage: String, closed: Boolean) =
+  def showResult1(message: String, result: (Either[Throwable, Int], List[Throwable]), resourceMessage: String, closed: Boolean) =
     result match {
       case (r, ls) =>
         s"""|
@@ -88,7 +88,7 @@ Finally (no pun intended!) note that you can use `execSafe` if you are not inter
           else ls.map(_.getMessage).toString},\t$resourceMessage: $closed""".stripMargin
     }
 
-  def showResult2(message: String, result: (Throwable Either Int, List[Throwable])) =
+  def showResult2(message: String, result: (Either[Throwable, Int], List[Throwable])) =
     result match {
       case (r, ls) =>
         s"""|

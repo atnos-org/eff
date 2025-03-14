@@ -180,7 +180,7 @@ class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with Sca
         j = i + 1
       } yield j
 
-    val execute: Eff[S, Throwable Either Int] =
+    val execute: Eff[S, Either[Throwable, Int]] =
       action.addLast(futureDelay[S, Unit](lastActionDone += 1)).futureAttempt
 
     execute.runOption.runSequential must beSome(beLeft[Throwable]).awaitFor(20.seconds)

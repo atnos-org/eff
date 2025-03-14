@@ -18,7 +18,7 @@ trait FutureCreation extends FutureTypes {
   final def futureFail[R: _future, A](t: Throwable): Eff[R, A] =
     Eff.send[TimedFuture, R, A](TimedFuture((_, _) => Future.failed(t)))
 
-  final def futureFromEither[R: _future, A](e: Throwable Either A): Eff[R, A] =
+  final def futureFromEither[R: _future, A](e: Either[Throwable, A]): Eff[R, A] =
     e.fold(futureFail[R, A], Eff.pure[R, A])
 
   final def futureDelay[R: _future, A](a: => A, timeout: Option[FiniteDuration] = None): Eff[R, A] =

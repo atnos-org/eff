@@ -96,7 +96,7 @@ trait MemberInOut[T[_], R] extends MemberIn[T, R] { outer =>
     def accept[V](union: Union[Out, V]): Union[R, V] =
       union
 
-    def project[V](union: Union[R, V]): Union[Out, V] Either T[V] =
+    def project[V](union: Union[R, V]): Either[Union[Out, V], T[V]] =
       outer.extract(union).map(Right.apply).getOrElse(Left(union))
   }
 }
@@ -179,7 +179,7 @@ trait Member[T[_], R] extends MemberInOut[T, R] {
 
   def accept[V](union: Union[Out, V]): Union[R, V]
 
-  def project[V](union: Union[R, V]): Union[Out, V] Either T[V]
+  def project[V](union: Union[R, V]): Either[Union[Out, V], T[V]]
 
   def aux: Member.Aux[T, R, Out] =
     this
@@ -227,7 +227,7 @@ trait MemberLower1 extends MemberLower2 {
     def accept[V](union: Union[Out, V]): Union[Fx1[T], V] =
       throw new EffImpossibleException("cannot accept a nil effect as In1")
 
-    def project[V](union: Union[Fx1[T], V]): Union[Out, V] Either T[V] =
+    def project[V](union: Union[Fx1[T], V]): Either[Union[Out, V], T[V]] =
       Right(union.tagged.valueUnsafe.asInstanceOf[T[V]])
   }
 }
@@ -242,7 +242,7 @@ trait MemberLower2 extends MemberLower3 {
     def accept[V](union: Union[Out, V]): Union[Fx2[L, R], V] =
       union.tagged.increment
 
-    def project[V](union: Union[Fx2[L, R], V]): Union[Out, V] Either L[V] =
+    def project[V](union: Union[Fx2[L, R], V]): Either[Union[Out, V], L[V]] =
       if (union.tagged.index == 1) Right(union.tagged.valueUnsafe.asInstanceOf[L[V]])
       else Left(union.tagged.decrement)
   }
@@ -258,7 +258,7 @@ trait MemberLower3 extends MemberLower4 {
     def accept[V](union: Union[Out, V]): Union[Fx3[L, M, R], V] =
       union.tagged.increment
 
-    def project[V](union: Union[Fx3[L, M, R], V]): Union[Out, V] Either L[V] =
+    def project[V](union: Union[Fx3[L, M, R], V]): Either[Union[Out, V], L[V]] =
       if (union.tagged.index == 1) Right(union.tagged.valueUnsafe.asInstanceOf[L[V]])
       else Left(union.tagged.decrement.asInstanceOf[Union[Out, V]])
   }
@@ -275,7 +275,7 @@ trait MemberLower4 extends MemberLower5 {
       def accept[V](union: Union[Out, V]): Union[FxAppend[Fx1[T], Fx3[L, M, R]], V] =
         Union.appendR(union)
 
-      def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Union[Out, V] Either T[V] =
+      def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Either[Union[Out, V], T[V]] =
         union match {
           case UnionAppendL(l) => Right(l.tagged.valueUnsafe.asInstanceOf[T[V]])
           case UnionAppendR(r) => Left(r)
@@ -298,7 +298,7 @@ trait MemberLower5 extends MemberLower6 {
         else Union.appendR(tagged.forget)
       }
 
-      def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Union[Fx3[T, M, R], V] Either L[V] =
+      def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Either[Union[Fx3[T, M, R], V], L[V]] =
         union match {
           case UnionAppendL(l) => Left(l.forget)
           case UnionAppendR(r) =>
@@ -329,7 +329,7 @@ trait MemberLower6 extends MemberLower7 {
         }
       }
 
-      def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Union[Fx3[T, L, R], V] Either M[V] = union match {
+      def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Either[Union[Fx3[T, L, R], V], M[V]] = union match {
         case UnionAppendL(l) => Left(l.forget)
         case UnionAppendR(r) =>
           val tagged = r.tagged
@@ -357,7 +357,7 @@ trait MemberLower7 extends MemberLower8 {
         else UnionAppendR(tagged.decrement)
       }
 
-      def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Union[Fx3[T, L, M], V] Either R[V] = union match {
+      def project[V](union: Union[FxAppend[Fx1[T], Fx3[L, M, R]], V]): Either[Union[Fx3[T, L, M], V], R[V]] = union match {
         case UnionAppendL(l) => Left(l.forget)
         case UnionAppendR(r) =>
           val tagged = r.tagged
@@ -375,7 +375,7 @@ trait MemberLower8 extends MemberLower9 {
     def inject[V](e: T[V]): Union[FxAppend[Fx1[T], R], V] =
       Union.appendL(Union.one(e))
 
-    def project[V](union: Union[FxAppend[Fx1[T], R], V]): Union[Out, V] Either T[V] = union match {
+    def project[V](union: Union[FxAppend[Fx1[T], R], V]): Either[Union[Out, V], T[V]] = union match {
       case UnionAppendR(r) => Left(r)
       case UnionAppendL(l) => Right(l.tagged.valueUnsafe.asInstanceOf[T[V]])
       case UnionTagged(_, _) => throw new EffImpossibleException("impossible")
@@ -424,7 +424,7 @@ trait MemberLower14 extends MemberLower15 {
         case _ => union.forget
       }
 
-      def project[V](union: Union[FxAppend[L, R], V]): Union[Out, V] Either T[V] = union match {
+      def project[V](union: Union[FxAppend[L, R], V]): Either[Union[Out, V], T[V]] = union match {
         case UnionAppendL(r) => append.project(r).left.map(Union.appendL)
         case UnionAppendR(_) => Left(union.forget)
         case UnionTagged(_, _) => throw new EffImpossibleException("impossible")
@@ -442,7 +442,7 @@ trait MemberLower15 extends MemberLower16 {
     def accept[V](union: Union[Out, V]): Union[Fx2[L, R], V] =
       UnionTagged(union.asInstanceOf[UnionTagged[Fx2[L, R], V]].valueUnsafe, 1)
 
-    def project[V](union: Union[Fx2[L, R], V]): Union[Out, V] Either R[V] = {
+    def project[V](union: Union[Fx2[L, R], V]): Either[Union[Out, V], R[V]] = {
       val tagged = union.tagged
       if (tagged.index == 2) Right(tagged.valueUnsafe.asInstanceOf[R[V]])
       else Left(tagged.forget)
@@ -465,7 +465,7 @@ trait MemberLower16 extends MemberLower17 {
           else UnionTagged(value, 3)
       }
 
-    def project[V](union: Union[Fx3[L, M, R], V]): Union[Out, V] Either M[V] = union match {
+    def project[V](union: Union[Fx3[L, M, R], V]): Either[Union[Out, V], M[V]] = union match {
       case UnionTagged(value, index) =>
         (index: @switch) match {
           case 1 => Left(union.forget)
@@ -496,7 +496,7 @@ trait MemberLower17 extends MemberLower18 {
           case UnionTagged(_, _) => throw new EffImpossibleException("impossible")
         }
 
-      def project[V](union: Union[FxAppend[L, R], V]): Union[Out, V] Either T[V] =
+      def project[V](union: Union[FxAppend[L, R], V]): Either[Union[Out, V], T[V]] =
         union match {
           case UnionAppendL(u) => Left(UnionAppendL(u))
           case UnionAppendR(u) => append.project(u).leftMap(UnionAppendR.apply)
@@ -516,7 +516,7 @@ trait MemberLower18 extends MemberLower19 {
     def accept[V](union: Union[Out, V]): Union[Fx3[L, M, R], V] =
       union.forget
 
-    def project[V](union: Union[Fx3[L, M, R], V]): Union[Out, V] Either R[V] = union match {
+    def project[V](union: Union[Fx3[L, M, R], V]): Either[Union[Out, V], R[V]] = union match {
       case tagged @ UnionTagged(value, index) =>
         if (index == 3) Right(value.asInstanceOf[R[V]])
         else Left(tagged.forget)
@@ -535,7 +535,7 @@ trait MemberLower19 {
       def accept[V](union: Union[Out, V]): Union[FxAppend[R, NoFx], V] =
         Union.appendL(m.accept(union))
 
-      def project[V](union: Union[FxAppend[R, NoFx], V]): Union[Out, V] Either T[V] =
+      def project[V](union: Union[FxAppend[R, NoFx], V]): Either[Union[Out, V], T[V]] =
         m.project(union.asInstanceOf[UnionAppendL[R, NoFx, V]].value)
     }
 
@@ -549,7 +549,7 @@ trait MemberLower19 {
       def accept[V](union: Union[Out, V]): Union[FxAppend[NoFx, R], V] =
         Union.appendR(m.accept(union))
 
-      def project[V](union: Union[FxAppend[NoFx, R], V]): Union[Out, V] Either T[V] =
+      def project[V](union: Union[FxAppend[NoFx, R], V]): Either[Union[Out, V], T[V]] =
         m.project(union.asInstanceOf[UnionAppendR[NoFx, R, V]].value)
     }
 

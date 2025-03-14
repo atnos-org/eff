@@ -5,7 +5,7 @@ import org.atnos.eff.Eff.*
 
 trait EitherCreation {
 
-  type ThrowableEither[A] = Throwable Either A
+  type ThrowableEither[A] = Either[Throwable, A]
   type _ThrowableEither[R] = ThrowableEither <= R
   type _throwableEither[R] = ThrowableEither |= R
 
@@ -14,7 +14,7 @@ trait EitherCreation {
     option.fold[Eff[R, A]](left[R, E, A](e))(right[R, E, A])
 
   /** create an Either effect from a single Either value */
-  def fromEither[R, E, A](Either: E Either A)(implicit member: Either[E, *] |= R): Eff[R, A] =
+  def fromEither[R, E, A](Either: Either[E, A])(implicit member: Either[E, *] |= R): Eff[R, A] =
     send[Either[E, *], R, A](Either)
 
   /** create a failed value */

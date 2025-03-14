@@ -151,7 +151,7 @@ And you want to write an interpreter which will translate authentication actions
       case class Authenticate(token: String) extends Authenticated[AccessRights]
       type _authenticate[U] = Authenticated |= U
 
-      type AuthErroEither[A] = AuthError Either A
+      type AuthErroEither[A] = Either[AuthError, A]
       type _error[U] = AuthErroEither |= U
 
       /**
@@ -171,8 +171,8 @@ And you want to write an interpreter which will translate authentication actions
         })
 
 // call to a service to authenticate tokens
-      def authenticateImpl(token: String): Future[AuthError Either AccessRights] =
-        Future.successful[AuthError Either AccessRights] { Left(AuthError("token invalid!")) }
+      def authenticateImpl(token: String): Future[Either[AuthError, AccessRights]] =
+        Future.successful[Either[AuthError, AccessRights]] { Left(AuthError("token invalid!")) }
 
       def authenticate[S: _authenticate](token: String) = Authenticate(token).send
 

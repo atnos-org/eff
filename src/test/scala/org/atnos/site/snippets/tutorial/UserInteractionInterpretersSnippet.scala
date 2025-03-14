@@ -17,7 +17,7 @@ trait UserInteractionInterpretersSnippet {
     recurse(effect)(new Recurser[Interact, m.Out, A, A] {
       def onPure(a: A): A = a
 
-      def onEffect[X](i: Interact[X]): X Either Eff[m.Out, A] = Left[X, Eff[m.Out, A]] {
+      def onEffect[X](i: Interact[X]): Either[X, Eff[m.Out, A]] = Left[X, Eff[m.Out, A]] {
         i match {
           case Ask(prompt) =>
             println(prompt)
@@ -28,7 +28,7 @@ trait UserInteractionInterpretersSnippet {
         }
       }
 
-      def onApplicative[X, T[_]: Traverse](ms: T[Interact[X]]): T[X] Either Interact[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ms: T[Interact[X]]): Either[T[X], Interact[T[X]]] =
         Left(ms.map {
           case Ask(prompt) => println(prompt); readLine()
           case Tell(msg) => println(msg)
@@ -42,14 +42,14 @@ trait UserInteractionInterpretersSnippet {
     recurse(effect)(new Recurser[DataOp, m.Out, A, A] {
       def onPure(a: A): A = a
 
-      def onEffect[X](i: DataOp[X]): X Either Eff[m.Out, A] = Left[X, Eff[m.Out, A]] {
+      def onEffect[X](i: DataOp[X]): Either[X, Eff[m.Out, A]] = Left[X, Eff[m.Out, A]] {
         i match {
           case AddCat(a) => memDataSet.append(a); ()
           case GetAllCats() => memDataSet.toList
         }
       }
 
-      def onApplicative[X, T[_]: Traverse](ms: T[DataOp[X]]): T[X] Either DataOp[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ms: T[DataOp[X]]): Either[T[X], DataOp[T[X]]] =
         Left(ms.map {
           case AddCat(a) => memDataSet.append(a); ()
           case GetAllCats() => memDataSet.toList

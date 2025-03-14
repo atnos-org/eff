@@ -33,7 +33,7 @@ trait ActionCreation extends ActionTypes {
       fail(failureMessage)
 }
 trait ActionInterpretation extends ActionImplicits {
-  def runAction[A](action: Eff[ActionStack, A], printer: String => Unit = s => ()): (Error Either A, List[String]) =
+  def runAction[A](action: Eff[ActionStack, A], printer: String => Unit = s => ()): (Either[Error, A], List[String]) =
     run(runEval(runWarnings(runConsoleToPrinter(printer)(runError(action)))))
 }
 

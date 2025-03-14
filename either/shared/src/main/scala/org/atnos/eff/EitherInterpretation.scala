@@ -9,21 +9,21 @@ import org.atnos.eff.Interpret.*
 trait EitherInterpretation {
 
   /** run the Either effect, yielding E Either A */
-  def runEither[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[Either[E, *], R, U]): Eff[U, E Either A] =
+  def runEither[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[Either[E, *], R, U]): Eff[U, Either[E, A]] =
     interpretEither(effect)(cats.instances.either.catsStdInstancesForEither[E])
 
   /** run the Either effect, yielding E Either A and combine all Es */
-  def runEitherCombine[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[Either[E, *], R, U], s: Semigroup[E]): Eff[U, E Either A] =
+  def runEitherCombine[R, U, E, A](effect: Eff[R, A])(implicit m: Member.Aux[Either[E, *], R, U], s: Semigroup[E]): Eff[U, Either[E, A]] =
     interpretEither(effect)(EitherApplicative[E])
 
   private def interpretEither[R, U, E, A](effect: Eff[R, A])(ap: Applicative[Either[E, *]])(implicit
     m: Member.Aux[Either[E, *], R, U]
-  ): Eff[U, E Either A] =
-    Interpret.recurse(effect)(eitherRecurser[U, E, A, E Either A](a => Right(a), e => Monad[Eff[U, *]].pure(Left(e)))(ap))
+  ): Eff[U, Either[E, A]] =
+    Interpret.recurse(effect)(eitherRecurser[U, E, A, Either[E, A]](a => Right(a), e => Monad[Eff[U, *]].pure(Left(e)))(ap))
 
   /** catch possible left values */
-  def attemptEither[R, E, A](effect: Eff[R, A])(implicit member: Either[E, *] /= R): Eff[R, E Either A] =
-    catchLeft[R, E, E Either A](effect.map(a => Either.right(a)))(e => pure(Either.left(e)))
+  def attemptEither[R, E, A](effect: Eff[R, A])(implicit member: Either[E, *] /= R): Eff[R, Either[E, A]] =
+    catchLeft[R, E, Either[E, A]](effect.map(a => Either.right(a)))(e => pure(Either.left(e)))
 
   /** catch and handle a possible left value */
   def catchLeft[R, E, A](effect: Eff[R, A])(handle: E => Eff[R, A])(implicit member: Either[E, *] /= R): Eff[R, A] =
@@ -47,13 +47,13 @@ trait EitherInterpretation {
       def onPure(a: A): B =
         pureValue(a)
 
-      def onEffect[X](m: E Either X): X Either Eff[R, B] =
+      def onEffect[X](m: Either[E, X]): Either[X, Eff[R, B]] =
         m match {
           case Left(e) => Right(handle(e))
           case Right(a) => Left(a)
         }
 
-      def onApplicative[X, T[_]: Traverse](ms: T[E Either X]): T[X] Either (E Either T[X]) = {
+      def onApplicative[X, T[_]: Traverse](ms: T[Either[E, X]]): Either[T[X], Either[E, T[X]]] = {
         implicit val eitherAp: Applicative[Either[E, *]] = ap
         Right(ms.sequence)
       }
@@ -72,7 +72,7 @@ trait EitherInterpretation {
     transform[SR, BR, U1, U2, Either[E1, *], Either[E2, *], A](
       r,
       new ~>[Either[E1, *], Either[E2, *]] {
-        def apply[X](r: E1 Either X): E2 Either X =
+        def apply[X](r: Either[E1, X]): Either[E2, X] =
           r.leftMap(getter)
       }
     )
@@ -87,7 +87,7 @@ trait EitherInterpretation {
   ): Eff[U, A] =
     translate(r) {
       new Translate[Either[E1, *], U] {
-        def apply[X](ex: E1 Either X): Eff[U, X] =
+        def apply[X](ex: Either[E1, X]): Eff[U, X] =
           ex match {
             case Left(e1) => EitherEffect.left[U, E2, X](getter(e1))
             case Right(x) => pure(x)
@@ -100,14 +100,14 @@ trait EitherInterpretation {
    */
   def localEither[R, E, A](e: Eff[R, A])(modify: E => E)(implicit m: Either[E, *] /= R): Eff[R, A] =
     interceptNat(e)(new ~>[Either[E, *], Either[E, *]] {
-      def apply[X](ex: E Either X): E Either X =
+      def apply[X](ex: Either[E, X]): Either[E, X] =
         ex.leftMap(modify)
     })
 
   def EitherApplicative[E](implicit s: Semigroup[E]): Applicative[Either[E, *]] = new Applicative[Either[E, *]] {
     def pure[A](a: A): Either[E, A] = Right(a)
 
-    def ap[A, B](ff: E Either (A => B))(fa: E Either A): E Either B =
+    def ap[A, B](ff: Either[E, A => B])(fa: Either[E, A]): Either[E, B] =
       fa match {
         case Right(a) => ff.map(_(a))
         case Left(e1) =>

@@ -9,10 +9,10 @@ trait safe {
 
   implicit class SafeEffectOps[R, A](e: Eff[R, A]) {
 
-    def runSafe[U](implicit m: Member.Aux[Safe, R, U]): Eff[U, (Throwable Either A, List[Throwable])] =
+    def runSafe[U](implicit m: Member.Aux[Safe, R, U]): Eff[U, (Either[Throwable, A], List[Throwable])] =
       SafeEffect.runSafe[R, U, A](e)
 
-    def execSafe[U](implicit m: Member.Aux[Safe, R, U]): Eff[U, Throwable Either A] =
+    def execSafe[U](implicit m: Member.Aux[Safe, R, U]): Eff[U, Either[Throwable, A]] =
       SafeEffect.execSafe[R, U, A](e)
 
     def `finally`(last: Eff[R, Unit])(implicit m: Safe /= R): Eff[R, A] =
@@ -36,7 +36,7 @@ trait safe {
     def whenThrowable(onThrowable: PartialFunction[Throwable, Eff[R, A]])(implicit m: Safe /= R): Eff[R, A] =
       SafeEffect.whenThrowable(e, onThrowable)
 
-    def attempt(implicit m: Safe /= R): Eff[R, Throwable Either A] =
+    def attempt(implicit m: Safe /= R): Eff[R, Either[Throwable, A]] =
       SafeEffect.attempt(e)
 
     def ignoreException[E <: Throwable: ClassTag](implicit m: Safe /= R): Eff[R, Unit] =

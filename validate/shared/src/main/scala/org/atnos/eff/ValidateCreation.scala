@@ -10,7 +10,7 @@ trait ValidateCreation {
     option.map(_ => correct(())).getOrElse(wrong(e))
 
   /** create an Validate effect from a single Either value */
-  def validateEither[R, E, A](either: E Either A)(implicit m: Validate[E, *] |= R): Eff[R, Unit] =
+  def validateEither[R, E, A](either: Either[E, A])(implicit m: Validate[E, *] |= R): Eff[R, Unit] =
     either.fold(e => wrong(e), _ => correct(()))
 
   /** create an Validate effect from a single Ior value */

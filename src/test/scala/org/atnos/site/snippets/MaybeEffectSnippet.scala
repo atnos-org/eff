@@ -27,13 +27,13 @@ trait MaybeEffectSnippet {
       recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
         def onPure(a: A): Option[A] = Some(a)
 
-        def onEffect[X](m: Maybe[X]): X Either Eff[U, Option[A]] =
+        def onEffect[X](m: Maybe[X]): Either[X, Eff[U, Option[A]]] =
           m match {
             case Just(x) => Left(x)
             case Nothing() => Right(Eff.pure(None))
           }
 
-        def onApplicative[X, T[_]: Traverse](ms: T[Maybe[X]]): T[X] Either Maybe[T[X]] =
+        def onApplicative[X, T[_]: Traverse](ms: T[Maybe[X]]): Either[T[X], Maybe[T[X]]] =
           Right(ms.sequence)
       })
 

@@ -20,7 +20,7 @@ final class TwitterFutureOps[R, A](private val e: Eff[R, A]) extends AnyVal {
   def runTwitterFutureMemo[U](cache: Cache)(implicit memMember: Member.Aux[Memoized, R, U], futMember: TwitterTimedFuture |= U): Eff[U, A] =
     TwitterFutureEffect.runFutureMemo(cache)(e)(using memMember, futMember)
 
-  def twitterFutureAttempt(implicit future: TwitterTimedFuture /= R): Eff[R, Throwable Either A] =
+  def twitterFutureAttempt(implicit future: TwitterTimedFuture /= R): Eff[R, Either[Throwable, A]] =
     TwitterFutureInterpretation.futureAttempt(e)
 
   def twitterFutureMemo(key: AnyRef, cache: Cache)(implicit future: TwitterTimedFuture /= R): Eff[R, A] =

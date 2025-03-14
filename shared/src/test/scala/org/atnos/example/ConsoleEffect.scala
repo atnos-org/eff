@@ -37,14 +37,14 @@ object ConsoleEffect {
   def runConsoleToPrinter[R, U, A](printer: String => Unit)(w: Eff[R, A])(implicit m: Member.Aux[Console, R, U]) =
     recurse(w)(new Recurser[Console, U, A, A] {
       def onPure(a: A) = a
-      def onEffect[X](cx: Console[X]): X Either Eff[U, A] =
+      def onEffect[X](cx: Console[X]): Either[X, Eff[U, A]] =
         cx.run match {
           case (c, x) =>
             printer(c.message)
             Left(x)
         }
 
-      def onApplicative[X, T[_]: Traverse](ws: T[Console[X]]): T[X] Either Console[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ws: T[Console[X]]): Either[T[X], Console[T[X]]] =
         Left(ws.map { w =>
           val (c, x) = w.run
           printer(c.message)
