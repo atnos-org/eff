@@ -1,7 +1,7 @@
 package org.atnos.eff
 package syntax.addon.scalaz
 
-import scalaz._
+import scalaz.*
 
 object validate extends org.atnos.eff.syntax.validate with validate
 

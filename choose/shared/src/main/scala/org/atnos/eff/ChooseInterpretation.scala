@@ -1,8 +1,8 @@
 package org.atnos.eff
 
-import Eff._
-import cats._
-import cats.syntax.all._
+import cats.*
+import cats.syntax.all.*
+import org.atnos.eff.Eff.*
 import scala.annotation.tailrec
 
 trait ChooseInterpretation {

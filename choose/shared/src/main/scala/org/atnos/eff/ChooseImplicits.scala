@@ -1,7 +1,7 @@
 package org.atnos.eff
 
-import Eff._
-import cats._
+import cats.*
+import org.atnos.eff.Eff.*
 
 trait ChooseImplicits {
 

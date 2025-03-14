@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import Eff._
+import org.atnos.eff.Eff.*
 
 trait MemoCreation extends MemoTypes {
 

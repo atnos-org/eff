@@ -1,12 +1,12 @@
 package org.atnos.benchmark
 
-import org.scalameter.api._
-import org.atnos.eff._
-import EvalEffect._
-import Eff._
-import cats.syntax.all._
 import cats.Eval
-import org.scalameter.picklers.Implicits._
+import cats.syntax.all.*
+import org.atnos.eff.*
+import org.atnos.eff.Eff.*
+import org.atnos.eff.EvalEffect.*
+import org.scalameter.api.*
+import org.scalameter.picklers.Implicits.*
 
 object EffBenchmark extends Bench.OfflineReport {
   type E = Fx.fx1[Eval]

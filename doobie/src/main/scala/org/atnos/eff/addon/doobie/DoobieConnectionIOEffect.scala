@@ -1,13 +1,13 @@
 package org.atnos.eff.addon.doobie
 
-import java.sql.Connection
 import _root_.doobie.Transactor
 import _root_.doobie.free.connection.ConnectionIO
 import cats.effect.Bracket
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.~>
-import org.atnos.eff._
-import org.atnos.eff.eff._
+import java.sql.Connection
+import org.atnos.eff.*
+import org.atnos.eff.eff.*
 
 trait DoobieConnectionIOTypes {
   type _connectionIO[R] = ConnectionIO |= R

@@ -1,13 +1,13 @@
 package org.atnos.eff.addon.monix
 
-import cats._
-import cats.effect._
-import monix.eval._
-import monix.execution._
-import org.atnos.eff._
-import org.atnos.eff.syntax.eff._
+import cats.*
+import cats.effect.*
+import monix.eval.*
+import monix.execution.*
+import org.atnos.eff.*
+import org.atnos.eff.syntax.eff.*
 import scala.concurrent.duration.FiniteDuration
-import scala.util._
+import scala.util.*
 
 trait TaskTypes {
   type _task[R] = |=[Task, R]

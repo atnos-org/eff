@@ -1,10 +1,10 @@
 package org.atnos.eff.syntax
 
-import org.atnos.eff._
+import org.atnos.eff.*
 import org.atnos.eff.concurrent.Scheduler
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 trait future {
 

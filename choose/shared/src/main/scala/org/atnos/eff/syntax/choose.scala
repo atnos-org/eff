@@ -1,7 +1,7 @@
 package org.atnos.eff.syntax
 
 import cats.Alternative
-import org.atnos.eff._
+import org.atnos.eff.*
 
 object choose extends choose
 

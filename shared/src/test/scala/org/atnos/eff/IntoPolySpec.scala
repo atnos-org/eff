@@ -1,10 +1,10 @@
 package org.atnos.eff
 
-import EffCompat._
-import cats.data._
+import cats.data.*
+import org.atnos.eff.EffCompat.*
+import org.atnos.eff.syntax.all.*
 import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
-import syntax.all._
 
 class IntoPolySpec extends Specification with ThrownExpectations {
   def is = s2"""

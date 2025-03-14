@@ -1,9 +1,9 @@
 package org.atnos.eff.syntax.addon.monix
 
-import org.atnos.eff._
-import org.atnos.eff.addon.monix._
 import _root_.monix.eval.Task
 import monix.execution.Scheduler
+import org.atnos.eff.*
+import org.atnos.eff.addon.monix.*
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Either
 

@@ -1,7 +1,7 @@
 package org.atnos.eff.syntax
 
-import cats._
-import org.atnos.eff._
+import cats.*
+import org.atnos.eff.*
 
 object memo extends memo
 

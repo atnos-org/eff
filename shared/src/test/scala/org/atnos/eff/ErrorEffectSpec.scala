@@ -1,14 +1,14 @@
 package org.atnos.eff
 
-import org.specs2.Specification
-import ErrorEffect.{ok => OK}
-import ErrorEffect.ErrorOrOk
-import scala.collection.mutable.ListBuffer
-import cats.data._
-import cats.syntax.all._
 import cats.Eval
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
+import cats.data.*
+import cats.syntax.all.*
+import org.atnos.eff.ErrorEffect.ErrorOrOk
+import org.atnos.eff.ErrorEffect.ok as OK
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
+import org.specs2.Specification
+import scala.collection.mutable.ListBuffer
 
 class ErrorEffectSpec extends Specification with Specs2Compat {
   def is = s2"""

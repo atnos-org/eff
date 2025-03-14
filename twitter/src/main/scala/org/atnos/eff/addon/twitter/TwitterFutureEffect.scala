@@ -1,13 +1,13 @@
 package org.atnos.eff.addon.twitter
 
-import cats._
-import cats.syntax.all._
-import org.atnos.eff.eff._
-import org.atnos.eff._
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.TimeoutException
-import com.twitter.util._
+import cats.*
+import cats.syntax.all.*
+import com.twitter.util.*
+import org.atnos.eff.*
 import org.atnos.eff.concurrent.Scheduler
+import org.atnos.eff.eff.*
+import scala.concurrent.TimeoutException
+import scala.concurrent.duration.FiniteDuration
 
 object TwitterFutureCreation extends TwitterFutureCreation
 

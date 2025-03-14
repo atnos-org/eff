@@ -1,7 +1,7 @@
 package org.atnos.site
 
 import org.atnos.site.snippets.MaybeEffectSnippet
-import MaybeEffectSnippet._
+import org.atnos.site.snippets.MaybeEffectSnippet.*
 
 object CreateEffects extends UserGuidePage {
   def is = "Creating effects".title ^ s2"""

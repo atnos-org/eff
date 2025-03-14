@@ -1,7 +1,7 @@
 package org.atnos.eff.macros
 
+import org.atnos.eff.*
 import org.specs2.Specification
-import org.atnos.eff._
 
 class EffMacrosSpec extends Specification {
   def is = s2"""

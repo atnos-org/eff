@@ -1,6 +1,6 @@
 package org.atnos.eff.syntax
 
-import org.atnos.eff._
+import org.atnos.eff.*
 
 object batch extends batch
 

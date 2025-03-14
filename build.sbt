@@ -480,15 +480,6 @@ lazy val disableScala3 = Def.settings(
       libraryDependencies.value
     }
   },
-  Seq(Compile, Test).map { x =>
-    (x / sources) := {
-      if (scalaBinaryVersion.value == "3") {
-        Nil
-      } else {
-        (x / sources).value
-      }
-    }
-  },
   Test / test := {
     if (scalaBinaryVersion.value == "3") {
       ()
@@ -503,4 +494,13 @@ Global / excludeLintKeys ++= Set(
   ghreleaseIsPrerelease,
   ghreleaseNotes,
   ghreleaseTitle,
+)
+
+inThisBuild(
+  Seq(
+    semanticdbEnabled := (
+      Set("2.12", "2.13").contains(scalaBinaryVersion.value) || scalaVersion.value.startsWith("3.3")
+    ),
+    semanticdbVersion := scalafixSemanticdb.revision
+  )
 )

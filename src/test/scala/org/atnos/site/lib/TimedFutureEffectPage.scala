@@ -1,7 +1,7 @@
 package org.atnos.site
 package lib
 
-import org.specs2.matcher.ExpectationsDescription._
+import org.specs2.matcher.ExpectationsDescription.*
 
 object TimedFutureEffectPage extends UserGuidePage {
   def is = "TimedFuture".title ^ s2"""

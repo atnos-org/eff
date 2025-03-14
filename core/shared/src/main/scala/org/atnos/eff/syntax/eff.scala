@@ -1,7 +1,7 @@
 package org.atnos.eff
 package syntax
 
-import cats._
+import cats.*
 import cats.data.Writer
 
 /**

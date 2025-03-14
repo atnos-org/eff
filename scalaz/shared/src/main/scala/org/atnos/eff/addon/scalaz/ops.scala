@@ -1,7 +1,7 @@
 package org.atnos.eff
 package addon.scalaz
 
-import scalaz._
+import scalaz.*
 
 final class EffScalazOneEffectOps[M[_], A](private val e: Eff[Fx1[M], A]) extends AnyVal {
   def detach(implicit M: Monad[M], b: BindRec[M]): M[A] =

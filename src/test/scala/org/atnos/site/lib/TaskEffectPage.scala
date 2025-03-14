@@ -2,9 +2,9 @@ package org.atnos.site
 package lib
 
 import java.util.concurrent.Executors
-import org.atnos.eff.syntax.all._
+import org.atnos.eff.syntax.all.*
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object TaskEffectPage extends UserGuidePage {
   def is = "Task".title ^ s2"""

@@ -2,9 +2,9 @@ package org.atnos.eff
 package addon
 package scalaz
 
-import _root_.scalaz._
-import _root_.scalaz.syntax.functor._
-import _root_.scalaz.std.vector._
+import _root_.scalaz.*
+import _root_.scalaz.std.vector.*
+import _root_.scalaz.syntax.functor.*
 
 object EffScalaz {
 

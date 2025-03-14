@@ -1,7 +1,7 @@
 // 8<---
 package org.atnos.site.snippets.tutorial
 
-import UserInteractionSnippet._
+import org.atnos.site.snippets.tutorial.UserInteractionSnippet.*
 
 trait UserInteractionProgramSnippet {
 // 8<---

@@ -1,13 +1,13 @@
 package org.atnos.eff
 
 import cats.Eval
+import cats.data.*
 import cats.~>
-import cats.data._
-import org.specs2._
-import org.scalacheck._
-import option._
-import reader._
-import syntax.all._
+import org.atnos.eff.option.*
+import org.atnos.eff.reader.*
+import org.atnos.eff.syntax.all.*
+import org.scalacheck.*
+import org.specs2.*
 
 class MemberSpec extends Specification with ScalaCheck with Specs2Compat {
   def is = s2"""

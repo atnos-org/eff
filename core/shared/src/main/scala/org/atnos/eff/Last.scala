@@ -1,7 +1,7 @@
 package org.atnos.eff
 
-import cats._
-import cats.syntax.all._
+import cats.*
+import cats.syntax.all.*
 import scala.util.control.NonFatal
 
 /**

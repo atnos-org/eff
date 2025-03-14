@@ -1,7 +1,7 @@
 package org.atnos.site
 
-import cats.data._
-import org.atnos.eff._
+import cats.data.*
+import org.atnos.eff.*
 
 object MemberImplicits extends UserGuidePage {
   def is = "Member implicits".title ^ s2"""

@@ -1,16 +1,16 @@
 package org.atnos.eff
 
-import cats.syntax.all._
-import org.atnos.eff.all._
-import org.atnos.eff.future._
-import org.atnos.eff.syntax.all._
-import org.atnos.eff.syntax.future._
-import org.specs2._
+import cats.syntax.all.*
+import org.atnos.eff.all.*
+import org.atnos.eff.future.*
+import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.future.*
+import org.specs2.*
 import org.specs2.concurrent.ExecutionEnv
-import scala.collection.mutable.ListBuffer
-import scala.concurrent._
-import duration._
 import org.specs2.matcher.ThrownExpectations
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.*
+import scala.concurrent.duration.*
 
 class FutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
   def is = sequential ^ s2"""

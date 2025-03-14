@@ -1,14 +1,14 @@
 package user
 
-import org.atnos.eff._
-import org.atnos.eff.eval._
-import org.atnos.eff.option._
-import org.atnos.eff.syntax.eval._
-import org.atnos.eff.syntax.addon.scalaz.all._
 import cats.Eval
-import scalaz._
-import Scalaz._
-import org.specs2._
+import org.atnos.eff.*
+import org.atnos.eff.eval.*
+import org.atnos.eff.option.*
+import org.atnos.eff.syntax.addon.scalaz.all.*
+import org.atnos.eff.syntax.eval.*
+import org.specs2.*
+import scalaz.*
+import scalaz.Scalaz.*
 
 class ScalazSyntaxSpec extends Specification {
   def is = s2"""

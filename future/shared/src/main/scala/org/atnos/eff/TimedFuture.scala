@@ -1,12 +1,12 @@
 package org.atnos.eff
 
+import cats.*
 import java.util.concurrent.TimeoutException
-import cats._
 import org.atnos.eff.concurrent.Scheduler
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.concurrent.duration.FiniteDuration
 
 final case class TimedFuture[A](callback: (Scheduler, ExecutionContext) => Future[A], timeout: Option[FiniteDuration] = None) {
   @inline def runNow(scheduler: Scheduler, ec: ExecutionContext): Future[A] =

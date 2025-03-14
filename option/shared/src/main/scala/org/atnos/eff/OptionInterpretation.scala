@@ -1,8 +1,8 @@
 package org.atnos.eff
 
-import cats.syntax.all._
-import Interpret._
-import cats._
+import cats.*
+import cats.syntax.all.*
+import org.atnos.eff.Interpret.*
 
 trait OptionInterpretation {
 

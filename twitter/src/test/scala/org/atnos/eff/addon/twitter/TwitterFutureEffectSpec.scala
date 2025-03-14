@@ -2,20 +2,20 @@ package org.atnos.eff.addon.twitter
 
 import com.twitter.util.Await
 import com.twitter.util.FuturePool
-import org.atnos.eff.addon.twitter.future._
-import org.atnos.eff.syntax.addon.twitter.future._
-import org.atnos.eff._
-import org.atnos.eff.ChooseEffect._
-import org.atnos.eff.option._
-import org.atnos.eff.syntax.choose._
-import org.atnos.eff.syntax.eff._
-import org.atnos.eff.syntax.option._
-import org.specs2._
+import org.atnos.eff.*
+import org.atnos.eff.ChooseEffect.*
+import org.atnos.eff.addon.twitter.future.*
+import org.atnos.eff.option.*
+import org.atnos.eff.syntax.addon.twitter.future.*
+import org.atnos.eff.syntax.choose.*
+import org.atnos.eff.syntax.eff.*
+import org.atnos.eff.syntax.option.*
+import org.specs2.*
 import org.specs2.concurrent.ExecutionEnv
-import scala.collection.mutable.ListBuffer
-import scala.concurrent._
-import duration._
 import org.specs2.matcher.ThrownExpectations
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.*
+import scala.concurrent.duration.*
 
 class TwitterFutureEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
   def is = sequential ^ s2"""

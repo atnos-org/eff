@@ -1,15 +1,15 @@
 package org.atnos.eff
 
 import cats.Eval
-import cats.syntax.all._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
-import org.specs2._
+import cats.syntax.all.*
+import org.atnos.eff.EitherEffect.left as leftEffect
+import org.atnos.eff.EitherEffect.right as rightEffect
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
+import org.scalacheck.Gen
+import org.specs2.*
 import org.specs2.matcher.Matcher
 import org.specs2.matcher.ThrownExpectations
-import org.scalacheck.Gen
-import EitherEffect.{right => rightEffect}
-import EitherEffect.{left => leftEffect}
 import scala.collection.mutable.ListBuffer
 
 class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {

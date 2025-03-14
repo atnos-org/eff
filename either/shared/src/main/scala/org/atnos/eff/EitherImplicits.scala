@@ -1,7 +1,7 @@
 package org.atnos.eff
 
-import cats._
-import cats.syntax.either._
+import cats.*
+import cats.syntax.either.*
 
 trait EitherImplicits {
 

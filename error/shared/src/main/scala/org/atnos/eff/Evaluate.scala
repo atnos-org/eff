@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats._
+import cats.*
 
 case class Evaluate[F, A](run: (Throwable Either F) Either cats.Eval[A])
 

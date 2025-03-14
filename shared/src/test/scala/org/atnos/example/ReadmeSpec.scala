@@ -1,13 +1,13 @@
 package org.atnos.example
 
-import org.specs2.Specification
-import org.atnos.eff._
-import cats.data._
 import cats.Eval
-import ReaderEffect._
-import WriterEffect._
-import EvalEffect._
-import Eff._
+import cats.data.*
+import org.atnos.eff.*
+import org.atnos.eff.Eff.*
+import org.atnos.eff.EvalEffect.*
+import org.atnos.eff.ReaderEffect.*
+import org.atnos.eff.WriterEffect.*
+import org.specs2.Specification
 
 class ReadmeSpec extends Specification {
   def is = s2"""

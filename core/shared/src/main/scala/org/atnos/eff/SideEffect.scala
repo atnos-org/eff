@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats._
+import cats.*
 
 trait SideEffect[T[_]] {
   def apply[X](tx: T[X]): X

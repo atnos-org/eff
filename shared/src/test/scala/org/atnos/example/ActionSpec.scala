@@ -1,17 +1,17 @@
 package org.atnos
 package example
 
-import ActionCreation._
-import Action.runAction
-import eff._
-import syntax.error._
-import EvalEffect._
-import WarningsEffect._
-import ConsoleEffect._
-import ErrorEffect._
-import Member.<=
 import cats.Eval
-import org.specs2._
+import org.atnos.eff.*
+import org.atnos.eff.ErrorEffect.*
+import org.atnos.eff.EvalEffect.*
+import org.atnos.eff.Member.<=
+import org.atnos.eff.syntax.error.*
+import org.atnos.example.Action.runAction
+import org.atnos.example.ActionCreation.*
+import org.atnos.example.ConsoleEffect.*
+import org.atnos.example.WarningsEffect.*
+import org.specs2.*
 
 class ActionSpec extends Specification with ScalaCheck with Specs2Compat {
   def is = s2"""

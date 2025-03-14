@@ -1,8 +1,8 @@
 package org.atnos
 package example
 
-import org.atnos.eff._
-import cats.data._
+import cats.data.*
+import org.atnos.eff.*
 
 object WarningsEffect {
 

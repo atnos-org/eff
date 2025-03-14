@@ -1,7 +1,7 @@
 package org.atnos.eff
 package syntax
 
-import ErrorEffect._
+import org.atnos.eff.ErrorEffect.*
 import scala.reflect.ClassTag
 
 object error extends error

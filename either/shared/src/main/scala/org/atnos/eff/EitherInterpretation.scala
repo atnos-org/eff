@@ -1,10 +1,10 @@
 package org.atnos.eff
 
-import cats._
-import cats.syntax.traverse._
-import cats.syntax.either._
-import Eff._
-import Interpret._
+import cats.*
+import cats.syntax.either.*
+import cats.syntax.traverse.*
+import org.atnos.eff.Eff.*
+import org.atnos.eff.Interpret.*
 
 trait EitherInterpretation {
 

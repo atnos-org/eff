@@ -1,14 +1,15 @@
 package org.atnos.eff
 
-import org.scalacheck.Arbitrary._
-import org.scalacheck._
+import cats.*
+import cats.data.*
+import cats.syntax.all.*
+import cats.syntax.all.catsSyntaxEq as _
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
+import org.scalacheck.*
+import org.scalacheck.Arbitrary.*
 import org.specs2.ScalaCheck
 import org.specs2.Specification
-import cats._
-import data._
-import cats.syntax.all.{catsSyntaxEq => _, _}
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
 import org.specs2.matcher.ThrownExpectations
 import scala.annotation.tailrec
 

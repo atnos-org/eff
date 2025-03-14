@@ -1,18 +1,18 @@
 package org.atnos.eff.addon.monix
 
-import org.atnos.eff.option._
-import org.atnos.eff.syntax.eff._
-import org.atnos.eff.syntax.option._
-import org.specs2._
+import monix.eval.Task
+import monix.execution.Scheduler.Implicits.global
+import org.atnos.eff.*
+import org.atnos.eff.addon.monix.task.*
+import org.atnos.eff.option.*
+import org.atnos.eff.syntax.addon.monix.task.*
+import org.atnos.eff.syntax.eff.*
+import org.atnos.eff.syntax.option.*
+import org.specs2.*
 import org.specs2.concurrent.ExecutionEnv
 import scala.collection.mutable.ListBuffer
-import monix.execution.Scheduler.Implicits.global
-import monix.eval.Task
-import org.atnos.eff._
-import org.atnos.eff.addon.monix.task._
-import org.atnos.eff.syntax.addon.monix.task._
 import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class TaskEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with Specs2Compat {
   def is = "monix task".title ^ sequential ^ s2"""

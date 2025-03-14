@@ -1,7 +1,7 @@
 package org.atnos.eff
 
-import cats._
-import EffCompat._
+import cats.*
+import org.atnos.eff.EffCompat.*
 
 trait EffImplicits {
 

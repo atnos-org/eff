@@ -1,9 +1,9 @@
 package org.atnos.eff
 
+import cats.*
+import cats.syntax.all.*
+import org.atnos.eff.Eff.*
 import scala.util.control.NonFatal
-import cats._
-import cats.syntax.all._
-import Eff._
 
 trait EvalInterpretation extends EvalTypes {
 

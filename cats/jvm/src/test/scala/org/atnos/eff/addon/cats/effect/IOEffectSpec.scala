@@ -1,16 +1,16 @@
 package org.atnos.eff.addon.cats.effect
 
-import org.atnos.eff.option._
-import org.atnos.eff.syntax.eff._
-import org.atnos.eff.syntax.option._
-import org.specs2._
-import org.specs2.concurrent.ExecutionEnv
-import org.atnos.eff._
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import IOEffect._
-import org.atnos.eff.syntax.addon.cats.effect._
-import scala.concurrent.duration._
+import org.atnos.eff.*
+import org.atnos.eff.addon.cats.effect.IOEffect.*
+import org.atnos.eff.option.*
+import org.atnos.eff.syntax.addon.cats.effect.*
+import org.atnos.eff.syntax.eff.*
+import org.atnos.eff.syntax.option.*
+import org.specs2.*
+import org.specs2.concurrent.ExecutionEnv
+import scala.concurrent.duration.*
 
 class IOEffectSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck {
   def is = "io".title ^ sequential ^ s2"""

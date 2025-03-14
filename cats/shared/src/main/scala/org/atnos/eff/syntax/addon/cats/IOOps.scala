@@ -3,7 +3,7 @@ package org.atnos.eff.syntax.addon.cats
 import cats.effect.IO
 import cats.effect.LiftIO
 import cats.effect.unsafe.IORuntime
-import org.atnos.eff._
+import org.atnos.eff.*
 import org.atnos.eff.addon.cats.effect.IOEffect
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration

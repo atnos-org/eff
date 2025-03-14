@@ -1,4 +1,4 @@
-import org.atnos.site._
+import org.atnos.site.*
 
 object index extends UserGuidePage {
   def is = "eff".title ^ s2"""

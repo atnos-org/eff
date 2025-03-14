@@ -1,17 +1,17 @@
 package org.atnos.eff.addon.doobie
 
-import org.specs2.Specification
-import doobie._
-import doobie.implicits._
-import cats.effect._
+import cats.effect.*
+import doobie.*
+import doobie.free.connection
+import doobie.implicits.*
 import org.atnos.eff.Eff
 import org.atnos.eff.Fx
 import org.atnos.eff.Specs2Compat
-import org.atnos.eff.syntax.eff._
-import org.atnos.eff.syntax.addon.doobie._
+import org.atnos.eff.syntax.addon.doobie.*
+import org.atnos.eff.syntax.eff.*
+import org.specs2.Specification
 import org.specs2.matcher.ThrownExpectations
 import org.specs2.matcher.ValueCheck
-import doobie.free.connection
 
 class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations with Specs2Compat {
   def is = sequential ^ s2"""

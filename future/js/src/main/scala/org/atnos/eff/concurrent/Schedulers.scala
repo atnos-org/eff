@@ -2,7 +2,7 @@ package org.atnos.eff.concurrent
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.scalajs.js.timers._
+import scala.scalajs.js.timers.*
 
 trait Schedulers {
 

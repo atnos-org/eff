@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import Eff.send
+import org.atnos.eff.Eff.send
 
 trait OptionCreation {
   type _Option[R] = Option <= R

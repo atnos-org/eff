@@ -1,9 +1,9 @@
 package org.atnos.eff
 
-import cats._
-import org.atnos.eff.syntax.all._
-import org.scalacheck.Arbitrary._
-import org.scalacheck._
+import cats.*
+import org.atnos.eff.syntax.all.*
+import org.scalacheck.*
+import org.scalacheck.Arbitrary.*
 import org.specs2.ScalaCheck
 import org.specs2.Specification
 

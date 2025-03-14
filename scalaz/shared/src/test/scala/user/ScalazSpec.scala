@@ -1,14 +1,13 @@
 package user
 
-import org.atnos.eff._
-import org.atnos.eff.eval._
-import org.atnos.eff.syntax.eval._
-import org.atnos.eff.syntax.addon.scalaz.all._
-import org.atnos.eff.addon.scalaz._
 import cats.Eval
-import scalaz._
-import Scalaz._
-import org.specs2._
+import org.atnos.eff.*
+import org.atnos.eff.addon.scalaz.*
+import org.atnos.eff.eval.*
+import org.atnos.eff.syntax.addon.scalaz.all.*
+import org.atnos.eff.syntax.eval.*
+import org.specs2.*
+import scalaz.Scalaz.*
 
 class ScalazSpec extends Specification with Specs2Compat {
   def is = s2"""

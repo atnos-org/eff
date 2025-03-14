@@ -1,7 +1,7 @@
 package org.atnos.eff
 package addon.scalaz
 
-import scalaz._
+import scalaz.*
 
 object either extends either
 

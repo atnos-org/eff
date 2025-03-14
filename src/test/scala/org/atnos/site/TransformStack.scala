@@ -1,9 +1,9 @@
 package org.atnos.site
 
-import snippets._
-import HadoopS3Snippet._
 import cats.Eval
 import org.atnos.eff.Fx
+import org.atnos.site.snippets.*
+import org.atnos.site.snippets.HadoopS3Snippet.*
 
 object TransformStack extends UserGuidePage {
   def is = "Transform stacks".title ^ s2"""
@@ -278,7 +278,7 @@ some common effects, so the resulting stack we want to work with is:${snippet {
       import org.atnos.eff._
       import cats.Eval
       import HadoopStack._
-      import S3Stack.{WriterString => _, _}
+      import S3Stack.{WriterString as _, _}
 
       type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
     }}
