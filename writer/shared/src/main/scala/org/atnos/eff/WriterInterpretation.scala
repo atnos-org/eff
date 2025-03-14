@@ -3,7 +3,7 @@ package org.atnos.eff
 import cats.*
 import cats.data.*
 import cats.syntax.all.*
-import org.atnos.eff.Eff.*
+import org.atnos.eff.Eff.send
 import org.atnos.eff.Interpret.*
 
 trait WriterInterpretation {

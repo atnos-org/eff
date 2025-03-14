@@ -4,7 +4,6 @@ import cats.*
 import cats.data.*
 import cats.syntax.all.*
 import org.atnos.eff.*
-import org.atnos.eff.Eff.*
 import org.atnos.eff.Interpret.*
 
 object ConsoleEffect {

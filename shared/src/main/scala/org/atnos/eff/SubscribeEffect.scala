@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats.*
-import org.atnos.eff.Eff.*
+import org.atnos.eff.Eff.send
 import org.atnos.eff.EffCompat.*
 import org.atnos.eff.either.*
 import org.atnos.eff.syntax.all.*

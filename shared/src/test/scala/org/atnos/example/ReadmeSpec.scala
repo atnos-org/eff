@@ -3,7 +3,7 @@ package org.atnos.example
 import cats.Eval
 import cats.data.*
 import org.atnos.eff.*
-import org.atnos.eff.Eff.*
+import org.atnos.eff.Eff.run
 import org.atnos.eff.EvalEffect.*
 import org.atnos.eff.ReaderEffect.*
 import org.atnos.eff.WriterEffect.*

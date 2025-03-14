@@ -2,7 +2,7 @@ package org.atnos.example
 
 import cats.Eval
 import org.atnos.eff.*
-import org.atnos.eff.Eff.*
+import org.atnos.eff.Eff.run
 import org.atnos.eff.ErrorEffect.*
 import org.atnos.eff.EvalEffect.*
 import org.atnos.example.ConsoleEffect.*

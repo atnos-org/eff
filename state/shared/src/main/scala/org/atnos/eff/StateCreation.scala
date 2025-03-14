@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats.data.*
-import org.atnos.eff.Eff.*
+import org.atnos.eff.Eff.send
 
 trait StateCreation {
 

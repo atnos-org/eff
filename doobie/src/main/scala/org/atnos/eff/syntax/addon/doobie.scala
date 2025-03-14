@@ -4,7 +4,6 @@ import _root_.doobie.Transactor
 import _root_.doobie.free.connection.ConnectionIO
 import cats.effect.Bracket
 import org.atnos.eff.*
-import org.atnos.eff.Eff
 import org.atnos.eff.addon.doobie.*
 
 trait doobie {
