@@ -592,7 +592,7 @@ so the resulting stack we want to work with is:</p>
 <pre><code class="prettyprint">import org.atnos.eff._
       import cats.Eval
       import HadoopStack._
-      import S3Stack.{WriterString =&gt; _, _}
+      import S3Stack.{WriterString as _, _}
 
       type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]</code></pre>
 <p>Then we can use the <code class="prettyprint">into</code> method to inject effects from
