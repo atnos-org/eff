@@ -2,7 +2,6 @@ package org.atnos.eff
 
 import cats.Traverse
 import cats.syntax.all.*
-import org.atnos.eff.Eff.*
 import org.atnos.eff.Interpret.*
 
 trait ListInterpretation {

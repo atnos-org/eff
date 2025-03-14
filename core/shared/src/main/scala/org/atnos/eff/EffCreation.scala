@@ -2,7 +2,6 @@ package org.atnos.eff
 
 import cats.*
 import cats.syntax.all.*
-import org.atnos.eff.Eff.*
 import scala.concurrent.duration.FiniteDuration
 
 trait EffCreation {
