@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats._
+import cats.*
 
 /**
  * The Safe type is a mix of a ThrowableEither / Eval effect

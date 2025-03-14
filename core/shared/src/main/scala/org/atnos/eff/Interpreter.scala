@@ -1,8 +1,8 @@
 package org.atnos.eff
 
-import cats._
-import cats.syntax.all._
-import Eff._
+import cats.*
+import cats.syntax.all.*
+import org.atnos.eff.Eff.*
 
 /**
  * Interpret eff values

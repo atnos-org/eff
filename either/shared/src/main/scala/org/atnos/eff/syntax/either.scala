@@ -1,7 +1,7 @@
 package org.atnos.eff.syntax
 
 import cats.Semigroup
-import org.atnos.eff._
+import org.atnos.eff.*
 
 object either extends either
 

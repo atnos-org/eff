@@ -1,7 +1,7 @@
 package org.atnos.eff
 
-import cats._
-import Eff._
+import cats.*
+import org.atnos.eff.Eff.*
 
 trait EvalCreation extends EvalTypes {
   def now[R: _eval, A](a: A): Eff[R, A] =

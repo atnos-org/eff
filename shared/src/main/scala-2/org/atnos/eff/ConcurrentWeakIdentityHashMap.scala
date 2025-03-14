@@ -16,8 +16,8 @@ package org.atnos.eff
  * limitations under the License.
  */
 
-import java.util
 import java.lang.ref.ReferenceQueue
+import java.util
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 

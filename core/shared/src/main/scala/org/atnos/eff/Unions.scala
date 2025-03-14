@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats._
+import cats.*
 
 /**
  * A non-empty list of Unions.

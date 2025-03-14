@@ -1,14 +1,14 @@
 package org.atnos.eff
 
-import java.util.Collections
-import java.util.concurrent._
 import cats.Eval
+import java.util.Collections
+import java.util.concurrent.*
 import org.atnos.eff.concurrent.Scheduler
 import org.atnos.eff.concurrent.Schedulers
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutorService
 import scala.concurrent.Promise
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 case class ExecutorServices(

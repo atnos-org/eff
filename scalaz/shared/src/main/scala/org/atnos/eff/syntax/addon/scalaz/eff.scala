@@ -1,7 +1,7 @@
 package org.atnos.eff
 package syntax.addon.scalaz
 
-import org.atnos.eff.addon.scalaz._
+import org.atnos.eff.addon.scalaz.*
 
 object eff extends eff
 

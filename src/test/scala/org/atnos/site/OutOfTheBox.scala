@@ -1,6 +1,6 @@
 package org.atnos.site
 
-import lib._
+import org.atnos.site.lib.*
 
 object OutOfTheBox extends UserGuidePage {
   def is = "Out of the box".title ^ s2"""

@@ -42,6 +42,7 @@ jobs:
            "++ ${{ matrix.scala }} -v"
            "scalafmtCheckAll"
            "Test/compile"
+           "scalafixAll --check"
            "test"
   wasm:
     runs-on: ubuntu-latest

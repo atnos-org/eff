@@ -1,9 +1,9 @@
 package org.atnos.eff
 
 import org.atnos.eff.concurrent.Scheduler
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 object FutureCreation extends FutureCreation
 

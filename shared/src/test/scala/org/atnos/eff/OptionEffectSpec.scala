@@ -1,12 +1,13 @@
 package org.atnos.eff
 
+import cats.data.*
+import cats.syntax.all.*
+import cats.syntax.all.catsSyntaxEq as _
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
+import org.scalacheck.Gen.posNum
 import org.specs2.ScalaCheck
 import org.specs2.Specification
-import org.scalacheck.Gen.posNum
-import cats.syntax.all.{catsSyntaxEq => _, _}
-import cats.data._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
 
 class OptionEffectSpec extends Specification with ScalaCheck with Specs2Compat {
   def is = s2"""

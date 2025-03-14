@@ -1,8 +1,8 @@
 package org.atnos.eff
 
-import all._
-import syntax.all._
-import cats.data._
+import cats.data.*
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
 import org.specs2.Specification
 
 class InferenceSpec extends Specification {

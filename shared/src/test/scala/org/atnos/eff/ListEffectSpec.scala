@@ -1,9 +1,9 @@
 package org.atnos.eff
 
-import org.specs2._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
-import cats.syntax.all._
+import cats.syntax.all.*
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
+import org.specs2.*
 
 class ListEffectSpec extends Specification with Specs2Compat {
   def is = s2"""

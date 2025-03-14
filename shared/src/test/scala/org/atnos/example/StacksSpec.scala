@@ -1,12 +1,12 @@
 package org.atnos
 package example
 
-import org.specs2._
-import cats.data._
 import cats.Eval
-import org.atnos.eff._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
+import cats.data.*
+import org.atnos.eff.*
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
+import org.specs2.*
 
 class StacksSpec extends Specification with Specs2Compat {
   def is = s2"""
@@ -38,7 +38,7 @@ class StacksSpec extends Specification with Specs2Compat {
   def togetherOpen = {
 
     import HadoopOpenStack._
-    import S3OpenStack.{WriterString => _, _}
+    import S3OpenStack.{WriterString as _, _}
 
     type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 
@@ -53,7 +53,7 @@ class StacksSpec extends Specification with Specs2Compat {
 
   def together = {
     import HadoopClosedStack._
-    import S3ClosedStack.{WriterString => _, _}
+    import S3ClosedStack.{WriterString as _, _}
 
     type HadoopS3 = Fx.fx4[S3Reader, HadoopReader, WriterString, Eval]
 

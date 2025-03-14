@@ -1,9 +1,9 @@
 package org.atnos.eff
 
-import Eff._
-import cats.syntax.all._
-import Interpret._
 import cats.Traverse
+import cats.syntax.all.*
+import org.atnos.eff.Eff.*
+import org.atnos.eff.Interpret.*
 
 trait ListInterpretation {
 

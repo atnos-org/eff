@@ -1,7 +1,7 @@
 package org.atnos.eff
 
-import cats._
-import eff._
+import cats.*
+import org.atnos.eff.eff.*
 
 trait SafeCreation extends SafeTypes {
 

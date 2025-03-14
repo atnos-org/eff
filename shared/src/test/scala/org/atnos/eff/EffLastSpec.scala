@@ -1,13 +1,13 @@
 package org.atnos.eff
 
 import cats.Eval
-import org.specs2._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
-import cats.syntax.all._
+import cats.syntax.all.*
+import org.atnos.eff.EitherEffect.left as leftE
+import org.atnos.eff.EitherEffect.right as rightE
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
 import org.scalacheck.Gen
-import EitherEffect.{left => leftE}
-import EitherEffect.{right => rightE}
+import org.specs2.*
 import scala.collection.mutable.ListBuffer
 
 class EffLastSpec extends Specification with ScalaCheck with Specs2Compat {

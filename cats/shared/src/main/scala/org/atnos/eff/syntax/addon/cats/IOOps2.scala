@@ -1,7 +1,7 @@
 package org.atnos.eff.syntax.addon.cats
 
 import cats.effect.IO
-import org.atnos.eff._
+import org.atnos.eff.*
 import org.atnos.eff.addon.cats.effect.IOEffect
 import org.atnos.eff.addon.cats.effect.IOInterpretation
 

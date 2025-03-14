@@ -1,10 +1,10 @@
 package org.atnos.eff
 
-import cats._
-import cats.syntax.all._
-import eff._
-import interpret._
-import EitherEffect._
+import cats.*
+import cats.syntax.all.*
+import org.atnos.eff.EitherEffect.*
+import org.atnos.eff.eff.*
+import org.atnos.eff.interpret.*
 import scala.reflect.ClassTag
 
 trait SafeInterpretation extends SafeCreation { outer =>

@@ -1,7 +1,7 @@
 package org.atnos.eff
 
-import cats._
-import data._
+import cats.*
+import cats.data.*
 
 trait StateImplicits {
 

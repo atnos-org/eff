@@ -1,12 +1,12 @@
 package org.atnos.eff.syntax
 
+import cats.Applicative
+import cats.Semigroup
 import cats.data.Ior
 import cats.data.IorNel
 import cats.data.NonEmptyList
 import cats.data.ValidatedNel
-import org.atnos.eff._
-import cats.Applicative
-import cats.Semigroup
+import org.atnos.eff.*
 
 object validate extends validate
 

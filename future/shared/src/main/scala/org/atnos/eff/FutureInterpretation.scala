@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats._
+import cats.*
 import org.atnos.eff.concurrent.Scheduler
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

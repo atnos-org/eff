@@ -4,8 +4,8 @@ import cats.effect.IO
 import cats.effect.LiftIO
 import cats.effect.unsafe.IORuntime
 import cats.~>
-import org.atnos.eff._
-import org.atnos.eff.syntax.eff._
+import org.atnos.eff.*
+import org.atnos.eff.syntax.eff.*
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Either

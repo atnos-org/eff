@@ -2,8 +2,8 @@ package org.atnos.eff.syntax.addon.twitter
 
 import com.twitter.util.Future
 import com.twitter.util.FuturePool
-import org.atnos.eff.addon.twitter._
-import org.atnos.eff._
+import org.atnos.eff.*
+import org.atnos.eff.addon.twitter.*
 import org.atnos.eff.concurrent.Scheduler
 import scala.concurrent.duration.FiniteDuration
 

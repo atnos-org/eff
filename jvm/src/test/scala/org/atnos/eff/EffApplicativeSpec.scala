@@ -1,24 +1,24 @@
 package org.atnos.eff
 
-import org.scalacheck.Arbitrary._
-import org.scalacheck._
-import org.specs2.ScalaCheck
-import org.specs2.Specification
 import cats.Eq
 import cats.Monad
-import org.atnos.eff.EffCompat._
 import org.atnos.eff.Batchable
-import org.atnos.eff.all._
+import org.atnos.eff.EffCompat.*
+import org.atnos.eff.all.*
 import org.atnos.eff.concurrent.Scheduler
-import org.atnos.eff.future._
-import org.atnos.eff.syntax.all._
-import org.atnos.eff.syntax.future._
+import org.atnos.eff.future.*
+import org.atnos.eff.syntax.all.*
+import org.atnos.eff.syntax.future.*
+import org.scalacheck.*
+import org.scalacheck.Arbitrary.*
+import org.specs2.ScalaCheck
+import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.ThrownExpectations
-import scala.concurrent._
-import duration._
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.*
+import scala.concurrent.duration.*
 
 class EffApplicativeSpec(implicit ee: ExecutionEnv) extends Specification with ScalaCheck with ThrownExpectations with Specs2Compat {
   def is = s2"""

@@ -1,8 +1,8 @@
 package org.atnos.eff.syntax
 
 import cats.Monoid
-import cats.data._
-import org.atnos.eff._
+import cats.data.*
+import org.atnos.eff.*
 
 object state extends state
 

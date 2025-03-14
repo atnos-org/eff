@@ -1,10 +1,10 @@
 package org.atnos.eff
 
-import cats._
-import Eff._
-import EffCompat._
-import org.atnos.eff.either._
-import org.atnos.eff.syntax.all._
+import cats.*
+import org.atnos.eff.Eff.*
+import org.atnos.eff.EffCompat.*
+import org.atnos.eff.either.*
+import org.atnos.eff.syntax.all.*
 import scala.util.control.NonFatal
 
 /**

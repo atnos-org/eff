@@ -1,7 +1,7 @@
 package org.atnos.site
 
-import org.atnos.site.snippets._
-import tutorial._
+import org.atnos.site.snippets.*
+import org.atnos.site.snippets.tutorial.*
 
 object Tutorial extends UserGuidePage {
   def is = "Tutorial".title ^ s2"""

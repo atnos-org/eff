@@ -1,7 +1,7 @@
 package org.atnos.eff
 package syntax.addon.scalaz
 
-import scalaz._
+import scalaz.*
 
 object safe extends org.atnos.eff.syntax.safe with safe
 

@@ -1,7 +1,7 @@
 package org.atnos.eff
 
-import cats._
-import Eff._
+import cats.*
+import org.atnos.eff.Eff.*
 
 trait ErrorCreation[F] extends ErrorTypes[F] {
 

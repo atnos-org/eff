@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats.Monad
-import Eff._
+import org.atnos.eff.Eff.*
 
 trait ChooseCreation {
 

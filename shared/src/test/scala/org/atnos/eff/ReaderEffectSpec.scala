@@ -1,10 +1,10 @@
 package org.atnos.eff
 
 import cats.Eval
+import cats.data.*
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
 import org.specs2.Specification
-import cats.data._
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
 
 class ReaderEffectSpec extends Specification with Specs2Compat {
   def is = s2"""

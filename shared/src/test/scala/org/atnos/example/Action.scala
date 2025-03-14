@@ -1,12 +1,12 @@
 package org.atnos.example
 
-import org.atnos.eff._
-import Eff._
 import cats.Eval
-import WarningsEffect._
-import ConsoleEffect._
-import EvalEffect._
-import ErrorEffect._
+import org.atnos.eff.*
+import org.atnos.eff.Eff.*
+import org.atnos.eff.ErrorEffect.*
+import org.atnos.eff.EvalEffect.*
+import org.atnos.example.ConsoleEffect.*
+import org.atnos.example.WarningsEffect.*
 
 /**
  * This is an example of a stack of effect with:

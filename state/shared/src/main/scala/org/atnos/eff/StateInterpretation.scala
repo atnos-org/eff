@@ -1,9 +1,9 @@
 package org.atnos.eff
 
-import cats.syntax.all._
-import Interpret._
-import cats._
-import data._
+import cats.*
+import cats.data.*
+import cats.syntax.all.*
+import org.atnos.eff.Interpret.*
 
 trait StateInterpretation {
 

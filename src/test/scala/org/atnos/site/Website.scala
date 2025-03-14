@@ -1,8 +1,8 @@
 package org.atnos.site
 
-import org.specs2._
-import org.specs2.execute._
-import runner._
+import org.specs2.*
+import org.specs2.execute.*
+import org.specs2.runner.*
 
 class Website extends Specification {
   def is = s2"""

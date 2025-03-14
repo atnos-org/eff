@@ -1,7 +1,7 @@
 // 8<---
 package org.atnos.site.snippets.tutorial
 
-import AdtSnippet._
+import org.atnos.site.snippets.tutorial.AdtSnippet.*
 
 trait AdtInterpreterSnippet {
 // 8<---

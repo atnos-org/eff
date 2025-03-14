@@ -2,7 +2,7 @@ package org.atnos.eff.syntax
 
 import cats.data.Kleisli
 import cats.data.Reader
-import org.atnos.eff._
+import org.atnos.eff.*
 
 object reader extends reader
 

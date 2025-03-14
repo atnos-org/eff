@@ -1,9 +1,9 @@
 package org.atnos.eff
 
+import cats.syntax.all.*
+import org.atnos.eff.all.*
+import org.atnos.eff.syntax.all.*
 import org.specs2.Specification
-import org.atnos.eff.all._
-import org.atnos.eff.syntax.all._
-import cats.syntax.all._
 
 class ChooseEffectSpec extends Specification with Specs2Compat {
   def is = s2"""

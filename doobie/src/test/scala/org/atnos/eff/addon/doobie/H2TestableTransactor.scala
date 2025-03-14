@@ -1,8 +1,7 @@
 package org.atnos.eff.addon.doobie
 
-import java.util.concurrent.Executors
-import cats.effect._
-import cats.syntax.all._
+import cats.effect.*
+import cats.syntax.all.*
 import doobie.free.connection.ConnectionIO
 import doobie.free.connection.close
 import doobie.free.connection.commit
@@ -11,6 +10,7 @@ import doobie.free.connection.rollback
 import doobie.free.connection.setAutoCommit
 import doobie.util.transactor.Strategy
 import doobie.util.transactor.Transactor
+import java.util.concurrent.Executors
 import org.h2.jdbcx.JdbcConnectionPool
 import scala.concurrent.ExecutionContext
 

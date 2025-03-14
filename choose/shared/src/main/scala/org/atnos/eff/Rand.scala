@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats._
+import cats.*
 import scala.util.Random
 
 /**

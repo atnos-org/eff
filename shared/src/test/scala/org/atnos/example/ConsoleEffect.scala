@@ -1,11 +1,11 @@
 package org.atnos.example
 
-import org.atnos.eff._
-import Eff._
-import Interpret._
-import cats._
-import cats.data._
-import cats.syntax.all._
+import cats.*
+import cats.data.*
+import cats.syntax.all.*
+import org.atnos.eff.*
+import org.atnos.eff.Eff.*
+import org.atnos.eff.Interpret.*
 
 object ConsoleEffect {
 

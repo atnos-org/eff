@@ -1,6 +1,6 @@
 package org.atnos.eff
 
-import cats._
+import cats.*
 
 trait EvalTypes {
   type _Eval[R] = Eval <= R

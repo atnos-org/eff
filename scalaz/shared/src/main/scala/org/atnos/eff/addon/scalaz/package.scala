@@ -1,7 +1,7 @@
 package org.atnos.eff
 package addon
 
-import _root_.scalaz._
+import _root_.scalaz.*
 
 package object scalaz {
 
