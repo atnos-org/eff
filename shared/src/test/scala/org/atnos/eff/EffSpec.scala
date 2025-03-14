@@ -7,8 +7,6 @@ import org.specs2.Specification
 import cats._
 import data._
 import cats.syntax.all.{catsSyntaxEq => _, _}
-import cats.Eq
-import cats.~>
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 import org.specs2.matcher.ThrownExpectations

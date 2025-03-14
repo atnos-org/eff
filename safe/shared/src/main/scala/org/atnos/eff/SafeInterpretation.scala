@@ -5,7 +5,6 @@ import cats.syntax.all._
 import eff._
 import interpret._
 import EitherEffect._
-import org.atnos.eff.Interpret.runInterpreter
 import scala.reflect.ClassTag
 
 trait SafeInterpretation extends SafeCreation { outer =>

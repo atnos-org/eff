@@ -7,7 +7,6 @@ import org.atnos.eff._
 import org.atnos.eff.addon.cats.effect.IOEffect
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import org.atnos.eff.Eff
 
 final class IOOps[A](private val e: Eff[Fx1[IO], A]) extends AnyVal {
 
