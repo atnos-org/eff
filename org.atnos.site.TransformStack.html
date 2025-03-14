@@ -526,8 +526,7 @@ effect. that they consider an implementation detail.</p>
 <pre><code class="prettyprint">      def executeOnDb[R, U, A](queries: Eff[R, A])(implicit db: Member.Aux[Db, R, U], eval: _eval[U]): Eff[U, A] = ???</code></pre>
 <p>How can you implement <code class="prettyprint">executeOnDb</code> with
 <code class="prettyprint">runDb</code>?</p>
-<pre><code class="prettyprint">      import org.atnos.eff.all._
-      import org.atnos.eff.syntax.all._
+<pre><code class="prettyprint">      import org.atnos.eff.syntax.all._
 
       def executeOnDb[R, U, A](queries: Eff[R, A])(implicit db: Member.Aux[Db, R, U], eval: _eval[U]): Eff[U, A] = {
 
