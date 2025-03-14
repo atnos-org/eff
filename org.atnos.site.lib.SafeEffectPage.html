@@ -351,7 +351,7 @@ and then close it safely. The <code class="prettyprint">close</code> part is a â
       def useResource(ok: Boolean) = (r: Resource) =&gt; protect[S, Int](if (ok) r.values.sum else throw new Exception(&quot;boo&quot;))
 
 // this program uses the resource safely even if there is an exception
-      def program(ok: Boolean): (Throwable Either Int, List[Throwable]) =
+      def program(ok: Boolean): (Either[Throwable, Int], List[Throwable]) =
         bracket(openResource)(useResource(ok))(closeResource).runSafe.run</code></pre>
 <pre><code class="prettyprint">&gt; Results
 Without exception: Right(55), finalizers exceptions: no exceptions, resource is closed: true
@@ -378,7 +378,7 @@ happens if a finalizer fails:</p>
         protect[S, Unit](if (ok) sumDone = true else throw new Exception(&quot;failed!!&quot;))
 
 // this program tries to set sumDone to true when the computation is done
-      def program(ok: Boolean, finalizeOk: Boolean): (Throwable Either Int, List[Throwable]) =
+      def program(ok: Boolean, finalizeOk: Boolean): (Either[Throwable, Int], List[Throwable]) =
         (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception(&quot;boo&quot;)) `finally` setDone(finalizeOk)).runSafe.run
 </code></pre>
 <pre><code class="prettyprint">&gt; Results
