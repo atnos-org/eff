@@ -3,7 +3,7 @@ package org.atnos.eff
 trait ErrorTypes[F] {
 
   /** type of errors: exceptions or failure messages */
-  type Error = Throwable Either F
+  type Error = Either[Throwable, F]
 
   /**
    * base type for this effect: either an error or a computation to evaluate

@@ -9,7 +9,7 @@ trait EitherImplicits {
     m.transform(using errorTranslateNat(map))
 
   final def errorTranslateNat[E1, E2](map: E2 => E1): Either[E2, *] ~> Either[E1, *] = new (Either[E2, *] ~> Either[E1, *]) {
-    def apply[X](x2: E2 Either X): E1 Either X = x2.leftMap(map)
+    def apply[X](x2: Either[E2, X]): Either[E1, X] = x2.leftMap(map)
   }
 
 }

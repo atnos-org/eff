@@ -14,6 +14,6 @@ import cats.*
  */
 trait Recurser[M[_], R, A, B] {
   def onPure(a: A): B
-  def onEffect[X](m: M[X]): X Either Eff[R, B]
-  def onApplicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]]
+  def onEffect[X](m: M[X]): Either[X, Eff[R, B]]
+  def onApplicative[X, T[_]: Traverse](ms: T[M[X]]): Either[T[X], M[T[X]]]
 }

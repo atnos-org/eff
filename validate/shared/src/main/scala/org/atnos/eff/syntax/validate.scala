@@ -14,10 +14,10 @@ trait validate {
 
   implicit class ValidateEffectOps[R, A](e: Eff[R, A]) {
 
-    def runNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, NonEmptyList[E] Either A] =
+    def runNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, Either[NonEmptyList[E], A]] =
       ValidateInterpretation.runNel(e)(using m.aux)
 
-    def runMap[E, L: Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, L Either A] =
+    def runMap[E, L: Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, Either[L, A]] =
       ValidateInterpretation.runMap(e)(map)(using Semigroup[L], m.aux)
 
     def runValidatedNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, ValidatedNel[E, A]] =

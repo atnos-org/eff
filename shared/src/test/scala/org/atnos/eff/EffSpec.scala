@@ -164,7 +164,7 @@ class EffSpec extends Specification with ScalaCheck with ThrownExpectations with
     type S = Fx.append[Fx.fx2[Writer[Int, *], Either[String, *]], Fx.fx1[Option]]
     val e: Eff[S, Int] = OptionEffect.some[S, Int](1)
 
-    e.runWriter.runEither.detach must beSome[String Either (Int, List[Int])](Right((1, Nil)))
+    e.runWriter.runEither.detach must beSome[Either[String, (Int, List[Int])]](Right((1, Nil)))
   }
 
   def detachOneApplicativeEffect =

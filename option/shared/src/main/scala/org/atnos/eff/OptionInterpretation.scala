@@ -16,13 +16,13 @@ trait OptionInterpretation {
       def onPure(a: A): Option[A] =
         Some(a)
 
-      def onEffect[X](m: Option[X]): X Either Eff[U, Option[A]] =
+      def onEffect[X](m: Option[X]): Either[X, Eff[U, Option[A]]] =
         m match {
           case None => Right(Eff.pure(None))
           case Some(x) => Left(x)
         }
 
-      def onApplicative[X, T[_]: Traverse](ms: T[Option[X]]): T[X] Either Option[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ms: T[Option[X]]): Either[T[X], Option[T[X]]] =
         Right(ms.sequence)
     })
 

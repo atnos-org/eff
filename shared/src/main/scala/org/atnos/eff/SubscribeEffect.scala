@@ -12,7 +12,7 @@ import scala.util.control.NonFatal
  */
 object SubscribeEffect {
 
-  type Callback[A] = (Throwable Either A) => Unit
+  type Callback[A] = (Either[Throwable, A]) => Unit
 
   sealed trait Subscribe[A] extends (Callback[A] => Unit) {
     def memoizeKey: Option[(AnyRef, Cache)]
@@ -29,9 +29,9 @@ object SubscribeEffect {
       s"SimpleSubscribe(<subscribe>, $memoizeKey)"
   }
 
-  case class AttemptedSubscribe[A](subscribe: Callback[Throwable Either A] => Unit, memoizeKey: Option[(AnyRef, Cache)] = None)
-      extends Subscribe[Throwable Either A] {
-    def apply(cb: Callback[Throwable Either A]): Unit = subscribe(cb)
+  case class AttemptedSubscribe[A](subscribe: Callback[Either[Throwable, A]] => Unit, memoizeKey: Option[(AnyRef, Cache)] = None)
+      extends Subscribe[Either[Throwable, A]] {
+    def apply(cb: Callback[Either[Throwable, A]]): Unit = subscribe(cb)
 
     def unmemoize: AttemptedSubscribe[A] =
       copy(memoizeKey = None)
@@ -47,7 +47,7 @@ object SubscribeEffect {
   def subscribeToAttemptedSubscribe: Subscribe ~> AttemptedSubscribe = new (Subscribe ~> AttemptedSubscribe) {
 
     def apply[X](subscribe: Subscribe[X]): AttemptedSubscribe[X] =
-      AttemptedSubscribe((c: Callback[Throwable Either X]) => subscribe((tx: Throwable Either X) => c(Right(tx))))
+      AttemptedSubscribe((c: Callback[Either[Throwable, X]]) => subscribe((tx: Either[Throwable, X]) => c(Right(tx))))
   }
 
   def subscribeAttempt[A](e: Eff[FS, A]): Eff[FS, ThrowableEither[A]] = {
@@ -59,8 +59,8 @@ object SubscribeEffect {
 
           send[Subscribe, U, ThrowableEither[X]](
             AttemptedSubscribe(
-              (c: Callback[Throwable Either X]) => {
-                sx.apply((tx: Throwable Either X) =>
+              (c: Callback[Either[Throwable, X]]) => {
+                sx.apply((tx: Either[Throwable, X]) =>
                   try {
                     c(Right(tx))
                   } catch {

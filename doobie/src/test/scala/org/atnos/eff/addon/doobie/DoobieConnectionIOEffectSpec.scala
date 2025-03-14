@@ -104,7 +104,7 @@ class DoobieConnectionIOEffectSpec extends Specification with ThrownExpectations
    */
 
   implicit class RunConnectionOps[A](e: Eff[Stack, A]) {
-    def runConnection(xa: Transactor[IO]): Throwable Either A =
+    def runConnection(xa: Transactor[IO]): Either[Throwable, A] =
       e.runConnectionIO(xa).detach.attempt.unsafeRunSync()
   }
 

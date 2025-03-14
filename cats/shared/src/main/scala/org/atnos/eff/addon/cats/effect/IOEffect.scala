@@ -56,12 +56,12 @@ trait IOInterpretation extends IOTypes {
 
   import interpret.of
 
-  def ioAttempt[R, A](e: Eff[R, A])(implicit m: MemberInOut[IO, R]): Eff[R, Throwable Either A] = {
+  def ioAttempt[R, A](e: Eff[R, A])(implicit m: MemberInOut[IO, R]): Eff[R, Either[Throwable, A]] = {
 
     interpret.interceptNatM[R, IO, Either[Throwable, *], A](
       e,
       new (IO ~> (IO of Either[Throwable, *])#l) {
-        def apply[X](io: IO[X]): IO[Throwable Either X] =
+        def apply[X](io: IO[X]): IO[Either[Throwable, X]] =
           io.attempt
       }
     )

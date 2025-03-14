@@ -146,7 +146,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   }.setGen(genInt)
 
   def ignoreException1 = prop { (n: Int) =>
-    def runWithException(t: Throwable): Throwable Either Unit =
+    def runWithException(t: Throwable): Either[Throwable, Unit] =
       protect[S, Int](throw t).ignoreException[IllegalArgumentException].execSafe.run
 
     runWithException(boom) ==== Left(boom)
@@ -154,7 +154,7 @@ class SafeEffectSpec extends Specification with ScalaCheck with ThrownExpectatio
   }
 
   def whenThrowable1 = prop { (n: Int) =>
-    def runWithException(t: Throwable): Throwable Either Int =
+    def runWithException(t: Throwable): Either[Throwable, Int] =
       protect[S, Int](throw t).whenThrowable {
         case _: IllegalArgumentException => pure(0)
         case _: IllegalStateException => pure(1)

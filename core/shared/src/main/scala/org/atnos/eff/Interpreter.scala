@@ -96,10 +96,10 @@ object Interpreter {
       def onPure(a: A): A =
         a
 
-      def onEffect[X](mx: M[X]): X Either Eff[R, A] =
+      def onEffect[X](mx: M[X]): Either[X, Eff[R, A]] =
         Left(sideEffect(mx))
 
-      def onApplicative[X, T[_]: Traverse](ms: T[M[X]]): T[X] Either M[T[X]] =
+      def onApplicative[X, T[_]: Traverse](ms: T[M[X]]): Either[T[X], M[T[X]]] =
         Left(ms.map(sideEffect.apply))
     })
 }

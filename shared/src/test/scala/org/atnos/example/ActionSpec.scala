@@ -65,11 +65,11 @@ class ActionSpec extends Specification with ScalaCheck with Specs2Compat {
    * HELPERS
    */
 
-  def runWith(i: Int, j: Int, printer: String => Unit = s => ()): (Error Either Int, List[String]) =
+  def runWith(i: Int, j: Int, printer: String => Unit = s => ()): (Either[Error, Int], List[String]) =
     runAction(actions(i, j), printer)
 
   /** specifying the stack is enough to run it */
-  def runWithUnbound(i: Int, j: Int, printer: String => Unit = s => ()): (Error Either Int, List[String]) = {
+  def runWithUnbound(i: Int, j: Int, printer: String => Unit = s => ()): (Either[Error, Int], List[String]) = {
     import ActionImplicits._
     runAction(unboundActions[ActionStack](i, j), printer)
   }

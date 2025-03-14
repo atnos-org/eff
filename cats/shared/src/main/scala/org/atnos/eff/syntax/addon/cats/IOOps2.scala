@@ -7,7 +7,7 @@ import org.atnos.eff.addon.cats.effect.IOInterpretation
 
 final class IOOps2[R, A](private val e: Eff[R, A]) extends AnyVal {
 
-  def ioAttempt(implicit m: MemberInOut[IO, R]): Eff[R, Throwable Either A] =
+  def ioAttempt(implicit m: MemberInOut[IO, R]): Eff[R, Either[Throwable, A]] =
     IOEffect.ioAttempt(e)
 
   def runIoMemo[U](cache: Cache)(implicit m: Member.Aux[Memoized, R, U], task: IO |= U): Eff[U, A] =

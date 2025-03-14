@@ -59,7 +59,7 @@ case class Unions[R, A](first: Union[R, A], rest: Vector[Union[R, Any]]) {
       }
     )
 
-  private def collect[M[_], U](collect: Union[R, Any] => Union[U, Any] Either M[Any]): CollectedUnions[M, R, U] = {
+  private def collect[M[_], U](collect: Union[R, Any] => Either[Union[U, Any], M[Any]]): CollectedUnions[M, R, U] = {
     val (effectsAndIndices, othersAndIndices) =
       unions.iterator.zipWithIndex.foldLeft((Vector[(M[Any], Int)](), Vector[(Union[U, Any], Int)]())) { case ((es, os), (u, i)) =>
         collect(u) match {
