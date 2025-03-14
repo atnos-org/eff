@@ -4,7 +4,6 @@ import com.twitter.util.Await
 import com.twitter.util.FuturePool
 import org.atnos.eff.addon.twitter.future._
 import org.atnos.eff.syntax.addon.twitter.future._
-import cats.syntax.all._
 import org.atnos.eff._
 import org.atnos.eff.ChooseEffect._
 import org.atnos.eff.option._

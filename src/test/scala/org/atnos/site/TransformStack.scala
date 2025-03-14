@@ -254,7 +254,6 @@ ${snippet {
 
       def runDb[R, U, A](queries: Eff[R, A])(implicit m: Member.Aux[Db, R, U], e: _eval[U], w: _writerString[U]): Eff[U, A] = ???
 // 8<--
-      import org.atnos.eff.all._
       import org.atnos.eff.syntax.all._
 
       def executeOnDb[R, U, A](queries: Eff[R, A])(implicit db: Member.Aux[Db, R, U], eval: _eval[U]): Eff[U, A] = {
