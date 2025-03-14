@@ -23,10 +23,10 @@ trait validate {
     def runValidatedNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, ValidatedNel[E, A]] =
       ValidateInterpretation.runValidatedNel(e)(using m.aux)
 
-    def runIorMap[E, L: Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, L Ior A] =
+    def runIorMap[E, L: Semigroup](map: E => L)(implicit m: Member[Validate[E, *], R]): Eff[m.Out, Ior[L, A]] =
       ValidateInterpretation.runIorMap(e)(map)(using Semigroup[L], m.aux)
 
-    def runIorNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, E IorNel A] =
+    def runIorNel[E](implicit m: Member[Validate[E, *], R]): Eff[m.Out, IorNel[E, A]] =
       ValidateInterpretation.runIorNel(e)(using m.aux)
 
     def catchWrongs[E, S[_]: Applicative](handle: S[E] => Eff[R, A])(implicit m: Member[Validate[E, *], R], semi: Semigroup[S[E]]): Eff[R, A] =
