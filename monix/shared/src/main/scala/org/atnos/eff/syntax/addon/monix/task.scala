@@ -5,7 +5,6 @@ import monix.execution.Scheduler
 import org.atnos.eff.*
 import org.atnos.eff.addon.monix.*
 import scala.concurrent.duration.FiniteDuration
-import scala.util.Either
 
 trait task {
 

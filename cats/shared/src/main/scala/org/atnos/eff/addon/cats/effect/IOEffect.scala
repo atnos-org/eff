@@ -8,7 +8,6 @@ import org.atnos.eff.*
 import org.atnos.eff.syntax.eff.*
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.util.Either
 
 object IOEffect extends IOEffectCreation with IOInterpretation
 
