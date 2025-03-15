@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats.syntax.either.*
-import org.atnos.eff.Eff.*
+import org.atnos.eff.Eff.send
 
 trait EitherCreation {
 
