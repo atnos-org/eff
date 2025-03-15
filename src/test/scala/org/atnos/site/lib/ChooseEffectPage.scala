@@ -29,9 +29,7 @@ For example if we take `List` to run a similar example as before, we get the lis
           else zero
       } yield found
 
-      import cats.instances.list._
-
-      pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose.run
+      pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose[List].run
     }.eval}
 
 """

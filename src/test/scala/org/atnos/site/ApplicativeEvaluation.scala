@@ -13,7 +13,6 @@ The default interpretation of `Eff` values is "monadic" meaning that effectful v
       import cats.Eval
       import cats.data.Writer
       import cats.syntax.traverse._
-      import cats.instances.list._
       import scala.concurrent._, duration._, ExecutionContext.Implicits.global
       import org.atnos.eff.concurrent.Scheduler
       import org.atnos.eff.syntax.future._
@@ -46,7 +45,6 @@ We can however run all those computations concurrently using the applicative exe
       import org.atnos.eff.concurrent.Scheduler
       import cats.Eval
       import cats.data.Writer
-      import cats.instances.list._
       import scala.concurrent._, duration._, ExecutionContext.Implicits.global
 
       type WriterString[A] = Writer[String, A]

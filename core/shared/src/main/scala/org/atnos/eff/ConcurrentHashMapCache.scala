@@ -1,7 +1,7 @@
 package org.atnos.eff
 
 import cats.Eval
-import java.util.concurrent.*
+import java.util.concurrent.ConcurrentHashMap
 
 case class ConcurrentHashMapCache(map: ConcurrentHashMap[AnyRef, Eval[Any]] = new ConcurrentHashMap[AnyRef, Eval[Any]]) extends Cache {
 
