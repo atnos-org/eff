@@ -2,7 +2,7 @@ package org.atnos.eff
 
 import cats.*
 import cats.syntax.all.*
-import org.atnos.eff.Eff.*
+import org.atnos.eff.Eff.send
 import org.atnos.eff.Interpret.*
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal

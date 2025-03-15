@@ -3,7 +3,7 @@ package org.atnos.eff
 import cats.*
 import cats.syntax.either.*
 import cats.syntax.traverse.*
-import org.atnos.eff.Eff.*
+import org.atnos.eff.Eff.pure
 import org.atnos.eff.Interpret.*
 
 trait EitherInterpretation {
