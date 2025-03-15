@@ -27,7 +27,7 @@ class EffMacrosSpec extends Specification {
     def put[T: Ordering, R: _kvstore](key: String, value: T): Eff[R, Unit]
     def getAll[T, R: _kvstore]: Eff[R, GetAllResult[T]]
     def get[T, R: _kvstore](key: String): Eff[R, GetResult[T]]
-    def delete[T, R: _kvstore](key: String): Eff[R, Unit]
+    def delete[R: _kvstore](key: String): Eff[R, Unit]
     def update[T: Ordering, R: _kvstore](key: String, f: T => T): Eff[R, Unit] =
       for {
         vMaybe <- get[T, R](key)
@@ -73,7 +73,7 @@ class EffMacrosSpec extends Specification {
       def get[T](key: String): GetResult[T] =
         GetResult(kvs.get(key).asInstanceOf[Option[T]])
 
-      def delete[T](key: String): Unit = {
+      def delete(key: String): Unit = {
         kvs.remove(key)
         ()
       }
@@ -115,7 +115,7 @@ class EffMacrosSpec extends Specification {
           r <- fromEither(Either.catchNonFatal(m.get(key).map(_.asInstanceOf[T])))
         } yield GetResult(r)
 
-        def delete[T](key: String): Eff[U, Unit] = for {
+        def delete(key: String): Eff[U, Unit] = for {
           _ <- tell(s"delete($key)")
           u <- modify((map: Map[String, Any]) => map - key)
           r <- fromEither(Either.catchNonFatal(()))
@@ -163,7 +163,7 @@ class EffMacrosSpec extends Specification {
         r <- fromEither(Either.catchNonFatal(m.get(key).map(_.asInstanceOf[T]))).into[U]
       } yield GetResult(r)
 
-      def delete[T, U: _throwableEither: _writerString: _stateMap](key: String): Eff[U, Unit] = for {
+      def delete[U: _throwableEither: _writerString: _stateMap](key: String): Eff[U, Unit] = for {
         _ <- tell(s"delete($key)").into[U]
         u <- modify((map: Map[String, Any]) => map - key).into[U]
         r <- fromEither(Either.catchNonFatal(())).into[U]
@@ -190,7 +190,7 @@ class EffMacrosSpec extends Specification {
       def put[T](key: String, value: T)(implicit ordering: Ordering[T]): Option[Unit] = Some(())
       def get[T](key: String): Option[GetResult[T]] = Some(GetResult(None))
       def getAll[T]: Option[GetAllResult[T]] = Some(GetAllResult(Nil))
-      def delete[T](key: String): Option[Unit] = Some(())
+      def delete(key: String): Option[Unit] = Some(())
     }
 
     runOption(theProgram.transform(optionInterp)).run ==== Some(None)

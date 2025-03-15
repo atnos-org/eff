@@ -23,7 +23,7 @@ trait MaybeEffectSnippet {
     def nothing[R: _maybe, A]: Eff[R, A] =
       send[Maybe, R, A](Nothing())
 
-    def runMaybe[R, U, A, B](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
+    def runMaybe[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
       recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
         def onPure(a: A): Option[A] = Some(a)
 

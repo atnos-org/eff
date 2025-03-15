@@ -21,7 +21,7 @@ trait AdtCreationSnippet {
     Eff.send[KVStore, R, Option[T]](Get(key))
 
   /** delete returns nothing (i.e. Unit) */
-  def delete[T, R: _kvstore](key: String): Eff[R, Unit] =
+  def delete[R: _kvstore](key: String): Eff[R, Unit] =
     Eff.send(Delete(key))
 
   /** update composes get and put, and returns nothing. */

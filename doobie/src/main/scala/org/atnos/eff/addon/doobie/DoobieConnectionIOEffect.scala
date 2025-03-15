@@ -21,7 +21,7 @@ trait DoobieConnectionIOCreation extends DoobieConnectionIOTypes {
 
 trait DoobieConnectionIOInterpretation extends DoobieConnectionIOTypes {
 
-  def runConnectionIO[R, U, F[_], E, A, B](
+  def runConnectionIO[R, U, F[_], A](
     e: Eff[R, A]
   )(t: Transactor[F])(implicit mc: Member.Aux[ConnectionIO, R, U], mf: F /= U, me: Bracket[F, Throwable]): Eff[U, A] = {
 
