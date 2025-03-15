@@ -13,7 +13,7 @@ trait WriterInterpretation {
    *
    * This uses a ListBuffer internally to append values
    */
-  def runWriter[R, U, O, A, B](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, *], R, U]): Eff[U, (A, List[O])] =
+  def runWriter[R, U, O, A](w: Eff[R, A])(implicit m: Member.Aux[Writer[O, *], R, U]): Eff[U, (A, List[O])] =
     runWriterFold(w)(ListFold[O])
 
   /**

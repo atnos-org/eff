@@ -1,6 +1,5 @@
 package org.atnos.site
 
-import org.atnos.site.snippets.*
 import org.atnos.site.snippets.tutorial.*
 
 object Tutorial extends UserGuidePage {
