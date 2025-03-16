@@ -68,7 +68,6 @@ class StateEffectSpec extends Specification with ScalaCheck with Specs2Compat {
   }
 
   def lensedState = {
-    type StateIntPair[A] = State[(Int, Int), A]
     type TS = Fx.fx2[StateInt, Option]
 
     val action: Eff[TS, String] =
