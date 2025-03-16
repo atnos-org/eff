@@ -345,9 +345,7 @@ before, we get the list of all the accepted pairs:</p>
           else zero
       } yield found
 
-      import cats.instances.list._
-
-      pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose.run</code></pre>
+      pairsBiggerThan[S](List(1, 2, 3, 4), 5).runChoose[List].run</code></pre>
 <p><code class="prettyprint">&gt; List((2,4), (3,3), (3,4), (4,2), (4,3), (4,4))</code></p>
 </div>
 
