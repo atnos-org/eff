@@ -3,7 +3,7 @@ import sbtcrossproject.CrossProject
 
 Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
 
-lazy val specs2Version = Def.setting("4.20.9")
+lazy val specs2Version = Def.setting("4.21.0")
 lazy val twitterUtilVersion = "24.2.0"
 lazy val doobieVersion = "0.13.4"
 
