@@ -255,11 +255,7 @@ into multiple others">Translate an ef...</a>
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
-with-several-type-parameters" title="Running effects
-with several type parameters">Running effects...</a>
-          
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
 aliases" title="Use context bounds and type
 aliases">Use context bou...</a>
           
@@ -277,8 +273,6 @@ typeclasses">Know your Membe...</a>
               </ul><ul>
                 <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
       <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
-          
-        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
           
         </li></ul></ul>
       <ul>
@@ -454,7 +448,7 @@ abstract language into concrete values.</p>
  * The resulting effect stack is m.Out which is R without the KVStore effects
  *
  */
-  def runKVStoreUnsafe[R, A](effects: Eff[R, A])(implicit m: KVStore &lt;= R): Eff[m.Out, A] = {
+  def runKVStoreUnsafe[R, A](effects: Eff[R, A])(using m: KVStore &lt;= R): Eff[m.Out, A] = {
     // a very simple (and imprecise) key-value store
     val kvs = Map.empty[String, Any]
 
@@ -536,7 +530,7 @@ delegate the results to other effects in the same stack:</p>
  */
   def runKVStore[R, U, A](
     effects: Eff[R, A]
-  )(implicit m: Member.Aux[KVStore, R, U], throwable: _throwableEither[U], writer: _writerString[U], state: _stateMap[U]): Eff[U, A] = {
+  )(using m: Member.Aux[KVStore, R, U], throwable: _throwableEither[U], writer: _writerString[U], state: _stateMap[U]): Eff[U, A] = {
 
     translate(effects)(new Translate[KVStore, U] {
       def apply[X](kv: KVStore[X]): Eff[U, X] =
@@ -607,12 +601,7 @@ stack)</li>
 <li>call a final <code class="prettyprint">run</code> to get an <code class="prettyprint">A</code> value
 <p/></li>
 </ul>
-<p>Like this:</p>
-<pre><code class="prettyprint">      import org.atnos.eff._, syntax.all._
-
-// run the program with the unsafe interpreter
-      runKVStoreUnsafe(program[Fx.fx1[KVStore]]).run</code></pre>
-<p><code class="prettyprint">&gt; Some(14)</code></p>
+<p>Like this: `<code class="prettyprint"></code>&gt; Some(14)`</p>
 <p>With the safe interpreter, the process is the same and we need to</p>
 <ul>
 <li>specify an effect stack definition with all the effects</li>
@@ -621,17 +610,7 @@ stack)</li>
 <code class="prettyprint">NoFx</code> effect with <code class="prettyprint">run</code>
 <p/></li>
 </ul>
-<p>Like that:</p>
-<pre><code class="prettyprint">      import org.atnos.eff._, syntax.all._
-      import cats._, data._
-
-// run the program with the safe interpreter
-      type Stack = Fx.fx4[KVStore, Either[Throwable, *], State[Map[String, Any], *], Writer[String, *]]
-
-      val (result, logs) =
-        runKVStore(program[Stack]).runEither.evalState(Map.empty[String, Any]).runWriter.run
-
-      (result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
+<p>Like that: ``</p>
 <pre><code class="prettyprint">&gt; Right(Some(14))
 put(wild-cats, 2)
 get(wild-cats)
@@ -641,21 +620,7 @@ get(wild-cats)
 delete(tame-cats)</code></pre>
 <h3 id="add-some-syntax">Add some syntax</h3>
 <p>It is nice to be able to “chain” <code class="prettyprint">run</code> methods with this
-additional piece of syntax:</p>
-<pre><code class="prettyprint">      implicit class KVStoreOps[R, A](effects: Eff[R, A]) {
-        def runStore[U](implicit
-          m: Member.Aux[KVStore, R, U],
-          throwable: _throwableEither[U],
-          writer: _writerString[U],
-          state: _stateMap[U]
-        ): Eff[U, A] =
-          runKVStore(effects)
-      }
-
-      val (result, logs) =
-        program[Stack].runStore.runEither.evalState(Map.empty[String, Any]).runWriter.run
-
-      (result.toString +: logs).mkString(&quot;\n&quot;)</code></pre>
+additional piece of syntax: ``</p>
 <pre><code class="prettyprint">&gt; Right(Some(14))
 put(wild-cats, 2)
 get(wild-cats)
@@ -720,7 +685,7 @@ instances for those effects:</p>
   def readLine(): String =
     &quot;snuggles&quot;
 
-  def runInteract[R, A](effect: Eff[R, A])(implicit m: Interact &lt;= R): Eff[m.Out, A] =
+  def runInteract[R, A](effect: Eff[R, A])(using m: Interact &lt;= R): Eff[m.Out, A] =
     recurse(effect)(new Recurser[Interact, m.Out, A, A] {
       def onPure(a: A): A = a
 
@@ -743,7 +708,7 @@ instances for those effects:</p>
 
     })(using m)
 
-  def runDataOp[R, A](effect: Eff[R, A])(implicit m: DataOp &lt;= R): Eff[m.Out, A] = {
+  def runDataOp[R, A](effect: Eff[R, A])(using m: DataOp &lt;= R): Eff[m.Out, A] = {
     val memDataSet = new scala.collection.mutable.ListBuffer[String]
 
     recurse(effect)(new Recurser[DataOp, m.Out, A, A] {
@@ -766,10 +731,7 @@ instances for those effects:</p>
   }
 </code></pre>
 <p>Now if we run our program for a Stack combining both effects and type
-in “snuggles” when prompted, we see something like this:</p>
-<pre><code class="prettyprint">      type Stack = Fx.fx2[Interact, DataOp]
-
-      runInteract(runDataOp(program[Stack])).run</code></pre>
+in “snuggles” when prompted, we see something like this:``</p>
 <pre><code class="prettyprint">What&#39;s the kitty&#39;s name?
 Current cats: snuggles</code></pre>
 </div>

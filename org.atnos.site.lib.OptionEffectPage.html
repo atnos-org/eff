@@ -255,11 +255,7 @@ into multiple others">Translate an ef...</a>
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
-with-several-type-parameters" title="Running effects
-with several type parameters">Running effects...</a>
-          
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
 aliases" title="Use context bounds and type
 aliases">Use context bou...</a>
           
@@ -277,8 +273,6 @@ typeclasses">Know your Membe...</a>
               </ul><ul>
                 <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
       <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
-          
-        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
           
         </li></ul></ul>
       <ul>
@@ -321,26 +315,8 @@ typeclasses">Know your Membe...</a>
 <p>Adding an <code class="prettyprint">Option</code> effect in your stack allows to stop
 computations when necessary. If you create a value with
 <code class="prettyprint">some(a)</code> this value will be used downstream but if you use
-<code class="prettyprint">none</code> all computations will stop:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-
-      /**
- * Stack declaration
- */
-      type S = Fx.fx1[Option]
-
-// compute with this stack
-      val map: Map[String, Int] =
-        Map(&quot;key1&quot; -&gt; 10, &quot;key2&quot; -&gt; 20)
-
-// get 2 keys from the map and add the corresponding values
-      def addKeys(key1: String, key2: String): Eff[S, Int] = for {
-        a &lt;- fromOption(map.get(key1))
-        b &lt;- fromOption(map.get(key2))
-      } yield a + b
-
-      (addKeys(&quot;key1&quot;, &quot;key2&quot;).runOption.run, addKeys(&quot;key1&quot;, &quot;missing&quot;).runOption.run)</code></pre>
-<p><code class="prettyprint">&gt; (Some(30),None)</code></p>
+<code class="prettyprint">none</code> all computations will stop:`<code class="prettyprint"></code>&gt;
+(Some(30),None)`</p>
 </div>
 
 <script>

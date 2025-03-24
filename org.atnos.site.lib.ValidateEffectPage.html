@@ -255,11 +255,7 @@ into multiple others">Translate an ef...</a>
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
-with-several-type-parameters" title="Running effects
-with several type parameters">Running effects...</a>
-          
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
 aliases" title="Use context bounds and type
 aliases">Use context bou...</a>
           
@@ -277,8 +273,6 @@ typeclasses">Know your Membe...</a>
               </ul><ul>
                 <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
       <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
-          
-        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
           
         </li></ul></ul>
       <ul>
@@ -319,25 +313,9 @@ typeclasses">Know your Membe...</a>
 <div id="tipue_search_content"></div>
 
 <p>The <code class="prettyprint">Validate</code> effect is similar to the
-<code class="prettyprint">Either</code> effect but let you accumulate failures:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-
-      /**
-   * Stack declaration
-   */
-      type S = Fx.fx1[Validate[String, *]]
-
-      def checkPositiveInt(i: Int): Eff[S, Unit] =
-        validateCheck(i &gt;= 0, s&quot;$i is not positive&quot;)
-
-      def checkPositiveInts(a: Int, b: Int, c: Int): Eff[S, (Int, Int, Int)] = for {
-        _ &lt;- checkPositiveInt(a)
-        _ &lt;- checkPositiveInt(b)
-        _ &lt;- checkPositiveInt(c)
-      } yield (a, b, c)
-
-      checkPositiveInts(1, -3, -2).runNel.run</code></pre>
-<p><code class="prettyprint">&gt; Left(NonEmptyList(-3 is not positive, -2 is not positive))</code></p>
+<code class="prettyprint">Either</code> effect but let you accumulate failures:
+`<code class="prettyprint"></code>&gt; Left(NonEmptyList(-3 is not positive, -2 is not
+positive))`</p>
 </div>
 
 <script>

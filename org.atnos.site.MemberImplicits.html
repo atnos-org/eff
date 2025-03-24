@@ -255,11 +255,7 @@ into multiple others">Translate an ef...</a>
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
-with-several-type-parameters" title="Running effects
-with several type parameters">Running effects...</a>
-          
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
 aliases" title="Use context bounds and type
 aliases">Use context bou...</a>
           
@@ -277,8 +273,6 @@ typeclasses">Know your Membe...</a>
               </ul><ul>
                 <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
       <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
-          
-        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
           
         </li></ul></ul>
       <ul>
@@ -320,43 +314,12 @@ typeclasses">Know your Membe...</a>
 
 <p>Type inference with the Eff monad can be a bit tricky to get right if
 we want to avoid type annotations. Here are some tips to help you.</p>
-<h3 id="running-effects-with-several-type-parameters">Running effects
-with several type parameters</h3>
-<p>Some effects use 2 type variables, like <code class="prettyprint">Reader</code> or
-<code class="prettyprint">Writer</code>. If you want to use those effects in an effect stack
-you need to make sure you have the following <code class="prettyprint">scalac</code>
-option:</p>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode scala"><code class="sourceCode scala"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>scalacOptions <span class="op">+=</span> <span class="st">&quot;-Ypartial-unification&quot;</span></span></code></pre></div>
 <h3 id="use-context-bounds-and-type-aliases">Use context bounds and type
 aliases</h3>
 <p>When creating effects you can always “require” a stack containing the
-right effects with the <code class="prettyprint">MemberIn</code> typeclass:</p>
-<pre><code class="prettyprint">import org.atnos.eff._
-      import org.atnos.eff.all._
-
-      type StateInt[A] = State[Int, A]
-      type WriterString[A] = Writer[String, A]
-
-// for creating state effects
-      def putAndTell[R](i: Int)(implicit s: StateInt |= R, w: WriterString |= R): Eff[R, Int] =
-        for {
-          // no type annotations needed!
-          _ &lt;- put(i)
-          _ &lt;- tell(&quot;stored &quot; + i)
-        } yield i</code></pre>
+right effects with the <code class="prettyprint">MemberIn</code> typeclass:``</p>
 <p>You can even use context bounds to make the declaration of
-<code class="prettyprint">putAndTell</code> more concise:</p>
-<pre><code class="prettyprint">import org.atnos.eff.all._
-
-      type _stateInt[R] = State[Int, *] |= R
-      type _writerString[R] = Writer[String, *] |= R
-
-      def putAndTell[R: _stateInt: _writerString](i: Int): Eff[R, Int] =
-        for {
-          _ &lt;- put(i)
-          _ &lt;- tell(&quot;stored &quot; + i)
-        } yield i</code></pre>
+<code class="prettyprint">putAndTell</code> more concise:``</p>
 <h3 id="know-your-member-typeclasses">Know your <code class="prettyprint">Member</code>
 typeclasses</h3>
 <p>There are 3 different ways to declare that an effect is part of an
@@ -406,47 +369,12 @@ and remove the effect from the stack</td>
 <h3 id="packing-member-instances">“Packing” member instances</h3>
 <p>Some function signatures can be repetitive when they always require
 the same list of effects:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode scala"><code class="sourceCode scala"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo1<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo2<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo3<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode scala"><code class="sourceCode scala"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo1<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo2<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> foo3<span class="op">[</span>R <span class="op">:</span>_foo <span class="op">:</span>_bar <span class="op">:</span>_baz<span class="op">](</span>i<span class="op">:</span> <span class="bu">Int</span><span class="op">):</span> Eff<span class="op">[</span>R<span class="op">,</span> <span class="bu">Int</span><span class="op">]</span></span></code></pre></div>
 <p>It is possible to “pack” them with the following
-<code class="prettyprint">_effects</code> type definition:</p>
-<pre><code class="prettyprint">import org.atnos.eff.Members.{&amp;:, &amp;&amp;:}
-
-      trait Foo[A]
-      trait Bar[A]
-      trait Baz[A]
-      trait Boo[A]
-
-      type _foo[R] = Foo |= R
-      type _bar[R] = Bar |= R
-      type _baz[R] = Baz |= R
-
-// Note the last &amp;&amp;:, you can write instead: _foo[R] &amp;: _bar[R] &amp;: _baz[R] &amp;: NoMember
-      type _effects[R] = _foo[R] &amp;: _bar[R] &amp;&amp;: _baz[R]
-
-      def getFoo[R: _foo: _bar]: Eff[R, Int] = Eff.pure(1)
-      def getBar[R: _bar]: Eff[R, Int] = Eff.pure(1)
-      def getBaz[R: _baz]: Eff[R, Int] = Eff.pure(1)
-
-      object t {
-
-        import org.atnos.eff.Members.extractMember
-
-        def foo[R: _effects](i: Int): Eff[R, Int] =
-          getFoo[R] &gt;&gt;
-            getBar[R] &gt;&gt;
-            getBaz[R]
-
-      }
-
-// Then call foo with a concrete stack
-      type S = Fx.fx3[Foo, Bar, Baz]
-      type U = Fx.fx4[Foo, Bar, Baz, Boo]
-
-      t.foo[S](1)
-      t.foo[U](1)</code></pre>
+<code class="prettyprint">_effects</code> type definition:``</p>
 <p>The implicit definition <code class="prettyprint">extractMember</code> in the
 <code class="prettyprint">Members</code> object will take care of “unpacking” the member
 instances where required. Note that this implicit must <em>not</em> be

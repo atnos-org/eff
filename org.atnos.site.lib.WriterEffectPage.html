@@ -255,11 +255,7 @@ into multiple others">Translate an ef...</a>
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
-with-several-type-parameters" title="Running effects
-with several type parameters">Running effects...</a>
-          
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
 aliases" title="Use context bounds and type
 aliases">Use context bou...</a>
           
@@ -277,8 +273,6 @@ typeclasses">Know your Membe...</a>
               </ul><ul>
                 <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
       <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
-          
-        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
           
         </li></ul></ul>
       <ul>
@@ -319,36 +313,8 @@ typeclasses">Know your Membe...</a>
 <div id="tipue_search_content"></div>
 
 <p>You can then define your own custom <code class="prettyprint">Fold</code> to log the
-values to a file:</p>
-<pre><code class="prettyprint">import org.atnos.eff._, all._, syntax.all._
-      import cats.data.Writer
-      import java.io.PrintWriter
-      import scala.io
-
-      type S = Fx.fx1[Writer[String, *]]
-
-      val action: Eff[S, Int] = for {
-        a &lt;- pure[S, Int](1)
-        _ &lt;- tell(&quot;first value &quot; + a)
-        b &lt;- pure[S, Int](2)
-        _ &lt;- tell(&quot;second value &quot; + b)
-
-      } yield a + b
-
-// define a fold to output values
-      def fileFold(path: String) = new RightFold[String, Unit] {
-        type S = PrintWriter
-        val init: S = new PrintWriter(path)
-
-        def fold(a: String, s: S): S = { s.println(a); s }
-
-        def finalize(s: S): Unit =
-          s.close
-      }
-
-      action.runWriterFold(fileFold(&quot;target/log&quot;)).run
-      io.Source.fromFile(&quot;target/log&quot;).getLines().toList</code></pre>
-<p><code class="prettyprint">&gt; List(second value 2, first value 1)</code></p>
+values to a file:`<code class="prettyprint"></code>&gt; List(second value 2, first value
+1)`</p>
 </div>
 
 <script>

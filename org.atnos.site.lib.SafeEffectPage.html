@@ -255,11 +255,7 @@ into multiple others">Translate an ef...</a>
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
-with-several-type-parameters" title="Running effects
-with several type parameters">Running effects...</a>
-          
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
 aliases" title="Use context bounds and type
 aliases">Use context bou...</a>
           
@@ -277,8 +273,6 @@ typeclasses">Know your Membe...</a>
               </ul><ul>
                 <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
       <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
-          
-        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
           
         </li></ul></ul>
       <ul>
@@ -328,31 +322,7 @@ executed after another one, even if the first one fails</li>
 and then close it safely. The <code class="prettyprint">close</code> part is a “finalizer”
 <p/></li>
 </ul>
-<p>Let’s see an example for the protection of a resource:</p>
-<pre><code class="prettyprint">import org.atnos.eff.syntax.all._
-      import org.atnos.eff._, all._
-
-// let&#39;s represent a resource which can be in use
-      case class Resource(values: List[Int] = (1 to 10).toList, inUse: Boolean = false) {
-        def isClosed = !inUse
-      }
-
-      var resource = Resource()
-
-// our stack of effects, with safe evaluation
-      type S = Fx.fx1[Safe]
-
-      def openResource: Eff[S, Resource] =
-        protect { resource = resource.copy(inUse = true); resource }
-
-      def closeResource(r: Resource): Eff[S, Unit] =
-        protect { resource = r.copy(inUse = false) }
-
-      def useResource(ok: Boolean) = (r: Resource) =&gt; protect[S, Int](if (ok) r.values.sum else throw new Exception(&quot;boo&quot;))
-
-// this program uses the resource safely even if there is an exception
-      def program(ok: Boolean): (Either[Throwable, Int], List[Throwable]) =
-        bracket(openResource)(useResource(ok))(closeResource).runSafe.run</code></pre>
+<p>Let’s see an example for the protection of a resource: ``</p>
 <pre><code class="prettyprint">&gt; Results
 Without exception: Right(55), finalizers exceptions: no exceptions, resource is closed: true
 With exception   : Left(boo), finalizers exceptions: no exceptions, resource is closed: true</code></pre>
@@ -365,22 +335,7 @@ which can themselves fail.</p>
 <p>A simpler version of <code class="prettyprint">bracket</code> is
 <code class="prettyprint">finally</code>.</p>
 <p>This example show how to use <code class="prettyprint">finally</code> but also what
-happens if a finalizer fails:</p>
-<pre><code class="prettyprint">import org.atnos.eff.syntax.all._
-      import org.atnos.eff._, all._
-
-// our stack of effects, with safe evaluation
-      type S = Fx.fx1[Safe]
-
-      var sumDone: Boolean = false
-
-      def setDone(ok: Boolean): Eff[S, Unit] =
-        protect[S, Unit](if (ok) sumDone = true else throw new Exception(&quot;failed!!&quot;))
-
-// this program tries to set sumDone to true when the computation is done
-      def program(ok: Boolean, finalizeOk: Boolean): (Either[Throwable, Int], List[Throwable]) =
-        (protect[S, Int](if (ok) (1 to 10).sum else throw new Exception(&quot;boo&quot;)) `finally` setDone(finalizeOk)).runSafe.run
-</code></pre>
+happens if a finalizer fails:``</p>
 <pre><code class="prettyprint">&gt; Results
 Computation ok, finalizer ok: Right(55), finalizers exceptions: no exceptions
 Computation ok, finalizer ko: Right(55), finalizers exceptions: List(failed!!)

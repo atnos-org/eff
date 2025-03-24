@@ -255,11 +255,7 @@ into multiple others">Translate an ef...</a>
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
-with-several-type-parameters" title="Running effects
-with several type parameters">Running effects...</a>
-          
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
 aliases" title="Use context bounds and type
 aliases">Use context bou...</a>
           
@@ -277,8 +273,6 @@ typeclasses">Know your Membe...</a>
               </ul><ul>
                 <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
       <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
-          
-        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
           
         </li></ul></ul>
       <ul>
@@ -348,7 +342,7 @@ an Effect for a new “optional” type.</p>
     def nothing[R: _maybe, A]: Eff[R, A] =
       send[Maybe, R, A](Nothing())
 
-    def runMaybe[R, U, A](effect: Eff[R, A])(implicit m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
+    def runMaybe[R, U, A](effect: Eff[R, A])(using m: Member.Aux[Maybe, R, U]): Eff[U, Option[A]] =
       recurse(effect)(new Recurser[Maybe, U, A, Option[A]] {
         def onPure(a: A): Option[A] = Some(a)
 
@@ -362,7 +356,7 @@ an Effect for a new “optional” type.</p>
           Right(ms.sequence)
       })
 
-    implicit val applicativeMaybe: Applicative[Maybe] = new Applicative[Maybe] {
+    given Applicative[Maybe] = new Applicative[Maybe] {
       def pure[A](a: A): Maybe[A] = Just(a)
 
       def ap[A, B](ff: Maybe[A =&gt; B])(fa: Maybe[A]): Maybe[B] =
@@ -386,15 +380,7 @@ values</p></li>
 <h3 id="compiler-limitation">Compiler limitation</h3>
 <p>When you create an effect you can define a sealed trait and case
 classes to represent different possibilities for that effect. For
-example for interacting with a database you might create:</p>
-<pre><code class="prettyprint">trait DatabaseEffect {
-
-        case class Record(fields: List[String])
-
-        sealed trait Db[A]
-        case class Get[A](id: Int) extends Db[Record]
-        case class Update[A](id: Int, record: Record) extends Db[Record]
-      }</code></pre>
+example for interacting with a database you might create: ``</p>
 <p>It is recommended to create the <code class="prettyprint">Db</code> types
 <strong>outside</strong> of the <code class="prettyprint">DatabaseEffect</code> trait.
 Indeed, during <code class="prettyprint">Member</code> implicit resolution, depending on how
@@ -422,19 +408,8 @@ and its removal from <code class="prettyprint">R</code> should be the effect sta
 <code class="prettyprint">U</code></li>
 </ul>
 <p><br/></p>
-<p>Then we can use this effect in a computation:</p>
-<pre><code class="prettyprint">import org.atnos.eff._
-      import org.atnos.eff.eff._
-      import MaybeEffect._
-
-      val action: Eff[Fx.fx1[Maybe], Int] =
-        for {
-          a &lt;- just(2)
-          b &lt;- just(3)
-        } yield a + b
-
-      run(runMaybe(action))</code></pre>
-<p><code class="prettyprint">&gt; Some(5)</code></p>
+<p>Then we can use this effect in a computation:`<code class="prettyprint"></code>&gt;
+Some(5)`</p>
 <hr />
 </div>
 

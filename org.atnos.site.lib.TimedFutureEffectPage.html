@@ -255,11 +255,7 @@ into multiple others">Translate an ef...</a>
     </li>
               </ul><ul>
                 <li id="org-atnos-site-memberimplicits"><a href="org.atnos.site.MemberImplicits.html" title="Member implicits">Member implicits</a>
-      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#running-effects
-with-several-type-parameters" title="Running effects
-with several type parameters">Running effects...</a>
-          
-        </li><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
+      <ul><ul><li><a href="org.atnos.site.MemberImplicits.html#use-context-bounds-and-type
 aliases" title="Use context bounds and type
 aliases">Use context bou...</a>
           
@@ -277,8 +273,6 @@ typeclasses">Know your Membe...</a>
               </ul><ul>
                 <li id="org-atnos-site-applicativeevaluation"><a href="org.atnos.site.ApplicativeEvaluation.html" title="Applicative">Applicative</a>
       <ul><ul><li><a href="org.atnos.site.ApplicativeEvaluation.html#concurrent-evaluation" title="Concurrent evaluation">Concurrent eval...</a>
-          
-        </li><li><a href="org.atnos.site.ApplicativeEvaluation.html#batching" title="Batching">Batching</a>
           
         </li></ul></ul>
       <ul>
@@ -327,48 +321,17 @@ timeouts, which are supported by passing in a
 <code class="prettyprint">Future</code>. This means if you start a computation before
 passing the <code class="prettyprint">Future</code> into Eff, the <code class="prettyprint">Future</code> will
 begin less predictably.</p>
-<p>Now, let’s create some <code class="prettyprint">TimedFuture</code> effects:</p>
-<pre><code class="prettyprint">import org.atnos.eff._
-      import org.atnos.eff.future._
-      import org.atnos.eff.syntax.all._
-      import org.atnos.eff.concurrent.Scheduler
-
-      import scala.concurrent._, duration._
-      import scala.concurrent.ExecutionContext.Implicits.global
-
-      type R = Fx.fx2[TimedFuture, Option]
-
-      val action: Eff[R, Int] =
-        for {
-          // create a value now
-          a &lt;- Eff.pure[R, Int](1)
-
-          // evaluate a value later, on some other thread pool, and continue when it&#39;s finished
-          b &lt;- futureDelay[R, Int](1)
-        } yield b
-
-</code></pre>
-<p>Then we need to pass a <code class="prettyprint">Scheduler</code> and an
-<code class="prettyprint">ExecutionContext</code> in to begin the computation.</p>
-<pre><code class="prettyprint">
-      implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
-      import org.atnos.eff.syntax.future._
-
-      Await.result(action.runOption.runSequential, 1.second)</code></pre>
-<p><code class="prettyprint">&gt; Some(1)</code></p>
+<p>Now, let’s create some <code class="prettyprint">TimedFuture</code>
+effects:`<code class="prettyprint"></code>&gt; Some(1)`</p>
 <p>You can also use other <code class="prettyprint">Future</code> or <code class="prettyprint">Task</code>
 effects:</p>
 <ul>
-<li><code class="prettyprint">twitter</code>: depend on <code class="prettyprint">eff-twitter</code> and import
-<code class="prettyprint">org.atnos.eff.addon.twitter.future._</code></li>
 <li><code class="prettyprint">monix</code>: depend on <code class="prettyprint">eff-monix</code> and import
 <code class="prettyprint">org.atnos.eff.addon.monix.task._</code></li>
 </ul>
 <p>There are corresponding syntax imports to be able to call
 <code class="prettyprint">runAsync</code> methods in:</p>
 <ul>
-<li><code class="prettyprint">twitter</code>:
-<code class="prettyprint">org.atnos.eff.syntax.addon.twitter.future._</code></li>
 <li><code class="prettyprint">monix</code>:
 <code class="prettyprint">org.atnos.eff.syntax.addon.monix.task._</code></li>
 </ul>
@@ -382,30 +345,7 @@ cache</li>
 <code class="prettyprint">Memoized</code> effect (you will need to provide the cache later)
 <p/></li>
 </ul>
-<pre><code class="prettyprint">import cats.syntax.all._
-      import org.atnos.eff._, future._, all._
-      import org.atnos.eff.concurrent.Scheduler
-      import org.atnos.eff.syntax.all._
-      import org.atnos.eff.syntax.future._
-      import scala.concurrent._, duration._
-      import scala.concurrent.ExecutionContext.Implicits.global
-
-      var i = 0
-
-      def expensive[R: _Future: _memo]: Eff[R, Int] =
-        futureMemoized[R, Int](&quot;key&quot;, futureDelay[R, Int] { i += 1; 10 * 10 })
-
-      type S = Fx.fx2[Memoized, TimedFuture]
-
-      implicit val scheduler: Scheduler = ExecutorServices.schedulerFromGlobalExecutionContext
-
-      val futureMemo: Future[Int] =
-        (expensive[S] &gt;&gt; expensive[S]).runFutureMemo(ConcurrentHashMapCache()).runSequential
-
-      Await.result(futureMemo, 1.second)
-
-      &quot;there is only one invocation&quot; &lt;==&gt; (i === 1)</code></pre>
-<p><code class="prettyprint">&gt; there is only one invocation &lt;=&gt; true</code></p>
+<p>`<code class="prettyprint"></code>&gt; there is only one invocation &lt;=&gt; true`</p>
 </div>
 
 <script>
