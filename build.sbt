@@ -3,7 +3,7 @@ import sbtcrossproject.CrossProject
 
 Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
 
-lazy val specs2Version = "4.21.0"
+lazy val specs2Version = "5.5.8"
 lazy val doobieVersion = "0.13.4"
 
 enablePlugins(BuildInfoPlugin)
