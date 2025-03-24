@@ -1,0 +1,12 @@
+- [eff 8](https://github.com/atnos-org/eff/commit/777b0b010fc7f45d29518250832b3e216573642a)
+  - drop Scala 2
+  - drop twitter module
+  - drop batch module
+  - drop Scala 2 macro annotation module
+  - use given, using and extension instead of implicit
+  - remove deprecated methods
+- [Update cats-effect to 3.6.0](https://github.com/atnos-org/eff/commit/d6c65870f01a94ba9beb3fb8bfeaada34fed0af4)
+- [Update specs2-core, specs2-html, ... to 4.21.0](https://github.com/atnos-org/eff/commit/705bfa10dae7f91ab8467edd695e245fad76aa51)
+- [Bump sbt/setup-sbt from 1.1.6 to 1.1.7](https://github.com/atnos-org/eff/commit/10330cd1a1ef4b1c9cd9aedf9b707c3b5f27dd63)
+- [Update sbt, scripted-plugin to 1.10.11](https://github.com/atnos-org/eff/commit/030fba7f0fba0b6ddc4d5242d680a00255f2155b)
+- [enable StateEffectSpec in native and js](https://github.com/atnos-org/eff/commit/cbc38ac4ad95c6199921a45f9d3b5df8109c184d)
