@@ -256,7 +256,7 @@ lazy val commonScalacOptions = Def.setting {
     "-encoding",
     "UTF-8",
     "-feature",
-    "-language:implicitConversions,higherKinds,existentials",
+    "-language:existentials",
     "-unchecked",
     "-no-indent",
     "-Ykind-projector",
