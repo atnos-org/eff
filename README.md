@@ -24,13 +24,19 @@ Eff is published for Scala 3. `eff` core is available for the JVM, ScalaJS and s
 
 ```scala
 // check maven badge above for latest version
-libraryDependencies += "org.atnos" %% "eff" % "7.0.6"
+libraryDependencies += "org.atnos" %% "eff" % "8.0.0"
 
 // for Scala 3.3.x
 scalacOptions += "-Ykind-projector"
 
 // for latest Scala 3
 scalacOptions += "-Xkind-projector"
+```
+
+for Scala 2.x
+
+```scala
+libraryDependencies += "org.atnos" %% "eff" % "7.0.6"
 ```
 
 # Contributing
