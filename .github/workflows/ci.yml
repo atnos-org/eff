@@ -65,29 +65,3 @@ jobs:
            "project allJS"
            "+ Test/compile"
            "+ test"
-  push_gh_pages:
-    needs:
-    - test
-    - wasm
-    timeout-minutes: 30
-    runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'atnos-org' && github.ref == 'refs/heads/master' && github.event_name == 'push' }}
-    steps:
-    - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
-      with:
-        java-version: 8
-        distribution: temurin
-    - uses: sbt/setup-sbt@26ab4b0fa1c47fa62fc1f6e51823a658fb6c760c # v1.1.7
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-    - name: Install pandoc
-      run: ./.github/install_pandoc.sh
-    - uses: coursier/cache-action@142d2738bd29f0eb9d44610828acb3a19809feab # v6.4.6
-    - name: Generate html
-      run: ./.github/gen_doc.sh
-    - name: Push to gh-pages
-      uses: JamesIves/github-pages-deploy-action@6c2d9db40f9296374acc17b90404b6e8864128c8 # v4.7.3
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages
-        FOLDER: target/specs2-reports/site
-        CLEAN: true
