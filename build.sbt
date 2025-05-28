@@ -267,7 +267,7 @@ lazy val sharedPublishSettings = Seq(
   publishMavenStyle := true,
   Test / publishArtifact := false,
   pomIncludeRepository := Function.const(false),
-  publishTo := sonatypePublishToBundle.value,
+  publishTo := (if (isSnapshot.value) None else localStaging.value),
 ) ++ notesSettings
 
 lazy val notesSettings = Seq(

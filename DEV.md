@@ -11,7 +11,7 @@ sbt> set every ghreleaseGithubToken := Some("GITHUB TOKEN")
 sbt> githubRelease <tag name>
 sbt> project /
 sbt> +publishSigned
-sbt> sonatypeBundleRelease
+sbt> sonaRelease
 
 # set SNAPSHOT version.sbt
 ```
