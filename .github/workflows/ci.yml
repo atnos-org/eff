@@ -40,7 +40,7 @@ jobs:
            "++ ${{ matrix.scala }} -v"
            "scalafmtCheckAll"
            "Test/compile"
-           "scalafixAll --check"
+           "all scalafixCheckAll scalafixConfigRuleNamesSortCheck"
            "test"
   wasm:
     runs-on: ubuntu-latest
