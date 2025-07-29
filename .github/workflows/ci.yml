@@ -30,7 +30,7 @@ jobs:
     - if: ${{ matrix.scala == 'latest' }}
       run: sbt -v
            scalafmtSbtCheck
-           "++ 3.7.2-RC1!"
+           "++ 3.7.2!"
            "scalafmtCheckAll"
            "Test/compile"
            "test"
