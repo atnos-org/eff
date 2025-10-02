@@ -3,7 +3,7 @@ import sbtcrossproject.CrossProject
 
 Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
 
-lazy val specs2Version = Def.setting("4.21.0")
+lazy val specs2Version = Def.setting("4.22.0")
 lazy val twitterUtilVersion = "24.2.0"
 lazy val doobieVersion = "0.13.4"
 
@@ -125,7 +125,7 @@ lazy val catsEffect = crossProject(JVMPlatform)
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(future, option % Test)
   .settings(
-    libraryDependencies += "org.typelevel" %%% "cats-effect" % "3.6.0",
+    libraryDependencies += "org.typelevel" %%% "cats-effect" % "3.6.3",
   )
   .jvmSettings(commonJvmSettings)
   .settings(effSettings)
@@ -220,7 +220,7 @@ def Scala212 = "2.12.20"
 lazy val buildSettings = Seq(
   organization := "org.atnos",
   scalaVersion := Scala212,
-  crossScalaVersions := Seq(Scala212, "2.13.16", "3.3.5")
+  crossScalaVersions := Seq(Scala212, "2.13.17", "3.3.6")
 )
 
 lazy val commonSettings = Def.settings(
@@ -241,7 +241,7 @@ lazy val commonSettings = Def.settings(
         Nil
       case _ =>
         Seq(
-          compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.3" cross CrossVersion.full)
+          compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.4" cross CrossVersion.full)
         )
     }
   }
