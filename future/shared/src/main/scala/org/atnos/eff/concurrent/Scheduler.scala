@@ -5,7 +5,7 @@ import scala.concurrent.duration.FiniteDuration
 
 /**
  * The design of the Scheduler is taken from:
- * [[https://github.com/functional-streams-for-scala/fs2/blob/series/1.0/core/jvm/src/main/scala/fs2/Scheduler.scala]]
+ * [[https://github.com/typelevel/fs2/blob/36890708c4f65613934c44bdf9c7c2dd914e6d70/core/jvm/src/main/scala/fs2/Scheduler.scala]]
  */
 trait Scheduler {
   type Cancel = () => Unit
