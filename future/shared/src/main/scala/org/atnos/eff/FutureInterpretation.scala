@@ -23,7 +23,7 @@ trait FutureInterpretation extends FutureTypes {
   final def futureAttempt[R, A](e: Eff[R, A])(using TimedFuture /= R): Eff[R, Either[Throwable, A]] =
     interpret.interceptNatM[R, TimedFuture, Either[Throwable, *], A](
       e,
-      new (TimedFuture ~> ({ type l[a] = TimedFuture[Either[Throwable, a]] })#l) {
+      new (TimedFuture ~> ([a] =>> TimedFuture[Either[Throwable, a]])) {
         override def apply[X](fa: TimedFuture[X]): TimedFuture[Either[Throwable, X]] = attempt(fa)
       }
     )
