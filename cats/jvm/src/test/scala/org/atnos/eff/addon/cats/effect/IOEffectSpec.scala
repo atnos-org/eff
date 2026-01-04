@@ -44,7 +44,7 @@ class IOEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaCheck
   def e2 = {
     def action[R: _io: _option]: Eff[R, Int] = for {
       a <- ioDelay(10)
-      b <- ioDelay { boom; 20 }
+      b <- ioDelay { boom(); 20 }
     } yield a + b
 
     action[S].ioAttempt.runOption.unsafeRunTimed(5.seconds).flatten must beSome(beLeft(boomException))
@@ -136,7 +136,7 @@ class IOEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaCheck
   /**
    * HELPERS
    */
-  def boom: Unit = throw boomException
+  def boom(): Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
 
   def sleepFor(duration: FiniteDuration) =

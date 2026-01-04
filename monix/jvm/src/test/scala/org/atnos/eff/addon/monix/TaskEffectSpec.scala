@@ -54,7 +54,7 @@ class TaskEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaChe
   def e2 = {
     def action[R: _task: _option]: Eff[R, Int] = for {
       a <- taskDelay(10)
-      b <- taskDelay { boom; 20 }
+      b <- taskDelay { boom(); 20 }
     } yield a + b
 
     val result = Await.result(action[S].taskAttempt.runOption.runSequential.runToFuture, 10.seconds)
@@ -205,7 +205,7 @@ class TaskEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaChe
   /**
    * HELPERS
    */
-  def boom: Unit = throw boomException
+  def boom(): Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
 
   def sleepFor(duration: FiniteDuration) =

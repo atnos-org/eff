@@ -57,7 +57,7 @@ class FutureEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaC
   def e2 = {
     def action[R: _future: _option]: Eff[R, Int] = for {
       a <- futureDelay(10)
-      b <- futureDelay { boom; 20 }
+      b <- futureDelay { boom(); 20 }
     } yield a + b
 
     action[S].futureAttempt.runOption.runSequential must beSome(beLeft(boomException)).await(retries = 5, timeout = 5.seconds)
@@ -229,7 +229,7 @@ class FutureEffectSpec(using ee: ExecutionEnv) extends Specification with ScalaC
    * HELPERS
    */
 
-  def boom: Unit = throw boomException
+  def boom(): Unit = throw boomException
   val boomException: Throwable = new Exception("boom")
 
   def sleepFor(duration: FiniteDuration) =
