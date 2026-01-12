@@ -14,7 +14,7 @@ jobs:
       with:
         java-version: 8
         distribution: temurin
-    - uses: sbt/setup-sbt@3e125ece5c3e5248e18da9ed8d2cce3d335ec8dd # v1.1.14
+    - uses: sbt/setup-sbt@a627500d27445f8c5021755a439829b6e78e3358 # v1.1.15
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         ref: ${{ github.event.pull_request.head.sha }}
