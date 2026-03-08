@@ -1,6 +1,5 @@
 # eff
 
-[![Join the chat at https://gitter.im/atnos-org/eff](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/atnos-org/eff?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Maven Central](https://img.shields.io/maven-central/v/org.atnos/eff_3.svg)](https://maven-badges.herokuapp.com/maven-central/org.atnos/eff_3)
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
