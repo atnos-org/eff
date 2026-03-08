@@ -1,6 +1,6 @@
 # eff
 
-[![Maven Central](https://img.shields.io/maven-central/v/org.atnos/eff_3.svg)](https://maven-badges.herokuapp.com/maven-central/org.atnos/eff_3)
+[![Maven Central](https://img.shields.io/maven-central/v/org.atnos/eff_3.svg)](https://central.sonatype.com/artifact/org.atnos/eff_3)
 
 Extensible effects are an alternative to monad transformers for computing with effects in a functional way.
 This library is based on the "free-er" monad and extensible effects described in
