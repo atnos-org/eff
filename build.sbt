@@ -99,7 +99,7 @@ lazy val doobie = project
   .settings(libraryDependencies ++= doobieJvm)
   .settings(effSettings ++ commonJvmSettings)
 
-lazy val catsEffect = crossProject(JVMPlatform)
+lazy val catsEffect = crossProject(JVMPlatform, NativePlatform)
   .in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(future, option % Test)
@@ -107,6 +107,7 @@ lazy val catsEffect = crossProject(JVMPlatform)
     libraryDependencies += "org.typelevel" %%% "cats-effect" % "3.7.0",
   )
   .jvmSettings(commonJvmSettings)
+  .nativeSettings(commonNativeSettings)
   .settings(effSettings)
 
 lazy val catsEffectJVM = catsEffect.jvm
