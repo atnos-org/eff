@@ -214,6 +214,7 @@ lazy val commonJvmSettings = Seq(
 )
 
 lazy val commonNativeSettings = Def.settings(
+  evictionErrorLevel := Level.Warn,
   libraryDependencies ++= specs2.value,
   Test / test := {
     if ((Test / sources).value.isEmpty) {
