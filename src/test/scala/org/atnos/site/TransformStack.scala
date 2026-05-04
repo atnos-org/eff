@@ -165,7 +165,7 @@ And you want to write an interpreter which will translate authentication actions
               case Authenticate(token) =>
                 // send the TimedFuture effect in the stack U
                 fromFuture(authenticateImpl(token)).
-                  // send the Either value in the stack U
+                // send the Either value in the stack U
                 collapse
             }
         })
