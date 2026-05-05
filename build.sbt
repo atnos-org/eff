@@ -237,12 +237,12 @@ lazy val publishSettings =
     apiURL := Some(url("http://atnos.org/eff/api/")),
     pomExtra := (
       <developers>
-      <developer>
-        <id>etorreborre</id>
-        <name>Eric Torreborre</name>
-        <url>https://github.com/etorreborre/</url>
-      </developer>
-    </developers>
+        <developer>
+          <id>etorreborre</id>
+          <name>Eric Torreborre</name>
+          <url>https://github.com/etorreborre/</url>
+        </developer>
+      </developers>
     )
   ) ++ sharedPublishSettings
 
