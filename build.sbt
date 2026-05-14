@@ -323,6 +323,6 @@ Global / excludeLintKeys ++= Set(
 inThisBuild(
   Seq(
     semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixDependencies += "com.github.xuwei-k" %% "scalafix-rules" % "0.6.24"
+    scalafixDependencies += "com.github.xuwei-k" %% "scalafix-rules" % "0.6.25"
   )
 )
