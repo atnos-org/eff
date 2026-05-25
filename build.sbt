@@ -254,6 +254,7 @@ lazy val noPublishSettings = Seq(
 
 lazy val commonScalacOptions = Def.setting {
   Seq(
+    "-language:strictEquality",
     "-deprecation",
     "-encoding",
     "UTF-8",
