@@ -27,7 +27,7 @@ jobs:
       with:
         java-version: ${{matrix.java}}
         distribution: temurin
-    - uses: sbt/setup-sbt@2e222825582620cc38d2a54e674f3c01b7c14f5d # v1.1.24
+    - uses: sbt/setup-sbt@af116cce31c00823d3903ce687f9cda3a4f19f1b # v1.2.1
     - uses: coursier/cache-action@95e5b1029b6b86e7bac033ee44a0697d8a527d2d # v6.4.8
     - if: ${{ matrix.scala == 'latest' }}
       run: sbt -v
@@ -55,7 +55,7 @@ jobs:
       with:
         java-version: 21
         distribution: temurin
-    - uses: sbt/setup-sbt@2e222825582620cc38d2a54e674f3c01b7c14f5d # v1.1.24
+    - uses: sbt/setup-sbt@af116cce31c00823d3903ce687f9cda3a4f19f1b # v1.2.1
     - uses: actions/setup-node@v6
       with:
         node-version: 22
