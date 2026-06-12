@@ -142,7 +142,7 @@ lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     safe,
   )
   .settings(
-    libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.3.8",
+    libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.3.9",
   )
   .settings(effSettings)
   .jvmSettings(commonJvmSettings)
