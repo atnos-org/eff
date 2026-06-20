@@ -188,8 +188,6 @@ lazy val commonJsSettings = Def.settings(
           .withArgs(
             List(
               "--experimental-wasm-exnref",
-              "--experimental-wasm-imported-strings",
-              "--turboshaft-wasm",
             )
           )
         new NodeJSEnv(config)
