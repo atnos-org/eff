@@ -154,7 +154,7 @@ lazy val scalazJS = scalaz.js
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "3.3.8"
+  scalaVersion := "3.8.4"
 )
 
 lazy val commonSettings = Def.settings(
