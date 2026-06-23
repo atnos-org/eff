@@ -16,7 +16,7 @@ jobs:
         scala:
         - "3.x"
         java:
-        - 11
+        - 17
         - 25
         include:
         - java: 25
@@ -36,8 +36,8 @@ jobs:
            "++ 3.9.0-RC1!"
            "scalafmtCheckAll"
            "all allJVM/Test/compile allJS/Test/compile"
-           "allJVM/test"
-           "allJS/test"
+           "allJVM/testFull"
+           "allJS/testFull"
     - if: ${{ matrix.scala != 'latest' }}
       run: sbt -v
            --server
@@ -46,7 +46,7 @@ jobs:
            "scalafmtCheckAll"
            "Test/compile"
            "all scalafixCheckAll scalafixConfigRuleNamesSortCheck"
-           "test"
+           "testFull"
   wasm:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -67,8 +67,8 @@ jobs:
            --server
            -Dscala_js_wasm
            "project allJS"
-           "+ Test/compile"
-           "+ test"
+           "Test/compile"
+           "testFull"
   push_gh_pages:
     needs:
     - test
@@ -93,5 +93,5 @@ jobs:
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
-        FOLDER: target/specs2-reports/site
+        FOLDER: doc/target/specs2-reports/site
         CLEAN: true

@@ -1,46 +1,62 @@
 import org.scalajs.jsenv.nodejs._
-import sbtcrossproject.CrossProject
 
 Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
 
 lazy val specs2Version = "4.23.0"
 lazy val doobieVersion = "0.13.4"
+val Scala3 = "3.3.8"
+val scalaVersions = Seq(Scala3)
+val defaultAxis = VirtualAxis.scalaABIVersion(Scala3)
 
-enablePlugins(BuildInfoPlugin)
+def hash() = sys.process.Process("git rev-parse HEAD").lazyLines_!.head
 
-def hash() = sys.process.Process("git rev-parse HEAD").lineStream_!.head
-
-moduleName := "root"
-effSettings
-noPublishSettings
-commonJvmSettings
-libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
-
-dependsOn(
-  all.jvm % "test->test;compile->compile",
-  doobie,
-  monixJVM,
-  scalazJVM,
+val effRoot = rootProject.autoAggregate.settings(
+  moduleName := "root",
+  scalaVersion := Scala3,
+  effSettings,
+  noPublishSettings,
 )
 
-def p(id: String) = CrossProject(id, file(id))(JSPlatform, JVMPlatform, NativePlatform)
+val effDoc = project
+  .in(file("doc"))
+  .settings(
+    moduleName := "eff-doc",
+    scalaVersion := Scala3,
+    effSettings,
+    noPublishSettings,
+    commonJvmSettings,
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "org.atnos.eff",
+    libraryDependencies += "org.specs2" %% "specs2-html" % specs2Version % "test"
+  )
+  .enablePlugins(BuildInfoPlugin)
+  .dependsOn(
+    all.jvm(Scala3) % "test->test;compile->compile",
+    doobie.jvm(Scala3),
+    monix.jvm(Scala3),
+    scalaz.jvm(Scala3),
+  )
+
+def p(id: String) = ProjectMatrix(id = id, base = file(id), pluginClassLoader = this.getClass.getClassLoader)
+  .defaultAxes(defaultAxis)
   .settings(moduleName := s"eff-$id")
-  .jsSettings(commonJsSettings)
-  .jvmSettings(commonJvmSettings)
+  .jsPlatform(scalaVersions, commonJsSettings)
+  .jvmPlatform(scalaVersions, commonJvmSettings)
   .settings(
     effSettings,
   )
-  .nativeSettings(commonNativeSettings)
+  .nativePlatform(scalaVersions, commonNativeSettings)
   .dependsOn(core % "compile->compile;test->test")
 
-lazy val core = CrossProject("core", file("core"))(JSPlatform, JVMPlatform, NativePlatform)
+lazy val core = projectMatrix
+  .defaultAxes(defaultAxis)
   .settings(moduleName := "eff-core")
-  .jsSettings(commonJsSettings)
-  .jvmSettings(commonJvmSettings)
+  .jsPlatform(scalaVersions, commonJsSettings)
+  .jvmPlatform(scalaVersions, commonJvmSettings)
   .settings(
     effSettings,
   )
-  .nativeSettings(commonNativeSettings)
+  .nativePlatform(scalaVersions, commonNativeSettings)
 
 lazy val eval = p("eval")
 lazy val option = p("option")
@@ -55,23 +71,27 @@ lazy val state = p("state")
 lazy val safe = p("safe").dependsOn(either)
 lazy val future = p("future").dependsOn(eval)
 
-lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .in(file("."))
+lazy val all = projectMatrix
+  .defaultAxes(defaultAxis)
+  .in(file("all"))
   .settings(moduleName := "eff")
-  .jsSettings(commonJsSettings)
-  .jvmSettings(commonJvmSettings)
+  .jsPlatform(scalaVersions, commonJsSettings)
+  .jvmPlatform(scalaVersions, commonJvmSettings)
   .settings(
     effSettings,
   )
-  .nativeSettings(
-    commonNativeSettings,
-    Test / testOptions ++= {
-      if (scala.util.Properties.isLinux) {
-        Seq(Tests.Exclude(Set("org.atnos.eff.EvalEffectSpec")))
-      } else {
-        Nil
-      }
-    },
+  .nativePlatform(
+    scalaVersions,
+    Def.settings(
+      commonNativeSettings,
+      Test / testOptions ++= {
+        if (scala.util.Properties.isLinux) {
+          Seq(Tests.Exclude(Set("org.atnos.eff.EvalEffectSpec")))
+        } else {
+          Nil
+        }
+      },
+    )
   )
   .dependsOn(
     core % "test->test",
@@ -89,29 +109,27 @@ lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     future
   )
 
-lazy val coreJVM = core.jvm
-lazy val coreJS = core.js
-
-lazy val doobie = project
+lazy val doobie = projectMatrix
   .settings(moduleName := "eff-doobie")
-  .dependsOn(coreJVM % "compile->compile;test->test")
+  .dependsOn(core % "compile->compile;test->test")
+  .jvmPlatform(scalaVersions)
   .settings(libraryDependencies ++= doobieJvm)
   .settings(effSettings ++ commonJvmSettings)
 
-lazy val catsEffect = crossProject(JVMPlatform, NativePlatform)
+lazy val catsEffect = projectMatrix
+  .defaultAxes(defaultAxis)
   .in(file("cats"))
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(future, option % Test)
   .settings(
-    libraryDependencies += "org.typelevel" %%% "cats-effect" % "3.7.0",
+    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.7.0",
   )
-  .jvmSettings(commonJvmSettings)
-  .nativeSettings(commonNativeSettings)
+  .jvmPlatform(scalaVersions, commonJvmSettings)
+  .nativePlatform(scalaVersions, commonNativeSettings)
   .settings(effSettings)
 
-lazy val catsEffectJVM = catsEffect.jvm
-
-lazy val monix = crossProject(JSPlatform, JVMPlatform)
+lazy val monix = projectMatrix
+  .defaultAxes(defaultAxis)
   .in(file("monix"))
   .settings(moduleName := "eff-monix")
   .dependsOn(
@@ -119,16 +137,14 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
     option % Test,
   )
   .settings(
-    libraryDependencies += "io.monix" %%% "monix-eval" % "3.4.1",
+    libraryDependencies += "io.monix" %% "monix-eval" % "3.4.1",
   )
   .settings(effSettings)
-  .jvmSettings(commonJvmSettings)
-  .jsSettings(commonJsSettings)
+  .jvmPlatform(scalaVersions, commonJvmSettings)
+  .jsPlatform(scalaVersions, commonJsSettings)
 
-lazy val monixJVM = monix.jvm
-lazy val monixJS = monix.js
-
-lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+lazy val scalaz = projectMatrix
+  .defaultAxes(defaultAxis)
   .in(file("scalaz"))
   .settings(moduleName := "eff-scalaz")
   .dependsOn(
@@ -141,24 +157,20 @@ lazy val scalaz = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     safe,
   )
   .settings(
-    libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.3.9",
+    libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.3.9",
   )
   .settings(effSettings)
-  .jvmSettings(commonJvmSettings)
-  .jsSettings(commonJsSettings)
-  .nativeSettings(commonNativeSettings)
-
-lazy val scalazJVM = scalaz.jvm
-lazy val scalazJS = scalaz.js
+  .jvmPlatform(scalaVersions, commonJvmSettings)
+  .jsPlatform(scalaVersions, commonJsSettings)
+  .nativePlatform(scalaVersions, commonNativeSettings)
 
 lazy val buildSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "3.3.8"
 )
 
 lazy val commonSettings = Def.settings(
-  semanticdbEnabled := scalaVersion.value.startsWith("3.3"),
-  libraryDependencies += "org.typelevel" %%% "cats-core" % "2.13.0",
+  semanticdbEnabled := true,
+  libraryDependencies += "org.typelevel" %% "cats-core" % "2.13.0",
   scalacOptions ++= commonScalacOptions.value,
   (Compile / doc / scalacOptions) ++= {
     Seq(
@@ -180,7 +192,7 @@ lazy val commonJsSettings = Def.settings(
       scalaJSLinkerConfig ~= (
         _.withESFeatures(_.withUseWebAssembly(true).withESVersion(org.scalajs.linker.interface.ESVersion.ES2022)).withModuleKind(ModuleKind.ESModule)
       ),
-      jsEnv := {
+      jsEnv := Def.uncached {
         import org.scalajs.jsenv.nodejs.NodeJSEnv
         val config = NodeJSEnv
           .Config()
@@ -213,11 +225,11 @@ lazy val commonJvmSettings = Seq(
 lazy val commonNativeSettings = Def.settings(
   evictionErrorLevel := Level.Warn,
   libraryDependencies ++= specs2.value,
-  Test / test := {
+  Test / testFull := {
     if ((Test / sources).value.isEmpty) {
-      ()
+      TestResult.Empty
     } else {
-      (Test / test).value
+      (Test / testFull).value
     }
   },
 )
@@ -270,9 +282,6 @@ lazy val sharedPublishSettings = Seq(
   publishTo := (if (isSnapshot.value) None else localStaging.value),
 )
 
-buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
-buildInfoPackage := "org.atnos.eff"
-
 lazy val warnUnusedImport = Seq(
   scalacOptions += "-Wunused:imports",
   Compile / console / scalacOptions ~= { _.filterNot("-Wunused:imports" == _) },
@@ -288,10 +297,10 @@ lazy val doobieJvm = Seq("org.tpolecat" %% "doobie-core" % doobieVersion, "org.t
 
 lazy val specs2 = Def.setting(
   Seq(
-    "org.specs2" %%% "specs2-core",
-    "org.specs2" %%% "specs2-matcher-extra",
-    "org.specs2" %%% "specs2-scalacheck",
-    "org.specs2" %%% "specs2-junit",
+    "org.specs2" %% "specs2-core",
+    "org.specs2" %% "specs2-matcher-extra",
+    "org.specs2" %% "specs2-scalacheck",
+    "org.specs2" %% "specs2-junit",
   ).map(
     _ % specs2Version % "test"
   )

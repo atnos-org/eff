@@ -32,7 +32,7 @@ jobs:
         path: gh-pages
         allow-unsafe-pr-checkout: true
     - run: |
-        cp -r target/specs2-reports/site/* gh-pages/
+        cp -r doc/target/specs2-reports/site/* gh-pages/
         pushd gh-pages
         git checkout -- javascript
         git diff > diff.txt
