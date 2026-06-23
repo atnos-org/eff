@@ -60,7 +60,6 @@ lazy val all = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(moduleName := "eff")
   .jsSettings(commonJsSettings)
   .jvmSettings(commonJvmSettings)
-  .jvmSettings(notesSettings)
   .settings(
     effSettings,
   )
@@ -269,21 +268,6 @@ lazy val sharedPublishSettings = Seq(
   Test / publishArtifact := false,
   pomIncludeRepository := Function.const(false),
   publishTo := (if (isSnapshot.value) None else localStaging.value),
-) ++ notesSettings
-
-lazy val notesSettings = Seq(
-  ghreleaseRepoOrg := "atnos-org",
-  ghreleaseRepoName := "eff",
-  ghreleaseTitle := { (tagName: TagName) => s"eff ${tagName.replace("EFF-", "")}" },
-  ghreleaseIsPrerelease := { (tagName: TagName) => false },
-  ghreleaseNotes := { (tagName: TagName) =>
-    // find the corresponding release notes
-    val notesFilePath = s"notes/${tagName.replace("EFF-", "")}.markdown"
-    try scala.io.Source.fromFile(notesFilePath).mkString
-    catch { case t: Throwable => throw new Exception(s"$notesFilePath not found", t) }
-  },
-  // just upload the notes
-  ghreleaseAssets := Seq()
 )
 
 buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
@@ -311,12 +295,6 @@ lazy val specs2 = Def.setting(
   ).map(
     _ % specs2Version % "test"
   )
-)
-
-Global / excludeLintKeys ++= Set(
-  ghreleaseIsPrerelease,
-  ghreleaseNotes,
-  ghreleaseTitle,
 )
 
 inThisBuild(

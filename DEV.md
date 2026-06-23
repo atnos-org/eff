@@ -6,10 +6,6 @@
 # git tag "new version"
 # git push git@github.com:atnos-org/eff.git "new version"
 
-sbt> project coreJVM
-sbt> set every ghreleaseGithubToken := Some("GITHUB TOKEN")
-sbt> githubRelease <tag name>
-sbt> project /
 sbt> +publishSigned
 sbt> sonaRelease
 
