@@ -174,10 +174,9 @@ lazy val commonSettings = Def.settings(
   scalacOptions ++= commonScalacOptions.value,
   (Compile / doc / scalacOptions) ++= {
     Seq(
-      "-sourcepath",
-      (LocalRootProject / baseDirectory).value.getAbsolutePath,
-      "-doc-source-url",
-      s"https://github.com/atnos-org/eff/tree/${hash()}€{FILE_PATH}.scala"
+      "-source-links:github://atnos-org/eff",
+      "-revision",
+      hash()
     )
   },
   (Compile / doc / scalacOptions) := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
