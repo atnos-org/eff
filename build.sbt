@@ -172,7 +172,7 @@ lazy val commonSettings = Def.settings(
   semanticdbEnabled := true,
   libraryDependencies += "org.typelevel" %% "cats-core" % "2.13.0",
   scalacOptions ++= commonScalacOptions.value,
-  (Compile / doc / scalacOptions) ++= {
+  (Compile / doc / scalacOptions) ++= Def.uncached {
     Seq(
       "-source-links:github://atnos-org/eff",
       "-revision",
@@ -206,7 +206,7 @@ lazy val commonJsSettings = Def.settings(
   } else {
     Def.settings()
   },
-  scalacOptions += {
+  scalacOptions += Def.uncached {
     val a = (LocalRootProject / baseDirectory).value.toURI.toString
     val g = "https://raw.githubusercontent.com/atnos-org/eff/" + hash()
     val key = "-scalajs-mapSourceURI"
