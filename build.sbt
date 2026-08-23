@@ -137,7 +137,7 @@ lazy val monix = projectMatrix
     option % Test,
   )
   .settings(
-    libraryDependencies += "io.monix" %% "monix-eval" % "3.4.1",
+    libraryDependencies += "io.monix" %% "monix-eval" % "3.5.0",
   )
   .settings(effSettings)
   .jvmPlatform(scalaVersions, commonJvmSettings)
