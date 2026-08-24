@@ -27,7 +27,7 @@ jobs:
       with:
         java-version: ${{matrix.java}}
         distribution: temurin
-    - uses: sbt/setup-sbt@8feba82adc7f01ddcf8165b86f778bdb5b82cebc # v1.5.7
+    - uses: sbt/setup-sbt@c7d2d6258b4bd0d3ec5129e6b3453199d3c79729 # v1.5.8
     - uses: coursier/cache-action@95e5b1029b6b86e7bac033ee44a0697d8a527d2d # v6.4.8
     - if: ${{ matrix.scala == 'latest' }}
       run: sbt -v
@@ -58,7 +58,7 @@ jobs:
       with:
         java-version: 21
         distribution: temurin
-    - uses: sbt/setup-sbt@8feba82adc7f01ddcf8165b86f778bdb5b82cebc # v1.5.7
+    - uses: sbt/setup-sbt@c7d2d6258b4bd0d3ec5129e6b3453199d3c79729 # v1.5.8
     - uses: actions/setup-node@v7
       with:
         node-version: 26
@@ -81,7 +81,7 @@ jobs:
       with:
         java-version: 17
         distribution: temurin
-    - uses: sbt/setup-sbt@8feba82adc7f01ddcf8165b86f778bdb5b82cebc # v1.5.7
+    - uses: sbt/setup-sbt@c7d2d6258b4bd0d3ec5129e6b3453199d3c79729 # v1.5.8
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Install pandoc
       run: ./.github/install_pandoc.sh
