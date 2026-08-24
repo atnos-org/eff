@@ -33,7 +33,7 @@ jobs:
       run: sbt -v
            --server
            scalafmtSbtCheck
-           "++ 3.9.0-RC4!"
+           "++ 3.9.0-RC6!"
            "scalafmtCheckAll"
            "all allJVM/Test/compile allJS/Test/compile"
            "allJVM/testFull"
