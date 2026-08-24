@@ -122,7 +122,7 @@ lazy val catsEffect = projectMatrix
   .settings(moduleName := "eff-cats-effect")
   .dependsOn(future, option % Test)
   .settings(
-    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.7.0",
+    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.7.1",
   )
   .jvmPlatform(scalaVersions, commonJvmSettings)
   .nativePlatform(scalaVersions, commonNativeSettings)
