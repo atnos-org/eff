@@ -182,7 +182,21 @@ lazy val commonSettings = Def.settings(
   (Compile / doc / scalacOptions) := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
 ) ++ warnUnusedImport ++ prompt
 
+lazy val lazyValVarHandle = Def.settings(
+  scalacOptions ++= {
+    if (scalaVersion.value.startsWith("3.3.")) {
+      Seq(
+        "-Yfuture-lazy-vals",
+        "-release:11",
+      )
+    } else {
+      Nil
+    }
+  },
+)
+
 lazy val commonJsSettings = Def.settings(
+  lazyValVarHandle,
   libraryDependencies ++= specs2.value,
   parallelExecution := false,
   if (sys.props.isDefinedAt("scala_js_wasm")) {
@@ -214,7 +228,8 @@ lazy val commonJsSettings = Def.settings(
   }
 )
 
-lazy val commonJvmSettings = Seq(
+lazy val commonJvmSettings = Def.settings(
+  lazyValVarHandle,
   libraryDependencies ++= specs2.value,
   Test / fork := true,
   Global / cancelable := true,
