@@ -4,7 +4,7 @@ Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
 
 lazy val specs2Version = "4.23.0"
 lazy val doobieVersion = "0.13.4"
-val Scala3 = "3.3.8"
+val Scala3 = "3.9.0"
 val scalaVersions = Seq(Scala3)
 val defaultAxis = VirtualAxis.scalaABIVersion(Scala3)
 
