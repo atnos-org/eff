@@ -18,10 +18,10 @@ trait EffImplicits {
           Impure(NoEffect(a), Continuation.unit.map(f), l)
 
         case Impure(union, continuation, last) =>
-          Impure(union, continuation map f, last)
+          Impure(union, continuation.map(f), last)
 
         case ImpureAp(unions, continuations, last) =>
-          ImpureAp(unions, continuations map f, last)
+          ImpureAp(unions, continuations.map(f), last)
       }
 
     /**
@@ -95,14 +95,14 @@ trait EffImplicits {
         case ImpureAp(unions, c, last) =>
           ff match {
             case Pure(f, last1) =>
-              ImpureAp(unions, c map f, last1 *> last)
+              ImpureAp(unions, c.map(f), last1 *> last)
             case Impure(NoEffect(f), c1, last1) =>
               ImpureAp(unions, c.append(x => c1(f).map(_(x)))).addLast(last1 *> last)
             case Impure(u: Union[?, ?], c1: Continuation[AnyRef, Any, A => B], last1) =>
               ImpureAp(Unions(unions.first, unions.rest :+ u), Continuation.lift(ls => ap(c1(ls.last))(c(ls.dropRight(1))), c.onNone), last1 *> last)
             case ImpureAp(u, c1, last1) =>
               ImpureAp(
-                u append unions,
+                u.append(unions),
                 Continuation.lift(
                   { xs =>
                     val usize = u.size

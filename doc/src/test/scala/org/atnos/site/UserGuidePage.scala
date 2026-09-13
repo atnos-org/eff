@@ -59,7 +59,7 @@ abstract class UserGuidePage
     code
       .split("\n")
       .foldLeft((Vector[String](), true)) { case ((res, isCode), line) =>
-        if (line.trim startsWith "/*p")
+        if (line.trim.startsWith("/*p"))
           (res :+ "\n```\n" + line.trim.drop(3), false)
         else if (line.endsWith("*/") && !isCode)
           (res :+ "```", true)
