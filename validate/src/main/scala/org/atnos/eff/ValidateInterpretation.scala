@@ -100,7 +100,7 @@ trait ValidateInterpretation extends ValidateCreation {
         continuation.runOnNone >> Eff.pure(())
 
       def onApplicativeEffect[X, T[_]: Traverse](xs: T[Validate[E, X]], continuation: Continuation[R, T[X], A]): Eff[R, A] = {
-        val (eo, tx): (Option[S[E]], T[X]) = xs.traverse {
+        val (eo, tx) = xs.traverse[[a] =>> (Option[S[E]], a), X] {
           case Correct() | Warning(_) => (Option.empty[S[E]], ())
           case Wrong(e) => (Some(Applicative[S].pure(e)), ())
         }
