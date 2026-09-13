@@ -277,6 +277,7 @@ lazy val noPublishSettings = Seq(
 
 lazy val commonScalacOptions = Def.setting {
   Seq(
+    "-Wconf:msg=it should not be used as infix operator:error",
     "-language:strictEquality",
     "-deprecation",
     "-encoding",
