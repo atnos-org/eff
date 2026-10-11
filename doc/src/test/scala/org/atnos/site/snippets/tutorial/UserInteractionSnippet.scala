@@ -4,7 +4,7 @@ package org.atnos.site.snippets.tutorial
 trait UserInteractionSnippet {
 // 8<---
   import org.atnos.eff._
-  import all._
+  import org.atnos.eff.all._
 
   sealed trait Interact[A]
 

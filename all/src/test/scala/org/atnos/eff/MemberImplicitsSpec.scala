@@ -240,8 +240,8 @@ import org.atnos.eff.syntax.all.given
    */
   // PERMUTATIONS OF 4 effects
   import cats.data._
-  import org.atnos.eff.syntax.all.given
   import org.atnos.eff.option._
+  import org.atnos.eff.syntax.all.given
 
   type StateString[A] = State[String, A]
   type ReaderString[A] = Reader[String, A]

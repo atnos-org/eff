@@ -32,18 +32,16 @@ jobs:
     - if: ${{ matrix.scala == 'latest' }}
       run: sbt -v
            --server
-           scalafmtSbtCheck
            "++ 3.10.0!"
-           "scalafmtCheckAll"
+           scalafmtCheckRepo
            "all allJVM/Test/compile allJS/Test/compile"
            "allJVM/testFull"
            "allJS/testFull"
     - if: ${{ matrix.scala != 'latest' }}
       run: sbt -v
            --server
-           scalafmtSbtCheck
            "++ ${{ matrix.scala }} -v"
-           "scalafmtCheckAll"
+           scalafmtCheckRepo
            "Test/compile"
            "all scalafixCheckAll scalafixConfigRuleNamesSortCheck"
            "testFull"

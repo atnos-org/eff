@@ -8,7 +8,7 @@ trait UserInteractionInterpretersSnippet {
   import cats._
   import cats.syntax.all._
   import org.atnos.eff._
-  import interpret._
+  import org.atnos.eff.interpret._
 
   def readLine(): String =
     "snuggles"

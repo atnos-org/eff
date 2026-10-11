@@ -169,7 +169,6 @@ lazy val buildSettings = Seq(
 )
 
 lazy val commonSettings = Def.settings(
-  semanticdbEnabled := true,
   libraryDependencies += "org.typelevel" %% "cats-core" % "2.13.0",
   scalacOptions ++= commonScalacOptions.value,
   (Compile / doc / scalacOptions) ++= Def.uncached {
@@ -323,7 +322,6 @@ lazy val specs2 = Def.setting(
 
 inThisBuild(
   Seq(
-    semanticdbVersion := scalafixSemanticdb.revision,
     scalafixDependencies += "com.github.xuwei-k" %% "scalafix-rules" % "0.6.31"
   )
 )

@@ -5,13 +5,13 @@ import org.atnos.site.snippets.tutorial.AdtSnippet.*
 
 trait AdtInterpreterSafeSnippet {
 // 8<---
+  import cats.data._
+  import cats.syntax.all._
   import org.atnos.eff._
   import org.atnos.eff.either._
-  import org.atnos.eff.writer._
-  import org.atnos.eff.state._
   import org.atnos.eff.interpret._
-  import cats.syntax.all._
-  import cats.data._
+  import org.atnos.eff.state._
+  import org.atnos.eff.writer._
 
   type _writerString[R] = Writer[String, *] |= R
   type _stateMap[R] = State[Map[String, Any], *] |= R

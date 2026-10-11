@@ -5,10 +5,10 @@ import org.atnos.site.snippets.tutorial.AdtSnippet.*
 
 trait AdtInterpreterSnippet {
 // 8<---
-  import org.atnos.eff._
-  import interpret._
   import cats.Traverse
   import cats.syntax.all._
+  import org.atnos.eff._
+  import org.atnos.eff.interpret._
   import scala.collection.mutable._
 
   /**
