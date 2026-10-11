@@ -414,10 +414,10 @@ effect using the <code class="prettyprint">prepend</code> method. You now run th
 interact with a <a href="https://hadoop.apache.org">Hadoop</a> cluster.
 We can also define another stack, for storing and retrieving data on <a
 href="https://aws.amazon.com/s3">S3</a>.</p>
-<pre><code class="prettyprint">  import org.atnos.eff._
-  import all._
+<pre><code class="prettyprint">  import cats.Eval
   import cats.data._
-  import cats.Eval
+  import org.atnos.eff._
+  import org.atnos.eff.all._
 
   object HadoopStack {
 

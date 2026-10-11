@@ -424,10 +424,10 @@ language!</p>
 abstract language into concrete values.</p>
 <p>To do this, we will use an interpreter transforming our
 <code class="prettyprint">KVStore</code> effects using a simple mutable map:</p>
-<pre><code class="prettyprint">  import org.atnos.eff._
-  import interpret._
-  import cats.Traverse
+<pre><code class="prettyprint">  import cats.Traverse
   import cats.syntax.all._
+  import org.atnos.eff._
+  import org.atnos.eff.interpret._
   import scala.collection.mutable._
 
   /**
@@ -490,13 +490,13 @@ delegate the results to other effects in the same stack:</p>
 <li><code class="prettyprint">Either[E, *]</code> for type errors
 <p/></li>
 </ul>
-<pre><code class="prettyprint">  import org.atnos.eff._
-  import org.atnos.eff.either._
-  import org.atnos.eff.writer._
-  import org.atnos.eff.state._
-  import org.atnos.eff.interpret._
+<pre><code class="prettyprint">  import cats.data._
   import cats.syntax.all._
-  import cats.data._
+  import org.atnos.eff._
+  import org.atnos.eff.either._
+  import org.atnos.eff.interpret._
+  import org.atnos.eff.state._
+  import org.atnos.eff.writer._
 
   type _writerString[R] = Writer[String, *] |= R
   type _stateMap[R] = State[Map[String, Any], *] |= R
@@ -637,7 +637,7 @@ us compose different algebras in the context of <code class="prettyprint">Eff</c
 can form a more complex program. First you define your ADTs with smart
 constructors:</p>
 <pre><code class="prettyprint">  import org.atnos.eff._
-  import all._
+  import org.atnos.eff.all._
 
   sealed trait Interact[A]
 
@@ -680,7 +680,7 @@ instances for those effects:</p>
 <pre><code class="prettyprint">  import cats._
   import cats.syntax.all._
   import org.atnos.eff._
-  import interpret._
+  import org.atnos.eff.interpret._
 
   def readLine(): String =
     &quot;snuggles&quot;
