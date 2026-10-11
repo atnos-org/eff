@@ -5,9 +5,9 @@ trait MaybeEffectSnippet {
 
 // 8<---
   import cats._
-  import implicits._
+  import cats.syntax.all._
   import org.atnos.eff._
-  import all._
+  import org.atnos.eff.all._
   import org.atnos.eff.interpret._
 
   sealed trait Maybe[A]

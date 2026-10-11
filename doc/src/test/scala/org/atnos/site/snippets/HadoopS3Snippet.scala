@@ -3,10 +3,10 @@ package org.atnos.site.snippets
 
 trait HadoopS3Snippet {
 // 8<---
-  import org.atnos.eff._
-  import all._
-  import cats.data._
   import cats.Eval
+  import cats.data._
+  import org.atnos.eff._
+  import org.atnos.eff.all._
 
   object HadoopStack {
 

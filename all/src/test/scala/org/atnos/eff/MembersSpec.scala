@@ -20,8 +20,8 @@ class MembersSpec extends Specification {
 
   def packed = ok
 
-  import Members.&:
   import Members.&&:
+  import Members.&:
 
   trait Foo[A]
   trait Bar[A]
