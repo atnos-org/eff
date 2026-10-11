@@ -324,6 +324,6 @@ lazy val specs2 = Def.setting(
 inThisBuild(
   Seq(
     semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixDependencies += "com.github.xuwei-k" %% "scalafix-rules" % "0.6.30"
+    scalafixDependencies += "com.github.xuwei-k" %% "scalafix-rules" % "0.6.31"
   )
 )
