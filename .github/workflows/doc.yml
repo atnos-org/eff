@@ -23,7 +23,7 @@ jobs:
         allow-unsafe-pr-checkout: true
     - name: Install pandoc
       run: ./.github/install_pandoc.sh
-    - uses: coursier/cache-action@057d08c2f9a2c4e7a4d33df3aae657b7db88b8cc # v6.4.8.2.0
+    - uses: coursier/cache-action@057d08c2f9a2c4e7a4d33df3aae657b7db88b8cc # v8.2.0
     - name: Generate html
       run: ./.github/gen_doc.sh
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
