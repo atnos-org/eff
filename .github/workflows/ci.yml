@@ -28,7 +28,7 @@ jobs:
         java-version: ${{matrix.java}}
         distribution: temurin
     - uses: sbt/setup-sbt@ecad189dd245444b9ae0a0cd5922fd938b88906f # v1.5.12
-    - uses: coursier/cache-action@057d08c2f9a2c4e7a4d33df3aae657b7db88b8cc # v8.2.0
+    - uses: coursier/cache-action@ee0650f98295f27a505e4bfd284c9bfaa913a465 # v9.0.1
     - if: ${{ matrix.scala == 'latest' }}
       run: sbt -v
            --server
@@ -60,7 +60,7 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 26
-    - uses: coursier/cache-action@057d08c2f9a2c4e7a4d33df3aae657b7db88b8cc # v8.2.0
+    - uses: coursier/cache-action@ee0650f98295f27a505e4bfd284c9bfaa913a465 # v9.0.1
     - run: sbt -v
            --server
            -Dscala_js_wasm
@@ -83,7 +83,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Install pandoc
       run: ./.github/install_pandoc.sh
-    - uses: coursier/cache-action@057d08c2f9a2c4e7a4d33df3aae657b7db88b8cc # v8.2.0
+    - uses: coursier/cache-action@ee0650f98295f27a505e4bfd284c9bfaa913a465 # v9.0.1
     - name: Generate html
       run: ./.github/gen_doc.sh
     - name: Push to gh-pages
