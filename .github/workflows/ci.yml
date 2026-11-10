@@ -32,7 +32,7 @@ jobs:
     - if: ${{ matrix.scala == 'latest' }}
       run: sbt -v
            --server
-           "++ 3.10.0!"
+           "++ 3.10.1!"
            scalafmtCheckRepo
            "all allJVM/Test/compile allJS/Test/compile"
            "allJVM/testFull"
