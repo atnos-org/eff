@@ -12,21 +12,21 @@ jobs:
       pull-requests: write
       contents: read
     steps:
-    - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+    - uses: actions/setup-java@v6.3.0
       with:
         java-version: 17
         distribution: temurin
-    - uses: sbt/setup-sbt@7e114eae4f32ec3f93c851c2793376a77f384409 # v1.5.15
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: sbt/setup-sbt@v1.5.15
+    - uses: actions/checkout@v7.0.1
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         allow-unsafe-pr-checkout: true
     - name: Install pandoc
       run: ./.github/install_pandoc.sh
-    - uses: coursier/cache-action@ee0650f98295f27a505e4bfd284c9bfaa913a465 # v9.0.1
+    - uses: coursier/cache-action@v9.0.1
     - name: Generate html
       run: ./.github/gen_doc.sh
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
       with:
         ref: gh-pages
         path: gh-pages
@@ -38,7 +38,7 @@ jobs:
         git diff > diff.txt
         wc -l diff.txt
         popd
-    - uses: actions/github-script@v9
+    - uses: actions/github-script@v9.0.0
       with:
         script: |
           const fs = require('fs');
